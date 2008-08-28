@@ -1209,6 +1209,7 @@ int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
 // write to file? test?
 // Regexpsen for numbers, Entities.
 //
+#ifdef TIMBL
 int unk_pred( Logfile& l, Config& c ) {
   l.log( "unk_pred" );
   const std::string& timbl     = c.get_value("timbl");
@@ -1376,6 +1377,12 @@ int unk_pred( Logfile& l, Config& c ) {
 
   return 0;
 }
+#else
+int unk_pred( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );
+  return -1;
+}
+#endif
 
 // Version with targets?
 //
