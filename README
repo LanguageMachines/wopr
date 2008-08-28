@@ -15,3 +15,9 @@ OS X
 
 Debian: 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
+
+Example:
+--------
+
+./configure --prefix=/home/pberck/local --with-timbl=/home/pberck/local
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
