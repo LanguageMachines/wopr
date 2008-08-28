@@ -1,0 +1,16 @@
+msg:------------------------------------------------------------------
+msg: ./wopr -s etc/exp01_test -p filename:tekst.txt
+msg:------------------------------------------------------------------
+msg:
+params: type:test,ws:7
+run:cut
+run:lexicon
+run:window
+run:hapax
+run:testfile
+#set to load ibase file, or create an run: timbl_test?
+params: timbl: -a1 +D
+params: ibasefile:tekst.txt.l100000.ws7.ibase
+run:timbl_test
+
+

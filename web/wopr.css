@@ -1,0 +1,85 @@
+body {
+  /*background-color: #573718;*/;
+/* 135(87),11(0B),11 */
+/*background: transparent url(images/pattern02b.gif) 0 0;*/
+/*filter:alpha(opacity=75);-moz-opacity:.75;opacity:.75;*/
+/*background-repeat: repeat-y;*/
+}
+
+h1 {
+  font: 2em Sans-Serif;
+  color: #00A1F1; /*#870B0B;*/
+}
+
+#page {
+  border: 0px solid #F69028;
+  height: 100%;
+}
+
+#container1 {
+  margin-left: 40px;
+}
+
+#inputbox { 
+font: 14px/1.5 monaco, "Bitstream Vera Sans Mono", "Courier New", courier, monospace;
+}
+
+#outputbox { 
+margin-top: 20px;
+margin-bottom: 20px;
+font: 14px/1.5 monaco, "Bitstream Vera Sans Mono", "Courier New", courier, monospace;
+  color: #F69028;
+ }
+#s_input { 
+font: 14px/1.5 monaco, "Bitstream Vera Sans Mono", "Courier New", courier, monospace;
+  border: 2px dotted #558553;
+  width : 30em;
+ }
+
+.info { 
+  color: #C0C0C0;
+  margin-bottom: 1em;
+ }
+.prplx { 
+  color: #870B0B;
+ }
+.line { 
+  clear: both;
+  /*font-family: "Courier New", Courier, monospace;*/
+ }
+.target { 
+  float: left;
+  width: 130px;
+ }
+.result { 
+  width: 130px;
+  float: left;
+ }
+.right { 
+  width: 120px;
+  float: left;
+ }
+
+#historybox { 
+  clear: both;
+  overflow: auto;
+  border: 1px dotted #c0c0c0;
+  width: 75%;
+  height: 10em;
+  margin-top: 20px;
+  font: 14px/1.5 monaco, "Bitstream Vera Sans Mono", "Courier New", courier, monospace;
+  color: #C0C0C0;
+}
+
+#historyelement {
+  cursor: pointer;
+}
+
+/*
+0,181,241 licht blauw 
+#00B5F1
+0,161,241 donker
+#00A1F1
+246,144,40 orange
+#F69028
+*/

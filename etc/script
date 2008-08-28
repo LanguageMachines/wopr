@@ -1,0 +1,11 @@
+params: filename:reuters.martin.tok
+msg:
+run:count_lines
+run: make_wd
+run: make_traindata
+run: make_testdata
+msg:
+msg: And the next one!
+msg:
+run: hapax_traindata
+run: hapax_testdata

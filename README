@@ -1,0 +1,17 @@
+aclocal
+autoconf
+automake -a
+touch NEWS README AUTHORS ChangeLog
+automake -a
+./configure
+make
+
+OS X
+===
+
+./configure --with-timbl=/Users/pberck/install/
+
+==
+
+Debian: 
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib

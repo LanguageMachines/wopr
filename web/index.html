@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+<!-- -->
+<!--
+  ##      ##      #######      ########      ########      
+  ##  ##  ##     ##     ##     ##     ##     ##     ##     
+  ##  ##  ##     ##     ##     ##     ##     ##     ##     
+  ##  ##  ##     ##     ##     ########      ########      
+  ##  ##  ##     ##     ##     ##            ##   ##       
+  ##  ##  ## ### ##     ## ### ##        ### ##    ##  ### 
+   ###  ###  ###  #######  ### ##        ### ##     ## ### 
+-->
+<script type="text/javascript" src="js/mootools.v1.11pckr.js"></script>
+<!-- -->
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<meta name="author" content="Peter Berck" />
+<meta name="copyright" content="Peter Berck" />
+<meta name="description" content="w.o.p.r." />
+<meta name="keywords" content="w.o.p.r." />
+<!-- -->
+<title>WOPR demo</title>
+<!-- -->
+<style type="text/css" media="screen">@import 'wopr.css';</style>
+<!-- -->
+<script type="text/javascript">
+
+     /*
+       Make a server.php which returns which servers are available
+       with a nick name. The definition wil include machine/port
+       so we don't have to hardcode that in here.
+      */
+
+var mySlider;
+
+window.addEvent('domready', function() {
+
+  var h_box = $('historybox');
+  h_box.setOpacity(0);
+
+  var h_elem = $('historyelement');
+  if ( h_elem == null ) {
+      add_txt( "Sun rises in the east , film at 11 ." );
+      /*
+      var s = "Sun rises in the east , film at 11 .";
+      var history = new Element('div', {'id':'historyelement'});
+      history.addEvent("click", add_txt.pass(s));
+      history.setText( "> "+s );
+      history.injectTop( h_box );
+      h_box.setOpacity(1);
+      */
+  }
+
+  $('s_input').addEvent('keydown', function(event){
+      event = new Event(event);
+      if (event.key == 'enter') {
+	  do_submit();
+      }
+  });
+
+  mySlider = new Fx.Slide('title', {
+    mode: 'horizontal',
+    duration: 1000, 
+    transition: Fx.Transitions.expoOut
+  }).hide();
+
+  window.addEvent( 'load', function() {
+    mySlider.slideIn();
+  });
+
+});
+
+// Put the text from the history in the inputbox.
+//
+function add_txt( s ) {
+    var s_obj = $('s_input');
+    s_obj.value = s;
+}
+
+function do_clear() {
+  var s_obj = $('s_input');
+  s_obj.value = "";
+}
+
+function do_submit() {
+  var s_obj = $('s_input');
+  var s = s_obj.value.clean();
+  if ( s == "" ) {
+      alert( "Please enter text in the box!" );
+      return;
+  }
+  var aRequest = new XHR();
+  var obj = $('outputbox');
+  obj.setHTML( '<img src="images/loading.gif" />' );
+
+  // Hide this first.
+  //
+  var h_box = $('historybox');
+  h_box.setOpacity(0);
+
+  aRequest.addEvent('onSuccess',function() {
+	  var new_obj = $('outputbox');
+	  var js = Json.evaluate( aRequest.response.text );
+	  var txt = "Error, cannot connect.";
+	  if ( js.status != "error" ) {
+	      txt = "<div class='info'>ibasefile: "+js.ibasefile+"</div>";
+	      txt = txt + "<div class='prplx'>Perplexity: "+js.prplx+"</div>";
+
+	      txt = txt + "<div id='legend'>" + 
+		  "<div class='target'>target</div>" +
+		  "<div class='result'>result</div>" +
+		  "<div class='right'>prob</div>" +
+		  "</div>";
+
+	      // the classifications contain: {"target":"output"}
+	      // and the results contain: {"output":"perplexity"}
+	      // the probs contain: {"target":"type"}
+	      //
+	      for ( var i = 0; i < js.results.length; i++ ) {
+		  for ( j in js.classifications[i] ) {
+		      var my_guess = js.classifications[i][j];
+		      var my_prplx = js.results[i][my_guess];
+		      var p_type   = js.probs[i][j];
+		      txt = txt + "<div class='line'>";
+		      txt = txt + "<div class='target'>" + j + "</div>";
+		      txt = txt + "<div class='result'>" + my_guess + "</div>";
+		      txt = txt + "<div class='right'>" + my_prplx + "</div>";
+		      //txt = txt + " (" + p_type + ")" + "</div>";
+		      txt = txt + "</div>";
+		  }
+	      }
+
+	      // Save the new string in the historybox. Add an event to put
+	      // it back in the inputbox on a click.
+	      //
+	      var h_box = $('historybox');
+	      var history = new Element('div', {'id':'historyelement'});
+	      history.addEvent("click", add_txt.pass(s));
+	      history.setText( "> "+s+ " ("+js.prplx.toFloat().toPrecision(4)+")" );
+	      history.injectTop( h_box );
+
+	  } else {
+	      // do iets met txt
+	  }
+	  new_obj.setHTML( txt );
+
+	  // Nu misschien?
+	  //
+	  var legend = $('legend');
+	  legend.setStyle( "margin-top", "8px" );
+	  legend.setStyle( "margin-bottom", "8px" );
+	  legend.setStyle( "height", "18px" );
+
+	  var h_box = $('historybox');
+	  h_box.setOpacity(1);
+
+      });
+
+  aRequest.addEvent('onFailure',function() {
+	  var new_obj = $('outputbox');
+	  new_obj.setHTML( "An error occurred." );
+      });
+
+  aRequest.send( 'timbl.php', 's='+s );
+}
+
+</script>
+<!-- -->
+</head>
+<body>
+<div id="page">
+
+<div id="container1">
+  
+<h1 id="title">WOPR demo</h1>
+
+<div id="inputbox">
+Enter your text;
+<input type="text" name="s" id="s_input" />
+<input type="submit" name="search" value="Submit" onclick="do_submit();" />
+<input type="reset" name="reset" value="Clear" onclick="do_clear();" />
+</div>
+
+<div id="outputbox">
+</div>
+<br />
+<div id="historybox">
+</div>
+
+
+</div><!-- container -->
+
+</div><!-- page -->
+</body>
+</html>

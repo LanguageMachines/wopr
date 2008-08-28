@@ -1,0 +1,74 @@
+// $Id$
+//
+
+/*****************************************************************************
+ * Copyright 2005 Peter Berck                                                *
+ *                                                                           *
+ * This file is part of wpred.                                          *
+ *                                                                           *
+ * wpred is free software; you can redistribute it and/or modify it     *
+ * under the terms of the GNU General Public License as published by the     *
+ * Free Software Foundation; either version 2 of the License, or (at your    *
+ * option) any later version.                                                *
+ *                                                                           *
+ * wpred is distributed in the hope that it will be useful, but WITHOUT *
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or     *
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License      *
+ * for more details.                                                         *
+ *                                                                           *
+ * You should have received a copy of the GNU General Public License         *
+ * along with wpred; if not, write to the Free Software Foundation,     *
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
+ *****************************************************************************/
+
+#ifndef _RUNRUNRUN_H
+#define _RUNRUNRUN_H
+
+#include <string>
+#include <vector>
+
+#include "qlog.h"
+#include "Config.h"
+
+typedef int(*pt2Func)(Logfile*, Config*);
+typedef int(*pt2Func2)(Logfile&, Config&);
+
+int dummy( Logfile*, Config* );
+pt2Func fun_factory( const std::string& );
+int count_lines( Logfile*, Config* );
+int msg( Logfile*, Config* );
+
+int script( Logfile&, Config& );
+int timbl( Logfile&, Config& );
+pt2Func2 get_function( const std::string& );
+int tst( Logfile&, Config& );
+int cut( Logfile&, Config& );
+int flatten( Logfile&, Config& );
+int lowercase( Logfile&, Config& );
+int window( Logfile&, Config& );
+int window_s( Logfile&, Config& );
+int ngram( Logfile&, Config& );
+int prepare( Logfile&, Config& );
+int arpa( Logfile&, Config& );
+int window( std::string, std::string, int, int, std::vector<std::string>& );
+int window_line( Logfile&, Config& );
+int window_lr( Logfile&, Config& );
+int window_line2( Logfile&, Config& );
+int hapax_line( const std::string&, std::map<std::string,int>, int, int, std::string& );
+int unk_pred( Logfile& , Config& );
+int ngram( std::string, int, std::vector<std::string>& );
+int timbl_test( Logfile&, Config& );
+int lexicon( Logfile&, Config& );
+int hapax( Logfile&, Config& );
+int hapax_line_OLD( Logfile&, Config& );
+int trainfile( Logfile&, Config& );
+int testfile( Logfile&, Config& );
+int window_usenet( Logfile&, Config& );
+int server( Logfile&, Config& );
+int test( Logfile&, Config& );
+int smooth_old( Logfile&, Config& );
+int smooth( Logfile&, Config& );
+unsigned long anahash( std::string& );
+double word_entropy( std::map<std::string,int>& );
+int read_a3( Logfile&, Config& );
+#endif

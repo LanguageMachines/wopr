@@ -1,0 +1,19 @@
+msg:------------------------------------------------------------------
+msg:
+params: filename:tekst.txt
+run:cut
+run:lexicon
+run:window
+#run:hapax
+run: trainfile
+params: timbl: -a1
+run:timbl
+msg:
+params: filename:tekst.txt,lines:1,type:test
+run:cut
+run:lexicon
+run:window
+#run:hapax
+run:testfile
+params: timbl: -a1 -vS
+run:timbl

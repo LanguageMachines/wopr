@@ -1,0 +1,2314 @@
+// ---------------------------------------------------------------------------
+// $Id$
+// ---------------------------------------------------------------------------
+
+/*****************************************************************************
+ * Copyright 2007, 2008 Peter Berck                                          *
+ *                                                                           *
+ * This file is part of wopr.                                                *
+ *                                                                           *
+ * wopr is free software; you can redistribute it and/or modify it           *
+ * under the terms of the GNU General Public License as published by the     *
+ * Free Software Foundation; either version 2 of the License, or (at your    *
+ * option) any later version.                                                *
+ *                                                                           *
+ * wopr is distributed in the hope that it will be useful, but WITHOUT       *
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or     *
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License      *
+ * for more details.                                                         *
+ *                                                                           *
+ * You should have received a copy of the GNU General Public License         *
+ * along with wpred; if not, write to the Free Software Foundation,          *
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
+ *****************************************************************************/
+
+// ---------------------------------------------------------------------------
+//  Includes.
+// ---------------------------------------------------------------------------
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
+#include <map>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+
+#include <math.h>
+#include <unistd.h>
+#include <stdio.h>
+
+#include "qlog.h"
+#include "util.h"
+#include "Config.h"
+#include "runrunrun.h"
+#include "server.h"
+#include "tag.h"
+
+#ifdef TIMBL
+# include "timbl/TimblAPI.h"
+#endif
+
+// ---------------------------------------------------------------------------
+// ./wpred --run run_exp2,run_external -e "sleep 10"
+// ./wpred --run make_data --params filename:settings
+// ./wpred --run timbl --params -- timbl:-a
+// ./wpred --run make_wd --params filename:reuters.martin.tok,ws:8
+//
+// ./wopr --run make_wd --params filename:reuters.martin.tok,ws:8,ml:400
+// ./wopr --run hapax_data --params hpx:1,filename:reuters.martin.tok.data
+// ./wopr -r make_wd,hapax_data -p ws:7,filename:retrs.mrtn.tok,hpx:4,ml:1000
+// ./wopr --run script -p filename:"etc/script",hpx:1
+// ---------------------------------------------------------------------------
+
+/*
+  Anders.
+
+  in script:
+    set input file
+    set filetype
+    specify transformations.
+
+    eg:
+    input: text.txt (parameter)
+    type: train (params)
+    (parameters: lines:100, ws:7, hpx:3)
+    transform: cut/lines:100, window_data/ws:7, hapax_data/hpx:3
+*/
+
+/*
+  This file could have a number of functions which can be
+  chained together maybe, like small building blocks
+  to set up experiments.
+  Like "make_test_test( params )" &c.
+  These could be specified in config like:
+    make_data, run_exp, &c.
+  Make function factory, let all take same arguments (Config*),
+  call one after the other?
+
+  make data, filter1, make more data, run exp.
+
+  take/define datasets etc. in Config? read a script?
+
+  What do we want?
+  1)scripts to make data
+  2)run Timbl
+  3)eval results
+
+  Parse output of started programs, recognise KV pairs, store them.
+  e.g. prog1 outputs "foo=bar", and foo is usable in prog2. useful
+  to get Timbl output in this program?
+  We need exec/fork as in PETeR...
+*/
+
+// ---- Experimental
+
+int rrand(Logfile& l, Config& c ) {
+  std::string filename = "/dev/video0";
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot open file." );
+    return -1;
+  }
+  std::ofstream file_out( "out.bin", std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  std::string a_line;
+
+  char* buffer;
+  int length = 1024 * 8;
+  buffer = new char[length];
+
+  // read data as a block:
+  //
+  for ( int i = 0; i < 10; i++ ) {
+    file_in.read( buffer, length );
+    l.log( to_str( (int)file_in.gcount() ));
+    file_out.write( buffer, length );
+  }
+
+  file_out.close();
+  file_in.close();
+  return 0;
+}
+
+// ---- End Experimental
+
+#ifdef TIMBL
+int timbl( Logfile& l, Config& c ) {
+  l.log( "timbl");
+  const std::string& timbl =  c.get_value("timbl");
+  l.inc_prefix();
+  l.log( "timbl:     "+timbl );
+  l.log( "trainfile: "+c.get_value( "trainfile" ) );
+  l.log( "testfile:  "+c.get_value( "testfile" ) );
+  l.dec_prefix();
+
+  //"-a IB2 +vF+DI+DB" ->  -timbl -- "-a IB2 +vF+DI+DB"
+  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+  My_Experiment->Learn( c.get_value( "trainfile" )); 
+
+  const std::string& test_filename = c.get_value( "testfile" );
+  if ( test_filename != "" ) {
+    const std::string testout_filename = test_filename + ".out";
+    My_Experiment->Test( test_filename, testout_filename );
+  }
+  delete My_Experiment;
+  return 0;
+}
+#else
+int timbl( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );
+  return -1;
+}
+#endif
+
+#ifdef TIMBL
+int make_ibase( Logfile& l, Config& c ) {
+  l.log( "make_ibase");
+  const std::string& timbl =  c.get_value("timbl");
+  const std::string& filename = c.get_value( "filename" );
+  const std::string& ibase_filename = filename + ".ibase";
+
+  l.inc_prefix();
+  l.log( "timbl:     "+timbl );
+  l.log( "filename:  "+c.get_value( "filename" ) );
+  l.log( "ibasefile: "+ibase_filename );
+  l.dec_prefix();
+
+  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+  My_Experiment->Learn( filename ); //c.get_value( "trainfile" )); 
+  My_Experiment->WriteInstanceBase( ibase_filename );
+
+  delete My_Experiment;
+  return 0;
+}
+#else
+int make_ibase( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );
+  return -1;
+}
+#endif
+
+int run_external( Logfile* l, Config *c ) {
+  char line[1024];
+  //system( (c->get_value( "external" )).c_str() );
+  FILE *fp = popen( (c->get_value( "external" )).c_str(), "r" );
+  while (fgets(line, 1024, fp) != NULL) {
+    l->log( line );
+  }
+  return 0;
+}
+
+int dummy( Logfile* l, Config *c ) {
+  l->log( "ERROR, dummy function." );
+  return -1;
+}
+
+int count_lines( Logfile *l, Config *c ) {
+  const std::string& filename = c->get_value( "filename" );
+  l->log( "count_lines(filename/"+filename+")" );
+
+  std::ifstream file( filename.c_str() );
+  if ( ! file ) {
+    l->log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  unsigned long lcount = 0;
+  while( std::getline( file, a_line )) {
+    ++lcount;
+  }
+  l->log( "lcount = " + to_str( lcount ));
+  return 0;
+}
+
+
+int dump_kv(Logfile *l, Config *c)  {
+  c->dump_kv();
+  return 0;
+}
+
+int clear_kv(Logfile *l, Config *c)  {
+  c->clear_kv();
+  return 0;
+}
+
+int script(Logfile& l, Config& c)  {
+  const std::string& filename = c.get_value( "script_filename" );
+  l.log( "script(script_filename/"+filename+")" );
+
+  std::ifstream file( filename.c_str() );
+  if ( ! file ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  
+  std::string a_line;
+  while( std::getline( file, a_line )) {
+    if ( a_line.length() == 0 ) {
+      continue;
+    }
+    std::vector<std::string>cmds;
+    std::vector<std::string>kv_pairs;
+
+    int pos = a_line.find( ':', 0 );
+    if ( pos != std::string::npos ) {
+      std::string lhs = trim(a_line.substr( 0, pos ));
+      std::string rhs = trim(a_line.substr( pos+1 ));
+
+      if ( lhs == "run" ) {
+	int(*pt2Func2)(Logfile&, Config&) = get_function( rhs );
+	int res = pt2Func2(l, c);
+	//l.log( "Result = "+to_str(res) );// should abort if != 0
+	if ( res != 0 ) {
+	  return res;
+	}
+      }
+      if ( lhs == "params" ) {
+	Tokenize( rhs, kv_pairs, ',' );
+	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	  c.process_line( kv_pairs.at(j) );
+	  l.log( "Parameter: " + kv_pairs.at(j) );
+	}
+	kv_pairs.clear();
+      }
+      if ( lhs == "msg" ) {
+	l.log( rhs );
+      }
+      if ( lhs == "set" ) { // set: savename:filename.
+	// set foo = foo + "t" ? (or add foo "t")
+	Tokenize( rhs, kv_pairs, ',' );
+	std::string kv = kv_pairs.at(0);
+	int pos = kv.find( ':', 0 );
+	if ( pos != std::string::npos ) {
+	  std::string lhs = trim(kv.substr( 0, pos ));
+	  std::string rhs = trim(kv.substr( pos+1 ));
+	  std::string val = c.get_value( rhs );
+	  c.add_kv( lhs, val );
+	  l.log( "SET "+lhs+" to "+val );
+	}
+      }
+    }
+  }
+  
+  return 0;
+}
+
+typedef int(*pt2Func)(Logfile*, Config*);
+pt2Func fun_factory( const std::string& a_fname ) {
+  if ( a_fname == "count_lines" ) {
+    return &count_lines;
+  } else if ( a_fname == "dump_kv" ) {
+    return &dump_kv;
+  } else if ( a_fname == "clear_kv" ) {
+    return &clear_kv;
+  }
+  return &dummy;
+}
+
+// NEW
+
+int tst(Logfile& l, Config& c)  {
+  return 1;
+}
+
+typedef int(*pt2Func2)(Logfile&, Config&);
+pt2Func2 get_function( const std::string& a_fname ) {
+  if ( a_fname == "cut" ) {
+    return &cut;
+  } else if ( a_fname == "timbl" ) {
+    return &timbl;
+  } else if ( a_fname == "flatten" ) {
+    return &flatten;
+  } else if ( a_fname == "lowercase" ) {
+    return &lowercase;
+  } else if ( a_fname == "make_ibase" ) {
+    return &make_ibase;
+  } else if ( a_fname == "window" ) {
+    return &window;
+  } else if ( a_fname == "window_s" ) {
+    return &window_s;
+  } else if ( a_fname == "ngram" ) {
+    return &ngram;
+  } else if ( a_fname == "prepare" ) {
+    return &prepare;
+  } else if ( a_fname == "arpa" ) {
+    return &arpa;
+  } else if ( a_fname == "window_line" ) {
+    return &window_line;
+  } else if ( a_fname == "window_lr" ) {
+    return &window_lr;
+  } else if ( a_fname == "unk_pred" ) {
+    return &unk_pred;
+  } else if ( a_fname == "timbl_test" ) {
+    return &timbl_test;
+  } else if ( a_fname == "script" ) {
+    return &script;
+  } else if ( a_fname == "lexicon" ) {
+    return &lexicon;
+  } else if ( a_fname == "hapax" ) {
+    return &hapax;
+  } else if ( a_fname == "trainfile" ) {
+    return &trainfile;
+  } else if ( a_fname == "testfile" ) {
+    return &testfile;
+  } else if ( a_fname == "window_usenet" ) {
+    return &window_usenet;
+  } else if ( a_fname == "server" ) {
+    return &server;
+  } else if ( a_fname == "test" ) {
+    return &test;
+  } else if ( a_fname == "smooth" ) {
+    return &smooth_old;
+  } else if ( a_fname == "server2" ) {
+    return &server2;
+  } else if ( a_fname == "read_a3" ) {
+    return &read_a3;
+  } else if ( a_fname == "tag" ) {
+    return &tag;
+  } else if ( a_fname == "rrand" ) {
+    return &rrand;
+  }
+  return &tst;
+}
+
+// parameter: filename
+//            lines
+//            (skip/start, etc)
+//
+int cut(Logfile& l, Config& c) {
+  l.log( "cut" );
+  const std::string& filename = c.get_value( "filename" );
+  unsigned long lines = stol( c.get_value( "lines", "0" ));
+  std::string output_filename = filename + ".cl";
+  if ( lines > 0 ) {
+    output_filename = output_filename + to_str(lines);
+  }
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "lines:    " + to_str(lines) );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  
+  std::string a_line;
+  unsigned long lcount = 0;
+  while( std::getline( file_in, a_line )) {
+    file_out << a_line << std::endl;
+    ++lcount;
+    if ( lcount == lines ) {
+      break;
+    }
+  }
+  file_out.close();
+  file_in.close();
+
+  // Should we check if we got as many lines as we requested?
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// parameter: filename, lines (lines can be cut also...)
+// Create a single columnfile with the sentences in filename.
+//
+int flatten(Logfile& l, Config& c) {
+  l.log( "flatten" );
+  const std::string& filename = c.get_value( "filename" );
+  unsigned long lines = stol( c.get_value( "lines", "0" ));
+  std::string output_filename = filename + ".fl";
+  if ( lines > 0 ) {
+    output_filename = output_filename + to_str(lines);
+  }
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  
+  std::string a_word;
+  unsigned long lcount = 0;
+  while( file_in >> a_word ) {
+    file_out << a_word << std::endl;
+    ++lcount;
+    if ( lcount == lines ) {
+      break;
+    }
+  }
+  file_out.close();
+  file_in.close();
+  
+  l.log( "Count: " + to_str(lcount) );
+
+  // Should we check if we got as many lines as we requested?
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// parameter: filename, lines (lines can be cut also...)
+// Create a single columnfile with the sentences in filename.
+//
+int lowercase(Logfile& l, Config& c) {
+  l.log( "lowercase" );
+  const std::string& filename = c.get_value( "filename" );
+  std::string output_filename = filename + ".lc";
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  
+  std::string a_line;
+  while ( getline( file_in, a_line )) {
+    std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    file_out << a_line << std::endl;
+  }
+  file_out.close();
+  file_in.close();
+  
+  // Should we check if we got as many lines as we requested?
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// parameter: filename
+//            ws
+//
+// Sentence mode?
+//
+int window( Logfile& l, Config& c ) {
+  l.log( "window" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  std::string        output_filename = filename + ".ws" + to_str(ws);
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ws:        "+to_str(ws) );
+  l.log( "lowercase: "+to_str(to_lower) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  // initialise with _
+  // loop:
+  //   read word,
+  //   output window
+  //   output word (the class)
+  //   shift whole window down, put class at last
+  // copy( v2.begin( )+4, v2.begin( ) + 7, v2.begin( ) + 2 );
+  //       first          last             begin pos
+  // until nomorewords.
+  std::string               a_word;
+  std::vector<std::string>  window(ws+1, "_");
+  std::map<std::string,int> count;
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+
+  while( file_in >> a_word ) {
+
+    if ( to_lower ) {
+      std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower); 
+    }
+
+    std::copy( window.begin(), window.end()-1, output );
+    file_out << a_word << std::endl;
+    
+    window.at(ws) = a_word;
+    copy( window.begin()+1, window.end(), window.begin() );
+  }
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// parameter: filename
+//            ws
+//
+// Sentence mode.
+//
+int window_s( Logfile& l, Config& c ) {
+  l.log( "window_s" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  std::string        output_filename = filename + ".ws" + to_str(ws);
+  std::string        pre_s           = c.get_value( "pre_s", "" );
+  std::string        suf_s           = c.get_value( "suf_s", "" );
+  int                skip            = 0;
+
+  // If we specify a sentence begin marker, we skip the "_ _ .." patterns with
+  // skip (duh).
+  //
+  if ( pre_s != "" ) {
+    pre_s = pre_s + " ";
+    skip = ws;
+  }
+  if ( suf_s != "" ) {
+    suf_s = " " + suf_s;
+  }
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ws:        "+to_str(ws) );
+  l.log( "lowercase: "+to_str(to_lower) );
+  l.log( "pre_s    : "+pre_s );
+  l.log( "suf_s    : "+suf_s );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+
+  while( std::getline( file_in, a_line )) {
+
+    if ( to_lower ) {
+      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    }
+
+    //std::string t = a_line;
+
+    a_line = pre_s + a_line + suf_s;
+
+    window( a_line, a_line, ws, 0, results );
+    if ( (skip == 0) || (results.size() >= ws) ) {
+      for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
+	std::string cl = *ri;
+	file_out << cl << std::endl;
+	//l.log( cl );
+      }
+      results.clear();
+    } else {
+      l.log( "SKIP: " + a_line );
+    }
+  }
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+int ngram( Logfile& l, Config& c ) {
+  l.log( "ngram" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+  std::string        output_filename = filename + ".ng" + to_str(ws);
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ws:        "+to_str(ws) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  // initialise with _
+  // loop:
+  //   read word,
+  //   output window
+  //   output word (the class)
+  //   shift whole window down,
+  // copy( v2.begin( )+4, v2.begin( ) + 7, v2.begin( ) + 2 );
+  //       first          last             begin pos
+  // until nomorewords.
+  std::string               a_word;
+  std::vector<std::string>  window(ws, "_");
+  std::map<std::string,int> count;
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+
+  for ( int i = 0; i < ws; i++ ) {
+    file_in >> a_word;
+     window.at(i) = a_word;    
+  }
+
+  while( file_in >> a_word ) {
+
+    std::copy( window.begin(), window.end(), output );
+    file_out << std::endl;
+    
+    copy( window.begin()+1, window.end(), window.begin() );
+    window.at(ws-1) = a_word;
+  }
+
+  std::copy( window.begin(), window.end(), output );
+  file_out << std::endl;
+  
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// Take a line-based file write it word-based with the sentences
+// wrapped in <s> and </s>.
+// This way we can feed it in the windowing/ngram functions.
+// Actually, the word based is not necessary...
+//
+int prepare( Logfile& l, Config& c ) {
+  l.log( "prepare" );
+  const std::string& filename        = c.get_value( "filename" );
+  std::string        pre_s           = c.get_value( "pre_s", "<s>" );
+  std::string        suf_s           = c.get_value( "suf_s", "</s>" );
+  std::string        output_filename = filename + ".p";
+
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "pre_s   : "+pre_s );
+  l.log( "suf_s   : "+suf_s );
+  l.log( "OUTPUT  : "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string a_line, a_word;
+  std::vector<std::string> words;
+  std::vector<std::string>::iterator wi;
+  while( std::getline( file_in, a_line )) {
+    //
+    // How to split the line?
+    //
+    file_out << pre_s << " "; //std::endl;
+
+    /*
+    Tokenize( a_line, words, ' ' );
+    for ( wi = words.begin(); wi != words.end(); wi++ )  {
+      a_word = *wi;
+      if ( a_word != "" ) {
+	file_out << a_word << std::endl;
+      }
+    }
+    words.clear();
+    */
+    file_out << a_line << suf_s << std::endl;
+  } 
+  file_out.close();
+  file_in.close();
+
+  return 0;
+}
+
+// Read an ngn file, create arpa format
+//
+int arpa( Logfile& l, Config& c ) {
+  l.log( "arpa" );
+  const std::string& filename        = c.get_value( "filename" );
+  std::string        output_filename = filename + ".arpa";
+  const int          precision       = stoi( c.get_value( "precision", "6" ));
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ws:        "+to_str(ws) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::map<std::string,int> count;
+  std::string a_line;
+  int total_count = 0;
+  while( std::getline( file_in, a_line )) {
+    count[ a_line ]++;
+    ++total_count;
+  } 
+  file_in.close();
+
+  /*
+  std::map<int,int> ffreqs; // frequency of frequencies
+  int max_freq = 0;
+  for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
+    int ngfreq = (*iter).second;
+    if ( ngfreq > max_freq ) {
+      max_freq = ngfreq;
+    }
+    ffreqs[ngfreq]++;
+  }
+  */
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  file_out << "\\data\\\n";
+  file_out << "ngram " << ws << "=" << count.size() << "\n";
+  file_out << "\\" << ws << "-grams:\n";
+
+  for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
+    int ngfreq = (*iter).second;
+    double cprob = (double)ngfreq / (double)total_count;
+    //file_out << to_str(cprob, precision) << " " << (*iter).first << "\n";
+    file_out << log(cprob) << " " << (*iter).first << "\n";
+  }
+
+  file_out << "\\end\\\n";
+  file_out.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+/*./wopr --run window_line -p classify:"Pork bellies also closed sharply lower because more hogs translates to more pork",ibasefile:tekst.txt.l100000.ws7.ibase
+
+./wopr --run window_line -p classify:"dit is een zin and sentence .",ibasefile:tekst.txt.l1000.ws7.ibase,timbl:"-a1 +D"
+ */
+#ifdef TIMBL
+int window_line(Logfile& l, Config& c) {
+  // initialise with _
+  // loop:
+  //   read word,
+  //   output window
+  //   output word (the class)
+  //   shift whole window down, put class at last
+  // copy( v2.begin( )+4, v2.begin( ) + 7, v2.begin( ) + 2 );
+  //       first          last             begin pos
+  // until nomorewords.
+  //
+  // Have target as argument?
+  //
+  int ws = stoi( c.get_value( "ws", "7" ));
+  std::string              a_word;
+  std::vector<std::string> words; // input.
+  std::vector<std::string> res;
+  std::vector<std::string> word_stats; // perplx. per word.
+  std::vector<std::string> window(ws+1, "_"); //context + target
+  std::vector<std::string>::iterator wi;
+  std::ostream_iterator<std::string> output( std::cout, " " );
+  const std::string& a_line = c.get_value( "classify", "error" );
+  const std::string& timbl  =  c.get_value("timbl");
+  Tokenize( a_line, words, ' ' );
+
+  std::string classify_line;
+  int correct = 0;
+  int possible = 0;
+  int sentence_length = 0;
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
+    std::string distrib;
+    std::vector<std::string> distribution;
+    std::string result;
+    double distance;
+    double total_prplx = 0.0;
+    const Timbl::ValueDistribution *vd;
+    const Timbl::TargetValue *tv;
+
+    //window.at(ws-1) = words.at(0); // shift in the first word
+    //                      +1 in the above case.
+    for ( wi = words.begin()+0; wi != words.end(); wi++ )  {
+      ++sentence_length;
+      a_word = *wi;
+      std::copy( window.begin(), window.end()-1, std::inserter(res, res.end()));
+      res.push_back(a_word); // target
+      for ( int i = 0; i < ws; i++ ) {
+	classify_line = classify_line + window.at(i)+" ";
+      }
+      classify_line = classify_line + a_word; // target
+      window.at(ws) = a_word;
+      // Classify with the TimblAPI
+      My_Experiment->Classify( classify_line, result, distrib, distance );
+      //tv = My_Experiment->Classify( classify_line, vd );
+
+      std::cout << "[" << classify_line << "] = " << result 
+		<< "/" << distance << " "
+	//<< distrib << " "
+		<< std::endl;
+      classify_line = "";
+      if ( result == a_word ) {
+	l.log( "Correcto" );
+	++correct;
+      }
+
+      // Begin experimental
+      // { is 2.00000, misschien 1.00000 }
+      //
+      Tokenize( distrib, distribution, ' ' ); // { TOK0 num, TOK1 num }
+      //
+      // nu hebben we paren? Eerste { overslaan.
+      //
+      bool is_class = true;
+      int  sum      = 0;
+      int  d_size   = 0;
+      int  target_f = 0;
+      for ( int i = 1; i < distribution.size(); i++ ) {
+	std::string token = distribution.at(i);
+	if ( (token == "{") || (token == "}")) {
+	  continue;
+	}
+	if ( is_class ) {
+	  ++d_size;
+	  if ( token == a_word ) {
+	    token = "In distro: "+token; //(would have been) the correct prediction.
+	    l.log( token + " / " + distribution.at(i+1) );
+	    target_f = stoi(distribution.at(i+1));
+	    ++possible;
+	  }
+	  //l.log_begin( token );
+	} else {
+	  token = token.substr(0, token.length()-1);
+	  sum += stoi( token );
+	  //l.log_end( " - "+token );
+	}
+	is_class = ( ! is_class );
+      }
+      if ( d_size < 20 ) {
+	l.log( distrib );
+      }
+      //
+      // sum is the sum of frequencies in distro.
+      // d_size is the number of items in distro.
+      //
+      l.log( "sum="+to_str(sum)+", d_size="+to_str(d_size));
+      double prplx = 1.0;
+      if ( sum != 0 ) {
+	prplx = (double)target_f / (double)sum;
+      }
+      word_stats.push_back( "prplx("+a_word+"/"+result+") = " + to_str( 1 - prplx ));
+      l.log( "prplx = " + to_str( 1 - prplx ));
+      total_prplx += prplx;
+      distribution.clear();
+      d_size = 0;
+      //
+      // End experimental
+      /*
+      if ( vd ) {
+	int count = 0;
+	Timbl::ValueDistribution::dist_iterator it=vd->begin();      
+	while ( it != vd->end() ){
+	  //Timbl::Vfield *foo = it->second;
+	  //const Timbl::TargetValue *bar = foo->Value();
+	  std::string quux = it->second->Value()->Name(); //bar->Name();
+	  if ( quux == a_word ) {
+	    std::cout << "Found a_word.\n";
+	    std::cout << it->second->Value() << ": "
+		      << it->second->Weight() << std::endl;
+	  }
+	  ++it;
+	  const Timbl::TargetValue *tarv = it->second->Value();
+	  
+	  if ( --count == 0 ) {
+	    it = vd->end();
+	  }
+	}
+      }
+      */
+      copy( window.begin()+1, window.end(), window.begin() );
+    }
+    //
+    // Normalize to sentence length. Subtract from 1 (0 means
+    // all wrong, totally surprised).
+    //
+    total_prplx = total_prplx / sentence_length;
+    l.log( "correct     = " + to_str(correct)+"/"+to_str(sentence_length));
+    l.log( "possible    = " + to_str(possible));
+    l.log( "total_prplx = " + to_str( 1 - total_prplx ));
+
+    for ( int i = 0; i < sentence_length; i++ ) {
+      l.log( word_stats.at(i) );
+    }
+  }
+  catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
+
+  return 0;
+}
+#else
+int window_line( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif
+
+// NB: window(c,l) exists as well.
+//
+// Q: large data set "as one line" ?
+//
+// Supply targets? It should be a function...
+// Now it is a string which will be tokenized. Differentiate between
+// null en "" ?
+//
+// Have a seperate n-gram function?
+//
+int window( std::string a_line, std::string target_str, 
+	    int lc, int rc, 
+	    std::vector<std::string>& res ) {
+
+  std::vector<std::string> words; //(10000000,"foo");
+  Tokenize( a_line, words );
+
+  std::vector<std::string> targets;
+  if ( target_str == "" ) {
+    targets = std::vector<std::string>( words.size(), "" ); // or nothing?
+  } else {
+    Tokenize( target_str, targets );
+  }
+
+  //std::vector<std::string> V; (V -> words)
+  //copy(istream_iterator<std::string>(cin), istream_iterator<std::string>(),
+  //     back_inserter(V));   
+
+  std::vector<std::string> full(lc+rc, "_"); // initialise a full window.
+  //full[lc+rc-1] = "<S>";
+
+  //
+  // ...and insert the words at the position after the left context.
+  //                                     can we do this from a file?
+  //                                               |
+  std::copy( words.begin(), words.end(), std::inserter(full, full.begin()+lc));
+
+  std::vector<std::string>::iterator si;
+  std::vector<std::string>::iterator fi;
+  std::vector<std::string>::iterator ti = targets.begin();
+  std::string windowed_line = "";
+  si = full.begin()+lc; // first word of sentence.
+  for ( int i = 0; i < words.size(); i++ ) {
+    //mark/target is at full(i+lc)
+    
+    for ( fi = si-lc; fi != si+1+rc; fi++ ) { // context around si
+      if ( fi != si ) {
+	windowed_line = windowed_line + *fi + " ";
+      }/* else {
+	windowed_line = windowed_line + "(T) ";
+	}*/
+    }
+    windowed_line = windowed_line + *ti; // target. function to make target?
+    res.push_back( windowed_line );
+    windowed_line.clear();
+    si++;
+    ti++;
+  }
+
+  return 0;
+}
+
+// Full windowing on a file, left/right contexts
+//
+int window_lr( Logfile& l, Config& c ) {
+  l.log( "window_lr" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                lc              = stoi( c.get_value( "lc", "3" ));
+  int                rc              = stoi( c.get_value( "rc", "3" ));
+  std::string        output_filename = filename + ".l" + to_str(lc) + "r" + to_str(rc);
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "lc:        "+to_str(lc) );
+  l.log( "rc:        "+to_str(rc) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string                        a_line;
+  std::vector<std::string>           results;
+  std::vector<std::string>::iterator ri;
+  while( std::getline( file_in, a_line ) ) { 
+    window( a_line, a_line, lc, rc, results );
+    for ( ri = results.begin(); ri != results.end(); ri++ ) {
+      file_out << *ri << "\n";
+    }
+    results.clear();
+  }
+
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// Hapax one line only.
+// Everything that is NOT in wfreqs is replaced by HAPAX.
+// Only called from server2, maybe move it there.
+// Unlike the hapax() function, the actual frequency is checked directly.
+//
+// This is called from server2 - do not use otherwise.
+//
+int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
+		int hpx, int hpx_t, std::string& res ) {
+  std::vector<std::string> words;
+  Tokenize( a_line, words, ' ' );
+  std::vector<std::string>::iterator wi;
+  std::map<std::string, int>::iterator wfi;
+  std::string hpx_sym = "<unk>"; //c.get_value("hpx_sym", "<unk>");
+
+  //  replace_if with bind2nd( .. )
+  
+  wfreqs["_"]    = hpx+1;
+  wfreqs["<s>"]  = hpx+1;
+  wfreqs["</s>"] = hpx+1;
+
+  res.clear();
+  std::string wrd;
+  for ( int i = 0; i < words.size(); i++ ) {
+    wrd = words.at( i );
+    wfi = wfreqs.find( wrd );
+
+    if ( wfi == wfreqs.end() ) { // not found
+      res = res + hpx_sym + " ";
+    } else {
+      int f = (*wfi).second;
+      if ( f > hpx ) {
+	res = res + wrd + " ";
+      } else {
+	res = res + hpx_sym + " ";
+      }
+    }
+  } 
+  /*
+  //
+  // The target.
+  //
+  int idx = words.size()-1; // Target
+  wrd = words.at( idx );
+  if ( hpx_t == 0 ) {
+    res = res + wrd;
+  } else {
+    int f = (*wfi).second;
+    if ( f > hpx ) {
+      res = res + wrd;
+    } else {
+      res = res + hpx_sym;
+    }
+  }
+  */
+
+  /*
+  for ( wi = words.begin(); wi != words.end(); wi++ ) {
+    wfi = wfreqs.find(*wi);
+    if ( wfi == wfreqs.end() ) { // not found
+      res = res + hpx_sym + " ";
+    } else {
+      int f = (*wfi).second;
+      if ( f > hpx ) {
+	res = res + *wi + " ";
+      } else {
+	res = res + hpx_sym + " ";
+      }
+    }
+  }
+  res = res.substr(0, res.length()-1);
+  */
+
+  return 0;
+}
+
+// The unknown words predictor, double-wopr, &c.
+// Takes a file, checks each focus word(target), if it is unknown,
+// write to file? test?
+// Regexpsen for numbers, Entities.
+//
+int unk_pred( Logfile& l, Config& c ) {
+  l.log( "unk_pred" );
+  const std::string& timbl     = c.get_value("timbl");
+  const std::string& ibasefile = c.get_value("ibasefile");
+  const std::string& testfile  = c.get_value("testfile"); // We'll make data
+  const std::string& lexfile   = c.get_value("lexicon");
+  std::string        output_filename = testfile + ".up";
+  l.inc_prefix();
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "testfile:  "+testfile );
+  l.log( "lexicon:   "+lexfile );
+  l.log( "timbl:     "+timbl );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  std::ifstream file_lexicon( lexfile.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+  // Read the lexicon with word frequencies.
+  // We need a hash with frequence - countOfFrequency, ffreqs.
+  //
+  l.log( "Reading lexicon." );
+  std::string a_word;
+  int wfreq;
+  unsigned long total_count = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  while( file_lexicon >> a_word >> wfreq ) {
+    wfreqs[a_word] = wfreq;
+    total_count += wfreq;
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+
+  // Open test file.
+  //
+  std::ifstream file_in( testfile.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load test file." );
+    return -1;
+  }
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  // Set up Timbl.
+  //
+  std::string distrib;
+  std::string a_line;
+  std::vector<std::string> distribution;
+  std::vector<std::string> words;
+  std::string result;
+  double distance;
+  double total_prplx = 0.0;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  int unknown_count = 0;
+  int skipped_num = 0;
+  int skipped_ent = 0;
+
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
+
+    std::vector<std::string> results;
+    std::vector<std::string>::iterator ri;
+
+    // Loop over the test file.
+    // The test file is in format l-1,l-2,l-3,...
+    //
+    while( std::getline( file_in, a_line ) ) {  
+
+      a_line = trim( a_line, " \n\r" );
+      //std::cout << a_line << std::endl;
+
+      std::string new_line; // The new one with unk words replaced.
+
+      // Tokenize the line of data, check for unknowns.
+      //
+      Tokenize( a_line, words, ' ' );
+      for ( int i = 0; i < words.size(); i++ ) {
+	
+	std::string word = words.at(i);
+
+	// Check if it is known/unknown. Check for numbers and entities.
+	// (Make these regexpen a parameter?) Before or after unknown check?
+	// We need a regexp  library...
+	//
+	if ( (word[0] > 64) && (word[0] < 91) && (i > 0 ) ) {
+	  ++skipped_ent;
+	  new_line = new_line + word + " ";
+	  continue;
+	  std::cout << "ENTITY: " << word << std::endl;
+	}
+	if ( is_numeric( word ) ) {
+	  ++skipped_num;
+	  new_line = new_line + word + " ";
+	  continue;
+	  std::cout << "NUMERIC: " << word << std::endl;
+	}
+	if ( wfreqs.find( words.at(i) ) == wfreqs.end() ) { // not found 
+	  //
+	  // Unknown, we classify.
+	  //
+	  //std::cout << "'" << word << "' <unk>\n";
+	  ++unknown_count;
+
+	  // Create a pattern for this word. The pattern we want is
+	  // at index i.
+	  //
+	  window( a_line, "", 2, 2, results ); // hardcoded (now) l2r2 format
+	  std::string cl = results.at(i);      // line to classify
+	  cl = cl + "TARGET";
+	  //std::cout << cl << std::endl;
+	  My_Experiment->Classify( cl, result, distrib, distance );
+	  //std::cout << "CLAS=" << result << std::endl;
+	  new_line = new_line + result + " ";
+	  results.clear();
+	} else {
+	  new_line = new_line + word + " ";
+	}
+      }
+      words.clear();
+      results.clear();
+
+      //std::cout << new_line << std::endl;
+      //std::cout << std::endl;
+      
+      file_out << new_line << std::endl;
+
+      /*
+      // Now create a .ws3 data line for the new line.
+      //
+      window( new_line, a_line, ws, 0, results );
+      if ( results.size() >= ws ) {
+	for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	  std::string cl = *ri;
+	  file_out << cl << std::endl;
+	}
+	results.clear();
+      } else {
+	l.log( "SKIP: " + new_line );
+      }
+      */
+
+    } // getline
+  } // try
+  catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
+
+  file_out.close();
+  file_in.close();
+
+  l.log( "Unknowns: " + to_str(unknown_count));
+  l.log( "Numeric : " + to_str( skipped_num ));
+  l.log( "Entity  : " + to_str( skipped_ent ));
+
+  return 0;
+}
+
+// Version with targets?
+//
+int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
+
+  std::vector<std::string> words;
+  Tokenize( a_line, words, ' ' );
+
+  if ( words.size() < n ) {
+    return 1;
+  }
+
+  std::vector<std::string>::iterator wi;
+  std::vector<std::string>::iterator ngri;
+
+  std::string w_line = "";
+  wi = words.begin(); // first word of sentence.
+  for ( int i = 0; i < words.size()-n+1; i++ ) {
+    
+    for ( ngri= wi; ngri < wi+n; ngri++ ) {
+      w_line = w_line + *ngri + " "; // no out of bounds checking.
+    }
+    std::cout << w_line << std::endl;
+
+    w_line.clear();
+    wi++;
+  }
+
+  return 0;
+}
+
+// If we add a .lex file, do the double-wopr? Hm, this does file based.
+//
+// ./wopr --run timbl_test -p ibasefile:tekst.txt.l100000.ws7.ibase,testfile:tekst.txt.l1000.ws7,timbl:-a1
+//
+#ifdef TIMBL
+int timbl_test(Logfile& l, Config& c) {
+  l.log( "timb_test" );
+  const std::string& timbl     =  c.get_value("timbl");
+  const std::string& ibasefile =  c.get_value("ibasefile");
+  const std::string& testfile  =  c.get_value("testfile");
+  l.inc_prefix();
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "testfile:  "+testfile );
+  l.dec_prefix();
+
+  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+  (void)My_Experiment->GetInstanceBase( ibasefile );
+
+  const std::string testout_filename = testfile + ".out";
+  My_Experiment->Test( testfile, testout_filename );
+  delete My_Experiment;
+
+  return 0;
+}
+#else
+int timbl_test( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif
+
+// input: filename
+// writes: filename.lex, adds "lexicon" to kv.
+//
+int lexicon(Logfile& l, Config& c) {
+  l.log( "lexicon" );
+  const std::string& filename        = c.get_value( "filename" );
+  std::string        output_filename = filename + ".lex";
+  std::string        counts_filename = filename + ".cnt";
+  std::string        mode            = c.get_value( "mode", "word" );
+  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "lowercase: "+to_str(to_lower) );
+  l.log( "OUTPUT:   "+output_filename );
+  l.log( "OUTPUT:   "+counts_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  
+  std::string a_word;
+  std::map<std::string,int> count;
+  if ( mode == "word" ) {
+    while( file_in >> a_word ) {  //linebased?
+      
+      if ( to_lower ) {
+	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
+      }
+      ++count[ a_word ];
+    }
+  }
+  else {
+    while( std::getline( file_in, a_word ) ) {  //linebased?
+      
+      if ( to_lower ) {
+	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
+      }
+      ++count[ a_word ];
+    }
+  }
+  file_in.close();
+
+  // Save lexicon, and count counts.
+  //
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  std::map<int,int> ffreqs;
+  long total_count;
+  for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
+    int wfreq = (*iter).second;
+    file_out << (*iter).first << " " << wfreq << "\n";
+    ffreqs[wfreq]++;
+    total_count += wfreq;
+  }
+  file_out.close();
+
+  // Save count of counts. Twice, so we can change those to c* later.
+  //
+  // Format of .cnt: 4 764 3.6322
+  //                 | |   |
+  //                 ^frequency
+  //                   ^number with this frequency
+  //                       ^adjusted frequency (after smooth)
+  //
+  std::ofstream counts_out( counts_filename.c_str(), std::ios::out );
+  if ( ! counts_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  counts_out << 0 << " " << 0 << " " << 0 << "\n";
+  for( std::map<int,int>::iterator iter = ffreqs.begin(); iter != ffreqs.end(); iter++ ) {
+    double pMLE = (double)(*iter).first / total_count;
+    int cnt = (*iter).first;
+    counts_out << cnt << " " << (*iter).second << " " << cnt << "\n";
+  }
+  counts_out.close();
+
+  double we = word_entropy( count );
+  l.log( "w_ent = " + to_str(we) );
+
+  c.add_kv( "lexicon", output_filename );
+  l.log( "SET lexicon to "+output_filename );
+  return 0;
+}
+
+// A load_lexicon, which loads it and calculates some stats. But
+// where/how do we store it? Pointer to structure in c? Extra
+// variable in Config? A store/load function in Config?
+// Have this is a MyConfig class, inherits from Config?
+//
+// Maybe all lexicon related functions in lexicon.cc ?
+//
+int load_lexicon(Logfile& l, Config& c)  {
+  l.log( "load_lexicon" );
+  std::string lexicon_filename = c.get_value("lexicon");
+  l.inc_prefix();
+  l.log( "lexicon:  "+lexicon_filename );
+  l.log( "SET: word_entropy" );
+  l.dec_prefix();
+
+}
+
+unsigned long anahash( std::string& s ) {
+  unsigned long res = 0;
+
+  for ( int i = 0; i < s.length(); i++ ) {
+    res += (unsigned long)pow((unsigned long)s[i],5);
+  }
+  return res;
+}
+
+// needs filename, and type.
+// writes filename.hpx, if test type, we hapax target and have extra t
+// in the name. This one doesn't change the filename, it adds
+// trainfile or testfile depending on type!
+// use set mechanism in script?? if we do "set: type:test" will that work?
+//
+int hapax(Logfile& l, Config& c)  {
+  l.log( "hapax" );
+  const std::string& filename = c.get_value( "filename" );
+  int hapax = stoi( c.get_value( "hpx", "1" ));
+  std::string output_filename = filename + ".hpx" + to_str(hapax);
+  std::string lexicon_filename = c.get_value("lexicon");
+  std::string hpx_sym = c.get_value("hpx_sym", "<unk>");
+  int type = 0;
+  if ( c.get_value( "type" ) == "test" ) {
+    type = 1;
+    output_filename += "t";
+  }
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "hpx:      "+to_str(hapax) );
+  l.log( "lexicon:  "+lexicon_filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string>words;
+  unsigned long lcount = 0;
+  unsigned long wcount = 0;
+  std::string a_word;
+  int wfreq;
+  std::map<std::string,int> wfreqs;
+
+  // Read the lexicon with word frequencies.
+  // Words with freq <= hapax level are skipped (i.e., will be
+  // "HAPAX"/"<unk>" in the resulting file. So everything not in the
+  // resulting list will be skipped.
+  //
+  l.log( "Reading lexicon, creating hapax list." );
+  while( file_lexicon >> a_word >> wfreq ) {
+    if ( wfreq > hapax ) {
+      wfreqs[a_word] = wfreq;
+    }
+    ++wcount;
+  }
+  l.log( "Loaded hapax list ("+to_str((int)wfreqs.size())+"), total "
+	 + to_str(wcount) );
+  file_lexicon.close();
+
+  // We don't want to hapax '_', or <s>
+  //
+  wfreqs["_"]    = 1;
+  wfreqs["<s>"]  = 1;
+  wfreqs["</s>"] = 1;
+
+  while( std::getline( file_in, a_line )) {
+    ++lcount;
+    Tokenize( a_line, words, ' ' );
+    //
+    // The features.
+    //
+    for ( int i = 0; i < words.size()-1; i++ ) {
+      //
+      // Words not in the wfreqs vector are "HAPAX"ed.
+      // (The actual freq is not checked here anymore.)
+      //
+      if ( wfreqs.find(words.at(i)) == wfreqs.end() ) { // not found
+	file_out << hpx_sym << " ";
+      } else {
+	file_out << words.at(i) << " ";
+      }
+    }
+    //
+    // The target.
+    //
+    int idx = words.size()-1; // Target
+    if ( type == 0 ) { // Train, alleen de features hapaxen.
+      file_out << words.at(idx); // target
+    } else {
+      if ( wfreqs.find(words.at(idx)) == wfreqs.end() ) { // not found
+	file_out <<  hpx_sym;
+      } else {
+	file_out << words.at(idx);
+      }
+    }
+    file_out <<  std::endl;
+    words.clear();
+  }
+  file_out.close();
+  file_in.close();
+
+  if ( type == 0 ) {
+    c.add_kv( "trainfile", output_filename );
+    l.log( "SET trainfile to " + output_filename );
+  } else {
+    c.add_kv( "testfile", output_filename );
+    l.log( "SET testfile to " + output_filename );
+  }
+  return 0;
+}
+
+// Hapax one line only.
+//
+int hapax_line_OLD(Logfile& l, Config& c)  {
+  l.log( "hapax_line" );
+  int hapax = stoi( c.get_value( "hpx", "1" ));
+  const std::string& lexicon_filename = c.get_value("lexicon");
+  const std::string& a_line = c.get_value("classify", "error");
+
+  // Always test.
+  //
+  int type = 1;
+  if ( c.get_value( "type" ) == "train" ) {
+    type = 1;
+  }
+  l.inc_prefix();
+  l.log( "hpx:      "+to_str(hapax) );
+  l.log( "lexicon:  "+lexicon_filename );
+  l.dec_prefix();
+
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::vector<std::string>words;
+  unsigned long lcount = 0;
+  unsigned long wcount = 0;
+  std::string a_word;
+  int wfreq;
+  std::map<std::string,int> wfreqs;
+
+  // Read the lexicon with word frequencies.
+  // Words with freq <= hapax level are skipped (i.e., will be
+  // "HAPAX" in the resulting file.
+  //
+  l.log( "Reading lexicon, creating hapax list." );
+  while( file_lexicon >> a_word >> wfreq ) {
+    if ( wfreq > hapax ) {
+      wfreqs[a_word] = wfreq;
+    }
+  }
+  l.log( "Loaded hapax list ("+to_str((int)wfreqs.size())+")" );
+  file_lexicon.close();
+
+  std::string res;
+  Tokenize( a_line, words, ' ' );
+
+  for ( int i = 0; i < words.size()-1; i++ ) {
+    //
+    // NB: unknown words and "_" are hapaxed as well.
+    // Words not in the wfreqs vector are "HAPAX"ed.
+    //
+    if ( wfreqs.find(words.at(i)) == wfreqs.end() ) { // not found
+      res = res + "HAPAX ";
+    } else {
+      res = res + words.at(i) + " ";
+    }
+  }
+  //
+  // The target.
+  //
+  int idx = words.size()-1; // Target
+  if ( type == 0 ) { // Train, alleen de features hapaxen.
+    res = res + words.at(idx); // target
+  } else {
+    if ( wfreqs.find(words.at(idx)) == wfreqs.end() ) { // not found
+      res = res +  "HAPAX";
+    } else {
+      res = res + words.at(idx);
+    }
+  }
+
+  // And set the classify line to the hapaxed result.
+  //
+  l.log( res );
+  c.add_kv( "classify", res );
+
+  return 0;
+}
+
+/*
+int trainfile(Logfile& l, Config& c)  {
+  const std::string& filename = c.get_value( "filename" );
+  c.add_kv( "trainfile", filename );
+  l.log( "trainfile: "+filename );
+  return 0;
+}
+
+int testfile(Logfile& l, Config& c)  {
+  const std::string& filename = c.get_value( "filename" );
+  c.add_kv( "testfile", filename );
+  l.log( "testfile: "+filename );
+  return 0;
+}
+*/
+
+int trainfile(Logfile& l, Config& c)  {
+  l.log( "trainfile" );
+  const std::string& filename = c.get_value( "trainfile" );
+  c.add_kv( "filename", filename );
+  l.log( "SET filename to "+filename );
+  return 0;
+}
+
+int testfile(Logfile& l, Config& c)  {
+  l.log( "testfile" );
+  const std::string& filename = c.get_value( "testfile" );
+  c.add_kv( "filename", filename );
+  l.log( "SET filename to "+filename );
+  return 0;
+}
+
+// a timbl_test_with_ibase
+
+// make data from usenet: target is per np.nnn hetzelfde,... 
+
+// parameter: filename
+//            ws
+//
+int window_usenet( Logfile& l, Config& c ) {
+  l.log( "window_usenet" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+  std::string        output_filename = filename + ".ws" + to_str(ws);
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "ws:       "+to_str(ws) );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string               a_word;
+  std::string               target;
+  std::vector<std::string>  window(ws+1, "_");
+  std::map<std::string,int> count;
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+  std::vector<std::string>  data;
+
+  // Look for target first?
+  // TARGET:value
+  // lees tot volgende target, and window_line die array?
+  while( file_in >> a_word ) {
+
+    if ( a_word.substr(0,7) == "TARGET:" ) {
+      //window data with target
+      if ( data.size() > 0 ) {
+	std::vector<std::string>  window(ws, "_");
+	for ( int i = 0; i < data.size(); i++ ) {
+	  std::copy( window.begin(), window.end(), output );
+	  file_out << target << std::endl;
+	  copy( window.begin()+1, window.end(), window.begin() );
+	  window.at(ws-1) = data.at(i);
+	}
+	std::copy( window.begin(), window.end(), output );
+	file_out << target << std::endl;
+      }
+      target = a_word.substr(7);
+      data.clear();
+      continue;
+    }
+    data.push_back( a_word );
+    /*
+    std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
+    std::copy( window.begin(), window.end()-1, output );
+    file_out << target << std::endl;
+    window.at(ws) = a_word;
+    copy( window.begin()+1, window.end(), window.begin() );
+    */
+  }
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+
+// ./wopr --run server -p ibasefile:tekst.txt.l1000.ws7.ibase,timbl:"-a1 +D"
+//
+#ifdef TIMBL
+int server(Logfile& l, Config& c) {
+  const std::string& timbl  = c.get_value("timbl");
+
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
+    My_Experiment->StartServer( 8888, 1 );
+  }
+  catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
+
+  return 0;
+}
+#else
+int server( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif
+
+// test spul
+// ./wopr -r test -p zin:"1 2 3"
+//
+int test(Logfile& l, Config& c) {
+  std::string foo = c.get_value( "zin" );
+  std::vector<std::string> results;
+  std::vector<std::string>::iterator ri;
+
+  l.log( "ngram( 3 )" );
+  ngram_line( foo, 3, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "ngram( 1 )" );
+  ngram_line( foo, 1, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "ngram( 5 )" );
+  ngram_line( foo, 5, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+
+  l.log( "window( 7, 0 )" );
+  window( foo, "", 7, 0, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 2, 3 )" );
+  window( foo, foo, 2, 3, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 1, 1 )" );
+  window( foo, "", 1, 1, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 0, 3 )" );
+  window( foo, "", 0, 3, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+
+  return 0;
+}
+
+/*
+double log2( double n ) {
+  return log(n) / log(2); // make that a constant.
+}
+*/
+
+// word entropy.
+// over map/array with words+freq.
+//   std::map<std::string,int> wfreqs;
+//   wfreqs[a_word] = wfreq;
+double word_entropy( std::map<std::string,int>& wfreqs ) {
+  double word_e = 0.0;
+  unsigned long t_freq = 0;
+  std::map<std::string,int>::iterator wi;
+
+  for ( wi = wfreqs.begin(); wi != wfreqs.end(); wi++ ) {
+    t_freq += (*wi).second;
+  }
+  for ( wi = wfreqs.begin(); wi != wfreqs.end(); wi++ ) {
+    double w_prob = (double)((*wi).second / (double)t_freq);
+    word_e += (w_prob * log2( w_prob ));
+  }
+  return -word_e;
+
+}
+
+// Maybe a version which takes the cnt array instead of the lexicon.
+// THIS IS THE VERSION USED!
+//
+int smooth_old( Logfile& l, Config& c ) {
+  l.log( "smooth" );
+  const std::string& counts_filename = c.get_value( "counts" );
+  const int precision = stoi( c.get_value( "precision", "6" ));
+  const int k = stoi( c.get_value( "k", "10" ));
+  l.inc_prefix();
+  l.log( "counts: " + counts_filename );
+  l.log( "k:      " + to_str(k) );
+  l.dec_prefix();
+
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string>words;
+  unsigned long lcount = 0;
+  unsigned long total_count = 0;
+  std::string a_word;
+  int wfreq;
+  std::map<std::string,int> wfreqs;
+  std::map<int,int> ffreqs; // sort order?
+
+  for ( int i = 0; i < 10; i++ ) {
+    ffreqs[i] = 0;
+  }
+
+  // Read the counts of counts.
+  //
+  l.log( "Reading counts." );
+  int count;
+  int Nc0;
+  double Nc1; // this is c*
+  int numcounts = 0;
+  int maxcounts = 0;
+  while( file_counts >> count >> Nc0 >> Nc1 ) {
+    ffreqs[count] = Nc0;
+    total_count += count*Nc0;
+    ++numcounts;
+    if ( count > maxcounts ) {
+      maxcounts = count;
+    }
+  }
+  file_counts.close();
+  l.log( "Read counts." );
+
+  std::map<int,int>::iterator fi;
+  std::vector<int> counts;
+  for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
+    if ( (int)(*fi).first < k ) {
+      l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
+    }
+    //counts.at( (int)(*fi).first ) = (int)(*fi).second;;
+  }
+  l.log( "Total count: " + to_str( total_count ));
+
+  std::ofstream counts_out( counts_filename.c_str(), std::ios::out );
+  if ( ! counts_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  // N1/N
+  double p0 = (double)ffreqs[1] / (double)total_count ;
+  l.log( "N1/N = " + to_str(ffreqs[1]) + "/" + to_str(total_count) + " = " + to_str( p0 ));
+  counts_out << "0 0 " << p0 << std::endl; // This is a probability, not c*
+
+  // Calculate new counts Good-Turing
+  // ffreqs contains the counts.
+  //
+  //std::vector<int> c_star;
+  for ( int i = 1; i < k; i++ ) { // This loop should be with iterator
+    int Nc = (int)ffreqs[i];
+    int cp1 = i+1;                // Should be fi.next
+    int Ncp1 = (int)ffreqs[cp1];
+    double pMLE = i / (double)total_count; //PJB Nc or i ??
+    double c_star = i;
+    if ( Nc != 0 ) {
+      c_star = (double)cp1 * (double)( (double)Ncp1 / (double)Nc );
+    }
+    double p_star = pMLE; // average between prev and next?
+    if ( c_star != 0 ) {
+      p_star = (double)c_star / (double)total_count;
+    }
+    l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
+    counts_out << i << " " << Nc << " " << c_star << std::endl;
+    //std::cerr << i << "," << i << "," << c_star << std::endl;
+    //std::cerr << i << "," << to_str(pMLE,precision) << "," << to_str(p_star,precision) << std::endl;
+  }
+
+  // Stämmer inte - we need the *first and *second!
+  //
+  for ( int i = k; i <= maxcounts; i++ ) { // niet numcounts, te weinig!
+    int Nc = (int)ffreqs[i];
+    counts_out << i << " " << Nc << " " << i << std::endl;
+  }
+  counts_out.close();
+
+  return 0;  
+}
+
+// Maybe a version which takes the cnt array instead of the lexicon.
+//
+int smooth_old_LEX( Logfile& l, Config& c ) {
+  l.log( "smooth" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const int precision = stoi( c.get_value( "precision", "6" ));
+  const int k = stoi( c.get_value( "k", "10" ));
+  l.inc_prefix();
+  l.log( "lexicon: " + lexicon_filename );
+  l.log( "k:       " + to_str(k) );
+  l.dec_prefix();
+
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string>words;
+  unsigned long lcount = 0;
+  unsigned long total_count = 0;
+  std::string a_word;
+  int wfreq;
+  std::map<std::string,int> wfreqs;
+  std::map<int,int> ffreqs;
+
+  for ( int i = 0; i < 10; i++ ) {
+    ffreqs[i] = 0;
+  }
+
+  // Read the lexicon with word frequencies.
+  // We need a hash with frequence - countOfFrequency, ffreqs.
+  //
+  l.log( "Reading lexicon." );
+  while( file_lexicon >> a_word >> wfreq ) {
+    wfreqs[a_word] = wfreq;
+    ffreqs[wfreq]++;
+    total_count += wfreq;
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon." );
+
+  std::map<int,int>::iterator fi;
+  std::vector<int> counts;
+  for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
+    l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
+    //counts.at( (int)(*fi).first ) = (int)(*fi).second;;
+  }
+  l.log( "Total count: " + to_str( total_count ));
+
+  // N1/N
+  double p0 = (double)ffreqs[1] / (double)total_count ;
+  l.log( "N1/N = " + to_str( p0 ));
+
+  // Calculate new counts Good-Turing
+  // ffreqs contains the counts.
+  //
+  //std::vector<int> c_star;
+  for ( int i = 1; i < k; i++ ) {
+    int Nc = (int)ffreqs[i];
+    int cp1 = i+1;
+    int Ncp1 = (int)ffreqs[cp1];
+    double pMLE = i / (double)total_count; //PJB Nc or i ??
+    double c_star = i;
+    if ( Nc != 0 ) {
+      c_star = (double)cp1 * (double)( (double)Ncp1 / (double)Nc );
+    }
+    double p_star = pMLE; // average between prev and next?
+    if ( c_star != 0 ) {
+      p_star = (double)c_star / (double)total_count;
+    }
+    l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
+    //std::cerr << i << "," << i << "," << c_star << std::endl;
+    std::cerr << i << "," << to_str(pMLE,precision) << "," << to_str(p_star,precision) << std::endl;
+  }
+
+  return 0;  
+}
+
+int smooth(Logfile& l, Config& c)  {
+  l.log( "smooth" );
+  const std::string& filename = c.get_value( "filename" );
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string> words;
+  unsigned long lcount = 0;
+  unsigned long total_count = 0;
+  unsigned long word_count = 0;
+  std::string a_word;
+  int wfreq;
+  std::map<std::string,int> pcounts; // pattern counter
+  std::map<int,int> ffreqs; // frequency of frequencies
+
+  std::map<std::string,int> class_count;
+
+  std::vector< std::map<std::string,int> > foobar;
+
+  l.log( "Reading data." );
+  while( std::getline( file_in, a_line )) {
+
+    Tokenize( a_line, words, ' ' );
+    a_line = "";
+    int last = words.size()-1;
+    for ( int i = 0; i < last; i++ ) {
+      //(foobar.at(i))[words.at(i)] += 1;
+      a_line = a_line + words.at(i) + ' ';
+    }
+    class_count[words.at(last)]++;
+    words.clear();
+    //l.log( a_line );
+    pcounts[a_line]++;
+    lcount++;
+  }
+  file_in.close();
+  l.log( "Line count: " + to_str(lcount));
+
+  std::map<std::string,int>::iterator pi;
+  for ( pi = pcounts.begin(); pi != pcounts.end(); pi++ ) {
+    int freq = (int)(*pi).second;
+    ffreqs[freq]++;
+  }
+  for ( pi = class_count.begin(); pi != class_count.end(); pi++ ) {
+    //l.log( (*pi).first + "," + to_str((int)(*pi).second) );
+  }
+  std::map<int,int>::iterator fi;
+  for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
+    l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
+  }
+
+  l.log( "Number of counts: " + to_str( static_cast<long>(ffreqs.size()) ));
+  l.log( "Number of classes: " + to_str( static_cast<long>(class_count.size())));
+  l.log( "Word count (lexicon size): " + to_str( word_count ));
+  l.log( "Total count: " + to_str( total_count ));
+  
+  // Size of possible data space
+  //
+  unsigned long possible_patterns = pow( word_count, 7 );
+  l.log( "Possible patterns: " + to_str( possible_patterns ));
+
+  // N1/N
+  double n1_over_n = (double)ffreqs[1] / (double)total_count ;
+  l.log( "N1/N = " + to_str( n1_over_n ));
+
+  unsigned long data_size = 0; // same as total_count
+  while( std::getline( file_in, a_line )) {
+    ++data_size;
+    Tokenize( a_line, words, ' ' );
+    //
+    // The features.
+    //
+    for ( int i = 0; i < words.size()-1; i++ ) {
+      //
+    }
+    //
+    // The target.
+    //
+    int idx = words.size()-1; // Target
+  }
+  file_in.close();
+
+  l.log( "Data size: " + to_str( data_size ));
+
+  // unseen_est = (n1/n) / (possible_patterns - data_size)
+
+  double foo = n1_over_n / ( possible_patterns - data_size );
+  l.log( "foo: " + to_str( foo ));
+
+  return 0;
+}
+
+int read_a3(Logfile& l, Config& c) {
+  l.log( "read_a3" );
+  const std::string& filename = c.get_value( "filename" );
+  std::string output_filename = filename + ".xa3"; // ex a3 format.
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    file_in.close();
+    return -1;
+  }
+  
+  // Lines like:
+  // NULL ({ }) Approval ({ 1 }) of ({ 2 }) the ({ 3 }) Minutes ({ 4 }) 
+  //          ^posb      |
+  //                     ^pose
+  std::string a_line;
+  std::string ssym = "<s>";
+  std::string esym = "</s>";
+  while( getline( file_in, a_line) ) {
+    if ( a_line.substr(0,4) == "NULL" ) {
+      //l.log( a_line );
+      std::string clean;
+      std::string::iterator si;
+      
+      size_t posb = 0;
+      size_t pose = 0;
+      std::string delb = "})";
+      std::string dele = "({";
+
+      posb = a_line.find( delb, pose );
+      pose = a_line.find( dele, posb );
+      file_out << ssym << " ";
+      while ( (posb != std::string::npos) && (pose != std::string::npos) ) {
+	std::string word = a_line.substr(posb+3, pose-posb-4);
+	file_out << word << " "; // " " was std::endl;
+	posb = a_line.find(delb, pose);
+	pose = a_line.find(dele, posb);
+      }
+      file_out << esym << std::endl;
+    }
+  }
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );  
+  return 0;
+}
