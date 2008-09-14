@@ -379,6 +379,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &tag;
   } else if ( a_fname == "rrand" ) {
     return &rrand;
+  } else if ( a_fname == "pplx" ) {
+    return &pplx;
   }
   return &tst;
 }
@@ -1391,6 +1393,8 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
   std::vector<std::string> words;
   Tokenize( a_line, words, ' ' );
 
+  // Or fill with empty context?
+  //
   if ( words.size() < n ) {
     return 1;
   }
@@ -2317,5 +2321,83 @@ int read_a3(Logfile& l, Config& c) {
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );  
+  return 0;
+}
+
+/*
+  Calculate perplexiteit of a sentence (per sentence, file).
+
+  Bleh about <s> </s> ?
+
+  this was window( l, c ), maybe modify window_s( l, c ) ? done
+*/
+int pplx( Logfile& l, Config& c ) {
+  l.log( "pplx" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  std::string        output_filename = filename + ".px" + to_str(ws);
+  std::string        pre_s           = c.get_value( "pre_s", "<s> " );
+  std::string        suf_s           = c.get_value( "suf_s", " </s>" );
+  int                skip            = 0;
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ws:        "+to_str(ws) );
+  l.log( "lowercase: "+to_str(to_lower) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+
+  skip = ws;
+
+  while( std::getline( file_in, a_line )) {
+
+    if ( to_lower ) {
+      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    }
+
+    a_line = pre_s + a_line + suf_s;
+    
+    window( a_line, a_line, ws, 0, results );
+    if ( (skip == 0) || (results.size() >= ws) ) {
+      for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
+	std::string cl = *ri;
+	file_out << cl << std::endl;
+	l.log( cl );
+	// This pattern should be tested now (or write file first and
+	// then test). So we need an ibase, and maybe write extra info when
+	// we test (so we can calculate pplx). Better to test directly like
+	// in server2.
+	// Beginning of sentence, smaller contexts? How does srilm do it?
+      }
+      results.clear();
+    } else {
+      l.log( "SKIP: " + a_line );
+    }
+  }
+
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
   return 0;
 }

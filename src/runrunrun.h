@@ -71,4 +71,5 @@ int smooth( Logfile&, Config& );
 unsigned long anahash( std::string& );
 double word_entropy( std::map<std::string,int>& );
 int read_a3( Logfile&, Config& );
+int pplx( Logfile&, Config& );
 #endif
