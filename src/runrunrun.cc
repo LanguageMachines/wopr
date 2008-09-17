@@ -2334,14 +2334,24 @@ int read_a3(Logfile& l, Config& c) {
 int pplx( Logfile& l, Config& c ) {
   l.log( "pplx" );
   const std::string& filename        = c.get_value( "filename" );
+  const std::string& ibasefile       = c.get_value( "ibasefile" );
+  const std::string& timbl           = c.get_value( "timbl" );
   int                ws              = stoi( c.get_value( "ws", "3" ));
   bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename = filename + ".px" + to_str(ws);
   std::string        pre_s           = c.get_value( "pre_s", "<s> " );
   std::string        suf_s           = c.get_value( "suf_s", " </s>" );
   int                skip            = 0;
+  Timbl::TimblAPI   *My_Experiment;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
   l.inc_prefix();
   l.log( "filename:  "+filename );
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "timbl:     "+timbl );
   l.log( "ws:        "+to_str(ws) );
   l.log( "lowercase: "+to_str(to_lower) );
   l.log( "OUTPUT:    "+output_filename );
@@ -2357,6 +2367,12 @@ int pplx( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write file." );
     return -1;
   }
+
+  try {
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+    // My_Experiment->Classify( cl, result, distrib, distance );
+  } catch (...) {}
 
   std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
@@ -2382,11 +2398,15 @@ int pplx( Logfile& l, Config& c ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
 	l.log( cl );
+	//
 	// This pattern should be tested now (or write file first and
 	// then test). So we need an ibase, and maybe write extra info when
 	// we test (so we can calculate pplx). Better to test directly like
 	// in server2.
 	// Beginning of sentence, smaller contexts? How does srilm do it?
+	//
+	My_Experiment->Classify( cl, result, distrib, distance );
+	l.log( result + ' ' + to_str(distance) );
       }
       results.clear();
     } else {
