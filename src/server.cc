@@ -349,7 +349,7 @@ int server2(Logfile& l, Config& c) {
 	//
 	// WHERE DO WE HAPAX? After, or before we window?
 	//
-	window( classify_line, t, ws, 0, results );
+	window( classify_line, t, ws, 0, false, results );
 	for ( ri = results.begin(); ri != results.end(); ri++ ) {
 
 	  std::string cl = *ri;
@@ -750,7 +750,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
     //
     // WHERE DO WE HAPAX? After, or before we window?
     //
-    window( classify_line, t, ws, 0, results );
+    window( classify_line, t, ws, 0, false, results );
     for ( ri = results.begin(); ri != results.end(); ri++ ) {
       
       std::string cl = *ri;

@@ -15,7 +15,9 @@ wopr_SOURCES = \
 	src/runrunrun.cc \
 	src/watcher.cc \
 	src/tag.h \
-	src/tag.cc
+	src/tag.cc \
+	src/Classifier.h \
+	src/Classifier.cc
 
 woprsm_SOURCES = \
 	src/woprsm.cc

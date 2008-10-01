@@ -50,6 +50,7 @@
 #include "runrunrun.h"
 #include "server.h"
 #include "tag.h"
+#include "Classifier.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -643,7 +644,7 @@ int window_s( Logfile& l, Config& c ) {
 
     a_line = pre_s + a_line + suf_s;
 
-    window( a_line, a_line, ws, 0, results );
+    window( a_line, a_line, ws, 0, false, results );
     if ( (skip == 0) || (results.size() >= ws) ) {
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
@@ -1039,7 +1040,7 @@ int window_line( Logfile& l, Config& c ) {
 // a b ->d with a '1 backoff'
 //
 int window( std::string a_line, std::string target_str, 
-	    int lc, int rc, 
+	    int lc, int rc, bool var, 
 	    std::vector<std::string>& res ) {
 
   std::vector<std::string> words; //(10000000,"foo");
@@ -1070,7 +1071,10 @@ int window( std::string a_line, std::string target_str,
   std::vector<std::string>::iterator ti = targets.begin();
   std::string windowed_line = "";
   si = full.begin()+lc; // first word of sentence.
-  int factor = 0;// lc; // lc for variable length instances.
+  int factor = 0; // lc for variable length instances.
+  if ( var == true ) {
+    factor = lc;
+  }
   for ( int i = 0; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
     
@@ -1090,6 +1094,56 @@ int window( std::string a_line, std::string target_str,
     if ( factor > 0 ) {
       --factor;
     }
+  }
+
+  return 0;
+}
+
+// With 'backoff'. See comments above. Right context doesn't make sense here.
+//
+int window( std::string a_line, std::string target_str, 
+	    int lc, int rc, int bo,
+	    std::vector<std::string>& res ) {
+
+  std::vector<std::string> words;
+  Tokenize( a_line, words );
+
+  std::vector<std::string> targets;
+  if ( target_str == "" ) {
+    targets = std::vector<std::string>( words.size(), "" ); // or nothing?
+  } else {
+    Tokenize( target_str, targets );
+  }
+
+  std::vector<std::string> full(lc, "_"); // initialise a full window.
+
+  //
+  // ...and insert the words at the position after the left context.
+  //                                     can we do this from a file?
+  //                                               |
+  std::copy( words.begin(), words.end(), std::inserter(full, full.begin()+lc));
+
+  std::vector<std::string>::iterator si;
+  std::vector<std::string>::iterator fi;
+  std::vector<std::string>::iterator ti = targets.begin();
+  std::string windowed_line = "";
+  si = full.begin()+lc; // first word of the instance
+  int factor = lc; // lc for variable length instances.
+  for ( int i = 0; i < words.size(); i++ ) {
+    for ( fi = si-lc; fi != si-bo; fi++ ) { // context around si
+      if ( fi != si ) {
+	windowed_line = windowed_line + *fi + " ";
+      }
+    }
+    if ( factor > 0 ) {
+      --factor;
+    } else {
+      windowed_line = windowed_line + *ti; // target. Function to make target?
+      res.push_back( windowed_line );
+    }
+    windowed_line.clear();
+    si++;
+    ti++;
   }
 
   return 0;
@@ -1125,7 +1179,7 @@ int window_lr( Logfile& l, Config& c ) {
   std::vector<std::string>           results;
   std::vector<std::string>::iterator ri;
   while( std::getline( file_in, a_line ) ) { 
-    window( a_line, a_line, lc, rc, results );
+    window( a_line, a_line, lc, rc, false, results );
     for ( ri = results.begin(); ri != results.end(); ri++ ) {
       file_out << *ri << "\n";
     }
@@ -1338,7 +1392,7 @@ int unk_pred( Logfile& l, Config& c ) {
 	  // Create a pattern for this word. The pattern we want is
 	  // at index i.
 	  //
-	  window( a_line, "", 2, 2, results ); // hardcoded (now) l2r2 format
+	  window( a_line, "", 2, 2, false, results ); // hardcoded (now) l2r2 format
 	  std::string cl = results.at(i);      // line to classify
 	  cl = cl + "TARGET";
 	  //std::cout << cl << std::endl;
@@ -1935,26 +1989,58 @@ int test(Logfile& l, Config& c) {
   }
   results.clear();
 
-  l.log( "window( 7, 0 )" );
-  window( foo, "", 7, 0, results );
+  l.log( "window( 7, 0, false )" );
+  window( foo, "T T T T T T T", 7, 0, false, results );
   for ( ri = results.begin(); ri != results.end(); ri++ ) {
     l.log( *ri );
   }
   results.clear();
-  l.log( "window( 2, 3 )" );
-  window( foo, foo, 2, 3, results );
+  l.log( "window( 7, 0, true )" );
+  window( foo, "T T T T T T T", 7, 0, true, results );
   for ( ri = results.begin(); ri != results.end(); ri++ ) {
     l.log( *ri );
   }
   results.clear();
-  l.log( "window( 1, 1 )" );
-  window( foo, "", 1, 1, results );
+
+  l.log( "window( 3, 0 ) + target, backoff 0" );
+  window( foo, foo, 3, 0, 0, results );
   for ( ri = results.begin(); ri != results.end(); ri++ ) {
     l.log( *ri );
   }
   results.clear();
-  l.log( "window( 0, 3 )" );
-  window( foo, "", 0, 3, results );
+  l.log( "window( 3, 0 ) + target, backoff 1" );
+  window( foo, foo, 3, 0, 1, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 2, 0 ) + target, backoff 1" );
+  window( foo, foo, 2, 0, 1, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+
+  l.log( "window( 2, 3, false )" );
+  window( foo, foo, 2, 3, false, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 2, 3, true )" );
+  window( foo, foo, 2, 3, true, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 1, 1, false )" );
+  window( foo, "", 1, 1, false, results );
+  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+    l.log( *ri );
+  }
+  results.clear();
+  l.log( "window( 0, 3, false )" );
+  window( foo, "", 0, 3, false, results );
   for ( ri = results.begin(); ri != results.end(); ri++ ) {
     l.log( *ri );
   }
@@ -2340,23 +2426,24 @@ int read_a3(Logfile& l, Config& c) {
   Bleh about <s> </s> ?
 
   this was window( l, c ), maybe modify window_s( l, c ) ? done
+
+  If we want to choose different ibases: we need some extra info (window
+  size, ...). How? Meta info in the ibase file? Extra file with new 
+  extension? Specify an extra config file?
 */
 int pplx( Logfile& l, Config& c ) {
   l.log( "pplx" );
-  const std::string& filename        = c.get_value( "filename" );
-  const std::string& ibasefile       = c.get_value( "ibasefile" );
-
-  const std::string& ibasefile1      = c.get_value( "ibasefile1" );
-  const std::string& ibasefile2      = c.get_value( "ibasefile2" );
-
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const std::string& timbl           = c.get_value( "timbl" );
-  int                ws              = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
-  std::string        output_filename = filename + ".px" + to_str(ws);
-  std::string        pre_s           = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s           = c.get_value( "suf_s", "</s>" );
-  int                skip            = 0;
+  const std::string& kvs_filename     = c.get_value( "kvs" );
+  const std::string& timbl            = c.get_value( "timbl" );
+  int                ws               = stoi( c.get_value( "ws", "3" ));
+  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  std::string        output_filename  = filename + ".px" + to_str(ws);
+  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -2366,11 +2453,8 @@ int pplx( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
-
-  l.log( "ibasefile1: "+ibasefile1 );
-  l.log( "ibasefile2: "+ibasefile2 );
-
   l.log( "lexicon:    "+lexicon_filename );
+  l.log( "kvs:        "+kvs_filename );
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
@@ -2410,6 +2494,24 @@ int pplx( Logfile& l, Config& c ) {
   file_lexicon.close();
   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
 
+  // read kvs
+  //
+  l.log( "Reading classifiers." );
+  std::vector<Classifier*> cls;
+  std::ifstream file_kvs( kvs_filename.c_str() );
+  if ( ! file_kvs ) {
+    l.log( "ERROR: cannot load kvs file." );
+    return -1;
+  }
+  read_classifiers_from_file( file_kvs, cls );
+  l.log( to_str(cls.size()) );
+  file_kvs.close();
+  std::vector<Classifier*>::iterator cli;
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    l.log( (*cli)->id );
+  }
+  l.log( "Read classifiers." );
+
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
@@ -2440,7 +2542,13 @@ int pplx( Logfile& l, Config& c ) {
 
     // We could loop over window sizes (classifiers), vote which result we take.
     //
-    window( a_line, a_line, ws, 0, results ); // varwindow? make ukk pattern too?
+    window( a_line, a_line, ws, 0, false, results ); // varwindow? make ukk pattern too?
+
+    // If we get different size patterns (first 1, then 2, then 3, 3, 3) we
+    // can choose he right classifier based on the size of the pattern.
+    // So maybe we need yet-anoher-window function which does that (essentially
+    // patterns without the _ markers).
+
     if ( (skip == 0) || (results.size() >= ws) ) {
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
@@ -2506,5 +2614,75 @@ int pplx( Logfile& l, Config& c ) {
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// Fill a keyword value hash
+// What we want:
+//
+// classifier:one
+// one:ibasefile:something.ws3.ibase
+// one:ws:3
+// one:foo:bar
+// classifier:two
+// ...
+//
+int read_kv_from_file( std::ifstream& file,
+		       std::map<std::string, std::string>& res )  {
+  std::string a_line;
+  while( std::getline( file, a_line )) {
+    if ( a_line.length() == 0 ) {
+      continue;
+    }
+    int pos = a_line.find( ':', 0 );
+    if ( pos != std::string::npos ) {
+      std::string lhs = trim(a_line.substr( 0, pos ));
+      std::string rhs = trim(a_line.substr( pos+1 ));
+      res[lhs] = rhs;
+    }
+  }
+  
+  return 0;
+}
+
+int read_classifiers_from_file( std::ifstream& file,
+				std::vector<Classifier*>& cl )  {
+  std::string a_line;
+  Classifier* c = NULL;
+  while( std::getline( file, a_line )) {
+    if ( a_line.length() == 0 ) {
+      continue;
+    }
+    int pos = a_line.find( ':', 0 );
+    if ( pos != std::string::npos ) {
+      std::string lhs = trim(a_line.substr( 0, pos ));
+      std::string rhs = trim(a_line.substr( pos+1 ));
+
+      // Create a new one. If c != NULL, we store it in the cl vector.
+      //
+      if ( lhs == "classifier" ) {
+	if ( c != NULL ) {
+	  //store
+	  cl.push_back( c );
+	  c = NULL;
+	}
+	c = new Classifier( rhs );
+      } else if ( lhs == "ibasefile" ) {
+	// store this ibasefile
+	if ( c != NULL ) {
+	  c->set_ibasefile( rhs );
+	}
+      } else if ( lhs == "ws" ) {
+	// store this window size
+	if ( c != NULL) {
+	    c->set_ws( stoi(rhs) );
+	}
+      }
+    }
+  }
+  if ( c != NULL ) {
+    cl.push_back( c );
+  }
+  
   return 0;
 }

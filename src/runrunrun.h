@@ -29,6 +29,7 @@
 
 #include "qlog.h"
 #include "Config.h"
+#include "Classifier.h"
 
 typedef int(*pt2Func)(Logfile*, Config*);
 typedef int(*pt2Func2)(Logfile&, Config&);
@@ -50,7 +51,8 @@ int window_s( Logfile&, Config& );
 int ngram( Logfile&, Config& );
 int prepare( Logfile&, Config& );
 int arpa( Logfile&, Config& );
-int window( std::string, std::string, int, int, std::vector<std::string>& );
+int window( std::string, std::string, int, int, bool, std::vector<std::string>& );
+int window( std::string, std::string, int, int, int, std::vector<std::string>& );
 int window_line( Logfile&, Config& );
 int window_lr( Logfile&, Config& );
 int window_line2( Logfile&, Config& );
@@ -72,4 +74,6 @@ unsigned long anahash( std::string& );
 double word_entropy( std::map<std::string,int>& );
 int read_a3( Logfile&, Config& );
 int pplx( Logfile&, Config& );
+int read_kv_from_file(std::ifstream&, std::map<std::string, std::string>&);
+int read_classifiers_from_file( std::ifstream& file,std::vector<Classifier*>& );
 #endif
