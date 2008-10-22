@@ -2180,9 +2180,11 @@ int smooth_old( Logfile& l, Config& c ) {
   const std::string& counts_filename = c.get_value( "counts" );
   const int precision = stoi( c.get_value( "precision", "6" ));
   const int k = stoi( c.get_value( "k", "10" ));
+  std::string gt_filename = counts_filename + ".gt";
   l.inc_prefix();
   l.log( "counts: " + counts_filename );
   l.log( "k:      " + to_str(k) );
+  l.log( "OUTPUT: " + gt_filename );
   l.dec_prefix();
 
   std::ifstream file_counts( counts_filename.c_str() );
@@ -2239,30 +2241,50 @@ int smooth_old( Logfile& l, Config& c ) {
     return -1;
   }
 
+  // GT smoothed file, contains:
+  // freq, number of words with freq, pMLE, pMLE smoothed.
+  //
+  std::ofstream file_out( gt_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
   // N1/N
-  double p0 = (double)ffreqs[1] / (double)total_count ;
+  double p0 = (double)ffreqs[1] / (double)total_count;
   l.log( "N1/N = " + to_str(ffreqs[1]) + "/" + to_str(total_count) + " = " + to_str( p0 ));
   counts_out << "0 0 " << p0 << std::endl; // This is a probability, not c*
+
+  // GoodTuring-3.pdf
+  //
+  double GTfactor = 1 - p0; // p0 =  P(new_word)
+  file_out << "0 0 0 " << p0 << std::endl;
 
   // Calculate new counts Good-Turing
   // ffreqs contains the counts.
   //
-  //std::vector<int> c_star;
+  // NB: See GoodTuring-3.pdf !
+  //
   for ( int i = 1; i < k; i++ ) { // This loop should be with iterator
     int Nc = (int)ffreqs[i];
     int cp1 = i+1;                // Should be fi.next
     int Ncp1 = (int)ffreqs[cp1];
-    double pMLE = i / (double)total_count; //PJB Nc or i ??
+    //
+    // pMLE = probability of word occuring Nc times
+    //
+    double pMLE = Nc / (double)total_count; //PJB Nc or i ?? 
     double c_star = i;
     if ( Nc != 0 ) {
       c_star = (double)cp1 * (double)( (double)Ncp1 / (double)Nc );
     }
     double p_star = pMLE; // average between prev and next?
     if ( c_star != 0 ) {
-      p_star = (double)c_star / (double)total_count;
+      //p_star = (double)c_star / (double)total_count;
+      p_star = pMLE * GTfactor; // The adjusted pMLE for words occuring Nc times
     }
     l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
     counts_out << i << " " << Nc << " " << c_star << std::endl;
+    file_out << i << " " << Nc << " " << pMLE << " " << p_star << std::endl;
     //std::cerr << i << "," << i << "," << c_star << std::endl;
     //std::cerr << i << "," << to_str(pMLE,precision) << "," << to_str(p_star,precision) << std::endl;
   }
@@ -2271,8 +2293,11 @@ int smooth_old( Logfile& l, Config& c ) {
   //
   for ( int i = k; i <= maxcounts; i++ ) { // niet numcounts, te weinig!
     int Nc = (int)ffreqs[i];
+    double pMLE = Nc / (double)total_count;
     counts_out << i << " " << Nc << " " << i << std::endl;
+    file_out << i << " " << Nc << " " << pMLE << " " << pMLE << std::endl;
   }
+  file_out.close();
   counts_out.close();
 
   return 0;  
@@ -2750,13 +2775,28 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string a_word;
   int wfreq;
   unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 esitmate.
   std::map<std::string,int> wfreqs; // whole lexicon
   while ( file_lexicon >> a_word >> wfreq ) {
     wfreqs[a_word] = wfreq;
     total_count += wfreq;
+    if ( wfreq == 1 ) {
+      ++N_1;
+    }
   }
   file_lexicon.close();
   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  l.log( to_str( N_1 ));
+
+  // The P(new_word) according to GoodTuring-3.pdf
+  // We need the filename.cnt for this, because we really need to
+  // discount the rest if we assign probability to the unseen words.
+  //
+  // We need to esitmate the total number of unseen words. Same as
+  // vocab, i.e assume we saw half? Ratio of N_1 to total_count?
+  //
+  double p0 = (double)N_1 / ((double)total_count * total_count);
+  l.log( "P(new_particular) = " + to_str(p0) );
 
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
@@ -2865,8 +2905,8 @@ int pplx_simple( Logfile& l, Config& c ) {
 	logprob = log2( target_lexprob );
 	info = "target_lexprob";
       } else {
-	logprob = log2( 0.001 ); // Foei!
-	info = "foei";
+	logprob = log2( p0 /*0.0001*/ ); // Foei!
+	info = "P(new_particular)";
       }
     }
     sum_logprob += logprob;// (logprob * target_distprob);
