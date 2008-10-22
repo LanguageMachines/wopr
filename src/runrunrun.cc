@@ -2762,7 +2762,10 @@ int pplx_simple( Logfile& l, Config& c ) {
     My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
     // My_Experiment->Classify( cl, result, distrib, distance );
-  } catch (...) {}
+  } catch (...) {
+    l.log( "Cannot create Timbl Experiment..." );
+    return 1;
+  }
 
   std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
@@ -2779,6 +2782,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   // Recognise <s> or similar, reset pplx calculations.
   // Output results on </s> or similar.
+  // Or a divisor whoch is not processed?
   //
   double sentence_prob      = 0.0;
   double sum_logprob        = 0.0;
@@ -2792,7 +2796,6 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     words.clear();
     a_line = trim( a_line );
-    l.log( a_line );
     Tokenize( a_line, words, ' ' );
     std::string target = words.at( words.size()-1 );
     
@@ -2815,7 +2818,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = tv->Name();
-    l.log( "Answer: '" + answer + "' / '" + target + "'" );
+    //l.log( "Answer: '" + answer + "' / '" + target + "'" );
     
     if ( target == answer ) {
       ++correct;
@@ -2847,7 +2850,6 @@ int pplx_simple( Logfile& l, Config& c ) {
       ++it;
     }
     target_distprob = (double)target_freq / (double)distr_count;
-    //l.log( "target_distprob = " + to_str( target_distprob) );
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
@@ -2867,10 +2869,9 @@ int pplx_simple( Logfile& l, Config& c ) {
 	info = "foei";
       }
     }
-    l.log( "tprob = " +info );
     sum_logprob += logprob;// (logprob * target_distprob);
 
-    file_out << a_line << ' ' << logprob << std::endl;
+    file_out << a_line << ' ' << logprob << ' ' << info << std::endl;
 
     if ( target == "</s>" ) {
       l.log( " sum_logprob = " + to_str( sum_logprob) );
