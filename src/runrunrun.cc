@@ -191,6 +191,10 @@ int make_ibase( Logfile& l, Config& c ) {
   My_Experiment->WriteInstanceBase( ibase_filename );
 
   delete My_Experiment;
+
+  c.add_kv( "ibasefile", ibase_filename );
+  l.log( "SET ibasefile to "+ibase_filename );
+
   return 0;
 }
 #else
@@ -342,6 +346,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &window_s;
   } else if ( a_fname == "ngram" ) {
     return &ngram;
+  } else if ( a_fname == "ngram_s" ) {
+    return &ngram_s;
   } else if ( a_fname == "prepare" ) {
     return &prepare;
   } else if ( a_fname == "arpa" ) {
@@ -382,6 +388,10 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &rrand;
   } else if ( a_fname == "pplx" ) {
     return &pplx;
+  } else if ( a_fname == "pplxs" ) {
+    return &pplx_simple;
+  } else if ( a_fname == "multi" ) {
+    return &multi;
   }
   return &tst;
 }
@@ -726,6 +736,56 @@ int ngram( Logfile& l, Config& c ) {
   return 0;
 }
 
+// Sentence/line based ngram function.
+//
+int ngram_s( Logfile& l, Config& c ) {
+  l.log( "ngram_s" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                ws              = stoi( c.get_value( "ws", "3" ));
+  std::string        output_filename = filename + ".ng" + to_str(ws);
+  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ws:        "+to_str(ws) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string>::iterator ri;
+
+  while( std::getline( file_in, a_line )) {
+
+    if ( to_lower ) {
+      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    }
+
+    ngram_line( a_line, ws, results );
+    for ( ri = results.begin(); ri != results.end(); ri++ ) {
+      std::string cl = *ri;
+      file_out << cl << std::endl;
+    }
+    results.clear();
+  }
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
 // Take a line-based file write it word-based with the sentences
 // wrapped in <s> and </s>.
 // This way we can feed it in the windowing/ngram functions.
@@ -776,7 +836,7 @@ int prepare( Logfile& l, Config& c ) {
     }
     words.clear();
     */
-    file_out << a_line << suf_s << std::endl;
+    file_out << a_line << " " << suf_s << std::endl;
   } 
   file_out.close();
   file_in.close();
@@ -1473,7 +1533,8 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
     for ( ngri= wi; ngri < wi+n; ngri++ ) {
       w_line = w_line + *ngri + " "; // no out of bounds checking.
     }
-    std::cout << w_line << std::endl;
+    //std::cout << w_line << std::endl;
+    res.push_back( w_line );
 
     w_line.clear();
     wi++;
@@ -2045,6 +2106,43 @@ int test(Logfile& l, Config& c) {
     l.log( *ri );
   }
 
+
+  // Andere test
+  //
+  std::cout << "log2" << std::endl;
+  double slp = 
+    log2( 0.000769644 ) + 
+    log2( 0.0513096 ) +
+    log2( 0.256548 ) + 
+    log2( 0.0855161 ) +
+    log2( 0.0934579 ) +
+    log2( 0.00159902 ) +
+    log2( 0.769644 ) +
+    log2( 0.361747 ) +
+    log2( 0.722171 );
+  std::cout << slp << std::endl;
+  slp = slp / 9;
+  std::cout << slp << std::endl;
+  double ppl = pow( 2, -slp );
+  std::cout << ppl << std::endl;
+
+  std::cout << "log10" << std::endl;
+  slp =
+    log10( 0.000769644 ) + 
+    log10( 0.0513096 ) +
+    log10( 0.256548 ) + 
+    log10( 0.0855161 ) +
+    log10( 0.0934579 ) +
+    log10( 0.00159902 ) +
+    log10( 0.769644 ) +
+    log10( 0.361747 ) +
+    log10( 0.722171 );
+  std::cout << slp << std::endl;
+  slp = slp / 9;
+  std::cout << slp << std::endl;
+  ppl = pow( 10, -slp );
+  std::cout << ppl << std::endl;
+
   return 0;
 }
 
@@ -2430,11 +2528,382 @@ int read_a3(Logfile& l, Config& c) {
   If we want to choose different ibases: we need some extra info (window
   size, ...). How? Meta info in the ibase file? Extra file with new 
   extension? Specify an extra config file?
+
+  Simpeler: calculate pplx on windowed Timbl output file?
+
+  TEST: ../wopr -r pplx -p filename:zin1.txt,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
+
+  TODO: pplx_simple: no windowing, take data file as 'pre made' but
+        use Timbl to classif and calculate pplx.
 */
 int pplx( Logfile& l, Config& c ) {
   l.log( "pplx" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& timbl            = c.get_value( "timbl" );
+  int                ws               = stoi( c.get_value( "ws", "3" ));
+  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  std::string        output_filename  = filename + ".px" + to_str(ws);
+  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  int                skip             = 0;
+  Timbl::TimblAPI   *My_Experiment;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  l.inc_prefix();
+  l.log( "filename:   "+filename );
+  l.log( "ibasefile:  "+ibasefile );
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "timbl:      "+timbl );
+  l.log( "ws:         "+to_str(ws) );
+  l.log( "lowercase:  "+to_str(to_lower) );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load inputfile." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+  // Read the lexicon with word frequencies.
+  // We need a hash with frequence - countOfFrequency, ffreqs.
+  //
+  l.log( "Reading lexicon." );
+  std::string a_word;
+  int wfreq;
+  unsigned long total_count = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  while ( file_lexicon >> a_word >> wfreq ) {
+    wfreqs[a_word] = wfreq;
+    total_count += wfreq;
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+
+  try {
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+    // My_Experiment->Classify( cl, result, distrib, distance );
+  } catch (...) {}
+
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+
+  skip = 0; //kludge factor
+
+  while( std::getline( file_in, a_line )) {
+
+    if ( to_lower ) {
+      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    }
+
+    a_line = pre_s + ' ' + a_line + ' ' + suf_s;
+    
+    std::string wopr_line;
+
+    window( a_line, a_line, ws, 0, false, results ); 
+
+    if ( (skip == 0) || (results.size() >= ws) ) {
+      for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
+	std::string cl = *ri;
+	file_out << cl << std::endl;
+	l.log( cl );
+	//
+	// This pattern should be tested now (or write file first and
+	// then test). So we need an ibase, and maybe write extra info when
+	// we test (so we can calculate pplx). Better to test directly like
+	// in server2.
+	// Beginning of sentence, smaller contexts? How does srilm do it?
+	// Prepare the instances FIRST, stuff into an array (so we can have
+	// small ones at the beginning), then loop over and classify.
+	// The special cases are at the beginning of the sentence.
+	// 0) we start with nothing - predict first word is meaningless.
+	//    (classifier with right context? :-) )
+	// 1) shorter context till we end up at ws
+	// 2) if right-most word in context is <unk>, yet a different classifier
+	//    again.
+	// class with word+what to do.
+	// eg: ( 'the', '', first-word-classifier )
+	//     ( 'brown', 'the quick', ws-2-ibase-classifier )
+	//
+	// we can do this for MT: different classifiers per word, train 
+	// classifier to get right classifier for each word. Uhm
+	//
+	// --
+	// Extra <k> <unk> pattern parallel to word pattern?
+	// Or let the <known><unk> pattern choose the ibase:
+	//  <k><k><u><T> selects a ws2.ibase predicting word+2
+	// --
+	//
+	tv = My_Experiment->Classify( cl, vd );
+	wopr_line = wopr_line + tv->Name() + " ";
+	l.log( "Answer: " + tv->Name() );
+
+	Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	int cnt = 0;
+	cnt = vd->size();
+	//l.log( to_str(cnt) );
+	if ( cnt < 25 ) {
+	  it = vd->begin();
+	  while ( it != vd->end() ) {
+	    //std::cout << cnt << " " << it->second->Value() << ":  "
+	    //	       << it->second->Weight() << std::endl;
+	    std::cout << it->second << ' ';
+	    ++it;
+	  }
+	  std::cout << std::endl;
+	}
+	
+      }
+      results.clear();
+    } else {
+      l.log( "SKIP: " + a_line );
+    }
+
+    l.log( wopr_line );
+  }
+
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// ../wopr -r pplxs -p filename:reuters.martin.tok.1000.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
+//
+int pplx_simple( Logfile& l, Config& c ) {
+  l.log( "pplx" );
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& ibasefile        = c.get_value( "ibasefile" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& timbl            = c.get_value( "timbl" );
+  int                ws               = stoi( c.get_value( "ws", "3" ));
+  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  std::string        output_filename  = filename + ".px" + to_str(ws);
+  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  int                skip             = 0;
+  Timbl::TimblAPI   *My_Experiment;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  l.inc_prefix();
+  l.log( "filename:   "+filename );
+  l.log( "ibasefile:  "+ibasefile );
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "timbl:      "+timbl );
+  l.log( "ws:         "+to_str(ws) );
+  l.log( "lowercase:  "+to_str(to_lower) );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load inputfile." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+  // Read the lexicon with word frequencies.
+  // We need a hash with frequence - countOfFrequency, ffreqs.
+  //
+  l.log( "Reading lexicon." );
+  std::string a_word;
+  int wfreq;
+  unsigned long total_count = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  while ( file_lexicon >> a_word >> wfreq ) {
+    wfreqs[a_word] = wfreq;
+    total_count += wfreq;
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+
+  try {
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+    // My_Experiment->Classify( cl, result, distrib, distance );
+  } catch (...) {}
+
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  std::vector<std::string> words;
+  int correct = 0;
+  int wrong   = 0;
+
+  // Recognise <s> or similar, reset pplx calculations.
+  // Output results on </s> or similar.
+  //
+  double sentence_prob      = 0.0;
+  double sum_logprob        = 0.0;
+  int    sentence_wordcount = 0;
+  while( std::getline( file_in, a_line )) {
+
+    if ( to_lower ) {
+      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    }
+
+    std::string wopr_line;
+
+    Tokenize( a_line, words, ' ' );
+    std::string target = words.at(words.size()-1);
+    
+    // Check sentence begin/end here.
+
+    ++sentence_wordcount;
+
+    // Is the target in the lexicon?
+    //
+    std::map<std::string,int>::iterator wfi = wfreqs.find( target );
+    bool   target_unknown = false;
+    int    target_lexfreq = 0;
+    double target_lexprob = 0.0;
+    if ( wfi == wfreqs.end() ) {
+      target_unknown = true;
+    } else {
+      target_lexfreq =  (int)(*wfi).second;
+      target_lexprob = (double)target_lexfreq / (double)total_count;
+      //l.log( "target_lexfreq = " + to_str(target_lexfreq) );
+      //l.log( "target_lexprob = " + to_str(target_lexprob) );
+    }
+
+    //file_out << a_line << std::endl;
+
+    l.log( a_line );
+
+    tv = My_Experiment->Classify( a_line, vd );
+    std::string answer = tv->Name();
+    l.log( "Answer: " + answer );
+    
+    if ( target == answer ) {
+      ++correct;
+    } else {
+      ++wrong;
+    }
+
+    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+    int cnt = 0;
+    int distr_count = 0;
+    int target_freq = 0;
+    int answer_freq = 0;
+    double target_distprob = 0.0;
+    double answer_prob = 0.0;
+    cnt = vd->size();
+    //l.log( to_str(cnt) );
+    while ( it != vd->end() ) {
+      //const Timbl::TargetValue *tv = it->second->Value();
+
+      std::string tvs  = it->second->Value()->Name();
+      double      wght = it->second->Weight();
+
+      /*
+      std::cout << " " << it->second->Value() << ":  "
+      	       << it->second->Weight() << std::endl;
+      */
+
+      distr_count += it->second->Weight();
+
+      if ( tvs == target ) { // The correct answer was in the distribution!
+	target_freq = wght;
+      }
+      if ( tvs == answer ) {
+	answer_freq = wght;
+      }
+
+      ++it;
+    }
+    target_distprob = (double)target_freq / (double)distr_count;
+    l.log( "target_distprob = " + to_str( target_distprob) );
+
+    // If correct: if target in distr, we take that prob, else
+    // the lexical prob.
+    // Unknown words?
+    //
+    double logprob = 0.0;
+
+    if ( target_freq > 0 ) { // Rights answer was in distr.
+      logprob = log2( target_distprob );
+      sum_logprob += logprob;// (logprob * target_distprob);
+    } else {
+      if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+	logprob = log2( target_lexprob );
+	sum_logprob += logprob;// (logprob * target_lexprob);
+      } else {
+	sum_logprob += log2( 0.0001 ); // Foei!
+      }
+    }
+
+  } // while getline()
+
+  l.log( "sentence_prob = " + to_str( sentence_prob) );
+  l.log( "sum_logprob = " + to_str( sum_logprob) );
+  l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
+  double pplx = pow( 2, -( sum_logprob / sentence_wordcount ) ); 
+  l.log( "pplx = " + to_str( pplx ) );
+
+  file_out.close();
+  file_in.close();
+
+  l.log( "Correct: " + to_str(correct) );
+  l.log( "Wrong  : " + to_str(wrong) );
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+
+
+#ifdef TIMBL
+int multi( Logfile& l, Config& c ) {
+  l.log( "multi" );
+  const std::string& filename         = c.get_value( "filename" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   const std::string& timbl            = c.get_value( "timbl" );
@@ -2452,7 +2921,6 @@ int pplx( Logfile& l, Config& c ) {
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
-  l.log( "ibasefile:  "+ibasefile );
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "kvs:        "+kvs_filename );
   l.log( "timbl:      "+timbl );
@@ -2496,27 +2964,33 @@ int pplx( Logfile& l, Config& c ) {
 
   // read kvs
   //
-  l.log( "Reading classifiers." );
-  std::vector<Classifier*> cls;
-  std::ifstream file_kvs( kvs_filename.c_str() );
-  if ( ! file_kvs ) {
-    l.log( "ERROR: cannot load kvs file." );
-    return -1;
+  if ( kvs_filename != "" ) {
+    l.log( "Reading classifiers." );
+    std::vector<Classifier*> cls;
+    std::ifstream file_kvs( kvs_filename.c_str() );
+    if ( ! file_kvs ) {
+      l.log( "ERROR: cannot load kvs file." );
+      return -1;
+    }
+    read_classifiers_from_file( file_kvs, cls );
+    l.log( to_str(cls.size()) );
+    file_kvs.close();
+    std::vector<Classifier*>::iterator cli;
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+      l.log( (*cli)->id );
+      (*cli)->init();
+    }
+    l.log( "Read classifiers." );
   }
-  read_classifiers_from_file( file_kvs, cls );
-  l.log( to_str(cls.size()) );
-  file_kvs.close();
-  std::vector<Classifier*>::iterator cli;
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
-    l.log( (*cli)->id );
-  }
-  l.log( "Read classifiers." );
 
+  // Need more of these in Classifier.
+  /*
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( ibasefile );
+    (void)My_Experiment->GetInstanceBase( "" );
     // My_Experiment->Classify( cl, result, distrib, distance );
   } catch (...) {}
+  */
 
   std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
@@ -2542,53 +3016,33 @@ int pplx( Logfile& l, Config& c ) {
 
     // We could loop over window sizes (classifiers), vote which result we take.
     //
-    window( a_line, a_line, ws, 0, false, results ); // varwindow? make ukk pattern too?
+    for ( int win_s = 0; win_s <= ws; win_s++ ) { //should depend on classifier.
+      l.log( "win_s="+to_str(win_s) );
+    window( a_line, a_line, win_s, 0, true, results ); 
 
+    // For each classifier, make data and run. We need to specify how to
+    // make data. We have the ws parameter in the Classifier.
+    //
     // If we get different size patterns (first 1, then 2, then 3, 3, 3) we
     // can choose he right classifier based on the size of the pattern.
     // So maybe we need yet-anoher-window function which does that (essentially
     // patterns without the _ markers).
 
-    if ( (skip == 0) || (results.size() >= ws) ) {
+    if ( (skip == 0) || (results.size() >= win_s) ) {
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
 	l.log( cl );
-	//
-	// This pattern should be tested now (or write file first and
-	// then test). So we need an ibase, and maybe write extra info when
-	// we test (so we can calculate pplx). Better to test directly like
-	// in server2.
-	// Beginning of sentence, smaller contexts? How does srilm do it?
-	// Prepare the instances FIRST, stuff into an array (so we can have
-	// small ones at the beginning), then loop over and classify.
-	// The special cases are at the beginning of the sentence.
-	// 0) we start with nothing - predict first word is meaningless.
-	//    (classifier with right context? :-) )
-	// 1) shorter context till we end up at ws
-	// 2) if right-most word in context is <unk>, yet a different classifier
-	//    again.
-	// class with word+what to do.
-	// eg: ( 'the', '', first-word-classifier )
-	//     ( 'brown', 'the quick', ws-2-ibase-classifier )
-	//
-	// we can do this for MT: different classifiers per word, train 
-	// classifier to get right classifier for each word. Uhm
-	//
-	// --
-	// Extra <k> <unk> pattern parallel to word pattern?
-	// Or let the <known><unk> pattern choose the ibase:
-	//  <k><k><u><T> selects a ws2.ibase predicting word+2
-	// --
-	//
+	
+	/*
 	tv = My_Experiment->Classify( cl, vd );
 	wopr_line = wopr_line + tv->Name() + " ";
 	l.log( "Answer: " + tv->Name() );
-
+	
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
 	cnt = vd->size();
-	l.log( to_str(cnt) );
+	//l.log( to_str(cnt) );
 	if ( cnt < 25 ) {
 	  it = vd->begin();
 	  while ( it != vd->end() ) {
@@ -2599,15 +3053,17 @@ int pplx( Logfile& l, Config& c ) {
 	  }
 	  std::cout << std::endl;
 	}
-	
+	*/
       }
       results.clear();
     } else {
       l.log( "SKIP: " + a_line );
     }
+    }
 
     l.log( wopr_line );
   }
+  
 
   file_out.close();
   file_in.close();
@@ -2616,6 +3072,12 @@ int pplx( Logfile& l, Config& c ) {
   l.log( "SET filename to "+output_filename );
   return 0;
 }
+#else
+int multi( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );  
+  return -1;
+}
+#endif
 
 // Fill a keyword value hash
 // What we want:
@@ -2676,6 +3138,11 @@ int read_classifiers_from_file( std::ifstream& file,
 	// store this window size
 	if ( c != NULL) {
 	    c->set_ws( stoi(rhs) );
+	}
+      } else if ( lhs == "timbl" ) {
+	// e.g: "-a1 +vdb +D +G"
+	if ( c != NULL) {
+	    c->set_timbl( rhs );
 	}
       }
     }

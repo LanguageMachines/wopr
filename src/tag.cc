@@ -129,7 +129,7 @@ void Node::dump( std::map<int, std::string>& classes,
 
   if ( d == 0 ) { // d is depth, we are at the 'end' here.
 
-    os << "Dflt: " << classes[ classhash ] << std::endl;
+    //os << "Dflt: " << classes[ classhash ] << std::endl; //PJB ??
 
     for ( int i = 0; i < dist.size(); i += 2 ) {
       std::string the_class = classes[ dist[i] ];
@@ -137,7 +137,8 @@ void Node::dump( std::map<int, std::string>& classes,
       float class_prob = (float)(class_freq / (float)sum);
       //classprob 1 gives 0 here.
       //if ( class_prob != 1.0 ) {
-      os << log10(class_prob) << " " << pat << the_class << std::endl;
+      os << log10(class_prob) << " " << pat << the_class; // << " 0.01";
+      os << std::endl;
       //}
     }
   }
