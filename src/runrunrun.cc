@@ -2783,19 +2783,19 @@ int pplx_simple( Logfile& l, Config& c ) {
   double sentence_prob      = 0.0;
   double sum_logprob        = 0.0;
   int    sentence_wordcount = 0;
+
   while( std::getline( file_in, a_line )) {
 
     if ( to_lower ) {
       std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
     }
 
-    std::string wopr_line;
-
+    words.clear();
+    a_line = trim( a_line );
+    l.log( a_line );
     Tokenize( a_line, words, ' ' );
-    std::string target = words.at(words.size()-1);
+    std::string target = words.at( words.size()-1 );
     
-    // Check sentence begin/end here.
-
     ++sentence_wordcount;
 
     // Is the target in the lexicon?
@@ -2813,13 +2813,9 @@ int pplx_simple( Logfile& l, Config& c ) {
       //l.log( "target_lexprob = " + to_str(target_lexprob) );
     }
 
-    //file_out << a_line << std::endl;
-
-    l.log( a_line );
-
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = tv->Name();
-    l.log( "Answer: " + answer );
+    l.log( "Answer: '" + answer + "' / '" + target + "'" );
     
     if ( target == answer ) {
       ++correct;
@@ -2842,50 +2838,60 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
 
-      /*
-      std::cout << " " << it->second->Value() << ":  "
-      	       << it->second->Weight() << std::endl;
-      */
-
-      distr_count += it->second->Weight();
+      distr_count += wght;
 
       if ( tvs == target ) { // The correct answer was in the distribution!
 	target_freq = wght;
-      }
-      if ( tvs == answer ) {
-	answer_freq = wght;
       }
 
       ++it;
     }
     target_distprob = (double)target_freq / (double)distr_count;
-    l.log( "target_distprob = " + to_str( target_distprob) );
+    //l.log( "target_distprob = " + to_str( target_distprob) );
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
     // Unknown words?
     //
     double logprob = 0.0;
-
-    if ( target_freq > 0 ) { // Rights answer was in distr.
+    std::string info = "huh?";
+    if ( target_freq > 0 ) { // Right answer was in distr.
       logprob = log2( target_distprob );
-      sum_logprob += logprob;// (logprob * target_distprob);
+      info = "target_distprob";
     } else {
       if ( ! target_unknown ) { // Wrong, we take lex prob if known target
 	logprob = log2( target_lexprob );
-	sum_logprob += logprob;// (logprob * target_lexprob);
+	info = "target_lexprob";
       } else {
-	sum_logprob += log2( 0.0001 ); // Foei!
+	logprob = log2( 0.001 ); // Foei!
+	info = "foei";
       }
+    }
+    l.log( "tprob = " +info );
+    sum_logprob += logprob;// (logprob * target_distprob);
+
+    file_out << a_line << ' ' << logprob << std::endl;
+
+    if ( target == "</s>" ) {
+      l.log( " sum_logprob = " + to_str( sum_logprob) );
+      l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
+      double foo  = sum_logprob / (double)sentence_wordcount;
+      double pplx = pow( 2, -foo ); 
+      l.log( " pplx = " + to_str( pplx ) );
+      sum_logprob = 0.0;
+      sentence_wordcount = 0;
+      l.log( "--" );
     }
 
   } // while getline()
 
-  l.log( "sentence_prob = " + to_str( sentence_prob) );
-  l.log( "sum_logprob = " + to_str( sum_logprob) );
-  l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
-  double pplx = pow( 2, -( sum_logprob / sentence_wordcount ) ); 
-  l.log( "pplx = " + to_str( pplx ) );
+  if ( sentence_wordcount > 0 ) { // Overgebleven zooi
+    l.log( "sum_logprob = " + to_str( sum_logprob) );
+    l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
+    double foo  = sum_logprob / (double)sentence_wordcount;
+    double pplx = pow( 2, -foo ); 
+    l.log( "pplx = " + to_str( pplx ) );
+  }
 
   file_out.close();
   file_in.close();
