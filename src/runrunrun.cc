@@ -1600,7 +1600,7 @@ int lexicon(Logfile& l, Config& c) {
   std::string a_word;
   std::map<std::string,int> count;
   if ( mode == "word" ) {
-    while( file_in >> a_word ) {  //linebased?
+    while( file_in >> a_word ) {  //word based
       
       if ( to_lower ) {
 	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
@@ -1609,7 +1609,7 @@ int lexicon(Logfile& l, Config& c) {
     }
   }
   else {
-    while( std::getline( file_in, a_word ) ) {  //linebased?
+    while( std::getline( file_in, a_word ) ) {  //linebased
       
       if ( to_lower ) {
 	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
@@ -2272,14 +2272,14 @@ int smooth_old( Logfile& l, Config& c ) {
     //
     // pMLE = probability of word occuring Nc times
     //
-    double pMLE = Nc / (double)total_count; //PJB Nc or i ?? 
+    double pMLE = Nc / (double)total_count; //PJB Nc or i ?? (refAA)
     double c_star = i;
     if ( Nc != 0 ) {
       c_star = (double)cp1 * (double)( (double)Ncp1 / (double)Nc );
     }
     double p_star = pMLE; // average between prev and next?
     if ( c_star != 0 ) {
-      //p_star = (double)c_star / (double)total_count;
+      //p_star = (double)c_star / (double)total_count; (see refAA)
       p_star = pMLE * GTfactor; // The adjusted pMLE for words occuring Nc times
     }
     l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
@@ -2727,6 +2727,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
   int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
@@ -2744,6 +2745,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
   l.log( "lexicon:    "+lexicon_filename );
+  l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
@@ -2775,7 +2777,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string a_word;
   int wfreq;
   unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 esitmate.
+  unsigned long N_1 = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
   while ( file_lexicon >> a_word >> wfreq ) {
     wfreqs[a_word] = wfreq;
@@ -2786,7 +2788,22 @@ int pplx_simple( Logfile& l, Config& c ) {
   }
   file_lexicon.close();
   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-  l.log( to_str( N_1 ));
+
+  // If we want smoothed counts, we need this file...
+  // Make mapping <int, double> from c to c* ?
+  //
+  std::map<int,double> c_stars;
+  int Nc0;
+  double Nc1; // this is c*
+  int count;
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+  }
+  while( file_counts >> count >> Nc0 >> Nc1 ) {
+    c_stars[count] = Nc1;
+  }
+  file_counts.close();
 
   // The P(new_word) according to GoodTuring-3.pdf
   // We need the filename.cnt for this, because we really need to
@@ -2794,6 +2811,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   // We need to esitmate the total number of unseen words. Same as
   // vocab, i.e assume we saw half? Ratio of N_1 to total_count?
+  //
+  // We need to load .cnt file as well...
   //
   double p0 = (double)N_1 / ((double)total_count * total_count);
   l.log( "P(new_particular) = " + to_str(p0) );
@@ -2841,19 +2860,23 @@ int pplx_simple( Logfile& l, Config& c ) {
     
     ++sentence_wordcount;
 
-    // Is the target in the lexicon?
+    // Is the target in the lexicon? We could calculate a smoothed
+    // value here if we load the cnt file too...
     //
     std::map<std::string,int>::iterator wfi = wfreqs.find( target );
     bool   target_unknown = false;
-    int    target_lexfreq = 0;
+    double target_lexfreq = 0.0;// should be double because smoothing
     double target_lexprob = 0.0;
     if ( wfi == wfreqs.end() ) {
       target_unknown = true;
     } else {
       target_lexfreq =  (int)(*wfi).second;
+      std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
+      if ( cfi != c_stars.end() ) {
+	target_lexfreq = (double)(*cfi).second;
+	//l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
+      }
       target_lexprob = (double)target_lexfreq / (double)total_count;
-      //l.log( "target_lexfreq = " + to_str(target_lexfreq) );
-      //l.log( "target_lexprob = " + to_str(target_lexprob) );
     }
 
     tv = My_Experiment->Classify( a_line, vd );
@@ -2902,16 +2925,21 @@ int pplx_simple( Logfile& l, Config& c ) {
       info = "target_distprob";
     } else {
       if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-	logprob = log2( target_lexprob );
+	logprob = log2( target_lexprob ); // SMOOTHED here, see above
 	info = "target_lexprob";
       } else {
 	logprob = log2( p0 /*0.0001*/ ); // Foei!
 	info = "P(new_particular)";
       }
     }
-    sum_logprob += logprob;// (logprob * target_distprob);
+    sum_logprob += logprob;
 
-    file_out << a_line << ' ' << logprob << ' ' << info << std::endl;
+    // What do we want in the output file? Write the pattern and answer,
+    // the logprob, followed by the info string.
+    //
+    file_out << a_line << ' ' << answer << ' '
+	     << logprob << ' ' << info << std::endl;
+    //file_out << answer << ' ';
 
     if ( target == "</s>" ) {
       l.log( " sum_logprob = " + to_str( sum_logprob) );
@@ -2926,7 +2954,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   } // while getline()
 
-  if ( sentence_wordcount > 0 ) { // Overgebleven zooi
+  if ( sentence_wordcount > 0 ) { // Overgebleven zooi (of alles).
     l.log( "sum_logprob = " + to_str( sum_logprob) );
     l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
     double foo  = sum_logprob / (double)sentence_wordcount;
@@ -2940,8 +2968,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "Correct: " + to_str(correct) );
   l.log( "Wrong  : " + to_str(wrong) );
 
-  c.add_kv( "filename", output_filename );
-  l.log( "SET filename to "+output_filename );
+  //c.add_kv( "filename", output_filename );
+  //l.log( "SET filename to "+output_filename );
   return 0;
 }
 
