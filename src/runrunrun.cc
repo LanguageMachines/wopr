@@ -2838,7 +2838,9 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::vector<std::string> words;
   int correct = 0;
   int wrong   = 0;
-
+  int correct_unknown = 0;
+  int correct_distr = 0;
+  
   // Recognise <s> or similar, reset pplx calculations.
   // Output results on </s> or similar.
   // Or a divisor whoch is not processed?
@@ -2865,6 +2867,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     std::map<std::string,int>::iterator wfi = wfreqs.find( target );
     bool   target_unknown = false;
+    bool   correct_answer = false;
     double target_lexfreq = 0.0;// should be double because smoothing
     double target_lexprob = 0.0;
     if ( wfi == wfreqs.end() ) {
@@ -2885,6 +2888,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     
     if ( target == answer ) {
       ++correct;
+      correct_answer = true;
     } else {
       ++wrong;
     }
@@ -2908,11 +2912,16 @@ int pplx_simple( Logfile& l, Config& c ) {
 
       if ( tvs == target ) { // The correct answer was in the distribution!
 	target_freq = wght;
+	if ( correct_answer == false ) {
+	  ++correct_distr;
+	  --wrong; // direct answer wrong, but right in distr. compensate count
+	}
       }
 
       ++it;
     }
     target_distprob = (double)target_freq / (double)distr_count;
+    l.log( "Distr. size: " + to_str(cnt) + "/" + to_str(target_distprob) );
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
@@ -2928,6 +2937,10 @@ int pplx_simple( Logfile& l, Config& c ) {
 	logprob = log2( target_lexprob ); // SMOOTHED here, see above
 	info = "target_lexprob";
       } else {
+	//
+	// What to do here? We have an 'unknown' target, i.e. not in the
+	// lexicon.
+	//
 	logprob = log2( p0 /*0.0001*/ ); // Foei!
 	info = "P(new_particular)";
       }
@@ -2965,8 +2978,13 @@ int pplx_simple( Logfile& l, Config& c ) {
   file_out.close();
   file_in.close();
 
-  l.log( "Correct: " + to_str(correct) );
-  l.log( "Wrong  : " + to_str(wrong) );
+  l.log( "Correct:       " + to_str(correct) );
+  l.log( "Correct Distr: " + to_str(correct_distr) );
+  int correct_total = correct_distr+correct;
+  l.log( "Correct Total: " + to_str(correct_total) );
+  l.log( "Wrong:         " + to_str(wrong) );
+  l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
+  l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
 
   //c.add_kv( "filename", output_filename );
   //l.log( "SET filename to "+output_filename );
