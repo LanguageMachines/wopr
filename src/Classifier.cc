@@ -1,5 +1,5 @@
 #include <string>
-#include "classifier.h"
+#include "Classifier.h"
 
 Classifier::Classifier( const std::string& n ) {
   id = n;
