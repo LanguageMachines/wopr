@@ -2561,6 +2561,7 @@ int read_a3(Logfile& l, Config& c) {
   TODO: pplx_simple: no windowing, take data file as 'pre made' but
         use Timbl to classif and calculate pplx.
 */
+#ifdef TIMBL
 int pplx( Logfile& l, Config& c ) {
   l.log( "pplx" );
   const std::string& filename         = c.get_value( "filename" );
@@ -2719,9 +2720,16 @@ int pplx( Logfile& l, Config& c ) {
   l.log( "SET filename to "+output_filename );
   return 0;
 }
+#else
+int pplx( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}  
+#endif
 
 // ../wopr -r pplxs -p filename:reuters.martin.tok.1000.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
 //
+#ifdef TIMBL
 int pplx_simple( Logfile& l, Config& c ) {
   l.log( "pplx" );
   const std::string& filename         = c.get_value( "filename" );
@@ -2990,8 +2998,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   //l.log( "SET filename to "+output_filename );
   return 0;
 }
-
-
+#else
+int pplx_simple( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}  
+#endif
 
 #ifdef TIMBL
 int multi( Logfile& l, Config& c ) {
