@@ -2773,30 +2773,31 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "ERROR: cannot load lexicon file." );
-    return -1;
-  }
-  // Read the lexicon with word frequencies.
-  // We need a hash with frequence - countOfFrequency, ffreqs.
-  //
-  l.log( "Reading lexicon." );
-  std::string a_word;
   int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
-  while ( file_lexicon >> a_word >> wfreq ) {
-    wfreqs[a_word] = wfreq;
-    total_count += wfreq;
-    if ( wfreq == 1 ) {
-      ++N_1;
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
     }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
-  file_lexicon.close();
-  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-
+  
   // If we want smoothed counts, we need this file...
   // Make mapping <int, double> from c to c* ?
   //
@@ -2807,11 +2808,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+  } else {
+    while( file_counts >> count >> Nc0 >> Nc1 ) {
+      c_stars[count] = Nc1;
+    }
+    file_counts.close();
   }
-  while( file_counts >> count >> Nc0 >> Nc1 ) {
-    c_stars[count] = Nc1;
-  }
-  file_counts.close();
 
   // The P(new_word) according to GoodTuring-3.pdf
   // We need the filename.cnt for this, because we really need to
@@ -2822,7 +2824,10 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   // We need to load .cnt file as well...
   //
-  double p0 = (double)N_1 / ((double)total_count * total_count);
+  double p0 = 0.00001; // Arbitrary low probability for unknown words.
+  if ( total_count > 0 ) { // Better estimate if we have a lexicon
+    p0 = (double)N_1 / ((double)total_count * total_count);
+  }
   //l.log( "P(new_particular) = " + to_str(p0) );
 
   try {
@@ -2961,8 +2966,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     // the logprob, followed by the info string.
     //
     file_out << a_line << ' ' << answer << ' '
-	     << logprob << ' ' << info << std::endl;
-    //file_out << answer << ' ';
+	     << logprob << ' ' /*<< info*/ << std::endl;
 
     if ( target == "</s>" ) {
       l.log( " sum_logprob = " + to_str( sum_logprob) );
