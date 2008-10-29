@@ -1,20 +1,30 @@
-aclocal
-autoconf
-automake -a
-touch NEWS README AUTHORS ChangeLog
-automake -a
+Info
+====
+
+Run 'sh bootstrap.sh' first if starting with a fresh checkout.
+
+
+General
+=======
+
 ./configure
 make
 
+With Timbl support, local install:
+
+./configure --prefix=/home/pberck/local --with-timbl=/home/pberck/local
+make
+
 OS X
-===
+====
 
 ./configure --with-timbl=/Users/pberck/install/
 
-==
+Debian 
+======
 
-Debian: 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
+
 
 Example:
 --------
