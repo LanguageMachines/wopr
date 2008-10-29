@@ -2993,8 +2993,10 @@ int pplx_simple( Logfile& l, Config& c ) {
   int correct_total = correct_distr+correct;
   l.log( "Correct Total: " + to_str(correct_total) );
   l.log( "Wrong:         " + to_str(wrong) );
-  l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-  l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+  if ( sentence_wordcount > 0 ) {
+    l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
+    l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+  }
 
   //c.add_kv( "filename", output_filename );
   //l.log( "SET filename to "+output_filename );
