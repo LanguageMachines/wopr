@@ -14,6 +14,7 @@ With Timbl support, local install:
 
 ./configure --prefix=/home/pberck/local --with-timbl=/home/pberck/local
 make
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
 
 OS X
 ====
@@ -29,5 +30,9 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
 Example:
 --------
 
-./configure --prefix=/home/pberck/local --with-timbl=/home/pberck/local
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
+Perplexiteitsberekeningen:
+
+wopr -r pplxs -p filename:reuters.martin.tok.10000.test.ng4,lexicon:reuters.martin.tok.10000.train.lex,ibasefile:reuters.martin.tok.10000.train.ng4.ibase,ws:4,timbl:"-a1 +D",counts:reuters.martin.tok.10000.train.cnt 
+
+wopr -r pplxs -p filename:testset.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
+
