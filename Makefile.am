@@ -10,9 +10,11 @@ wopr_SOURCES = \
 	src/qlog.cc \
 	src/Config.h \
 	src/Config.cc \
+	src/server.h \
 	src/server.cc \
 	src/runrunrun.h \
 	src/runrunrun.cc \
+	src/watcher.h \
 	src/watcher.cc \
 	src/tag.h \
 	src/tag.cc \
@@ -27,7 +29,8 @@ man_MANS = man/wopr.1
 EXTRA_DIST = \
 	$(man_MANS) \
 	etc/nscript \
-	etc/nscript1
+	etc/nscript1 \
+	bootstrap.sh
 #	m4/check_symbol.m4 \
 #	scripts/gen_otp.pl \
 #	scripts/info.sh \
