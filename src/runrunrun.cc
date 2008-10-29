@@ -2823,7 +2823,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   // We need to load .cnt file as well...
   //
   double p0 = (double)N_1 / ((double)total_count * total_count);
-  l.log( "P(new_particular) = " + to_str(p0) );
+  //l.log( "P(new_particular) = " + to_str(p0) );
 
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
@@ -2881,15 +2881,17 @@ int pplx_simple( Logfile& l, Config& c ) {
     if ( wfi == wfreqs.end() ) {
       target_unknown = true;
     } else {
-      target_lexfreq =  (int)(*wfi).second;
+      target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
       std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
-      if ( cfi != c_stars.end() ) {
+      if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
 	target_lexfreq = (double)(*cfi).second;
 	//l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
       }
       target_lexprob = (double)target_lexfreq / (double)total_count;
     }
 
+    // What does Timbl think?
+    //
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = tv->Name();
     //l.log( "Answer: '" + answer + "' / '" + target + "'" );
@@ -2929,7 +2931,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       ++it;
     }
     target_distprob = (double)target_freq / (double)distr_count;
-    l.log( "Distr. size: " + to_str(cnt) + "/" + to_str(target_distprob) );
+    //l.log( "Distr. size: " + to_str(cnt) + "/" + to_str(target_distprob) );
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
