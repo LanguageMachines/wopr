@@ -2906,22 +2906,31 @@ int pplx_simple( Logfile& l, Config& c ) {
       ++wrong;
     }
 
+    // Loop over distribution returned by Timbl.
+    //
+    // entropy over distribution: sum( p log(p) ). For p we need total in 
+    // distr. We don't want to loop twice.
+    //
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
     int cnt = 0;
     int distr_count = 0;
     int target_freq = 0;
     int answer_freq = 0;
+    double prob            = 0.0;
     double target_distprob = 0.0;
-    double answer_prob = 0.0;
+    double answer_prob     = 0.0;
+    double entropy         = 0.0;
     cnt = vd->size();
-    //l.log( to_str(cnt) );
+    distr_count = vd->totalSize();
+    //l.log( "DISTRC=" + to_str(distr_count) );
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
 
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
 
-      distr_count += wght;
+      prob = (double)wght / (double)distr_count;
+      entropy -= prob * log2(prob);
 
       if ( tvs == target ) { // The correct answer was in the distribution!
 	target_freq = wght;
@@ -2935,6 +2944,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     target_distprob = (double)target_freq / (double)distr_count;
     //l.log( "Distr. size: " + to_str(cnt) + "/" + to_str(target_distprob) );
+    //l.log( "entropy = " + to_str(entropy) );
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
@@ -2961,11 +2971,25 @@ int pplx_simple( Logfile& l, Config& c ) {
     sum_logprob += logprob;
 
     // What do we want in the output file? Write the pattern and answer,
-    // the logprob, followed by the info string.
+    // the logprob, followed by the entropy (of distr.), the size of the
+    // distribution returned, and the top-10 (or less) of the distribution.
     //
     file_out << a_line << ' ' << answer << ' '
-	     << logprob << ' ' /*<< info*/ << std::endl;
+	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+    int num = 10;
+    it = vd->begin();
+    file_out << cnt << " [ ";
+    while ( it != vd->end() && (--num >= 0) ) {
+      //std::cout << cnt << " " << it->second->Value() << ":  "
+      //	       << it->second->Weight() << std::endl;
+      file_out << it->second << ' ';
+      ++it;
+    }
+    file_out << "]";
+    file_out << std::endl;
 
+    // End of sentence (sort of)
+    //
     if ( target == "</s>" ) {
       l.log( " sum_logprob = " + to_str( sum_logprob) );
       l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
