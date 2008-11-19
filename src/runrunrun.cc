@@ -1756,7 +1756,7 @@ int hapax(Logfile& l, Config& c)  {
 	 + to_str(wcount) );
   file_lexicon.close();
 
-  // We don't want to hapax '_', or <s>
+  // We don't want to hapax '_', or <s> (small chance anyway)
   //
   wfreqs["_"]    = 1;
   wfreqs["<s>"]  = 1;
@@ -2908,8 +2908,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     // Loop over distribution returned by Timbl.
     //
-    // entropy over distribution: sum( p log(p) ). For p we need total in 
-    // distr. We don't want to loop twice.
+    // entropy over distribution: sum( p log(p) ). 
     //
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
     int cnt = 0;
@@ -2930,7 +2929,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       double      wght = it->second->Weight();
 
       prob = (double)wght / (double)distr_count;
-      entropy -= prob * log2(prob);
+      entropy -= ( prob * log2(prob) );
 
       if ( tvs == target ) { // The correct answer was in the distribution!
 	target_freq = wght;
@@ -2973,6 +2972,8 @@ int pplx_simple( Logfile& l, Config& c ) {
     // What do we want in the output file? Write the pattern and answer,
     // the logprob, followed by the entropy (of distr.), the size of the
     // distribution returned, and the top-10 (or less) of the distribution.
+    // 
+    // TODO: top-10 is unsorted...sorted by freq. would be better.
     //
     file_out << a_line << ' ' << answer << ' '
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
@@ -2982,7 +2983,8 @@ int pplx_simple( Logfile& l, Config& c ) {
     while ( it != vd->end() && (--num >= 0) ) {
       //std::cout << cnt << " " << it->second->Value() << ":  "
       //	       << it->second->Weight() << std::endl;
-      file_out << it->second << ' ';
+      //std::string key = it->second->Value()->Name();
+      //file_out << it->second << ' ';
       ++it;
     }
     file_out << "]";
