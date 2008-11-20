@@ -2730,6 +2730,13 @@ int pplx( Logfile& l, Config& c ) {
 // ../wopr -r pplxs -p filename:reuters.martin.tok.1000.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
 //
 #ifdef TIMBL
+struct distr_elem {
+  std::string name;
+  double      freq;
+  bool operator<(const distr_elem& rhs) const {
+    return freq > rhs.freq;
+  }
+};
 int pplx_simple( Logfile& l, Config& c ) {
   l.log( "pplx" );
   const std::string& filename         = c.get_value( "filename" );
@@ -2921,12 +2928,19 @@ int pplx_simple( Logfile& l, Config& c ) {
     double entropy         = 0.0;
     cnt = vd->size();
     distr_count = vd->totalSize();
-    //l.log( "DISTRC=" + to_str(distr_count) );
+
+    std::vector<distr_elem> distr_vec;
+
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
 
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
+
+      distr_elem  d;
+      d.name = tvs;
+      d.freq = wght;
+      distr_vec.push_back( d );
 
       prob = (double)wght / (double)distr_count;
       entropy -= ( prob * log2(prob) );
@@ -2977,22 +2991,22 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     file_out << a_line << ' ' << answer << ' '
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
-    int num = 10;
-    it = vd->begin();
+
     file_out << cnt << " [ ";
-    while ( it != vd->end() && (--num >= 0) ) {
-      //std::cout << cnt << " " << it->second->Value() << ":  "
-      //	       << it->second->Weight() << std::endl;
-      //std::string key = it->second->Value()->Name();
-      //file_out << it->second << ' ';
-      ++it;
+    sort(distr_vec.begin(), distr_vec.end() /*, compfunc*/);
+    std::vector<distr_elem>::iterator fi;
+    int cntr = 5; // top-5 from distribution
+    fi = distr_vec.begin();
+    while ( (fi != distr_vec.end()) && (--cntr >= 0) ) {
+      file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+      fi++;
     }
     file_out << "]";
     file_out << std::endl;
 
     // End of sentence (sort of)
     //
-    if ( target == "</s>" ) {
+    if ( (target == "</s>") || (target == ".") ) {
       l.log( " sum_logprob = " + to_str( sum_logprob) );
       l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
