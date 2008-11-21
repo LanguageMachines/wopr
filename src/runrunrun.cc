@@ -2878,7 +2878,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     words.clear();
     a_line = trim( a_line );
     Tokenize( a_line, words, ' ' );
-    if ( words.size() == 1 ) {
+    if ( words.size() == 1 ) { // For Herman's data. TODO: better fix.
       words.clear();
       Tokenize( a_line, words, '\t' );
     }
@@ -2887,7 +2887,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     ++sentence_wordcount;
 
     // Is the target in the lexicon? We could calculate a smoothed
-    // value here if we load the cnt file too...
+    // value here if we load the .cnt file too...
     //
     std::map<std::string,int>::iterator wfi = wfreqs.find( target );
     bool   target_unknown = false;
