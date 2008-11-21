@@ -2748,6 +2748,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string        output_filename  = filename + ".px";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  int                topn             = stoi( c.get_value( "topn", "0" ) );
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -2762,6 +2763,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
   l.log( "lowercase:  "+to_str(to_lower) );
+  l.log( "topn:       "+to_str(topn) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -2876,6 +2878,10 @@ int pplx_simple( Logfile& l, Config& c ) {
     words.clear();
     a_line = trim( a_line );
     Tokenize( a_line, words, ' ' );
+    if ( words.size() == 1 ) {
+      words.clear();
+      Tokenize( a_line, words, '\t' );
+    }
     std::string target = words.at( words.size()-1 );
     
     ++sentence_wordcount;
@@ -2901,6 +2907,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
 
     // What does Timbl think?
+    // Do we change this answer to what is in the distr. (if it is?)
     //
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = tv->Name();
@@ -2937,10 +2944,12 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
 
-      distr_elem  d;
-      d.name = tvs;
-      d.freq = wght;
-      distr_vec.push_back( d );
+      if ( topn > 0 ) { // only save if we want to sort/print them later.
+	distr_elem  d;
+	d.name = tvs;
+	d.freq = wght;
+	distr_vec.push_back( d );
+      }
 
       prob = (double)wght / (double)distr_count;
       entropy -= ( prob * log2(prob) );
@@ -2986,27 +2995,28 @@ int pplx_simple( Logfile& l, Config& c ) {
     // What do we want in the output file? Write the pattern and answer,
     // the logprob, followed by the entropy (of distr.), the size of the
     // distribution returned, and the top-10 (or less) of the distribution.
-    // 
-    // TODO: top-10 is unsorted...sorted by freq. would be better.
     //
     file_out << a_line << ' ' << answer << ' '
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
 
-    file_out << cnt << " [ ";
-    sort(distr_vec.begin(), distr_vec.end() /*, compfunc*/);
-    std::vector<distr_elem>::iterator fi;
-    int cntr = 5; // top-5 from distribution
-    fi = distr_vec.begin();
-    while ( (fi != distr_vec.end()) && (--cntr >= 0) ) {
-      file_out << (*fi).name << ' ' << (*fi).freq << ' ';
-      fi++;
+    if ( topn > 0 ) { // we want a topn, sort and print them.
+      int cntr = topn;
+      sort( distr_vec.begin(), distr_vec.end() );
+      std::vector<distr_elem>::iterator fi;
+      fi = distr_vec.begin();
+      file_out << cnt << " [ ";
+      while ( (fi != distr_vec.end()) && (--cntr >= 0) ) {
+	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	fi++;
+      }
+      file_out << "]";
     }
-    file_out << "]";
+
     file_out << std::endl;
 
     // End of sentence (sort of)
     //
-    if ( (target == "</s>") || (target == ".") ) {
+    if ( target == "</s>" ) {
       l.log( " sum_logprob = " + to_str( sum_logprob) );
       l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
@@ -3040,8 +3050,6 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
   }
 
-  //c.add_kv( "filename", output_filename );
-  //l.log( "SET filename to "+output_filename );
   return 0;
 }
 #else
