@@ -2951,7 +2951,9 @@ int pplx_simple( Logfile& l, Config& c ) {
 	distr_vec.push_back( d );
       }
 
-      prob = (double)wght / (double)distr_count;
+      // Prob. of this item in distribution.
+      //
+      prob     = (double)wght / (double)distr_count;
       entropy -= ( prob * log2(prob) );
 
       if ( tvs == target ) { // The correct answer was in the distribution!
@@ -2965,8 +2967,6 @@ int pplx_simple( Logfile& l, Config& c ) {
       ++it;
     }
     target_distprob = (double)target_freq / (double)distr_count;
-    //l.log( "Distr. size: " + to_str(cnt) + "/" + to_str(target_distprob) );
-    //l.log( "entropy = " + to_str(entropy) );
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
@@ -2992,12 +2992,18 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     sum_logprob += logprob;
 
+    // Word logprob (ref. Antal's mail 21/11/08)
+    // 2 ^ (-logprob(w)) 
+    //
+    double word_lp = pow( 2, -logprob );
+
     // What do we want in the output file? Write the pattern and answer,
     // the logprob, followed by the entropy (of distr.), the size of the
     // distribution returned, and the top-10 (or less) of the distribution.
     //
     file_out << a_line << ' ' << answer << ' '
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+    file_out << word_lp << ' ';
 
     if ( topn > 0 ) { // we want a topn, sort and print them.
       int cntr = topn;
