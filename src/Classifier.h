@@ -32,6 +32,9 @@ class Classifier {
   void set_ws( int i ) {
     ws = i;
   }
+  int get_ws() {
+    return ws;
+  }
 
   void set_timbl( std::string t ) {
     timbl = t;

@@ -2878,7 +2878,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     words.clear();
     a_line = trim( a_line );
     Tokenize( a_line, words, ' ' );
-    if ( words.size() == 1 ) { // For Herman's data. TODO: better fix.
+    if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
       words.clear();
       Tokenize( a_line, words, '\t' );
     }
@@ -3129,6 +3129,8 @@ int multi( Logfile& l, Config& c ) {
 
   // read kvs
   //
+  std::map<int, Classifier*> ws_classifier; // size -> classifier.
+  std::map<int, Classifier*>::iterator wsci;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::vector<Classifier*> cls;
@@ -3144,6 +3146,8 @@ int multi( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
       (*cli)->init();
+      int c_ws = (*cli)->get_ws();
+      ws_classifier[c_ws] = *cli;
     }
     l.log( "Read classifiers." );
   }
@@ -3175,25 +3179,37 @@ int multi( Logfile& l, Config& c ) {
       std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
     }
 
-    a_line = pre_s + ' ' + a_line + ' ' + suf_s;
+    //a_line = pre_s + ' ' + a_line + ' ' + suf_s; // do we want this?
     
     std::string wopr_line;
 
     // We could loop over window sizes (classifiers), vote which result we take.
+    // win_s 0 is maybe stretching it a bit...
     //
-    for ( int win_s = 0; win_s <= ws; win_s++ ) { //should depend on classifier.
+    for ( int win_s = 1; win_s <= ws; win_s++ ) { //should depend on classifiers
       l.log( "win_s="+to_str(win_s) );
-    window( a_line, a_line, win_s, 0, true, results ); 
+
+      // --
+      // We should check if we have a classifier for this size, if
+      // not, we can skip the rest of the loop here...
+      // --
+      wsci = ws_classifier.find( win_s );
+      if ( wsci == ws_classifier.end() ) { // We have none
+	l.log( "No classifier for this window size." );
+      }
+      
+
+      //      pattern target  lc    rc  backoff
+      window( a_line, a_line, win_s, 0, false, results ); 
 
     // For each classifier, make data and run. We need to specify how to
     // make data. We have the ws parameter in the Classifier.
     //
     // If we get different size patterns (first 1, then 2, then 3, 3, 3) we
     // can choose he right classifier based on the size of the pattern.
-    // So maybe we need yet-anoher-window function which does that (essentially
+    // So maybe we need yet-another-window function which does that (essentially
     // patterns without the _ markers).
-
-    if ( (skip == 0) || (results.size() >= win_s) ) {
+      
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
@@ -3221,9 +3237,6 @@ int multi( Logfile& l, Config& c ) {
 	*/
       }
       results.clear();
-    } else {
-      l.log( "SKIP: " + a_line );
-    }
     }
 
     l.log( wopr_line );
