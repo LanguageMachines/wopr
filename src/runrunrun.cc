@@ -3152,15 +3152,6 @@ int multi( Logfile& l, Config& c ) {
     l.log( "Read classifiers." );
   }
 
-  // Need more of these in Classifier.
-  /*
-  try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( "" );
-    // My_Experiment->Classify( cl, result, distrib, distance );
-  } catch (...) {}
-  */
-
   std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
 
@@ -3179,8 +3170,8 @@ int multi( Logfile& l, Config& c ) {
       std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
     }
 
-    //a_line = pre_s + ' ' + a_line + ' ' + suf_s; // do we want this?
-    
+    // We window the testset ourselves...
+    //
     std::string wopr_line;
 
     // We could loop over window sizes (classifiers), vote which result we take.
@@ -3189,15 +3180,16 @@ int multi( Logfile& l, Config& c ) {
     for ( int win_s = 1; win_s <= ws; win_s++ ) { //should depend on classifiers
       l.log( "win_s="+to_str(win_s) );
 
-      // --
       // We should check if we have a classifier for this size, if
       // not, we can skip the rest of the loop here...
-      // --
+      //
       wsci = ws_classifier.find( win_s );
       if ( wsci == ws_classifier.end() ) { // We have none
 	l.log( "No classifier for this window size." );
+	continue;
       }
-      
+      Classifier *classifier = (Classifier*)(*wsci).second;
+      Timbl::TimblAPI *timbl = classifier->get_exp();
 
       //      pattern target  lc    rc  backoff
       window( a_line, a_line, win_s, 0, false, results ); 
@@ -3215,11 +3207,15 @@ int multi( Logfile& l, Config& c ) {
 	file_out << cl << std::endl;
 	l.log( cl );
 	
+	tv = timbl->Classify( cl, vd );
+	std::string answer = tv->Name();
+
+	int cnt = vd->size();
+	int distr_count = vd->totalSize();
+
+	l.log( "Answer: '" + answer + "' "+to_str(cnt) );
+
 	/*
-	tv = My_Experiment->Classify( cl, vd );
-	wopr_line = wopr_line + tv->Name() + " ";
-	l.log( "Answer: " + tv->Name() );
-	
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
 	cnt = vd->size();
