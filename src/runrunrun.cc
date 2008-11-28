@@ -51,6 +51,7 @@
 #include "server.h"
 #include "tag.h"
 #include "Classifier.h"
+#include "Multi.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -3066,6 +3067,8 @@ int pplx_simple( Logfile& l, Config& c ) {
 #endif
 
 #ifdef TIMBL
+// wopr -r multi -p kvs:ibases.kvs,filename:zin.04,lexicon:austen.txt.ng2.lex
+//
 int multi( Logfile& l, Config& c ) {
   l.log( "multi" );
   const std::string& filename         = c.get_value( "filename" );
@@ -3131,9 +3134,10 @@ int multi( Logfile& l, Config& c ) {
   //
   std::map<int, Classifier*> ws_classifier; // size -> classifier.
   std::map<int, Classifier*>::iterator wsci;
+  std::vector<Classifier*> cls;
+  std::vector<Classifier*>::iterator cli;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
-    std::vector<Classifier*> cls;
     std::ifstream file_kvs( kvs_filename.c_str() );
     if ( ! file_kvs ) {
       l.log( "ERROR: cannot load kvs file." );
@@ -3142,7 +3146,6 @@ int multi( Logfile& l, Config& c ) {
     read_classifiers_from_file( file_kvs, cls );
     l.log( to_str(cls.size()) );
     file_kvs.close();
-    std::vector<Classifier*>::iterator cli;
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
       (*cli)->init();
@@ -3162,50 +3165,42 @@ int multi( Logfile& l, Config& c ) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
-  skip = 0;
-
   while( std::getline( file_in, a_line )) {
 
     if ( to_lower ) {
       std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
     }
 
-    // We window the testset ourselves...
+    // We loop over classifiers, vote which result we take.
     //
-    std::string wopr_line;
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
 
-    // We could loop over window sizes (classifiers), vote which result we take.
-    // win_s 0 is maybe stretching it a bit...
-    //
-    for ( int win_s = 1; win_s <= ws; win_s++ ) { //should depend on classifiers
-      l.log( "win_s="+to_str(win_s) );
+      Classifier *classifier = *cli;
+      l.log( "Classifier: " + (*cli)->id );
+      int win_s = (*cli)->get_ws();
+      //l.log( "win_s="+to_str(win_s) );
 
-      // We should check if we have a classifier for this size, if
-      // not, we can skip the rest of the loop here...
-      //
-      wsci = ws_classifier.find( win_s );
-      if ( wsci == ws_classifier.end() ) { // We have none
-	l.log( "No classifier for this window size." );
-	continue;
-      }
-      Classifier *classifier = (Classifier*)(*wsci).second;
       Timbl::TimblAPI *timbl = classifier->get_exp();
 
       //      pattern target  lc    rc  backoff
       window( a_line, a_line, win_s, 0, false, results ); 
 
-    // For each classifier, make data and run. We need to specify how to
-    // make data. We have the ws parameter in the Classifier.
-    //
-    // If we get different size patterns (first 1, then 2, then 3, 3, 3) we
-    // can choose he right classifier based on the size of the pattern.
-    // So maybe we need yet-another-window function which does that (essentially
-    // patterns without the _ markers).
-      
-      for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
+      // For each classifier, make data and run. We need to specify how to
+      // make data. We have the ws parameter in the Classifier.
+      //
+      // If we get different size patterns (first 1, then 2, then 3, 3, 3) we
+      // can choose he right classifier based on the size of the pattern.
+      // So maybe we need yet-another-window function which does that
+      // (essentially patterns without the _ markers).
+      //
+      // Add a function to the kvs file to make data?
+      //
+      // We need a data structure to gather all the results and probability
+      // values... (classifier, classification, distr?, prob....)
+      //
+      for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
-	l.log( cl );
 	
 	tv = timbl->Classify( cl, vd );
 	std::string answer = tv->Name();
@@ -3213,7 +3208,7 @@ int multi( Logfile& l, Config& c ) {
 	int cnt = vd->size();
 	int distr_count = vd->totalSize();
 
-	l.log( "Answer: '" + answer + "' "+to_str(cnt) );
+	l.log( cl + "/" + answer + " "+to_str(cnt) );
 
 	/*
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
@@ -3235,7 +3230,6 @@ int multi( Logfile& l, Config& c ) {
       results.clear();
     }
 
-    l.log( wopr_line );
   }
   
 
