@@ -3073,6 +3073,7 @@ int multi( Logfile& l, Config& c ) {
   l.log( "multi" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   const std::string& timbl            = c.get_value( "timbl" );
   int                ws               = stoi( c.get_value( "ws", "3" ));
@@ -3090,6 +3091,7 @@ int multi( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "lexicon:    "+lexicon_filename );
+  l.log( "counts:     "+counts_filename );
   l.log( "kvs:        "+kvs_filename );
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
@@ -3110,25 +3112,61 @@ int multi( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "ERROR: cannot load lexicon file." );
-    return -1;
-  }
-  // Read the lexicon with word frequencies.
-  // We need a hash with frequence - countOfFrequency, ffreqs.
-  //
-  l.log( "Reading lexicon." );
-  std::string a_word;
   int wfreq;
   unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
-  while( file_lexicon >> a_word >> wfreq ) {
-    wfreqs[a_word] = wfreq;
-    total_count += wfreq;
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
-  file_lexicon.close();
-  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+
+  // If we want smoothed counts, we need this file...
+  // Make mapping <int, double> from c to c* ?
+  //
+  std::map<int,double> c_stars;
+  int Nc0;
+  double Nc1; // this is c*
+  int count;
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+  } else {
+    while( file_counts >> count >> Nc0 >> Nc1 ) {
+      c_stars[count] = Nc1;
+    }
+    file_counts.close();
+  }
+
+  // The P(new_word) according to GoodTuring-3.pdf
+  // We need the filename.cnt for this, because we really need to
+  // discount the rest if we assign probability to the unseen words.
+  //
+  // We need to esitmate the total number of unseen words. Same as
+  // vocab, i.e assume we saw half? Ratio of N_1 to total_count?
+  //
+  // We need to load .cnt file as well...
+  //
+  double p0 = 0.00001; // Arbitrary low probability for unknown words.
+  if ( total_count > 0 ) { // Better estimate if we have a lexicon
+    p0 = (double)N_1 / ((double)total_count * total_count);
+  }
 
   // read kvs
   //
@@ -3164,11 +3202,27 @@ int multi( Logfile& l, Config& c ) {
   std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
+  std::vector<Multi*> multivec( 20 );
+  std::vector<std::string> words;
 
   while( std::getline( file_in, a_line )) {
 
     if ( to_lower ) {
       std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
+    }
+
+    // How long is the sentence? initialise Multi.h in advance,
+    // one per word in the sentence?
+    // Initialise correct target as well...
+    //
+    int multi_idx = 0;
+    multivec.clear();
+    words.clear();
+    Tokenize( a_line, words, ' ' );
+    int sentence_size = words.size();
+    for ( int i = 0; i < sentence_size; i++ ) {
+      multivec[i] = new Multi("");
+      multivec[i]->set_target( words[i] );
     }
 
     // We loop over classifiers, vote which result we take.
@@ -3198,40 +3252,32 @@ int multi( Logfile& l, Config& c ) {
       // We need a data structure to gather all the results and probability
       // values... (classifier, classification, distr?, prob....)
       //
+      multi_idx = 0;
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
-	
+
 	tv = timbl->Classify( cl, vd );
 	std::string answer = tv->Name();
 
 	int cnt = vd->size();
 	int distr_count = vd->totalSize();
 
-	l.log( cl + "/" + answer + " "+to_str(cnt) );
+	l.log( to_str(multi_idx) + ": " + cl + "/" + answer + " "+to_str(cnt) );
 
-	/*
-	Timbl::ValueDistribution::dist_iterator it = vd->begin();
-	int cnt = 0;
-	cnt = vd->size();
-	//l.log( to_str(cnt) );
-	if ( cnt < 25 ) {
-	  it = vd->begin();
-	  while ( it != vd->end() ) {
-	    //std::cout << cnt << " " << it->second->Value() << ":  "
-	    //	       << it->second->Weight() << std::endl;
-	    std::cout << it->second << ' ';
-	    ++it;
-	  }
-	  std::cout << std::endl;
-	}
-	*/
-      }
+	multivec[multi_idx]->add_string( answer );
+	multivec[multi_idx]->add_answer( classifier, answer );
+
+	++multi_idx;
+      } // results
       results.clear();
-    }
+    } // classifiers
 
+    for ( int i = 0; i < sentence_size; i++ ) {
+      //l.log( words[i] + ": " + multivec[i]->get_answer() );
+      l.log( multivec[i]->get_answers() );
+    }
   }
-  
 
   file_out.close();
   file_in.close();
