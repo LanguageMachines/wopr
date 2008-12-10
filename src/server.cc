@@ -89,6 +89,9 @@ void sigchld_handler( int s ) {
 // ./wopr --run server2 -p ibasefile:tekst.txt.l1000.ws7.ibase,timbl:"-a1 +D"
 // pberck@lg0216:/x/work/wpred$ ./wopr -r server2 -p ibasefile:reuters.martin.tok.fl1000.ws7.hpx1.ibase,lexicon:reuters.martin.tok.fl10000.lex,timbl:"-a1 +vdb +D",unk_prob:0.00000001
 //
+/*
+test$ ../wopr -r server2 -p ibasefile:reuters.martin.tok.1000.ws3.ibase,lexicon:reuters.martin.tok.1000.lex,timbl:"-a1 +vdb +D",unk_prob:0.00000001,ws:3,sentence:0
+*/
 #ifdef TIMBL
 int server2(Logfile& l, Config& c) {
   l.log( "server2" );
@@ -376,6 +379,7 @@ int server2(Logfile& l, Config& c) {
 	  if ( ( lc != "_") && (wfi == wfreqs.end()) ) {
 	    lc_unknown = true;
 	  }
+	  lc_unknown = false;
 
 	  if ( lc_unknown == false ) {
 	    My_Experiment->Classify( cl, result, distrib, distance );
@@ -417,7 +421,7 @@ int server2(Logfile& l, Config& c) {
 	  // Look for the target word in the distribution returned by Timbl.
 	  // If it wasn't, look it up in the lexicon.
 	  //   If in lexicon, take lexicon prob.
-	  //   If not in lexicon, unknown, take default low prob.
+	  //   If not in lexicon, unknown, take default low prob. SMOOTHING!
 	  // If it was in distribution
 	  //    Take prob. in distribution.
 	  //
