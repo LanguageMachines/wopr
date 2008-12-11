@@ -141,8 +141,10 @@ int server2(Logfile& l, Config& c) {
   unsigned long total_count = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   while( file_lexicon >> a_word >> wfreq ) {
-    wfreqs[a_word] = wfreq;
-    total_count += wfreq;
+    if ( wfreq > hapax ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq; // here?
+    }
   }
   file_lexicon.close();
   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
@@ -294,8 +296,7 @@ int server2(Logfile& l, Config& c) {
 	//
 	// ----
 
-	// Hapax all. Note that the targets are a copy of this
-	// line, so the are also hapaxed.
+	// Hapax.
 	//
 	std::string classify_line;
 	if ( hapax > 0 ) {
@@ -370,16 +371,19 @@ int server2(Logfile& l, Config& c) {
 	  std::string target = *ti; // was *ri
 
 	  // Determine word before target. Look it up.
+	  // If unknow, skip classification because it will only
+	  // return the default distro (big).
 	  //
 	  std::vector<std::string> lcs; // left context, last word.
 	  Tokenize( cl, lcs, ' ' );
 	  std::string lc = lcs.at(ws-1);
 	  std::map<std::string,int>::iterator wfi = wfreqs.find(lc);
 	  bool lc_unknown = false;
+	  /*
 	  if ( ( lc != "_") && (wfi == wfreqs.end()) ) {
 	    lc_unknown = true;
 	  }
-	  lc_unknown = false;
+	  */
 
 	  if ( lc_unknown == false ) {
 	    My_Experiment->Classify( cl, result, distrib, distance );

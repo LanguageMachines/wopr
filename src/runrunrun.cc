@@ -1272,9 +1272,11 @@ int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
 
   //  replace_if with bind2nd( .. )
   
+  /*
   wfreqs["_"]    = hpx+1;
   wfreqs["<s>"]  = hpx+1;
   wfreqs["</s>"] = hpx+1;
+  */
 
   res.clear();
   std::string wrd;
@@ -1282,51 +1284,17 @@ int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
     wrd = words.at( i );
     wfi = wfreqs.find( wrd );
 
-    if ( wfi == wfreqs.end() ) { // not found
+    if ( wfi == wfreqs.end() ) { // not found in lexicon
       res = res + hpx_sym + " ";
     } else {
-      int f = (*wfi).second;
-      if ( f > hpx ) {
-	res = res + wrd + " ";
-      } else {
-	res = res + hpx_sym + " ";
-      }
+      //int f = (*wfi).second;
+      //if ( f > hpx ) {
+      res = res + wrd + " ";
+	//} else {
+	//res = res + hpx_sym + " ";
+	//}
     }
   } 
-  /*
-  //
-  // The target.
-  //
-  int idx = words.size()-1; // Target
-  wrd = words.at( idx );
-  if ( hpx_t == 0 ) {
-    res = res + wrd;
-  } else {
-    int f = (*wfi).second;
-    if ( f > hpx ) {
-      res = res + wrd;
-    } else {
-      res = res + hpx_sym;
-    }
-  }
-  */
-
-  /*
-  for ( wi = words.begin(); wi != words.end(); wi++ ) {
-    wfi = wfreqs.find(*wi);
-    if ( wfi == wfreqs.end() ) { // not found
-      res = res + hpx_sym + " ";
-    } else {
-      int f = (*wfi).second;
-      if ( f > hpx ) {
-	res = res + *wi + " ";
-      } else {
-	res = res + hpx_sym + " ";
-      }
-    }
-  }
-  res = res.substr(0, res.length()-1);
-  */
 
   return 0;
 }
