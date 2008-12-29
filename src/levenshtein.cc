@@ -1,11 +1,36 @@
 // Include STL string type
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
+#include <map>
 #include <vector>
+#include <algorithm>
+#include <iterator>
+
+#include <math.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #include "qlog.h"
 #include "util.h"
 #include "Config.h"
+#include "runrunrun.h"
+#include "server.h"
+#include "tag.h"
+#include "Classifier.h"
+#include "Multi.h"
+#include "levenshtein.h"
+
+#ifdef TIMBL
+# include "timbl/TimblAPI.h"
+#endif
 
 int min3( int a, int b, int c ) {
   int mi;
@@ -318,6 +343,8 @@ int correct( Logfile& l, Config& c ) {
     // there, we look at levenshtein distance 1, if there is a word
     // it could be the 'correction' of our target word.
     //
+    // PJB: patterns contain speling errors....
+    //
     //
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
     int cnt = 0;
@@ -365,7 +392,19 @@ int correct( Logfile& l, Config& c ) {
 
     // I we didn't have the correct answer in the distro, we take ld=1
     //
-    
+    it = vd->begin();
+    while ( it != vd->end() ) {
+
+      std::string tvs  = it->second->Value()->Name();
+      double      wght = it->second->Weight();
+
+      int ld = lev_distance( target, tvs );
+      if ( ld < 3 ) {
+	l.log( target+"/"+tvs+":"+to_str(ld) );
+      }
+
+      ++it;
+    }    
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
