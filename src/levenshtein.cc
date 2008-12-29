@@ -165,7 +165,10 @@ int correct( Logfile& l, Config& c ) {
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
+  // minimum word length
   int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  // maximum levenshtein distance
+  int                mld              = stoi( c.get_value( "mld", "2" ) );
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -182,6 +185,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "mwl:        "+to_str(mwl) );
+  l.log( "mld:        "+to_str(mld) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -339,6 +343,14 @@ int correct( Logfile& l, Config& c ) {
     }
 
     // Loop over distribution returned by Timbl.
+    /*
+      Je hebt een WOPR, en je laat dat los op een nieuw stuk tekst. Voor ieder
+      woord in de tekst kijk je of het in de distributie zit. Zo NIET, dan
+      check je of er een woord in de distributie zit dat op een kleine
+      Levenshtein-afstand van het woord staat, bijvoorbeeld op afstand 1,
+      dus er is 1 insertie/deletie/transpositie verschil tussen de twee
+      woorden.
+    */
     // For spelling correction we look in the distro. If the word is not
     // there, we look at levenshtein distance 1, if there is a word
     // it could be the 'correction' of our target word.
@@ -355,23 +367,19 @@ int correct( Logfile& l, Config& c ) {
     double target_distprob = 0.0;
     double answer_prob     = 0.0;
     double entropy         = 0.0;
+    bool in_distr          = false;
     cnt = vd->size();
     distr_count = vd->totalSize();
 
     std::vector<distr_elem> distr_vec;
 
+    // Check if target word is in the distribution.
+    //
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
 
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
-
-      if ( topn > 0 ) { // only save if we want to sort/print them later.
-	distr_elem  d;
-	d.name = tvs;
-	d.freq = wght;
-	distr_vec.push_back( d );
-      }
 
       // Prob. of this item in distribution.
       //
@@ -380,6 +388,7 @@ int correct( Logfile& l, Config& c ) {
 
       if ( tvs == target ) { // The correct answer was in the distribution!
 	target_freq = wght;
+	in_distr = true;
 	if ( correct_answer == false ) {
 	  ++correct_distr;
 	  --wrong; // direct answer wrong, but right in distr. compensate count
@@ -393,18 +402,27 @@ int correct( Logfile& l, Config& c ) {
     // I we didn't have the correct answer in the distro, we take ld=1
     //
     it = vd->begin();
-    while ( it != vd->end() ) {
-
-      std::string tvs  = it->second->Value()->Name();
-      double      wght = it->second->Weight();
-
-      int ld = lev_distance( target, tvs );
-      if ( ld < 3 ) {
-	l.log( target+"/"+tvs+":"+to_str(ld) );
+    if ( in_distr == false ) {
+      while ( it != vd->end() ) {
+	
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight();
+	
+	int ld = lev_distance( target, tvs );
+	if ( ld < 3 ) {
+	  l.log( target+"/"+tvs+":"+to_str(ld) );
+	}
+	
+	if ( ld <= mld ) { 
+	  distr_elem  d;
+	  d.name = tvs;
+	  d.freq = ld;
+	  distr_vec.push_back( d );
+	}
+	
+	++it;
       }
-
-      ++it;
-    }    
+    }
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
@@ -439,22 +457,20 @@ int correct( Logfile& l, Config& c ) {
     // the logprob, followed by the entropy (of distr.), the size of the
     // distribution returned, and the top-10 (or less) of the distribution.
     //
-    file_out << a_line << ' ' << answer << ' '
+    file_out << a_line << " (" << answer << ") "
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
     file_out << word_lp << ' ';
 
-    if ( topn > 0 ) { // we want a topn, sort and print them.
-      int cntr = topn;
-      sort( distr_vec.begin(), distr_vec.end() );
-      std::vector<distr_elem>::iterator fi;
-      fi = distr_vec.begin();
-      file_out << cnt << " [ ";
-      while ( (fi != distr_vec.end()) && (--cntr >= 0) ) {
-	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
-	fi++;
-      }
-      file_out << "]";
+    int cntr = 0;// 0 is all, was topn before.
+    sort( distr_vec.begin(), distr_vec.end() );
+    std::vector<distr_elem>::iterator fi;
+    fi = distr_vec.begin();
+    file_out << cnt << " [ ";
+    while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+      file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+      fi++;
     }
+    file_out << "]";
 
     file_out << std::endl;
 
