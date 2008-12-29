@@ -20,7 +20,9 @@ wopr_SOURCES = \
 	src/tag.cc \
 	src/Classifier.h \
 	src/Classifier.cc \
-	src/Multi.h
+	src/Multi.h \
+	src/levenshtein.cc \
+	src/levenshtein.h
 
 woprsm_SOURCES = \
 	src/woprsm.cc

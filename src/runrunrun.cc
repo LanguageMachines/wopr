@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007, 2008 Peter Berck                                          *
+ * Copyright 2007 - 2009 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -52,6 +52,7 @@
 #include "tag.h"
 #include "Classifier.h"
 #include "Multi.h"
+#include "levenshtein.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -393,6 +394,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &pplx_simple;
   } else if ( a_fname == "multi" ) {
     return &multi;
+  } else if ( a_fname == "correct" ) {
+    return &correct;
   }
   return &tst;
 }
@@ -2696,7 +2699,8 @@ int pplx( Logfile& l, Config& c ) {
 }  
 #endif
 
-// ../wopr -r pplxs -p filename:reuters.martin.tok.1000.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
+// wopr -r pplxs -p filename:reuters.martin.tok.1000.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,ws:3,timbl:"-a1 +D"
+// wopr -r pplxs -p filename:test1.ws3.hpx5,ibasefile:ep_sv_cl.ws3.hpx5_de.ibase,timbl:'-a1 +D',lexicon:ep_sv_cl.lex,hpx:5
 //
 #ifdef TIMBL
 struct distr_elem {
