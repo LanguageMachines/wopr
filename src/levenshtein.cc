@@ -164,11 +164,10 @@ int correct( Logfile& l, Config& c ) {
   std::string        output_filename  = filename + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
-  int                topn             = stoi( c.get_value( "topn", "0" ) );
   // minimum word length
   int                mwl              = stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance
-  int                mld              = stoi( c.get_value( "mld", "2" ) );
+  int                mld              = stoi( c.get_value( "mld", "1" ) );
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -183,7 +182,6 @@ int correct( Logfile& l, Config& c ) {
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
   l.log( "lowercase:  "+to_str(to_lower) );
-  l.log( "topn:       "+to_str(topn) );
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "OUTPUT:     "+output_filename );
@@ -400,9 +398,10 @@ int correct( Logfile& l, Config& c ) {
     target_distprob = (double)target_freq / (double)distr_count;
 
     // I we didn't have the correct answer in the distro, we take ld=1
+    // Skip words shorter than mwl.
     //
     it = vd->begin();
-    if ( in_distr == false ) {
+    if ( (target.length() > mwl) && (in_distr == false) ) {
       while ( it != vd->end() ) {
 	
 	std::string tvs  = it->second->Value()->Name();
