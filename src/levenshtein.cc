@@ -408,9 +408,6 @@ int correct( Logfile& l, Config& c ) {
 	double      wght = it->second->Weight();
 	
 	int ld = lev_distance( target, tvs );
-	if ( ld < 3 ) {
-	  l.log( target+"/"+tvs+":"+to_str(ld) );
-	}
 	
 	if ( ld <= mld ) { 
 	  distr_elem  d;
@@ -460,7 +457,7 @@ int correct( Logfile& l, Config& c ) {
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
     file_out << word_lp << ' ';
 
-    int cntr = 0;// 0 is all, was topn before.
+    int cntr = 0;
     sort( distr_vec.begin(), distr_vec.end() );
     std::vector<distr_elem>::iterator fi;
     fi = distr_vec.begin();
