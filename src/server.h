@@ -37,6 +37,8 @@
 int server2( Logfile&, Config& );
 std::string json_safe( const std::string& );
 std::string str_clean( const std::string& );
+int parse_distribution2( const Timbl::ValueDistribution*, std::map<std::string,
+			 double>&);
 int parse_distribution( std::string, std::map<std::string, double>& );
 
 #ifdef TIMBL

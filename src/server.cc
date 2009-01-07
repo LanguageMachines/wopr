@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007, 2008 Peter Berck                                          *
+ * Copyright 2007, 2009 Peter Berck                                          *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -78,7 +78,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#define MYPORT 3490    // the port users will be connecting to
 #define BACKLOG 5     // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once 
 
@@ -218,9 +217,9 @@ int server2(Logfile& l, Config& c) {
     sa.sa_handler = sigchld_handler; // reap all dead processes
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-      perror("sigaction");
-      exit(1);
+    if ( sigaction( SIGCHLD, &sa, NULL ) == -1 ) {
+      perror( "sigaction" );
+      exit( 1 );
     }
 
     // loop
@@ -386,7 +385,9 @@ int server2(Logfile& l, Config& c) {
 	  */
 
 	  if ( lc_unknown == false ) {
-	    My_Experiment->Classify( cl, result, distrib, distance );
+	    //My_Experiment->Classify( cl, result, distrib, distance );
+	    tv = My_Experiment->Classify( cl, vd, distance );
+	    result = tv->Name();
 	  } else {
 	    //
 	    // Set some dummy values so we can fall through the rest
@@ -412,7 +413,13 @@ int server2(Logfile& l, Config& c) {
 	  // Grok the distribution returned by Timbl.
 	  //
 	  std::map<std::string, double> res;
+	  /*
+	  long g0 = l.clock_mu_secs();
 	  parse_distribution( distrib, res );
+	  long g1 = l.clock_mu_secs();
+	  l.log( "Parse distro took (mu-sec): " + to_str((double)g1-g0,6,' ') );
+	  */
+	  parse_distribution2( vd, res );
 
 	  // Start calculating.
 	  //
@@ -617,6 +624,31 @@ std::string str_clean( const std::string& s ) {
     clean = clean + c;
   }
   return clean;
+}
+
+// tv = My_Experiment->Classify( *ri, vd );
+//
+int parse_distribution2( const Timbl::ValueDistribution* vd,
+			 std::map<std::string, double>& res ) {
+
+  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  int cnt = vd->size();
+  int distr_count = vd->totalSize();
+  
+  while ( it != vd->end() ) {
+    
+    std::string tvs  = it->second->Value()->Name();
+    double      wght = it->second->Weight();
+    
+    // Prob. of this item in distribution.
+    //
+    double prob = (double)wght / (double)distr_count;
+    res[tvs] = prob;
+
+    ++it;
+  }
+
+  return 0;
 }
 
 // Insert smoothed values here?
