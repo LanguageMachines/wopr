@@ -117,6 +117,7 @@ int main( int argc, char* argv[] ) {
   Config co;
   co.add_kv( "PID", to_str(getpid()) );
   int verbose = 0;
+  int log     = 0;
   int c;
   std::vector<std::string>kv_pairs;
   while ( 1 ) {
@@ -125,6 +126,7 @@ int main( int argc, char* argv[] ) {
       //{"name, has_arg, *flag, val"} 
       //no_argument, required_argument, optional_argument
       {"config", required_argument, 0, 0},
+      {"log", no_argument, 0, 0},
       {"script", required_argument, 0, 0},
       {"params", required_argument, 0, 0},
       {"run", required_argument, 0, 0},
@@ -133,7 +135,7 @@ int main( int argc, char* argv[] ) {
       {0, 0, 0, 0}
     };
 
-    c = getopt_long(argc, argv, "c:s:p:r:ve", long_options, &option_index);
+    c = getopt_long(argc, argv, "c:ls:p:r:ve", long_options, &option_index);
     if (c == -1) {
       break;
     }
@@ -143,6 +145,9 @@ int main( int argc, char* argv[] ) {
     case 0:
       if ( long_options[option_index].name == "verbose" ) {
 	verbose = 1;
+      }
+      if ( long_options[option_index].name == "log" ) {
+	log = 1;
       }
       if ( long_options[option_index].name == "config" ) {
 	co.read_file( optarg );
@@ -171,6 +176,10 @@ int main( int argc, char* argv[] ) {
       
     case 'c':
       co.read_file( optarg );
+      break;
+
+    case 'l':
+      log = 1;
       break;
 
     case 's':
@@ -211,6 +220,24 @@ int main( int argc, char* argv[] ) {
   } // while
   //co.dump_kv();
 
+  std::ofstream wopr_log;
+  if ( ! wopr_log ) {
+    l.log( "ERROR: cannot write wopr.log." );
+    return -1;
+  }
+
+  if ( log == 1 ) {
+    wopr_log.open( "wopr.log", std::ios::out | std::ios::app );
+    if ( wopr_log ) {
+      wopr_log << the_date_time() << ", wopr " << VERSION  << std::endl;
+      wopr_log << "wopr";
+      for (int i = 1; i < argc; i++)
+	wopr_log << " " << argv[i] ;
+      wopr_log  << std::endl;
+    }
+    wopr_log.close();
+  }
+
   l.log( "Starting." );
 
   timeval tv;
@@ -232,7 +259,17 @@ int main( int argc, char* argv[] ) {
 
   timeval tv2;
   l.get_raw(tv2);
-  l.log( "Running for "+secs_to_str( tv2.tv_sec - tv.tv_sec ));
+  long diff = tv2.tv_sec - tv.tv_sec;
+  l.log( "Running for "+secs_to_str( diff ));
+
+  if ( log == 1 ) {
+    wopr_log.open( "wopr.log", std::ios::out | std::ios::app );
+    if ( wopr_log ) {
+      wopr_log << the_date_time() << ", " << secs_to_str( diff ) << std::endl << std::endl;
+    }
+    wopr_log.close();
+  }
+
   l.log( "Ready." );
 
   return 0;
