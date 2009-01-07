@@ -399,17 +399,6 @@ int server2(Logfile& l, Config& c) {
 	    distance = 10.0;
 	  }
 
-	  /*
-	  tv = My_Experiment->Classify( *ri, vd );
-	  Timbl::ValueDistribution::dist_iterator it = vd->begin();
-	  while ( it != vd->end() ){
-	    std::cout << it->second << " has a value: ";
-	    std::cout << it->second->Value() << " an a weight of "
-		      << it->second->Weight() << std::endl;
-	    ++it;
-	  }
-	  */
-
 	  // Grok the distribution returned by Timbl.
 	  //
 	  std::map<std::string, double> res;
@@ -819,7 +808,9 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       }
       
       if ( lc_unknown == false ) {
-	My_Experiment->Classify( cl, result, distrib, distance );
+	//My_Experiment->Classify( cl, result, distrib, distance );
+	tv = My_Experiment->Classify( cl, vd, distance );
+	result = tv->Name();
       } else {
 	//
 	// Set some dummy values so we can fall through the rest
@@ -834,7 +825,8 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       // Grok the distribution returned by Timbl.
       //
       std::map<std::string, double> res;
-      parse_distribution( distrib, res );
+      //parse_distribution( distrib, res );
+      parse_distribution2( vd, res );
       
       // Start calculating.
       //
