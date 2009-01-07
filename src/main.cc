@@ -229,7 +229,7 @@ int main( int argc, char* argv[] ) {
   if ( log == 1 ) {
     wopr_log.open( "wopr.log", std::ios::out | std::ios::app );
     if ( wopr_log ) {
-      wopr_log << the_date_time() << ", wopr " << VERSION  << std::endl;
+      wopr_log << "# " << the_date_time() << ", wopr " << VERSION  << std::endl;
       wopr_log << "wopr";
       for (int i = 1; i < argc; i++)
 	wopr_log << " " << argv[i] ;
@@ -265,7 +265,8 @@ int main( int argc, char* argv[] ) {
   if ( log == 1 ) {
     wopr_log.open( "wopr.log", std::ios::out | std::ios::app );
     if ( wopr_log ) {
-      wopr_log << the_date_time() << ", " << secs_to_str( diff ) << std::endl << std::endl;
+      wopr_log << "# " << the_date_time() << ", " << secs_to_str( diff );
+      wopr_log << std::endl << std::endl;
     }
     wopr_log.close();
   }

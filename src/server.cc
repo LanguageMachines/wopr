@@ -617,6 +617,7 @@ std::string str_clean( const std::string& s ) {
 
 // tv = My_Experiment->Classify( *ri, vd );
 //
+#ifdef TIMBL
 int parse_distribution2( const Timbl::ValueDistribution* vd,
 			 std::map<std::string, double>& res ) {
 
@@ -639,6 +640,7 @@ int parse_distribution2( const Timbl::ValueDistribution* vd,
 
   return 0;
 }
+#endif
 
 // Insert smoothed values here?
 //
