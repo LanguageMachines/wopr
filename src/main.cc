@@ -231,9 +231,31 @@ int main( int argc, char* argv[] ) {
     if ( wopr_log ) {
       wopr_log << "# " << the_date_time() << ", wopr " << VERSION  << std::endl;
       wopr_log << "wopr";
-      for (int i = 1; i < argc; i++)
-	wopr_log << " " << argv[i] ;
-      wopr_log  << std::endl;
+      for (int i = 1; i < argc; i++) {
+	wopr_log << " ";
+	std::string s = std::string( argv[i] );
+	Tokenize( s, kv_pairs, ',' );
+	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	  std::string kv = kv_pairs.at(j);
+	  if ( kv.find( ' ', 0 ) != std::string::npos ) { // contains space
+	    int pos = kv.find( ':', 0 );
+	    if ( pos != std::string::npos ) {
+	      std::string lhs = trim(kv.substr( 0, pos ));
+	      std::string rhs = trim(kv.substr( pos+1 ));
+	      wopr_log << lhs << ":'" << rhs << "'";
+	    } else {
+	      // error.
+	    }
+	  } /*space*/ else {
+	    wopr_log << kv;
+	  }
+	  if ( j < kv_pairs.size()-1 ) {
+	    wopr_log << ",";
+	  }
+	} /* j */
+	kv_pairs.clear();
+      } /* i */
+      wopr_log << std::endl;
     }
     wopr_log.close();
   }
