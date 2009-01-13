@@ -3048,6 +3048,7 @@ int multi( Logfile& l, Config& c ) {
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   const std::string& timbl            = c.get_value( "timbl" );
+  // PJB: Should be a context string, also l2r2 &c.
   int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".px" + to_str(ws);

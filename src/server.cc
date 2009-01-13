@@ -402,13 +402,7 @@ int server2(Logfile& l, Config& c) {
 	  // Grok the distribution returned by Timbl.
 	  //
 	  std::map<std::string, double> res;
-	  /*
-	  long g0 = l.clock_mu_secs();
-	  parse_distribution( distrib, res );
-	  long g1 = l.clock_mu_secs();
-	  l.log( "Parse distro took (mu-sec): " + to_str((double)g1-g0,6,' ') );
-	  */
-	  parse_distribution2( vd, res );
+	  parse_distribution2( vd, res ); // was parse_distribution(...)
 
 	  // Start calculating.
 	  //

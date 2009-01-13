@@ -242,7 +242,7 @@ int main( int argc, char* argv[] ) {
 	    if ( pos != std::string::npos ) {
 	      std::string lhs = trim(kv.substr( 0, pos ));
 	      std::string rhs = trim(kv.substr( pos+1 ));
-	      wopr_log << lhs << ":'" << rhs << "'";
+	      wopr_log << lhs << ":'" << rhs << "'"; // single or double?
 	    } else {
 	      // error.
 	    }
