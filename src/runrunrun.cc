@@ -275,6 +275,7 @@ int script(Logfile& l, Config& c)  {
       std::string rhs = trim(a_line.substr( pos+1 ));
 
       if ( lhs == "run" ) {
+	//l.log(rhs);
 	int(*pt2Func2)(Logfile&, Config&) = get_function( rhs );
 	int res = pt2Func2(l, c);
 	//l.log( "Result = "+to_str(res) );// should abort if != 0
@@ -1770,6 +1771,7 @@ int hapax(Logfile& l, Config& c)  {
   file_out.close();
   file_in.close();
 
+  /*
   if ( type == 0 ) {
     c.add_kv( "trainfile", output_filename );
     l.log( "SET trainfile to " + output_filename );
@@ -1777,6 +1779,10 @@ int hapax(Logfile& l, Config& c)  {
     c.add_kv( "testfile", output_filename );
     l.log( "SET testfile to " + output_filename );
   }
+  */
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+filename );
+
   return 0;
 }
 
