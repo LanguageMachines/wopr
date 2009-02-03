@@ -5,7 +5,7 @@
 /*****************************************************************************
  * Copyright 2007-2009 Peter Berck                                           *
  *                                                                           *
- * This file is part of wpred.                                               *
+ * This file is part of wopr.                                                *
  *                                                                           *
  * wopr is free software; you can redistribute it and/or modify it           *
  * under the terms of the GNU General Public License as published by the     *

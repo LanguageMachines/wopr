@@ -1300,6 +1300,10 @@ int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
     }
   } 
 
+  // remove last " "
+  //
+  res.resize(res.size()-1);
+
   return 0;
 }
 
