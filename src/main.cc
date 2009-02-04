@@ -47,6 +47,9 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include <stdlib.h>  
+#include <string.h>  
+
 #include "qlog.h"
 #include "util.h"
 #include "Config.h"
