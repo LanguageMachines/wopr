@@ -3165,7 +3165,7 @@ int multi( Logfile& l, Config& c ) {
       return -1;
     }
     read_classifiers_from_file( file_kvs, cls );
-    l.log( to_str(cls.size()) );
+    l.log( to_str((int)cls.size()) );
     file_kvs.close();
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
