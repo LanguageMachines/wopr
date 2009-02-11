@@ -145,6 +145,16 @@ int levenshtein( Logfile& l, Config& c ) {
 
 // Spellings correction.
 //
+/*
+1. Meenemen van lexicale frequenties in Wopr Correct. We hadden het daar
+al over; je neemt de frequenties mee uit het trainingset-lexicon en
+geeft die mee in de output - of doet er zelfs al filtering op. Daarnaast
+vraag ik me af of naast OF in plaats van een frequentiedrempel, er ook
+een drempel gezet kan worden op de distributiegrootte of de entropie.
+Dus: als entropy > 5, of als distributie > 100, of als frequentie-ratio
+> 100, onderdruk dan de gesuggereerde correctie. In feite heb je hiermee
+drie parameters. Zou je eens kunnen bedenken of dit in te bouwen is? 
+*/
 #ifdef TIMBL
 struct distr_elem {
   std::string name;
@@ -168,6 +178,10 @@ int correct( Logfile& l, Config& c ) {
   int                mwl              = stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance
   int                mld              = stoi( c.get_value( "mld", "1" ) );
+  // max entropy
+  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  // maximum distributie
+  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -184,6 +198,8 @@ int correct( Logfile& l, Config& c ) {
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
+  l.log( "max_ent:    "+to_str(max_ent) );
+  l.log( "max_distr:  "+to_str(max_distr) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -353,7 +369,7 @@ int correct( Logfile& l, Config& c ) {
     // there, we look at levenshtein distance 1, if there is a word
     // it could be the 'correction' of our target word.
     //
-    // PJB: patterns contain speling errors....
+    // PJB: patterns containing spelling errors....
     //
     //
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
@@ -397,29 +413,6 @@ int correct( Logfile& l, Config& c ) {
     }
     target_distprob = (double)target_freq / (double)distr_count;
 
-    // I we didn't have the correct answer in the distro, we take ld=1
-    // Skip words shorter than mwl.
-    //
-    it = vd->begin();
-    if ( (target.length() > mwl) && (in_distr == false) ) {
-      while ( it != vd->end() ) {
-	
-	std::string tvs  = it->second->Value()->Name();
-	double      wght = it->second->Weight();
-	
-	int ld = lev_distance( target, tvs );
-	
-	if ( ld <= mld ) { 
-	  distr_elem  d;
-	  d.name = tvs;
-	  d.freq = ld;
-	  distr_vec.push_back( d );
-	}
-	
-	++it;
-      }
-    }
-
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
     // Unknown words?
@@ -443,6 +436,36 @@ int correct( Logfile& l, Config& c ) {
       }
     }
     sum_logprob += logprob;
+
+    // I we didn't have the correct answer in the distro, we take ld=1
+    // Skip words shorter than mwl.
+    //
+    it = vd->begin();
+    if ( (target.length() > mwl) && (in_distr == false) ) {
+      while ( it != vd->end() ) {
+	
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight();
+	
+	int ld = lev_distance( target, tvs );
+	
+	// If the ld of the word is less than the minimum,
+	// we include the result in our output.
+	//
+	if (
+	    (entropy <= max_ent) &&
+	    (cnt <= max_distr) &&
+	    ( ld <= mld ) 
+	    ) { 
+	    distr_elem  d;
+	    d.name = tvs;
+	    d.freq = ld;
+	    distr_vec.push_back( d );
+	}
+	
+	++it;
+      }
+    }
 
     // Word logprob (ref. Antal's mail 21/11/08)
     // 2 ^ (-logprob(w)) 
