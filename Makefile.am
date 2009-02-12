@@ -21,6 +21,8 @@ wopr_SOURCES = \
 	src/Classifier.h \
 	src/Classifier.cc \
 	src/Multi.h \
+	src/elements.h \
+	src/elements.cc \
 	src/levenshtein.cc \
 	src/levenshtein.h
 

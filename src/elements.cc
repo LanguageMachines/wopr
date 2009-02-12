@@ -1,5 +1,4 @@
-// $Id: levenshtein.h 2000 2008-03-19 14:16:19Z pberck $
-//
+// $Id: WorkUnit.h 7 2006-05-09 07:04:57Z pberck $
 
 /*****************************************************************************
  * Copyright 2008-2009 Peter Berck                                           *
@@ -21,11 +20,35 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
  *****************************************************************************/
 
-#ifndef _LEVENSHTEIN_H
-#define _LEVENSHTEIN_H
+// ----------------------------------------------------------------------------
 
-int distance(const std::string, const std::string);
-int levenshtein( Logfile&, Config& );
-int correct( Logfile&, Config& );
+/*!
+  \author Peter Berck
+  \date 2009
+*/
 
-#endif
+#include <iostream>
+#include <vector>
+#include <string>
+
+#include "elements.h"
+
+// ----------------------------------------------------------------------------
+// Classes
+// ----------------------------------------------------------------------------
+
+distr_elem::distr_elem() {
+};
+
+distr_elem::distr_elem( const std::string& s, double d1, double d2) {
+  name = s;
+  freq = d1;
+  lexfreq = d2;
+}
+
+distr_elem::~distr_elem() {
+  //std::cerr << "destroying.\n";
+}
+
+
+

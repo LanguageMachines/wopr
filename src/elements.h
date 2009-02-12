@@ -1,5 +1,4 @@
-// $Id: levenshtein.h 2000 2008-03-19 14:16:19Z pberck $
-//
+// $Id: WorkUnit.h 7 2006-05-09 07:04:57Z pberck $
 
 /*****************************************************************************
  * Copyright 2008-2009 Peter Berck                                           *
@@ -21,11 +20,42 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
  *****************************************************************************/
 
-#ifndef _LEVENSHTEIN_H
-#define _LEVENSHTEIN_H
+// ----------------------------------------------------------------------------
 
-int distance(const std::string, const std::string);
-int levenshtein( Logfile&, Config& );
-int correct( Logfile&, Config& );
+/*!
+  \author Peter Berck
+  \date 2009
+*/
+
+#ifndef _ELEMENTS_H
+#define _ELEMENTS_H
+
+#include <vector>
+#include <string>
+
+// ----------------------------------------------------------------------------
+// Classes
+// ----------------------------------------------------------------------------
+
+class distr_elem {
+ public:
+  std::string name; 
+  double      freq;
+  double      lexfreq;
+
+  distr_elem();
+  ~distr_elem();
+
+  distr_elem( const std::string& s, double d1, double d2);
+
+  //distr_elem(const distr_elem&);
+};
+
+class distr_elem_cmp_ptr {
+ public:
+  bool operator() (const distr_elem* de1, const distr_elem* de2) const {
+    return de1->freq < de2->freq;
+  } 
+}; 
 
 #endif

@@ -27,6 +27,7 @@
 #include "Classifier.h"
 #include "Multi.h"
 #include "levenshtein.h"
+#include "elements.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -156,15 +157,27 @@ Dus: als entropy > 5, of als distributie > 100, of als frequentie-ratio
 drie parameters. Zou je eens kunnen bedenken of dit in te bouwen is? 
 */
 #ifdef TIMBL
-struct distr_elem {
-  std::string name;
+/*struct distr_elem {
+  std::string name; // pointer van maken??
   double      freq;
-  bool operator<(const distr_elem& rhs) const {
+  double      lexfreq;
+    bool operator<(const distr_elem& rhs) const {
     return freq > rhs.freq;
-  }
+    }
 };
+distr_elem make_elem( std::string s, double d1, double d2 ) {
+  distr_elem d;
+  d.name = s;
+  d.freq = d1;
+  d.lexfreq = d2;
+  return d;
+}
+bool operator < ( const distr_elem& a, const distr_elem& b ) {
+  return ( a.freq > b.freq) ;
+}
+*/
 int correct( Logfile& l, Config& c ) {
-  l.log( "pplx" );
+  l.log( "correct" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -174,13 +187,13 @@ int correct( Logfile& l, Config& c ) {
   std::string        output_filename  = filename + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
-  // minimum word length
+  // minimum word length (guess added if > mwl)
   int                mwl              = stoi( c.get_value( "mwl", "5" ) );
-  // maximum levenshtein distance
+  // maximum levenshtein distance (guess added if <= mld)
   int                mld              = stoi( c.get_value( "mld", "1" ) );
-  // max entropy
+  // max entropy (guess added if <= max_entropy)
   int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
-  // maximum distributie
+  // maximum distributie (guess added if <= max_distr)
   int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
@@ -306,7 +319,6 @@ int correct( Logfile& l, Config& c ) {
   int    sentence_wordcount = 0;
 
   while( std::getline( file_in, a_line )) {
-
     if ( to_lower ) {
       std::transform( a_line.begin(),a_line.end(),a_line.begin(),tolower ); 
     }
@@ -385,8 +397,6 @@ int correct( Logfile& l, Config& c ) {
     cnt = vd->size();
     distr_count = vd->totalSize();
 
-    std::vector<distr_elem> distr_vec;
-
     // Check if target word is in the distribution.
     //
     while ( it != vd->end() ) {
@@ -441,25 +451,33 @@ int correct( Logfile& l, Config& c ) {
     // Skip words shorter than mwl.
     //
     it = vd->begin();
+    std::vector<distr_elem*> distr_vec;
+    std::map<std::string,int>::iterator tvsfi;
     if ( (target.length() > mwl) && (in_distr == false) ) {
       while ( it != vd->end() ) {
 	
 	std::string tvs  = it->second->Value()->Name();
 	double      wght = it->second->Weight();
-	
 	int ld = lev_distance( target, tvs );
 	
 	// If the ld of the word is less than the minimum,
 	// we include the result in our output.
+	// Lexicon frequency of tvs...
 	//
 	if (
 	    (entropy <= max_ent) &&
 	    (cnt <= max_distr) &&
 	    ( ld <= mld ) 
 	    ) { 
-	    distr_elem  d;
-	    d.name = tvs;
-	    d.freq = ld;
+	  distr_elem* d = new distr_elem(); 
+	  d->name = tvs;
+	  d->freq = ld;
+	    tvsfi = wfreqs.find( tvs );
+	    if ( tvsfi == wfreqs.end() ) {
+	      d->lexfreq = 0;
+	    } else {
+	      d->lexfreq = (double)(*tvsfi).second;
+	    }
 	    distr_vec.push_back( d );
 	}
 	
@@ -479,18 +497,17 @@ int correct( Logfile& l, Config& c ) {
     file_out << a_line << " (" << answer << ") "
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
     file_out << word_lp << ' ';
-
     int cntr = 0;
-    sort( distr_vec.begin(), distr_vec.end() );
-    std::vector<distr_elem>::iterator fi;
-    fi = distr_vec.begin();
+    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
     file_out << cnt << " [ ";
     while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-      file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+      file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+      delete *fi;
       fi++;
     }
+    distr_vec.clear();
     file_out << "]";
-
     file_out << std::endl;
 
     // End of sentence (sort of)
