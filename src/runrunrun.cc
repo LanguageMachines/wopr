@@ -2828,9 +2828,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "Cannot create Timbl Experiment..." );
     return 1;
   }
-
-  std::vector<std::string>::iterator vi;
-  std::ostream_iterator<std::string> output( file_out, " " );
+  l.log( "Instance base loaded." );
 
   std::string a_line;
   std::vector<std::string> results;
