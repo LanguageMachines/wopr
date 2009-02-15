@@ -2841,7 +2841,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   int wrong   = 0;
   int correct_unknown = 0;
   int correct_distr = 0;
-  
+    
   // Recognise <s> or similar, reset pplx calculations.
   // Output results on </s> or similar.
   // Or a divisor whoch is not processed?
@@ -2849,7 +2849,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   double sentence_prob      = 0.0;
   double sum_logprob        = 0.0;
   int    sentence_wordcount = 0;
-
+  
   while( std::getline( file_in, a_line )) {
 
     if ( to_lower ) {
@@ -2859,12 +2859,13 @@ int pplx_simple( Logfile& l, Config& c ) {
     words.clear();
     a_line = trim( a_line );
     Tokenize( a_line, words, ' ' );
+
     if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
       words.clear();
       Tokenize( a_line, words, '\t' );
     }
     std::string target = words.at( words.size()-1 );
-    
+
     ++sentence_wordcount;
 
     // Is the target in the lexicon? We could calculate a smoothed
@@ -2892,8 +2893,14 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = tv->Name();
+    if ( vd == NULL ) {
+      l.log( "Classify( a_line, vd ) was null, skipping current line." );
+      file_out << a_line << ' ' << answer << " ERROR" << std::endl;
+      continue;
+    }
+
     //l.log( "Answer: '" + answer + "' / '" + target + "'" );
-    
+
     if ( target == answer ) {
       ++correct;
       correct_answer = true;
