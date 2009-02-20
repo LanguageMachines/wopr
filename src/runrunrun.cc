@@ -2822,7 +2822,15 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;      
+    }
     (void)My_Experiment->GetInstanceBase( ibasefile );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;
+    }
     // My_Experiment->Classify( cl, result, distrib, distance );
   } catch (...) {
     l.log( "Cannot create Timbl Experiment..." );
@@ -2892,6 +2900,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     // Do we change this answer to what is in the distr. (if it is?)
     //
     tv = My_Experiment->Classify( a_line, vd );
+    // check for vd == NULL
     std::string answer = tv->Name();
     if ( vd == NULL ) {
       l.log( "Classify( a_line, vd ) was null, skipping current line." );
@@ -2924,7 +2933,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     cnt = vd->size();
     distr_count = vd->totalSize();
 
-    std::vector<distr_elem> distr_vec;
+    std::vector<distr_elem> distr_vec;// see correct in levenshtein.
 
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
@@ -2974,7 +2983,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	// What to do here? We have an 'unknown' target, i.e. not in the
 	// lexicon.
 	//
-	logprob = log2( p0 /*0.0001*/ ); // Foei!
+	logprob = log2( p0 /*0.0001*/ );
 	info = "P(new_particular)";
       }
     }
