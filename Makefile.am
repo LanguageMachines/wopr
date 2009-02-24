@@ -24,7 +24,9 @@ wopr_SOURCES = \
 	src/elements.h \
 	src/elements.cc \
 	src/levenshtein.cc \
-	src/levenshtein.h
+	src/levenshtein.h \
+	src/generator.h \
+	src/generator.cc
 
 woprsm_SOURCES = \
 	src/woprsm.cc

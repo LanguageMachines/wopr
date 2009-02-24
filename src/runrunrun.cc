@@ -53,6 +53,7 @@
 #include "Classifier.h"
 #include "Multi.h"
 #include "levenshtein.h"
+#include "generator.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -397,6 +398,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &multi;
   } else if ( a_fname == "correct" ) {
     return &correct;
+  } else if ( a_fname == "generate" ) {
+    return &generate;
   }
   return &tst;
 }
