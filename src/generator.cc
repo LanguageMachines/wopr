@@ -38,10 +38,12 @@ durian:wopr pberck$ ./wopr -r generate -p start:"Mexico has not",ibasefile:test/
 #ifdef TIMBL
 int generate( Logfile& l, Config& c ) {
   l.log( "generate" );
-  const std::string& start            = c.get_value( "start" );
+  const std::string& start            = c.get_value( "start", "" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
+  const std::string& end              = c.get_value( "end", " " );
+  int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".gen";
   int                len              = stoi( c.get_value( "len", "50" ) );
@@ -55,8 +57,10 @@ int generate( Logfile& l, Config& c ) {
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
   l.log( "timbl:      "+timbl );
-  l.log( "n:          "+to_str(n) );
-  l.log( "len:        "+to_str(len) );
+  l.log( "ws:         "+to_str(ws) );
+  l.log( "end:        "+end ); // end marker of sentences
+  l.log( "n:          "+to_str(n) ); // number of sentences
+  l.log( "len:        "+to_str(len) ); // max length of sentences
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
@@ -101,11 +105,15 @@ int generate( Logfile& l, Config& c ) {
   int cnt;
   int distr_count;
   srandom((unsigned)now()); 
-  
+
   while ( --n > 0 ) {
     a_line = start;
+    if ( start == "" ) {
+      for ( int i = 0; i < ws; i++ ) {
+	a_line = a_line + "_ "; // could pick a random something
+      }    
+    }
     result = start;
-    int ws = 3;
     int s_len = len;
 
     while ( --s_len >= 0 ) { // Or till we hit a "."
@@ -138,11 +146,15 @@ int generate( Logfile& l, Config& c ) {
       Tokenize( a_line, words, ' ' );
       copy( words.begin()+1, words.end(), words.begin() );
       words.at(ws-1) = answer;
-      a_line = words[0]+" "+words[1]+" "+words[2];
+
+      a_line = "";
+      for ( int i = 0; i < ws; i++ ) {
+	a_line = a_line + words[i] + " ";
+      }
 
       // Stop when "."
       //
-      if ( tvs == "." ) {
+      if ( tvs == end ) {
 	s_len = 0;
       }
     }
