@@ -45,6 +45,7 @@ int generate( Logfile& l, Config& c ) {
   const std::string& end              = c.get_value( "end", " " );
   int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  bool               show_counts      = stoi( c.get_value( "sc", "0" )) == 1;
   std::string        output_filename  = filename + ".gen";
   int                len              = stoi( c.get_value( "len", "50" ) );
   int                n                = stoi( c.get_value( "n", "10" ) );
@@ -61,6 +62,7 @@ int generate( Logfile& l, Config& c ) {
   l.log( "end:        "+end ); // end marker of sentences
   l.log( "n:          "+to_str(n) ); // number of sentences
   l.log( "len:        "+to_str(len) ); // max length of sentences
+  l.log( "sc:         "+to_str(show_counts) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
@@ -138,7 +140,10 @@ int generate( Logfile& l, Config& c ) {
       double      wght = it->second->Weight();
       answer = tvs;
       
-      result = result + " " + answer;//+"("+to_str(cnt)+")";
+      result = result + " " + answer;
+      if ( show_counts && ( cnt > 1 )) {
+	result = result + "("+to_str(cnt)+")";
+      }
       
       // shift/add/repeat
       //
