@@ -110,7 +110,7 @@ int generate( Logfile& l, Config& c ) {
 
   while ( --n >= 0 ) {
     a_line = start;
-    if ( start == "" ) {
+    if ( start == "" ) { // or less words than ws!
       for ( int i = 0; i < ws; i++ ) {
 	a_line = a_line + "_ "; // could pick a random something
       }    
@@ -118,9 +118,11 @@ int generate( Logfile& l, Config& c ) {
     result = start;
     int s_len = len;
     int no_choice = 0;
+    int total_choices = 0;
+    // abf, average branching factor?
 
     words.clear();
-    Tokenize( a_line, words, ' ' );
+    Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
 
     while ( --s_len >= 0 ) { // Or till we hit a "."
       a_line = a_line + " _";
@@ -132,6 +134,7 @@ int generate( Logfile& l, Config& c ) {
       if ( cnt == 1 ) {
 	++no_choice;
       }
+      total_choices += cnt;
 
       int rnd_idx = random() % cnt;
       //l.log( to_str(rnd_idx)+"/"+to_str(cnt) );
@@ -171,7 +174,9 @@ int generate( Logfile& l, Config& c ) {
     }
     
     //l.log( result );
-    file_out << result << std::endl;
+    file_out << result;
+    file_out << " " << no_choice << " " << total_choices;
+    file_out << std::endl;
   }
   file_out.close();
 
