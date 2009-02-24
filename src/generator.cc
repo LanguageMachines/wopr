@@ -117,6 +117,10 @@ int generate( Logfile& l, Config& c ) {
     }
     result = start;
     int s_len = len;
+    int no_choice = 0;
+
+    words.clear();
+    Tokenize( a_line, words, ' ' );
 
     while ( --s_len >= 0 ) { // Or till we hit a "."
       a_line = a_line + " _";
@@ -124,7 +128,11 @@ int generate( Logfile& l, Config& c ) {
       std::string answer = "";// tv->Name();
       cnt = vd->size();
       distr_count = vd->totalSize();
-      
+
+      if ( cnt == 1 ) {
+	++no_choice;
+      }
+
       int rnd_idx = random() % cnt;
       //l.log( to_str(rnd_idx)+"/"+to_str(cnt) );
       
@@ -147,8 +155,6 @@ int generate( Logfile& l, Config& c ) {
       
       // shift/add/repeat
       //
-      words.clear();
-      Tokenize( a_line, words, ' ' );
       copy( words.begin()+1, words.end(), words.begin() );
       words.at(ws-1) = answer;
 
