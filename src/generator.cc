@@ -108,7 +108,7 @@ int generate( Logfile& l, Config& c ) {
   int distr_count;
   srandom((unsigned)now()); 
 
-  while ( --n > 0 ) {
+  while ( --n >= 0 ) {
     a_line = start;
     if ( start == "" ) {
       for ( int i = 0; i < ws; i++ ) {
@@ -141,7 +141,7 @@ int generate( Logfile& l, Config& c ) {
       answer = tvs;
       
       result = result + " " + answer;
-      if ( show_counts && ( cnt > 1 )) {
+      if ( show_counts && ( cnt > 1 )) { // Show if more than one choice
 	result = result + "("+to_str(cnt)+")";
       }
       
