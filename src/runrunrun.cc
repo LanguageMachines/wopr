@@ -295,7 +295,12 @@ int script(Logfile& l, Config& c)  {
       if ( lhs == "msg" ) {
 	l.log( rhs );
       }
-      if ( lhs == "set" ) { // set: savename:filename.
+      // SET: optiones:
+      // set: filename:output01
+      // set: oldname:$filename
+      //              ^ take value of parameter instead of string.
+      //
+      if ( lhs == "set" ) { 
 	// set foo = foo + "t" ? (or add foo "t")
 	Tokenize( rhs, kv_pairs, ',' );
 	std::string kv = kv_pairs.at(0);
@@ -303,14 +308,9 @@ int script(Logfile& l, Config& c)  {
 	if ( pos != std::string::npos ) {
 	  std::string lhs = trim(kv.substr( 0, pos ));
 	  std::string rhs = trim(kv.substr( pos+1 ));
-	  std::string val = c.get_value( rhs ); // get value of a parameter
-	  /*
-	  c.add_kv( lhs, val );   // this is now switched off
-	  l.log( "SET "+lhs+" to "+val ); // see above
-	  */
-	  // functionality is now:
-	  // set filename:new_name
-	  //     ^parameter
+	  if ( rhs.substr(0, 1) == "$" ) {
+	    rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
+	  }
 	  c.add_kv( lhs, rhs );
 	  l.log( "SET "+lhs+" to "+rhs );
 	}
