@@ -1,0 +1,12 @@
+msg: 
+msg: Script to generate "poetry"
+msg: ---------------------------
+#
+run: window_s
+#
+params: timbl:-a1 +D
+run: make_ibase
+#
+params: len:10
+params: n:10
+run: generate

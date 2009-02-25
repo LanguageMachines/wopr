@@ -113,9 +113,11 @@ int generate( Logfile& l, Config& c ) {
     if ( start == "" ) { // or less words than ws!
       for ( int i = 0; i < ws; i++ ) {
 	a_line = a_line + "_ "; // could pick a random something
-      }    
+      }
+      result = start;
+    } else{
+      result = start + " ";
     }
-    result = start;
     int s_len = len;
     int no_choice = 0;
     int total_choices = 0;
@@ -151,11 +153,12 @@ int generate( Logfile& l, Config& c ) {
       double      wght = it->second->Weight();
       answer = tvs;
       
-      result = result + " " + answer;
+      result = result + answer;
       if ( show_counts && ( cnt > 1 )) { // Show if more than one choice
 	result = result + "("+to_str(cnt)+")";
       }
-      
+      result = result + " ";
+
       // shift/add/repeat
       //
       copy( words.begin()+1, words.end(), words.begin() );
@@ -175,7 +178,9 @@ int generate( Logfile& l, Config& c ) {
     
     //l.log( result );
     file_out << result;
-    file_out << " " << no_choice << " " << total_choices;
+    if ( show_counts) {
+      file_out << " " << no_choice << " " << total_choices;
+    }
     file_out << std::endl;
   }
   file_out.close();
