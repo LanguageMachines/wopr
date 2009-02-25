@@ -43,6 +43,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/stat.h> 
 
 #include "qlog.h"
 #include "util.h"
@@ -182,6 +183,13 @@ int make_ibase( Logfile& l, Config& c ) {
   const std::string& timbl =  c.get_value("timbl");
   const std::string& filename = c.get_value( "filename" );
   const std::string& ibase_filename = filename + ".ibase";
+
+  if ( file_exists(l, c, ibase_filename) ) {
+    l.log( "IBASE exists, not overwriting." );
+    c.add_kv( "ibasefile", ibase_filename );
+    l.log( "SET ibasefile to "+ibase_filename );
+    return 0;
+  }
 
   l.inc_prefix();
   l.log( "timbl:     "+timbl );
@@ -623,6 +631,13 @@ int window_s( Logfile& l, Config& c ) {
   std::string        pre_s           = c.get_value( "pre_s", "" );
   std::string        suf_s           = c.get_value( "suf_s", "" );
   int                skip            = 0;
+
+  if ( file_exists( l, c, output_filename ) ) {
+    l.log( "DATASET exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
 
   // If we specify a sentence begin marker, we skip the "_ _ .." patterns with
   // skip (duh).
@@ -3373,4 +3388,22 @@ int read_classifiers_from_file( std::ifstream& file,
   }
   
   return 0;
+}
+
+bool file_exists( Logfile& l, Config& c, const std::string& fn ) {
+  struct stat file_info;
+  int stat_res; 
+
+  // We check if overwrite is "on", then we just return false.
+  //
+  if ( c.get_value( "overwrite", "0" ) == "1" ) {
+    return false;
+  }
+
+  stat_res = stat( fn.c_str(), &file_info );
+  if( stat_res == 0 ) {
+    return true;
+  }
+
+  return false;
 }
