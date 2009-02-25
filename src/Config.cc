@@ -105,7 +105,13 @@ void Config::process_line( const std::string& a_line ) {
     if ( (lhs == "") || (rhs == "") ) {
       return;
     }
-    add_kv( lhs, rhs );
+    //
+    // Add only if it doesn't exist. This way, we can override
+    // parameters in scripts on the command line.
+    //
+    if ( get_value( lhs, "__NO__" ) == "__NO__" ) {
+      add_kv( lhs, rhs );
+    }
   }
 }
 
