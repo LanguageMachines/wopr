@@ -303,9 +303,16 @@ int script(Logfile& l, Config& c)  {
 	if ( pos != std::string::npos ) {
 	  std::string lhs = trim(kv.substr( 0, pos ));
 	  std::string rhs = trim(kv.substr( pos+1 ));
-	  std::string val = c.get_value( rhs );
-	  c.add_kv( lhs, val );
-	  l.log( "SET "+lhs+" to "+val );
+	  std::string val = c.get_value( rhs ); // get value of a parameter
+	  /*
+	  c.add_kv( lhs, val );   // this is now switched off
+	  l.log( "SET "+lhs+" to "+val ); // see above
+	  */
+	  // functionality is now:
+	  // set filename:new_name
+	  //     ^parameter
+	  c.add_kv( lhs, rhs );
+	  l.log( "SET "+lhs+" to "+rhs );
 	}
       }
     }
