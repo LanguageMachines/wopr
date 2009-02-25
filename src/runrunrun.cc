@@ -415,6 +415,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &correct;
   } else if ( a_fname == "generate" ) {
     return &generate;
+  } else if ( a_fname == "generate_server" ) {
+    return &generate_server;
   }
   return &tst;
 }

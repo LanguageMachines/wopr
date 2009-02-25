@@ -24,6 +24,16 @@
 #ifndef _GENERATOR_H
 #define _GENERATOR_H
 
+#ifdef TIMBL
+# include "timbl/TimblAPI.h"
+#endif
+
 int generate( Logfile&, Config& );
+
+#ifdef TIMBL
+std::string generate_one( Config&, std::string&, int, int, Timbl::TimblAPI* );
+#endif
+
+int generate_server( Logfile&, Config& );
 
 #endif
