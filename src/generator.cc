@@ -282,6 +282,75 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
   return result;
   
 }
+
+// returns one sentence of length len.
+//
+std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
+			  std::string end,
+			  Timbl::TimblAPI* My_Experiment ) {
+
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  std::vector<std::string> words;
+  Timbl::ValueDistribution::dist_iterator it;
+  int cnt;
+
+  MTRand mtrand;
+
+  words.clear();
+  Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
+
+  std::string result = "<sentence>";
+  int idx = 0;
+
+  while ( --len >= 0 ) {
+    a_line = a_line + " _";
+    tv = My_Experiment->Classify( a_line, vd );
+    std::string answer = "";// tv->Name();
+    cnt = vd->size();
+    
+    int rnd_idx = mtrand.randInt() % cnt;
+    
+    // Take (top) answer, or choose something from the
+    // distribution.
+    //
+    it = vd->begin();
+    for ( int i = 0; i < rnd_idx; i++ ) {
+      std::string tvs  = it->second->Value()->Name();
+      ++it;
+    }
+    std::string tvs  = it->second->Value()->Name();
+    double      wght = it->second->Weight();
+    answer = tvs;
+    
+    result = result + "<word id=\""+to_str(idx)+"\" cnt=\""+to_str(cnt)+"\">";
+    result = result + "<![CDATA[" + answer + "]]>";
+    result = result + "</word>\n";
+
+    ++idx,
+
+    // shift/add/repeat
+    //
+    copy( words.begin()+1, words.end(), words.begin() );
+    words.at(ws-1) = answer;
+    
+    a_line = "";
+    for ( int i = 0; i < ws; i++ ) {
+      a_line = a_line + words[i] + " ";
+    }  
+
+    std::string::size_type pos = end.find( answer, 0 );
+    if ( pos != std::string::npos ) {
+      len = 0;
+    }
+    
+  }
+
+  result = result + "</sentence>";
+
+  return result;  
+}
 #endif
 
 
@@ -426,15 +495,29 @@ int generate_server( Logfile& l, Config& c ) {
 	  
 	  // Make a function out of this.
 	  //
-	  std::string foo = generate_one( c, a_line, len, ws, end, My_Experiment );
+	  std::string foo = generate_xml( c, a_line, len, ws, end, My_Experiment );
 	  // We should add foo to start if we want to use start...
 	  if ( start != "" ) {
-	    foo = start + " " + foo;
+	    foo = start + " " + foo; // Must be in XML format!
 	  }
-	  foo = "<data><![CDATA[" + foo + "]]></data>";
+	  //foo = "<data><![CDATA[" + foo + "]]></data>";
 	  if ( send( new_fd, foo.c_str(), foo.length(), 0 ) == -1 ) {
 	    perror("send");
 	  }
+	  
+	  /*
+	    better to tokenize foo, and make this:
+	    <sentence id=".."><word cnt="" txt="word" idx=".." /></sentence>
+	    So we can have stats &c.
+	  */
+	  /*
+	  std::vector<std::string> words;
+	  Tokenize( foo, words, " " );
+	  std::string output = "<sentence>";
+	  for ( int i = 0; i < words.length(); i++ ) {
+	    output = output + "<word ";
+	  }
+	  */
 	  
 	} // --n
 	l.log( "ready." );

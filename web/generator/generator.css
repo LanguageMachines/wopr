@@ -26,6 +26,13 @@ h1 {
   line-height: 200%;
 }
 
+.plain {
+    
+}
+.nochoice {
+    color: #6b7b95; /*#a87aad;*/ /*#78ba91;good*/ /*#c17878;*/
+}
+
 a {
   text-decoration: none;
   color: #f69028;

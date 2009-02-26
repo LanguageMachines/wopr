@@ -11,16 +11,27 @@ function generate_one() {
 	ans = responseXML;
 
 	if ( ! ans ) {
-	  var parser = new DOMParser();
-	  var str = "<response><data>Server not running.</data></response>";
-	  ans = parser.parseFromString(str,'text/xml');
+	  //
 	}
 	
 	var new_html = "";
-	var items = ans.documentElement.getElementsByTagName("data");
-	for (var i = 0; i < items.length; i++) {
-	  var data = items[i].childNodes[0].nodeValue;
-	  new_html = new_html + data + "<br />";
+	var sentences = ans.documentElement.getElementsByTagName("sentence");
+	for (var s = 0; s < sentences.length; s++) {
+	  var words = sentences[s].getElementsByTagName("word");
+	  new_html = new_html + "&nbsp;&nbsp;&nbsp;&nbsp;";
+	  for ( var w = 0; w < words.length; w++ ) {
+	    var word = words[w].childNodes[0].nodeValue;
+	    var idx  = words[w].getAttribute("idx");
+	    var cnt  = words[w].getAttribute("cnt");
+	    var class = "plain";
+	    if ( cnt == 1 ) {
+	      class = "nochoice";
+	    }
+	    new_html = new_html + "<span class=\""+class+"\">";
+	    new_html = new_html + word;
+	    new_html = new_html + "</span> ";
+	  }
+	  new_html = new_html + "<br />";
 	}
 	output_el.set('html', new_html);
       },
