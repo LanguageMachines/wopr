@@ -1,0 +1,41 @@
+body {
+	margin: 0;
+	padding: 0;
+	font: 14px "Lucida Grande", "Arial", "Helvetica", "Verdana", "sans-serif";
+	background: #1d1d20;
+	color: #b3b3bb;
+}
+
+h1 {
+  font: 2em Sans-Serif;
+  color: #f69028;
+}
+
+#page {
+  margin-left: 40px;
+  margin-right: 40px;
+  border: 0px solid #F69028;
+  height: 100%;
+}
+
+#container1 {
+  margin-top: 40px;
+}
+
+#output {
+  line-height: 200%;
+}
+
+a {
+  text-decoration: none;
+  color: #f69028;
+}
+a:hover, a:active {
+  text-decoration: underline;
+  color: #f69028;
+}
+a:link, a:visited {
+  text-decoration: underline;
+  color: #f69028;
+}
+

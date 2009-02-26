@@ -25,8 +25,28 @@
 #include "server.h"
 #include "generator.h"
 
-//man 3 rand
-//#include <openssl/rand.h>
+#include "MersenneTwister.h"
+
+// Socket stuff
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+#define BACKLOG 5     // how many pending connections queue will hold
+#define MAXDATASIZE 2048 // max number of bytes we can get at once 
+
+void sigchld_handler_gen( int s ) {
+  while(waitpid(-1, NULL, WNOHANG) > 0);
+}
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -107,8 +127,7 @@ int generate( Logfile& l, Config& c ) {
   int cnt;
   int distr_count;
 
-  // srand and rand() for debian?!
-  srandom( (unsigned)now() ); 
+  MTRand mtrand;
 
   while ( --n >= 0 ) {
     a_line = start;
@@ -145,7 +164,7 @@ int generate( Logfile& l, Config& c ) {
       }
       total_choices += cnt;
 
-      int rnd_idx = random() % cnt;
+      int rnd_idx = mtrand.randInt() % cnt;
       //l.log( to_str(rnd_idx)+"/"+to_str(cnt) );
       
       // Take (top) answer, or choose something from the
@@ -205,6 +224,7 @@ int generate( Logfile& l, Config& c ) {
 // returns one sentence of length len.
 //
 std::string generate_one( Config& c, std::string& a_line, int len, int ws,
+			  std::string end,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   std::string result = "";
@@ -215,6 +235,8 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
   Timbl::ValueDistribution::dist_iterator it;
   int cnt;
 
+  MTRand mtrand;
+
   words.clear();
   Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
 
@@ -224,7 +246,7 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
     std::string answer = "";// tv->Name();
     cnt = vd->size();
     
-    int rnd_idx = random() % cnt;
+    int rnd_idx = mtrand.randInt() % cnt;
     
     // Take (top) answer, or choose something from the
     // distribution.
@@ -249,6 +271,12 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
     for ( int i = 0; i < ws; i++ ) {
       a_line = a_line + words[i] + " ";
     }  
+
+    std::string::size_type pos = end.find( answer, 0 );
+    if ( pos != std::string::npos ) {
+      len = 0;
+    }
+    
   }
 
   return result;
@@ -262,10 +290,11 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
 //
 int generate_server( Logfile& l, Config& c ) {
   l.log( "generate_server" );
+  const int port = stoi( c.get_value( "port", "1988" ));
   const std::string& start            = c.get_value( "start", "" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
-  const std::string& end              = c.get_value( "end", " " );
+  const std::string& end              = c.get_value( "end", "" );
   int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
   int                len              = stoi( c.get_value( "len", "50" ) );
@@ -273,6 +302,7 @@ int generate_server( Logfile& l, Config& c ) {
   Timbl::TimblAPI   *My_Experiment;
 
   l.inc_prefix();
+  l.log( "port:       "+to_str(port) );
   l.log( "ibasefile:  "+ibasefile );
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
@@ -299,30 +329,122 @@ int generate_server( Logfile& l, Config& c ) {
   }
   l.log( "Instance base loaded." );
 
+  // ----
+  int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
+  struct sockaddr_in my_addr;    // my address information
+  struct sockaddr_in their_addr; // connector's address information
+  socklen_t sin_size;
+  struct sigaction sa;
+  int yes=1;
+  int numbytes;  
+  char buf[MAXDATASIZE];
+  
+  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    perror("socket");
+    exit(1);
+  }
+  
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+    perror("setsockopt");
+    exit(1);
+  }
+  
+  int ka = 1;
+  if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &ka, sizeof(int)) == -1 ) {
+    perror("setsockopt");
+    exit(1);
+  }
+  
+  my_addr.sin_family = AF_INET;         // host byte order
+  my_addr.sin_port = htons(port);       // short, network byte order
+  my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
+  memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
+  
+  if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof my_addr) == -1) {
+    perror("bind");
+    exit(1);
+  }
+  
+  if (listen(sockfd, BACKLOG) == -1) {
+    perror("listen");
+    exit(1);
+  }
+  
+  sa.sa_handler = sigchld_handler_gen; // reap all dead processes
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+  if ( sigaction( SIGCHLD, &sa, NULL ) == -1 ) {
+    perror( "sigaction" );
+    exit( 1 );
+  }
+  // ----
+
   std::string a_line;
   std::string result;
 
-  // srand and rand() for debian?!
-  srandom( (unsigned)now() ); 
-
-  while ( --n >= 0 ) {
-    a_line = start;
-    if ( start == "" ) { // or less words than ws!
-      for ( int i = 0; i < ws; i++ ) {
-	a_line = a_line + "_ "; // could pick a random something?
-      }
-    }
-
-    // Make a function out of this.
-    //
-    std::string foo = generate_one( c, a_line, len, ws, My_Experiment );
-    // We should add foo to start if we want to use start...
-    if ( start != "" ) {
-      foo = start + " " + foo;
-    }
-    l.log( foo );
+  while ( true ) {  // main accept() loop
+    sin_size = sizeof their_addr;
     
-  }
+    if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
+			 &sin_size)) == -1) {
+      perror("accept");
+      continue;
+    }
+    l.log( "Connection from: " +std::string(inet_ntoa(their_addr.sin_addr)));
+
+    if ( ! fork() ) { // this is the child process
+      close(sockfd); // child doesn't need the listener.	
+      
+      // we close after one generation, but we could wait for more
+      // input on this socket if we don't just set con_open to
+      // false when ready.
+      //
+      bool connection_open = true;
+      while ( connection_open ) {
+	
+	if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
+	  perror("recv");
+	  exit(1);
+	}
+	buf[numbytes] = '\0';
+
+	std::string tmp_buf = str_clean( buf );
+	tmp_buf = trim( tmp_buf, " \n\r" );
+	
+	if ( tmp_buf == "_CLOSE_" ) {
+	  connection_open = false;// no use, we are in child...
+	  continue;
+	}
+	
+	while ( --n >= 0 ) {
+	  a_line = start;
+	  if ( start == "" ) { // or less words than ws!
+	    for ( int i = 0; i < ws; i++ ) {
+	      a_line = a_line + "_ "; // could pick a random something?
+	    }
+	  }
+	  
+	  // Make a function out of this.
+	  //
+	  std::string foo = generate_one( c, a_line, len, ws, end, My_Experiment );
+	  // We should add foo to start if we want to use start...
+	  if ( start != "" ) {
+	    foo = start + " " + foo;
+	  }
+	  foo = "<data><![CDATA[" + foo + "]]></data>";
+	  if ( send( new_fd, foo.c_str(), foo.length(), 0 ) == -1 ) {
+	    perror("send");
+	  }
+	  
+	} // --n
+	l.log( "ready." );
+	connection_open = false;
+      } // con open
+      exit(0);
+    } // fork
+    close( new_fd );  
+    
+  } // while true
 
   return 0;
 }  

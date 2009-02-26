@@ -31,7 +31,7 @@
 int generate( Logfile&, Config& );
 
 #ifdef TIMBL
-std::string generate_one( Config&, std::string&, int, int, Timbl::TimblAPI* );
+std::string generate_one( Config&, std::string&, int, int, std::string, Timbl::TimblAPI* );
 #endif
 
 int generate_server( Logfile&, Config& );

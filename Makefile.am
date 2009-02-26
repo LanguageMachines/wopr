@@ -26,7 +26,8 @@ wopr_SOURCES = \
 	src/levenshtein.cc \
 	src/levenshtein.h \
 	src/generator.h \
-	src/generator.cc
+	src/generator.cc \
+	src/MersenneTwister.h
 
 woprsm_SOURCES = \
 	src/woprsm.cc
@@ -37,14 +38,12 @@ EXTRA_DIST = \
 	$(man_MANS) \
 	etc/nscript \
 	etc/nscript1 \
-	bootstrap.sh
-#	m4/check_symbol.m4 \
-#	scripts/gen_otp.pl \
-#	scripts/info.sh \
-#	scripts/log.sh \
-#	scripts/quit.sh \
-#	scripts/remove.pl \
-#	scripts/start.sh \
-#	scripts/status.sh \
-#	scripts/stop.sh
+	etc/generator.script \
+	bootstrap.sh \
+	web/generator/generator.css \
+	web/generator/generator.php \
+	web/generator/generator.script \
+	web/generator/index.html \
+	web/generator/js/generator.js \
+	web/generator/js/mootools-1.2.1-core.js
 
