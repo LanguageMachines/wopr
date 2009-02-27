@@ -11,7 +11,8 @@ function generate_one() {
 	ans = responseXML;
 
 	if ( ! ans ) {
-	  //
+	  output_el.set('html', "Server is not running...");
+	  return;
 	}
 	
 	var new_html = "";
@@ -23,11 +24,11 @@ function generate_one() {
 	    var word = words[w].childNodes[0].nodeValue;
 	    var idx  = words[w].getAttribute("idx");
 	    var cnt  = words[w].getAttribute("cnt");
-	    var class = "plain";
+	    var klass = "plain";
 	    if ( cnt == 1 ) {
-	      class = "nochoice";
+	      klass = "nochoice";
 	    }
-	    new_html = new_html + "<span class=\""+class+"\">";
+	    new_html = new_html + "<span class=\""+klass+"\">";
 	    new_html = new_html + word;
 	    new_html = new_html + "</span> ";
 	  }
