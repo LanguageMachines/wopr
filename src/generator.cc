@@ -164,7 +164,7 @@ int generate( Logfile& l, Config& c ) {
       }
       total_choices += cnt;
 
-      int rnd_idx = mtrand.randInt() % cnt;
+      int rnd_idx = mtrand.randInt( cnt-1 ); // % 3; // Extra "% max" ?
       //l.log( to_str(rnd_idx)+"/"+to_str(cnt) );
       
       // Take (top) answer, or choose something from the
@@ -246,7 +246,7 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
     std::string answer = "";// tv->Name();
     cnt = vd->size();
     
-    int rnd_idx = mtrand.randInt() % cnt;
+    int rnd_idx = mtrand.randInt( cnt -1 );
     
     // Take (top) answer, or choose something from the
     // distribution.
@@ -311,7 +311,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     cnt = vd->size();
     int distr_count = vd->totalSize();
 
-    int rnd_idx = mtrand.randInt() % cnt;
+    int rnd_idx = mtrand.randInt( cnt-1 ); //  % 3;
     
     // Take (top) answer, or choose something from the
     // distribution.
