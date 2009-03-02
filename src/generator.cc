@@ -309,7 +309,8 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = "";// tv->Name();
     cnt = vd->size();
-    
+    int distr_count = vd->totalSize();
+
     int rnd_idx = mtrand.randInt() % cnt;
     
     // Take (top) answer, or choose something from the
@@ -324,7 +325,8 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     double      wght = it->second->Weight();
     answer = tvs;
     
-    result = result + "<word id=\""+to_str(idx)+"\" cnt=\""+to_str(cnt)+"\">";
+    result = result + "<word id=\""+to_str(idx)+"\" cnt=\""+to_str(cnt)+"\""
+      + " freq=\""+to_str(wght)+"\" sumfreq=\""+to_str(distr_count)+"\">";
     result = result + "<![CDATA[" + answer + "]]>";
     result = result + "</word>\n";
 
@@ -494,8 +496,6 @@ int generate_server( Logfile& l, Config& c ) {
 	    }
 	  }
 	  
-	  // Make a function out of this.
-	  //
 	  std::string foo = generate_xml( c, a_line, len, ws, end, My_Experiment );
 	  // We should add foo to start if we want to use start...
 	  if ( start != "" ) {
