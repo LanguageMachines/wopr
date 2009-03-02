@@ -471,6 +471,7 @@ int generate_server( Logfile& l, Config& c ) {
       bool connection_open = true;
       while ( connection_open ) {
 	
+	// we should read until ready...
 	if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
 	  perror("recv");
 	  exit(1);

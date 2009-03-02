@@ -37,7 +37,7 @@ function generate_one() {
 	output_el.set('html', new_html);
       },
 	onFailure:function(responseText, responseXML) {
-	alert("Error.");
+	output_el.set('html', "Error, cannot get a result from server...");
       }
     });
   
