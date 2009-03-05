@@ -2754,8 +2754,10 @@ int pplx_simple( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
+  int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".px";
+  std::string        output_filename1 = filename + ".pxs";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
@@ -2772,9 +2774,11 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
+  l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "OUTPUT:     "+output_filename );
+  l.log( "OUTPUT:     "+output_filename1 );
   l.dec_prefix();
 
   std::ifstream file_in( filename.c_str() );
@@ -2784,7 +2788,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   }
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write output file." );
+    l.log( "ERROR: cannot write output file." ); // for px
+    return -1;
+  }
+  std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." ); // for pxs
     return -1;
   }
 
@@ -2815,6 +2824,15 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
   
+
+  // Beginning of sentence marker.
+  // Maybe should just be a parameter...
+  //
+  std::string bos = "";
+  for ( int i = 0; i < ws; i++ ) {
+    bos = bos + "_ ";
+  }
+
   // If we want smoothed counts, we need this file...
   // Make mapping <int, double> from c to c* ?
   //
@@ -2872,6 +2890,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
+  std::vector<double> w_lprobs;
   int correct = 0;
   int wrong   = 0;
   int correct_unknown = 0;
@@ -2884,6 +2903,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   double sentence_prob      = 0.0;
   double sum_logprob        = 0.0;
   int    sentence_wordcount = 0;
+  int    sentence_count     = 0;
   
   while( std::getline( file_in, a_line )) {
 
@@ -2900,6 +2920,32 @@ int pplx_simple( Logfile& l, Config& c ) {
       Tokenize( a_line, words, '\t' );
     }
     std::string target = words.at( words.size()-1 );
+
+    // Check if "bos" here.
+    //
+    if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount> 0) ) {
+      double foo  = sum_logprob / (double)sentence_wordcount; // avg entropy
+      double pplx = pow( 2, -foo ); 
+      file_out1 << sentence_count << ", "
+		<< sentence_wordcount << ", "
+		<< sum_logprob << ", "
+		<< pplx << ", "; //std::endl;
+
+      std::vector<double>::iterator vi;
+      vi = w_lprobs.begin();
+      file_out1 << " [ ";
+      while ( vi != w_lprobs.end() ) {
+	file_out1 << *vi << ' ';
+	vi++;
+      }
+      file_out1 << "]";
+
+      file_out1 << std::endl;
+      sum_logprob = 0.0;
+      sentence_wordcount = 0;
+      ++sentence_count;
+      w_lprobs.clear();
+    }
 
     ++sentence_wordcount;
 
@@ -2937,6 +2983,8 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     //l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
+    // Statistics to be printed at the end. Not so very usefull.
+    //
     if ( target == answer ) {
       ++correct;
       correct_answer = true;
@@ -3014,12 +3062,17 @@ int pplx_simple( Logfile& l, Config& c ) {
 	info = "P(new_particular)";
       }
     }
+
+    // Add up.
+    //
     sum_logprob += logprob;
 
     // Word logprob (ref. Antal's mail 21/11/08)
     // 2 ^ (-logprob(w)) 
     //
     double word_lp = pow( 2, -logprob );
+
+    w_lprobs.push_back( word_lp );
 
     // What do we want in the output file? Write the pattern and answer,
     // the logprob, followed by the entropy (of distr.), the size of the
@@ -3047,26 +3100,32 @@ int pplx_simple( Logfile& l, Config& c ) {
     // End of sentence (sort of)
     //
     if ( target == "</s>" ) {
-      l.log( " sum_logprob = " + to_str( sum_logprob) );
-      l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
       double pplx = pow( 2, -foo ); 
-      l.log( " pplx = " + to_str( pplx ) );
+      file_out1 << sentence_count << ", "
+		<< sentence_wordcount << ", "
+		<< sum_logprob << ", "
+		<< pplx << std::endl;
       sum_logprob = 0.0;
       sentence_wordcount = 0;
-      l.log( "--" );
+      ++sentence_count;
     }
 
   } // while getline()
 
-  if ( sentence_wordcount > 0 ) { // Overgebleven zooi (of alles).
-    l.log( "sum_logprob = " + to_str( sum_logprob) );
-    l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
+  if ( sentence_wordcount > 0 ) { // Left over (or all)
+    //l.log( "sum_logprob = " + to_str( sum_logprob) );
+    //l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
     double foo  = sum_logprob / (double)sentence_wordcount;
     double pplx = pow( 2, -foo ); 
-    l.log( "pplx = " + to_str( pplx ) );
+    //l.log( "pplx = " + to_str( pplx ) );
+    file_out1 << sentence_count << ", "
+	      << sentence_wordcount << ", "
+	      << sum_logprob << ", "
+	      << pplx << std::endl;
   }
 
+  file_out1.close();
   file_out.close();
   file_in.close();
 
