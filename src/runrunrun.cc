@@ -2941,18 +2941,23 @@ int pplx_simple( Logfile& l, Config& c ) {
 		<< avg_wlp << " ";
 
       double sum_avg_diff = 0;
+      std::string tmp_output;
       std::vector<double>::iterator vi;
       vi = w_pplx.begin();
-      file_out1 << "[ ";
+      //file_out1 << "[ ";
+      tmp_output = " [ ";
       while ( vi != w_pplx.end() ) {
-	file_out1 << *vi << ' ';
+	//file_out1 << *vi << ' ';
+	tmp_output = tmp_output + to_str(*vi) + " ";
 	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
 	vi++;
       }
-      file_out1 << "] ";
+      tmp_output += "]";
+      //file_out1 << "] ";
 
       double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
-      file_out1 << std_dev;
+      //file_out1 << std_dev;
+      file_out1 << std_dev << tmp_output;
       file_out1 << std::endl;
       sum_logprob = 0.0;
       sentence_wordcount = 0;
@@ -3125,18 +3130,23 @@ int pplx_simple( Logfile& l, Config& c ) {
 		<< avg_wlp << " ";
 
       double sum_avg_diff = 0;
+      std::string tmp_output;
       std::vector<double>::iterator vi;
       vi = w_pplx.begin();
-      file_out1 << "[ ";
+      //file_out1 << "[ ";
+      tmp_output = " [ ";
       while ( vi != w_pplx.end() ) {
-	file_out1 << *vi << ' ';
+	//file_out1 << *vi << ' ';
+	tmp_output = tmp_output + to_str(*vi) + " ";
 	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
 	vi++;
       }
-      file_out1 << "] ";
+      tmp_output += "]";
+      //file_out1 << "] ";
 
       double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
-      file_out1 << std_dev;
+      //file_out1 << std_dev;
+      file_out1 << std_dev << tmp_output;
       file_out1 << std::endl;
       sum_logprob = 0.0;
       sentence_wordcount = 0;
@@ -3157,19 +3167,28 @@ int pplx_simple( Logfile& l, Config& c ) {
 		<< avg_wlp << " ";
 
       double sum_avg_diff = 0;
+      std::string tmp_output;
       std::vector<double>::iterator vi;
       vi = w_pplx.begin();
-      file_out1 << "[ ";
+      //file_out1 << "[ ";
+      tmp_output = " [ ";
       while ( vi != w_pplx.end() ) {
-	file_out1 << *vi << ' ';
+	//file_out1 << *vi << ' ';
+	tmp_output = tmp_output + to_str(*vi) + " ";
 	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
 	vi++;
       }
-      file_out1 << "] ";
+      tmp_output += "]";
+      //file_out1 << "] ";
 
       double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
-      file_out1 << std_dev;
+      //file_out1 << std_dev;
+      file_out1 << std_dev << tmp_output;
       file_out1 << std::endl;
+      sum_logprob = 0.0;
+      sentence_wordcount = 0;
+      ++sentence_count;
+      w_pplx.clear();
   }
 
   file_out1.close();
