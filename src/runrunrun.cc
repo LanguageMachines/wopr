@@ -2791,11 +2791,14 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write output file." ); // for px
     return -1;
   }
+  file_out << "# instance+target classification logprob entropy word_lp (dist.cnt [topn])" << std::endl;
+
   std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
-  if ( ! file_out ) {
+  if ( ! file_out1 ) {
     l.log( "ERROR: cannot write output file." ); // for pxs
     return -1;
   }
+  file_out1 << "# nr. #words sum(logprob) avg.pplx avg.wordlp [wordlp(each word)] std.dev(wordlp)" << std::endl;
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
@@ -2890,7 +2893,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
-  std::vector<double> w_lprobs;
+  std::vector<double> w_pplx;
   int correct = 0;
   int wrong   = 0;
   int correct_unknown = 0;
@@ -2902,6 +2905,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   double sentence_prob      = 0.0;
   double sum_logprob        = 0.0;
+  double sum_wlp            = 0.0; // word level pplx
   int    sentence_wordcount = 0;
   int    sentence_count     = 0;
   
@@ -2921,30 +2925,39 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     std::string target = words.at( words.size()-1 );
 
-    // Check if "bos" here.
+    // Check if "bos" here. If so, we need to calculate some
+    // averages, and reset the sum/counting variables.
+    //
+    // We also need this at the end of the loop!
     //
     if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount> 0) ) {
-      double foo  = sum_logprob / (double)sentence_wordcount; // avg entropy
-      double pplx = pow( 2, -foo ); 
-      file_out1 << sentence_count << ", "
-		<< sentence_wordcount << ", "
-		<< sum_logprob << ", "
-		<< pplx << ", "; //std::endl;
+      double avg_ent  = sum_logprob / (double)sentence_wordcount;
+      double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
+      double avg_pplx = pow( 2, -avg_ent ); 
+      file_out1 << sentence_count << " "
+		<< sentence_wordcount << " "
+		<< sum_logprob << " "
+		<< avg_pplx << " "
+		<< avg_wlp << " ";
 
+      double sum_avg_diff = 0;
       std::vector<double>::iterator vi;
-      vi = w_lprobs.begin();
-      file_out1 << " [ ";
-      while ( vi != w_lprobs.end() ) {
+      vi = w_pplx.begin();
+      file_out1 << "[ ";
+      while ( vi != w_pplx.end() ) {
 	file_out1 << *vi << ' ';
+	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
 	vi++;
       }
-      file_out1 << "]";
+      file_out1 << "] ";
 
+      double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
+      file_out1 << std_dev;
       file_out1 << std::endl;
       sum_logprob = 0.0;
       sentence_wordcount = 0;
       ++sentence_count;
-      w_lprobs.clear();
+      w_pplx.clear();
     }
 
     ++sentence_wordcount;
@@ -3037,46 +3050,48 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
 
       ++it;
-    }
+    } // end loop distribution
     target_distprob = (double)target_freq / (double)distr_count;
 
     // If correct: if target in distr, we take that prob, else
     // the lexical prob.
     // Unknown words?
     //
-    double logprob = 0.0;
+    double w_prob  = 0.0;
     std::string info = "huh?";
     if ( target_freq > 0 ) { // Right answer was in distr.
-      logprob = log2( target_distprob );
+      w_prob = target_distprob;
       info = "target_distprob";
     } else {
       if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-	logprob = log2( target_lexprob ); // SMOOTHED here, see above
+	w_prob = target_lexprob;
 	info = "target_lexprob";
       } else {
 	//
 	// What to do here? We have an 'unknown' target, i.e. not in the
 	// lexicon.
 	//
-	logprob = log2( p0 /*0.0001*/ );
+	w_prob = p0;
 	info = "P(new_particular)";
       }
     }
 
-    // Add up.
+    // (ref. Antal's mail 21/11/08)
+    // word level pplx: 2 ^ (-logprob(w)) 
     //
-    sum_logprob += logprob;
-
-    // Word logprob (ref. Antal's mail 21/11/08)
-    // 2 ^ (-logprob(w)) 
+    // What we want: average word_lp and standard dev.
     //
+    double logprob = log2( w_prob );
     double word_lp = pow( 2, -logprob );
-
-    w_lprobs.push_back( word_lp );
+    sum_logprob += logprob;
+    sum_wlp     += word_lp;
+    w_pplx.push_back( word_lp );
 
     // What do we want in the output file? Write the pattern and answer,
     // the logprob, followed by the entropy (of distr.), the size of the
     // distribution returned, and the top-10 (or less) of the distribution.
+    //
+    // #instance+target classification logprob entropy word_lp (dist.cnt [topn])
     //
     file_out << a_line << ' ' << answer << ' '
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
@@ -3100,29 +3115,61 @@ int pplx_simple( Logfile& l, Config& c ) {
     // End of sentence (sort of)
     //
     if ( target == "</s>" ) {
-      double foo  = sum_logprob / (double)sentence_wordcount;
-      double pplx = pow( 2, -foo ); 
-      file_out1 << sentence_count << ", "
-		<< sentence_wordcount << ", "
-		<< sum_logprob << ", "
-		<< pplx << std::endl;
+      double avg_ent  = sum_logprob / (double)sentence_wordcount;
+      double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
+      double avg_pplx = pow( 2, -avg_ent ); 
+      file_out1 << sentence_count << " "
+		<< sentence_wordcount << " "
+		<< sum_logprob << " "
+		<< avg_pplx << " "
+		<< avg_wlp << " ";
+
+      double sum_avg_diff = 0;
+      std::vector<double>::iterator vi;
+      vi = w_pplx.begin();
+      file_out1 << "[ ";
+      while ( vi != w_pplx.end() ) {
+	file_out1 << *vi << ' ';
+	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
+	vi++;
+      }
+      file_out1 << "] ";
+
+      double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
+      file_out1 << std_dev;
+      file_out1 << std::endl;
       sum_logprob = 0.0;
       sentence_wordcount = 0;
       ++sentence_count;
+      w_pplx.clear();
     }
 
   } // while getline()
 
   if ( sentence_wordcount > 0 ) { // Left over (or all)
-    //l.log( "sum_logprob = " + to_str( sum_logprob) );
-    //l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
-    double foo  = sum_logprob / (double)sentence_wordcount;
-    double pplx = pow( 2, -foo ); 
-    //l.log( "pplx = " + to_str( pplx ) );
-    file_out1 << sentence_count << ", "
-	      << sentence_wordcount << ", "
-	      << sum_logprob << ", "
-	      << pplx << std::endl;
+      double avg_ent  = sum_logprob / (double)sentence_wordcount;
+      double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
+      double avg_pplx = pow( 2, -avg_ent ); 
+      file_out1 << sentence_count << " "
+		<< sentence_wordcount << " "
+		<< sum_logprob << " "
+		<< avg_pplx << " "
+		<< avg_wlp << " ";
+
+      double sum_avg_diff = 0;
+      std::vector<double>::iterator vi;
+      vi = w_pplx.begin();
+      file_out1 << "[ ";
+      while ( vi != w_pplx.end() ) {
+	file_out1 << *vi << ' ';
+	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
+	vi++;
+      }
+      file_out1 << "] ";
+
+      double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
+      file_out1 << std_dev;
+      file_out1 << std::endl;
   }
 
   file_out1.close();
