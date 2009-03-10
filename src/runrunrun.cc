@@ -2798,7 +2798,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write output file." ); // for pxs
     return -1;
   }
-  file_out1 << "# nr. #words sum(logprob) avg.pplx avg.wordlp [wordlp(each word)] std.dev(wordlp)" << std::endl;
+  file_out1 << "# nr. #words sum(logprob) avg.pplx avg.wordlp std.dev(wordlp) [wordlp(each word)]" << std::endl;
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
