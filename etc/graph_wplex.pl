@@ -30,9 +30,11 @@ my $ws         = $opt_w ||  3;
 my $div  = "_ _ _ _ _ _ _ _ _ _";
 my $wcnt =  0;
 my $scnt = -1;
-my $outfile   = sprintf( $basename.".txt", $scnt );
-my $plotfile  = sprintf( $basename.".plot", $scnt );
-my $plotfname = sprintf( $basename.".svg", $scnt );
+my $outfile      = sprintf( $basename.".txt", $scnt );
+my $plotfile     = sprintf( $basename.".plot", $scnt );
+my $plotfname    = sprintf( $basename.".svg", $scnt );
+my $xtics_font   = "set xtics font \"Arial, 8\"";
+my $xtics_offset = "set xtics offset character -0.8, 0";
 my $wrds = "";
 my $xtcs = "";
 #my $eos_mode = 1; #end of sentence mode (0 = "_ _ _")
@@ -61,6 +63,8 @@ while ( my $line = <FH> ) {
     print PFH "set xlabel 'word #'\n";
     print PFH "set xtics 1,1 rotate by -90\n";
     chop $xtcs;
+    print PFH "$xtics_font\n";
+    print PFH "$xtics_offset\n";
     print PFH "set xtics (".$xtcs.")\n";
     print PFH "set logscale y\n";
     print PFH "set yrange []\n";
@@ -105,7 +109,7 @@ while ( my $line = <FH> ) {
   #
   print OFH $wcnt++."\t".$parts[$ws+2]."\t".$parts[$ws+4]."\t".$parts[$ws+5]."\t".$parts[$ws]."\n";
 
-  if ( ($eos_mode > 0) &&  ($trgt =~ m/[.?!]/) ) {
+  if ( ($eos_mode > 0) && ($trgt =~ m/[.?!]/) ) {
     #print "\n";
     print PFH "set terminal svg dynamic fsize 10\n";
     print PFH "set output \"".$plotfname."\"\n";
@@ -113,6 +117,8 @@ while ( my $line = <FH> ) {
     print PFH "set xlabel 'word #'\n";
     print PFH "set xtics 1,1 rotate by -90\n";
     chop $xtcs;
+    print PFH "$xtics_font\n";
+    print PFH "$xtics_offset\n";
     print PFH "set xtics (".$xtcs.")\n";
     print PFH "set logscale y\n";
     print PFH "set yrange []\n";
@@ -144,6 +150,8 @@ print PFH "set title \"".$outfile."\"\n";
 print PFH "set xlabel 'word #'\n";
 print PFH "set xtics 1,1 rotate by -90\n";
 chop $xtcs;
+print PFH "$xtics_font\n";
+print PFH "$xtics_offset\n";
 print PFH "set xtics (".$xtcs.")\n";
 print PFH "set logscale y\n";
 print PFH "set yrange []\n";
