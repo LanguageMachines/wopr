@@ -60,7 +60,6 @@ while ( my $line = <FH> ) {
     print PFH "set terminal svg dynamic fsize 10\n";
     print PFH "set output \"".$plotfname."\"\n";
     print PFH "set title \"".$outfile."\"\n";
-    print PFH "set xlabel 'word #'\n";
     print PFH "set xtics 1,1 rotate by -90\n";
     chop $xtcs;
     print PFH "$xtics_font\n";
@@ -114,7 +113,6 @@ while ( my $line = <FH> ) {
     print PFH "set terminal svg dynamic fsize 10\n";
     print PFH "set output \"".$plotfname."\"\n";
     print PFH "set title \"".$outfile."\"\n";
-    print PFH "set xlabel 'word #'\n";
     print PFH "set xtics 1,1 rotate by -90\n";
     chop $xtcs;
     print PFH "$xtics_font\n";
@@ -147,7 +145,6 @@ while ( my $line = <FH> ) {
 print PFH "set terminal svg dynamic fsize 10\n";
 print PFH "set output \"".$plotfname."\"\n";
 print PFH "set title \"".$outfile."\"\n";
-print PFH "set xlabel 'word #'\n";
 print PFH "set xtics 1,1 rotate by -90\n";
 chop $xtcs;
 print PFH "$xtics_font\n";
