@@ -10,6 +10,7 @@ use Getopt::Std;
 #
 # Generates an "out.nnnn.txt" and an "out.nnnn.plot" file per sentence.
 # The "out" prefix can be changed with the "-b" option.
+# Graphs can be plotted with "gnuplot out.nnn.plot".
 #
 # Set the eos_mode to 0: for "_ _ _" style files
 #                     1: for scanning of .!?
