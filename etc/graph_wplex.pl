@@ -8,6 +8,9 @@ use Getopt::Std;
 #
 # graph_wplex.pl -f testset.txt.ws3.hpx5.ib_1e6.px -b testtest -e 1
 #
+# Generates an "out.nnnn.txt" and an "out.nnnn.plot" file per sentence.
+# The "out" prefix can be changed with the "-b" option.
+#
 # Set the eos_mode to 0: for "_ _ _" style files
 #                     1: for scanning of .!?
 #
