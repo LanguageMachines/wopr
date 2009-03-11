@@ -3119,7 +3119,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     // End of sentence (sort of)
     //
-    if ( target == "</s>" ) {
+    if ( (target == "</s>") || (target == ".") || (target == "!") || (target == "?") ) {
       double avg_ent  = sum_logprob / (double)sentence_wordcount;
       double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
       double avg_pplx = pow( 2, -avg_ent ); 
