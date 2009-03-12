@@ -12,8 +12,8 @@ use Getopt::Std;
 # The "out" prefix can be changed with the "-b" option.
 # Graphs can be plotted with "gnuplot out.nnn.plot".
 #
-# Set the eos_mode to 0: for "_ _ _" style files
-#                     1: for scanning of .!?
+# Set the eos_mode ("-e n") to 0: for "_ _ _" style files
+#                              1: for scanning of .!?
 #
 # TODO: two separate checks for end-of-sentence is ugly, should be improved.
 #
