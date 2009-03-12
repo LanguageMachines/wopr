@@ -286,7 +286,7 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
 // returns one sentence of length len.
 //
 std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
-			  std::string end,
+			  std::string end, std::string id,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   std::vector<std::string>::iterator ri;
@@ -301,7 +301,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
   words.clear();
   Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
 
-  std::string result = "<sentence>";
+  std::string result = "<sentence id=\""+id+"\">";
   int idx = 0;
 
   while ( --len >= 0 ) {
@@ -496,7 +496,7 @@ int generate_server( Logfile& l, Config& c ) {
 	    }
 	  }
 	  
-	  std::string foo = generate_xml( c, a_line, len, ws, end, My_Experiment );
+	  std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n), My_Experiment );
 	  // We should add foo to start if we want to use start...
 	  if ( start != "" ) {
 	    foo = start + " " + foo; // Must be in XML format!
