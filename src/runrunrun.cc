@@ -1595,7 +1595,7 @@ int lexicon(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+counts_filename );
   l.dec_prefix();
 
-  if ( file_exists(output_filename) && file_exists(counts_filename) ) {
+  if ( file_exists(l, c, output_filename) && file_exists(l, c, counts_filename) ) {
     l.log( "LEXICON and COUNTSFILE exists, not overwriting." );
     c.add_kv( "lexicon", output_filename );
     l.log( "SET lexicon to "+output_filename );
