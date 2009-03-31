@@ -2295,7 +2295,7 @@ int smooth_old( Logfile& l, Config& c ) {
     }
     double p_star = pMLE; // average between prev and next?
     if ( c_star != 0 ) {
-      //p_star = (double)c_star / (double)total_count; (see refAA)
+      //p_star = (double)c_star / (double)total_count; //(see refAA)
       p_star = pMLE * GTfactor; // The adjusted pMLE for words occuring Nc times
     }
     l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
@@ -2795,14 +2795,14 @@ int pplx_simple( Logfile& l, Config& c ) {
   }
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write output file." ); // for px
+    l.log( "ERROR: cannot write .px output file." ); // for px
     return -1;
   }
   file_out << "# instance+target classification logprob entropy word_lp (dist.cnt [topn])" << std::endl;
 
   std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
   if ( ! file_out1 ) {
-    l.log( "ERROR: cannot write output file." ); // for pxs
+    l.log( "ERROR: cannot write .pxs output file." ); // for pxs
     return -1;
   }
   file_out1 << "# nr. #words sum(logprob) avg.pplx avg.wordlp std.dev(wordlp) [wordlp(each word)]" << std::endl;
