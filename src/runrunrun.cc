@@ -2195,7 +2195,7 @@ int smooth_old( Logfile& l, Config& c ) {
   l.log( "smooth" );
   const std::string& counts_filename = c.get_value( "counts" );
   const int precision = stoi( c.get_value( "precision", "6" ));
-  const int k = stoi( c.get_value( "k", "10" ));
+  int k = stoi( c.get_value( "k", "10" ));
   std::string gt_filename = counts_filename + ".gt";
   l.inc_prefix();
   l.log( "counts: " + counts_filename );
@@ -2218,10 +2218,6 @@ int smooth_old( Logfile& l, Config& c ) {
   std::map<std::string,int> wfreqs;
   std::map<int,int> ffreqs; // sort order?
 
-  for ( int i = 0; i < 10; i++ ) {
-    ffreqs[i] = 0;
-  }
-
   // Read the counts of counts.
   //
   l.log( "Reading counts." );
@@ -2241,12 +2237,18 @@ int smooth_old( Logfile& l, Config& c ) {
   file_counts.close();
   l.log( "Read counts." );
 
+  if ( k == 0 ) {
+    k = numcounts;
+  }
+
   std::map<int,int>::iterator fi;
   std::vector<int> counts;
   for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
+    /*
     if ( (int)(*fi).first < k ) {
       l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
     }
+    */
     //counts.at( (int)(*fi).first ) = (int)(*fi).second;;
   }
   l.log( "Total count: " + to_str( total_count ));
@@ -2282,7 +2284,7 @@ int smooth_old( Logfile& l, Config& c ) {
   // NB: See GoodTuring-3.pdf !
   //
   for ( int i = 1; i < k; i++ ) { // This loop should be with iterator
-    int Nc = (int)ffreqs[i];
+    int Nc = (int)ffreqs[i]; // PJB: Previously smoothed value??? 
     int cp1 = i+1;                // Should be fi.next
     int Ncp1 = (int)ffreqs[cp1];
     //
@@ -2296,13 +2298,12 @@ int smooth_old( Logfile& l, Config& c ) {
     double p_star = pMLE; // average between prev and next?
     if ( c_star != 0 ) {
       //p_star = (double)c_star / (double)total_count; //(see refAA)
-      p_star = pMLE * GTfactor; // The adjusted pMLE for words occuring Nc times
+      p_star = pMLE * GTfactor; // The adjusted pMLE for words occuring Nc times SHould be re-calculated every time?
     }
-    l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
+    //l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
+l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision) );
     counts_out << i << " " << Nc << " " << c_star << std::endl;
     file_out << i << " " << Nc << " " << pMLE << " " << p_star << std::endl;
-    //std::cerr << i << "," << i << "," << c_star << std::endl;
-    //std::cerr << i << "," << to_str(pMLE,precision) << "," << to_str(p_star,precision) << std::endl;
   }
 
   // Stämmer inte - we need the *first and *second!
