@@ -2212,7 +2212,7 @@ int smooth_old( Logfile& l, Config& c ) {
   std::string a_line;
   std::vector<std::string>words;
   unsigned long lcount = 0;
-  unsigned long total_count = 0;
+   
   std::string a_word;
   int wfreq;
   std::map<std::string,int> wfreqs;
@@ -2226,6 +2226,7 @@ int smooth_old( Logfile& l, Config& c ) {
   double Nc1; // this is c*
   int numcounts = 0;
   int maxcounts = 0;
+  unsigned long total_count = 0;
   while( file_counts >> count >> Nc0 >> Nc1 ) {
     ffreqs[count] = Nc0;
     total_count += count*Nc0;
@@ -2835,7 +2836,6 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
   
-
   // Beginning of sentence marker.
   // Maybe should just be a parameter...
   //
@@ -2851,14 +2851,17 @@ int pplx_simple( Logfile& l, Config& c ) {
   int Nc0;
   double Nc1; // this is c*
   int count;
+
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
   } else {
+    l.log( "Reading counts." );
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
     file_counts.close();
+    l.log( "Read counts." );
   }
 
   // The P(new_word) according to GoodTuring-3.pdf
@@ -2872,9 +2875,9 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   double p0 = 0.00001; // Arbitrary low probability for unknown words.
   if ( total_count > 0 ) { // Better estimate if we have a lexicon
-    p0 = (double)N_1 / ((double)total_count * total_count);
+    p0 = (double)N_1 / (double)total_count;
   }
-  //l.log( "P(new_particular) = " + to_str(p0) );
+  l.log( "P(0) = " + to_str(p0) );
 
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
