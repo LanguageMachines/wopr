@@ -295,7 +295,7 @@ int script(Logfile& l, Config& c)  {
       if ( lhs == "params" ) {
 	Tokenize( rhs, kv_pairs, ',' );
 	for ( int j = 0; j < kv_pairs.size(); j++ ) {
-	  c.process_line( kv_pairs.at(j) );
+	  c.process_line( kv_pairs.at(j), true ); // Can override!
 	  l.log( "Parameter: " + kv_pairs.at(j) );
 	}
 	kv_pairs.clear();

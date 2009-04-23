@@ -92,12 +92,12 @@ void Config::read_file( const std::string& filename ) {
     if ( a_line.at(0) == '#' ) {
       continue;
     }
-    process_line( a_line );
+    process_line( a_line, false );
   }
   file.close();
 }
 
-void Config::process_line( const std::string& a_line ) {
+void Config::process_line( const std::string& a_line, bool force ) {
   int pos = a_line.find( ':', 0 );
   if ( pos != std::string::npos ) {
     std::string lhs = trim(a_line.substr( 0, pos ));
@@ -112,7 +112,7 @@ void Config::process_line( const std::string& a_line ) {
     // Side effect: can't change filename etc in script.
     // Use "set filename" for that?
     //
-    if ( get_value( lhs, "__NO__" ) == "__NO__" ) {
+    if ( ( force == true ) || ( get_value( lhs, "__NO__" ) == "__NO__" ) ) {
       add_kv( lhs, rhs );
     }
   }

@@ -70,7 +70,7 @@ public:
   int  get_status() { return status; }
   void set_status(int s) { status = s; }
   void read_file( const std::string& );
-  void process_line( const std::string& );
+  void process_line( const std::string&, bool );
   void dump_kv();
   void clear_kv();
   void add_kv( const std::string&, const std::string& );

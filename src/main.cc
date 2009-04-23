@@ -163,7 +163,7 @@ int main( int argc, char* argv[] ) {
       if ( long_options[option_index].name == "params" ) {
 	Tokenize( optarg, kv_pairs, ',' );
 	for ( int i = 0; i < kv_pairs.size(); i++ ) {
-	  co.process_line( kv_pairs.at(i) );
+	  co.process_line( kv_pairs.at(i), false );
 	}
 	kv_pairs.clear();
       }
@@ -194,7 +194,7 @@ int main( int argc, char* argv[] ) {
     case 'p':
       Tokenize( optarg, kv_pairs, ',' );
       for ( int i = 0; i < kv_pairs.size(); i++ ) {
-	co.process_line( kv_pairs.at(i) );
+	co.process_line( kv_pairs.at(i), false );
       }
       kv_pairs.clear();
       break;
