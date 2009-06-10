@@ -292,6 +292,7 @@ int main( int argc, char* argv[] ) {
     wopr_log.open( "wopr.log", std::ios::out | std::ios::app );
     if ( wopr_log ) {
       wopr_log << "# " << the_date_time() << ", " << secs_to_str( diff );
+      wopr_log << " (" << to_str(getpid()) << ")" << std::endl;
       wopr_log << std::endl << std::endl;
     }
     wopr_log.close();
