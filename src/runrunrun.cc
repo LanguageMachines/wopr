@@ -2763,10 +2763,11 @@ int pplx_simple( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
   int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
-  std::string        output_filename  = filename + ".px";
-  std::string        output_filename1 = filename + ".pxs";
+  std::string        output_filename  = filename + "_" + id + ".px";
+  std::string        output_filename1 = filename + "_" + id + ".pxs";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
@@ -2786,6 +2787,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "topn:       "+to_str(topn) );
+  l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.log( "OUTPUT:     "+output_filename1 );
   l.dec_prefix();
