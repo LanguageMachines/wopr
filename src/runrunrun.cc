@@ -2752,6 +2752,7 @@ int pplx( Logfile& l, Config& c ) {
 struct distr_elem {
   std::string name;
   double      freq;
+  double      s_freq;
   bool operator<(const distr_elem& rhs) const {
     return freq > rhs.freq;
   }
@@ -2763,6 +2764,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
+  int                hapax            = stoi( c.get_value( "hpx", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   int                ws               = stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
@@ -2784,6 +2786,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
+  l.log( "hapax:      "+to_str(hapax) );
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "topn:       "+to_str(topn) );
@@ -2828,10 +2831,12 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "Reading lexicon." );
     std::string a_word;
     while ( file_lexicon >> a_word >> wfreq ) {
-      wfreqs[a_word] = wfreq;
-      total_count += wfreq;
-      if ( wfreq == 1 ) {
-	++N_1;
+      if ( wfreq > hapax ) { // PJB: klopt dit? We don't get ++N_1? Smoothing?
+	wfreqs[a_word] = wfreq;
+	total_count += wfreq;
+	if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
+	  ++N_1;
+	}
       }
     }
     file_lexicon.close();
@@ -3003,6 +3008,8 @@ int pplx_simple( Logfile& l, Config& c ) {
     // What does Timbl think?
     // Do we change this answer to what is in the distr. (if it is?)
     //
+    // Should also be smoothed?!
+    //
     tv = My_Experiment->Classify( a_line, vd );
     // check for vd == NULL
     std::string answer = tv->Name();
@@ -3027,9 +3034,12 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     // entropy over distribution: sum( p log(p) ). 
     //
+    // SMOOTHING
+    //
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
     int cnt = 0;
     int distr_count = 0;
+    double smoothed_distr_count = 0.0;
     int target_freq = 0;
     int answer_freq = 0;
     double prob            = 0.0;
@@ -3044,13 +3054,23 @@ int pplx_simple( Logfile& l, Config& c ) {
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
 
-      std::string tvs  = it->second->Value()->Name();
-      double      wght = it->second->Weight();
+      std::string tvs           = it->second->Value()->Name();
+      double      wght          = it->second->Weight(); // absolute frequency.
+      double      smoothed_wght = wght;
+      
+      std::map<int,double>::iterator cfi = c_stars.find( wght );
+      if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
+	smoothed_wght = (double)(*cfi).second;
+	//l.log( "smoothed_wght = " + to_str(smoothed_wght) );
+      }
+
+      smoothed_distr_count += smoothed_wght; // not used atm.
 
       if ( topn > 0 ) { // only save if we want to sort/print them later.
 	distr_elem  d;
-	d.name = tvs;
-	d.freq = wght;
+	d.name   = tvs;
+	d.freq   = wght;
+	d.s_freq = smoothed_wght;
 	distr_vec.push_back( d );
       }
 
@@ -3060,7 +3080,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       entropy -= ( prob * log2(prob) );
 
       if ( tvs == target ) { // The correct answer was in the distribution!
-	target_freq = wght;
+	target_freq = smoothed_wght; // SMOOTH
 	if ( correct_answer == false ) {
 	  ++correct_distr;
 	  --wrong; // direct answer wrong, but right in distr. compensate count
@@ -3069,6 +3089,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
       ++it;
     } // end loop distribution
+    // Note that target_freq can be smoothed.
     target_distprob = (double)target_freq / (double)distr_count;
 
     // If correct: if target in distr, we take that prob, else
