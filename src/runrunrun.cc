@@ -3000,15 +3000,12 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
       if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
 	target_lexfreq = (double)(*cfi).second;
-	//l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
       }
       target_lexprob = (double)target_lexfreq / (double)total_count;
     }
 
     // What does Timbl think?
     // Do we change this answer to what is in the distr. (if it is?)
-    //
-    // Should also be smoothed?!
     //
     tv = My_Experiment->Classify( a_line, vd );
     // check for vd == NULL
@@ -3034,8 +3031,6 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     // entropy over distribution: sum( p log(p) ). 
     //
-    // SMOOTHING
-    //
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
     int cnt = 0;
     int distr_count = 0;
@@ -3057,20 +3052,22 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::string tvs           = it->second->Value()->Name();
       double      wght          = it->second->Weight(); // absolute frequency.
       double      smoothed_wght = wght;
-      
+
+      // Is this the right place to use smoothed values?
+      // The Timbl distr. is built up from full corpus.
+      //
       std::map<int,double>::iterator cfi = c_stars.find( wght );
       if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
 	smoothed_wght = (double)(*cfi).second;
 	//l.log( "smoothed_wght = " + to_str(smoothed_wght) );
       }
-
       smoothed_distr_count += smoothed_wght; // not used atm.
 
       if ( topn > 0 ) { // only save if we want to sort/print them later.
 	distr_elem  d;
 	d.name   = tvs;
 	d.freq   = wght;
-	d.s_freq = smoothed_wght;
+	d.s_freq = smoothed_wght; // onzin.
 	distr_vec.push_back( d );
       }
 
@@ -3080,7 +3077,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       entropy -= ( prob * log2(prob) );
 
       if ( tvs == target ) { // The correct answer was in the distribution!
-	target_freq = smoothed_wght; // SMOOTH
+	target_freq = wght; // was smoothed_wght.
 	if ( correct_answer == false ) {
 	  ++correct_distr;
 	  --wrong; // direct answer wrong, but right in distr. compensate count
