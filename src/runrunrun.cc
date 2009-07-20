@@ -2205,7 +2205,7 @@ int smooth_old( Logfile& l, Config& c ) {
 
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load counts file." );
     return -1;
   }
 
@@ -2292,7 +2292,7 @@ int smooth_old( Logfile& l, Config& c ) {
     // pMLE = probability of word occuring Nc times
     //
     double pMLE = Nc / (double)total_count; //PJB Nc or i ?? (refAA)
-    double c_star = i;
+    double c_star = i; // this is really wrong...
     if ( Nc != 0 ) {
       c_star = (double)cp1 * (double)( (double)Ncp1 / (double)Nc );
     }
@@ -2304,7 +2304,12 @@ int smooth_old( Logfile& l, Config& c ) {
     //l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision)+" pMLE="+to_str(pMLE, precision)+" p*="+to_str(p_star, precision) );
 l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_star, precision) );
     counts_out << i << " " << Nc << " " << c_star << std::endl;
-    file_out << i << " " << Nc << " " << pMLE << " " << p_star << std::endl;
+    file_out << i << " " << Nc << " " << pMLE << " " << p_star;
+    file_out << " " << c_star/(double)total_count << std::endl;
+    //note 0s
+    if ( c_star == 0 ) {
+      l.log( "WARNING: too little data.");
+    }
   }
 
   // Stämmer inte - we need the *first and *second!
@@ -2313,7 +2318,10 @@ l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_st
     int Nc = (int)ffreqs[i];
     double pMLE = Nc / (double)total_count;
     counts_out << i << " " << Nc << " " << i << std::endl;
-    file_out << i << " " << Nc << " " << pMLE << " " << pMLE << std::endl;
+    if ( Nc > 0 ) {
+      file_out << i << " " << Nc << " " << pMLE << " " << pMLE;
+      file_out << " " << i/(double)total_count << std::endl; //note 0s
+    }
   }
   file_out.close();
   counts_out.close();
