@@ -2271,7 +2271,7 @@ int smooth_old( Logfile& l, Config& c ) {
 
   // N1/N
   double p0 = (double)ffreqs[1] / (double)total_count;
-  l.log( "N1/N = " + to_str(ffreqs[1]) + "/" + to_str(total_count) + " = " + to_str( p0 ));
+  l.log( "N1/N = " + to_str(ffreqs[1]) + "/" + to_str(total_count) + " = " + to_str( p0 ) + " " + to_str( p0 / (double)total_count ));
   counts_out << "0 0 " << p0 << std::endl; // This is a probability, not c*
 
   // GoodTuring-3.pdf
@@ -2891,6 +2891,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   double p0 = 0.00001; // Arbitrary low probability for unknown words.
   if ( total_count > 0 ) { // Better estimate if we have a lexicon
     p0 = (double)N_1 / (double)total_count;
+    // Assume N_0 equals N_1...
+    p0 = p0 / (double)N_1;
   }
   l.log( "P(0) = " + to_str(p0) );
 
@@ -3008,6 +3010,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
       if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
 	target_lexfreq = (double)(*cfi).second;
+	//l.log( "Changed lexfreq to: " + to_str(target_lexfreq));
       }
       target_lexprob = (double)target_lexfreq / (double)total_count;
     }
@@ -3085,7 +3088,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       entropy -= ( prob * log2(prob) );
 
       if ( tvs == target ) { // The correct answer was in the distribution!
-	target_freq = wght; // was smoothed_wght.
+	target_freq = wght; // no smoothing here (or?)
 	if ( correct_answer == false ) {
 	  ++correct_distr;
 	  --wrong; // direct answer wrong, but right in distr. compensate count
@@ -3117,6 +3120,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	//
 	w_prob = p0;
 	info = "P(new_particular)";
+	//l.log( target + " unk" );
       }
     }
 
