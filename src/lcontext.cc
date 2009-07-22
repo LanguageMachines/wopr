@@ -33,8 +33,6 @@
 
 #include <string>
 #include <iostream>
-#include <string>
-#include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <fstream>
@@ -52,12 +50,24 @@
 //  Code.
 // ---------------------------------------------------------------------------
 
+struct lex_elem {
+  std::string name;
+  double      freq;
+  bool operator<(const lex_elem& rhs) const {
+    return freq > rhs.freq;
+  }
+};
+
 int bounds_from_lex( Logfile& l, Config& c ) {
   l.log( "bounds_from_lex" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
+  int                m                = stoi( c.get_value( "m", "10" ));
+  int                n                = stoi( c.get_value( "n", "20" ));
 
   l.inc_prefix();
-  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "lexicon: "+lexicon_filename );
+  l.log( "m      : "+to_str(m) );
+  l.log( "n      : "+to_str(n) );
   l.dec_prefix();
 
   // Load lexicon.
@@ -65,22 +75,38 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   int wfreq;
   unsigned long total_count = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
+  std::vector<lex_elem> lex_vec;
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
   }
   // Read the lexicon with word frequencies.
-  // We need a hash with frequence - countOfFrequency, ffreqs.
   //
   l.log( "Reading lexicon." );
   std::string a_word;
   while ( file_lexicon >> a_word >> wfreq ) {
     wfreqs[a_word] = wfreq;
-    total_count += wfreq;
+    lex_elem l;
+    l.name = a_word;
+    l.freq = wfreq;
+    lex_vec.push_back( l );
   }
   file_lexicon.close();
   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+
+  sort( lex_vec.begin(), lex_vec.end() );
+  std::vector<lex_elem>::iterator li;
+  li = lex_vec.begin();
+  int rank = 0;
+  while ( li != lex_vec.end() ) {
+    if ( (rank > m) && (rank <= n) ) { // 6 words can be rank 11 ?
+      l.log( to_str(rank) + ":" + (*li).name + "/" + to_str((*li).freq) );
+    }
+    ++rank;
+    li++;
+  }
+  return 0;
 }
   
 

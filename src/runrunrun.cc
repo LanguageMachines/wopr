@@ -55,6 +55,7 @@
 #include "Multi.h"
 #include "levenshtein.h"
 #include "generator.h"
+#include "lcontext.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -417,6 +418,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &generate;
   } else if ( a_fname == "generate_server" ) {
     return &generate_server;
+  } else if ( a_fname == "bfl" ) { // bounds_from_lex in lcontext.cc
+    return &bounds_from_lex;
   }
   return &tst;
 }
@@ -1586,6 +1589,7 @@ int lexicon(Logfile& l, Config& c) {
   const std::string& filename        = c.get_value( "filename" );
   std::string        output_filename = filename + ".lex";
   std::string        counts_filename = filename + ".cnt";
+  std::string        anaval_filename = filename + ".av";
   std::string        mode            = c.get_value( "mode", "word" );
   bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
   l.inc_prefix();
@@ -1593,6 +1597,7 @@ int lexicon(Logfile& l, Config& c) {
   l.log( "lowercase: "+to_str(to_lower) );
   l.log( "OUTPUT:   "+output_filename );
   l.log( "OUTPUT:   "+counts_filename );
+  l.log( "OUTPUT:   "+anaval_filename );
   l.dec_prefix();
 
   if ( file_exists(l, c, output_filename) && file_exists(l, c, counts_filename) ) {
@@ -1630,21 +1635,32 @@ int lexicon(Logfile& l, Config& c) {
   }
   file_in.close();
 
-  // Save lexicon, and count counts.
+  // Save lexicon, and count counts, anagram values
   //
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
+    l.log( "ERROR: cannot write lexicon file." );
+    return -1;
+  }
+  std::ofstream file1_out( anaval_filename.c_str(), std::ios::out );
+  if ( ! file1_out ) {
+    l.log( "ERROR: cannot write anaval file." );
     return -1;
   }
   std::map<int,int> ffreqs;
   long total_count;
   for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
+    std::string wrd = (*iter).first;
     int wfreq = (*iter).second;
-    file_out << (*iter).first << " " << wfreq << "\n";
+    file_out << wrd << " " << wfreq << "\n";
     ffreqs[wfreq]++;
     total_count += wfreq;
+    //
+    // anagram value
+    //
+    file1_out << wrd << " " << anahash( wrd ) << "\n";
   }
+  file1_out.close();
   file_out.close();
 
   // Save count of counts. Twice, so we can change those to c* later.
@@ -1693,11 +1709,11 @@ int load_lexicon(Logfile& l, Config& c)  {
 
 }
 
-unsigned long anahash( std::string& s ) {
-  unsigned long res = 0;
+unsigned long long anahash( std::string& s ) {
+  unsigned long long res = 0;
 
   for ( int i = 0; i < s.length(); i++ ) {
-    res += (unsigned long)pow((unsigned long)s[i],5);
+    res += (unsigned long long)pow((unsigned long long)s[i],5);
   }
   return res;
 }
