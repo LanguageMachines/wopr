@@ -33,6 +33,15 @@
 
 #include <string>
 #include <iostream>
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
+#include <map>
+#include <vector>
+#include <algorithm>
+#include <iterator>
 
 #include "qlog.h"
 #include "Config.h"
@@ -42,6 +51,38 @@
 // ---------------------------------------------------------------------------
 //  Code.
 // ---------------------------------------------------------------------------
+
+int bounds_from_lex( Logfile& l, Config& c ) {
+  l.log( "bounds_from_lex" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+
+  l.inc_prefix();
+  l.log( "lexicon:    "+lexicon_filename );
+  l.dec_prefix();
+
+  // Load lexicon.
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+  // Read the lexicon with word frequencies.
+  // We need a hash with frequence - countOfFrequency, ffreqs.
+  //
+  l.log( "Reading lexicon." );
+  std::string a_word;
+  while ( file_lexicon >> a_word >> wfreq ) {
+    wfreqs[a_word] = wfreq;
+    total_count += wfreq;
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+}
+  
 
 
 // ---------------------------------------------------------------------------
