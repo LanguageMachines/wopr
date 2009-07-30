@@ -2786,6 +2786,7 @@ struct distr_elem {
 struct cached_distr {
   int distr_size;
   long sum_freqs;
+  double entropy;
   std::map<std::string,int> freqs; // word->frequency
   std::vector<distr_elem> distr_vec;
   bool operator<(const cached_distr& rhs) const {
@@ -2990,6 +2991,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	cached_distr c;
 	c.distr_size = 0;
 	c.sum_freqs  = 0;
+	c.entropy    = 0.0;
 	distr_cache.push_back( c );
   }
 
@@ -3151,10 +3153,16 @@ int pplx_simple( Logfile& l, Config& c ) {
       } else {
 	cache_level = 1;
       }
+    } else if (cache_idx != -1) {
+      if ( cd != NULL ) {
+	cache_level = 3;
+      } else {
+	cache_level = 2;// play mission impossible theme
+      }
     }
-    if ( (cache_idx != -1) && (cd != NULL) ) {
-      l.log( "Using cache #"+to_str(cache_idx) );
-      cache_level = 3;
+
+    if ( cache_level == 3 ) {
+      //l.log( "Using cache #"+to_str(cache_idx) );
       //
       // How to use the cache? We need to see if target is in the
       // distribution, and if it is, get the frequency.
@@ -3162,22 +3170,11 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::map<std::string,int>::iterator wfi = cd->freqs.find( target );
       if ( wfi != cd->freqs.end() ) {
 	target_freq = (long)(*wfi).second;
-	distr_vec = cd->distr_vec; // the [distr] we print
       }
+      entropy = cd->entropy;
+      distr_vec = cd->distr_vec; // the [distr] we print
     }
-    
-    if ( target_unknown == true ) {
-      it = vd->end(); // (test) trick to fall through the long loop.
-      //l.log( "SKIPPING" );
-      // this gives an empty [] in the .px file, and the entropy
-      // will be 0. (Was it that already?)
-    }
-    if ( target_freq > 0 ) { // not only this use chachelevel!
-      it = vd->end(); 
-    }
-
-    // check cache_level
-    if ( (cache_level == 1) || (cache_level == 0) ) {
+    if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
       while ( it != vd->end() ) {
 	//const Timbl::TargetValue *tv = it->second->Value();
 
@@ -3211,11 +3208,13 @@ int pplx_simple( Logfile& l, Config& c ) {
 	  cd->freqs[tvs] = wght;
 	}
 
-	// Prob. of this item in distribution.
+	// Entropy of whole distr. Cache.
 	//
 	prob     = (double)wght / (double)distr_count;
 	entropy -= ( prob * log2(prob) );
 	
+	// Move this to a better spot...
+	//
 	if ( target == tvs ) { // The correct answer was in the distribution!
 	  target_freq = wght; // no smoothing here (or?)
 	  if ( correct_answer == false ) {
@@ -3226,9 +3225,11 @@ int pplx_simple( Logfile& l, Config& c ) {
 	
 	++it;
       } // end loop distribution
-    } // cache_level == 1
+      if ( cache_level == 1 ) {
+	cd->entropy = entropy;
+      }
+    } // cache_level == 1 or 0
 
-    // Note that target_freq can be smoothed.
     target_distprob = (double)target_freq / (double)distr_count;
 
     // If correct: if target in distr, we take that prob, else
