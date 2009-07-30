@@ -2816,6 +2816,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string        result;
   double             distance;
 
+  // Sanity check.
+  //
+  if ( cache_size <= 0 ) {
+    l.log( "WARNING: cache_size should be > 0, setting to 1." );
+    cache_size = 1;
+  }
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
