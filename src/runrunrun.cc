@@ -2783,6 +2783,14 @@ struct distr_elem {
     return freq > rhs.freq;
   }
 };
+struct cached_distr {
+  int distr_size;
+  long sum_freqs;
+  std::map<std::string,int> freqs; // word->frequency
+  bool operator<(const cached_distr& rhs) const {
+    return distr_size < rhs.distr_size;
+  }
+};
 int pplx_simple( Logfile& l, Config& c ) {
   l.log( "pplx" );
   const std::string& filename         = c.get_value( "filename" );
@@ -2947,7 +2955,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     
   // Recognise <s> or similar, reset pplx calculations.
   // Output results on </s> or similar.
-  // Or a divisor whoch is not processed?
+  // Or a divisor which is not processed?
   //
   double sentence_prob      = 0.0;
   double sum_logprob        = 0.0;
@@ -2955,6 +2963,28 @@ int pplx_simple( Logfile& l, Config& c ) {
   int    sentence_wordcount = 0;
   int    sentence_count     = 0;
   
+  // Could cache a map(string:freq) of the top-3 distributions returned
+  // by Timbl.
+  // We get the size first, if it is bigger than the ones we have cached,
+  // we can save the map when we cycle through the distribution. Next
+  // time we can use the map to check if the target is in there.
+  // What do we need?
+  //   map with word->freq
+  //   sum(freqs)
+  //   number of entries
+  //
+  // Distribution cache
+  //
+  int cache_size   = 3;
+  int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
+  std::vector<cached_distr> distr_cache;
+  for ( int i = 0; i < cache_size; i++ ) {
+	cached_distr c;
+	c.distr_size = 0;
+	c.sum_freqs  = 0;
+	distr_cache.push_back( c );
+  }
+
   while( std::getline( file_in, a_line )) {
 
     if ( to_lower ) {
@@ -3071,21 +3101,50 @@ int pplx_simple( Logfile& l, Config& c ) {
     double target_distprob = 0.0;
     double answer_prob     = 0.0;
     double entropy         = 0.0;
+    std::vector<distr_elem> distr_vec;// see correct in levenshtein.
     cnt = vd->size();
     distr_count = vd->totalSize();
 
-    std::vector<distr_elem> distr_vec;// see correct in levenshtein.
-    
-    // Could cache a map(string:freq) of the top-3 distributions returned
-    // by Timbl.
-    // We get the size first, if it is bigger than the ones we have cached,
-    // we can save the map when we cycle through the distribution. Next
-    // time we can use the map to check if the target is in there.
+    // Check cache/size/presence
     //
+    int cache_idx = -1;
+    cached_distr* cd = NULL;
+    for ( int i = 0; i < cache_size; i++ ) {
+      if ( distr_cache.at(i).distr_size == cnt ) {
+	cache_idx = i; // it's cached already!
+	cd = &distr_cache.at(i);
+	break;
+      }
+    }
+    if ( cnt > lowest_cache ) { // It should be cached, if not present.
+      if ( cache_idx == -1 ) {
+	l.log( "caching " + to_str(cnt) );
+	
+	cd = &distr_cache.at(0);
+	cd->distr_size = cnt;
+	cd->sum_freqs = distr_count;
+	// find new lowest here.
+	sort( distr_cache.begin(), distr_cache.end() );
+	lowest_cache = distr_cache.at(0).distr_size;
+      }
+    }
+    // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
+    // cache_idx == -1 && cd != null: not cached, want to cache it.
+    // cache_idx  > -1 && cd == null: impossible?
+    // cache_idx  > -1 && cd != null: cached, cd points to cache.
+
+    if ( (cache_idx != -1) && (cd != NULL) ) {
+      l.log( "Using cache."+to_str(cd->distr_size) );
+    }
+    
     if ( target_unknown == true ) {
       it = vd->end(); // (test) trick to fall through the long loop.
       //l.log( "SKIPPING" );
+      // this gives an empty [] in the .px file, and the entropy
+      // will be 0. (Was it that already?)
     }
+
+    // choose here if do_cache/cached/nothing
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
 
@@ -3111,6 +3170,12 @@ int pplx_simple( Logfile& l, Config& c ) {
 	d.freq   = wght;
 	d.s_freq = smoothed_wght; // onzin.
 	distr_vec.push_back( d );
+      }
+
+      // Save it in the cache?
+      //
+      if ( cd != NULL ) {
+
       }
 
       // Prob. of this item in distribution.
@@ -3279,6 +3344,10 @@ int pplx_simple( Logfile& l, Config& c ) {
   if ( sentence_wordcount > 0 ) {
     l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
     l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+  }
+
+  for ( int i = 0; i < cache_size; i++ ) {
+    l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).distr_size) );
   }
 
   return 0;
