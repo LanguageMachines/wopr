@@ -33,5 +33,6 @@
 // ----------------------------------------------------------------------------
 
 int bounds_from_lex( Logfile&, Config& );
+int lcontext( Logfile&, Config& );
 
 #endif

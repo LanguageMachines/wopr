@@ -420,6 +420,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &generate_server;
   } else if ( a_fname == "bfl" ) { // bounds_from_lex in lcontext.cc
     return &bounds_from_lex;
+  } else if ( a_fname == "lcontext" ) { // from lcontext.cc
+    return &lcontext;
   }
   return &tst;
 }
@@ -3007,7 +3009,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       sentence_wordcount = 0;
       ++sentence_count;
       w_pplx.clear();
-    }
+    } // end bos
 
     ++sentence_wordcount;
 
@@ -3055,6 +3057,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
 
     // Loop over distribution returned by Timbl.
+    // Skip if taregt unknown.
     //
     // entropy over distribution: sum( p log(p) ). 
     //
@@ -3072,7 +3075,17 @@ int pplx_simple( Logfile& l, Config& c ) {
     distr_count = vd->totalSize();
 
     std::vector<distr_elem> distr_vec;// see correct in levenshtein.
-
+    
+    // Could cache a map(string:freq) of the top-3 distributions returned
+    // by Timbl.
+    // We get the size first, if it is bigger than the ones we have cached,
+    // we can save the map when we cycle through the distribution. Next
+    // time we can use the map to check if the target is in there.
+    //
+    if ( target_unknown == true ) {
+      it = vd->end(); // (test) trick to fall through the long loop.
+      //l.log( "SKIPPING" );
+    }
     while ( it != vd->end() ) {
       //const Timbl::TargetValue *tv = it->second->Value();
 
@@ -3083,12 +3096,14 @@ int pplx_simple( Logfile& l, Config& c ) {
       // Is this the right place to use smoothed values?
       // The Timbl distr. is built up from full corpus.
       //
+      /*
       std::map<int,double>::iterator cfi = c_stars.find( wght );
       if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
 	smoothed_wght = (double)(*cfi).second;
 	//l.log( "smoothed_wght = " + to_str(smoothed_wght) );
       }
       smoothed_distr_count += smoothed_wght; // not used atm.
+      */
 
       if ( topn > 0 ) { // only save if we want to sort/print them later.
 	distr_elem  d;
@@ -3103,7 +3118,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       prob     = (double)wght / (double)distr_count;
       entropy -= ( prob * log2(prob) );
 
-      if ( tvs == target ) { // The correct answer was in the distribution!
+      if ( target == tvs ) { // The correct answer was in the distribution!
 	target_freq = wght; // no smoothing here (or?)
 	if ( correct_answer == false ) {
 	  ++correct_distr;

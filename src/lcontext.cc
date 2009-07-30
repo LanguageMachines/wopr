@@ -45,6 +45,7 @@
 #include "Config.h"
 #include "util.h"
 #include "lcontext.h"
+#include "runrunrun.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -63,11 +64,13 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   int                m                = stoi( c.get_value( "m", "10" ));
   int                n                = stoi( c.get_value( "n", "20" ));
+  std::string        range_filename   = lexicon_filename + ".rng";
 
   l.inc_prefix();
   l.log( "lexicon: "+lexicon_filename );
-  l.log( "m      : "+to_str(m) );
-  l.log( "n      : "+to_str(n) );
+  l.log( "m:       "+to_str(m) );
+  l.log( "n:       "+to_str(n) );
+  l.log( "OUTPUT:  "+range_filename );
   l.dec_prefix();
 
   // Load lexicon.
@@ -81,6 +84,13 @@ int bounds_from_lex( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
   }
+
+  std::ofstream range_out( range_filename.c_str(), std::ios::out );
+  if ( ! range_out ) {
+    l.log( "ERROR: cannot write range file." );
+    return -1;
+  }
+
   // Read the lexicon with word frequencies.
   //
   l.log( "Reading lexicon." );
@@ -93,22 +103,88 @@ int bounds_from_lex( Logfile& l, Config& c ) {
     lex_vec.push_back( l );
   }
   file_lexicon.close();
-  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  l.log( "Read lexicon." );
 
   sort( lex_vec.begin(), lex_vec.end() );
   std::vector<lex_elem>::iterator li;
   li = lex_vec.begin();
-  int rank = 0;
+  int num = 0;
   while ( li != lex_vec.end() ) {
-    if ( (rank > m) && (rank <= n) ) { // 6 words can be rank 11 ?
-      l.log( to_str(rank) + ":" + (*li).name + "/" + to_str((*li).freq) );
+    int freq = (*li).freq;
+    if ( (freq >= m) && (freq < n) ) { // 6 words can be rank 11 ?
+      // beter .cnt sorteren, en die frequencies greppen uit het lex.
+      // l.log(  (*li).name + "/" + to_str(freq) );
+      //
+      // Maybe we don't want frequency here. So we can handcraft a
+      // list. Or ignore frequencies, but leeave them here...
+      //
+      range_out << (*li).name << " " << freq << "\n";
+      ++num;
     }
-    ++rank;
     li++;
   }
+  range_out.close();
+  l.log( "Range contains "+to_str(num)+" items." );
+
+  // set RANGE_FILE to range_filename ofzo
+
   return 0;
 }
   
+/*
+  Create data with a the .rng file.
 
+  Start reading the file to be "windowed".
+  check each word with .rng vector. Mark if present.
+  output vector+word
+  next
+
+  end of discourse? reset after nnn words? track changes?
+*/
+int lcontext( Logfile& l, Config& c ) {
+  l.log( "lcontext" );
+  const std::string& filename        = c.get_value( "filename" );
+  const std::string& rng_filename    = c.get_value( "range" );
+  std::string        output_filename = filename + ".rn";
+
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "range:    "+rng_filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists( l, c, output_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    //c.add_kv( "filename", output_filename );
+    //l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+
+  // Open range file.
+  //
+  std::ifstream file_rng( rng_filename.c_str() );
+  if ( ! file_rng ) {
+    l.log( "ERROR: cannot load range file." );
+    return -1;
+  }
+  l.log( "Reading range file." );
+  std::string a_word;
+  long wfreq;
+  std::vector<std::string> range;
+  while( file_rng >> a_word >> wfreq ) {
+    // foo, bar, quux.
+  }
+  l.log( "Loaded range file." );
+  file_rng.close();
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+  
+
+  return 0;
+}
 
 // ---------------------------------------------------------------------------
