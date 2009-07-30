@@ -2787,6 +2787,7 @@ struct cached_distr {
   int distr_size;
   long sum_freqs;
   std::map<std::string,int> freqs; // word->frequency
+  std::vector<distr_elem> distr_vec;
   bool operator<(const cached_distr& rhs) const {
     return distr_size < rhs.distr_size;
   }
@@ -3105,7 +3106,8 @@ int pplx_simple( Logfile& l, Config& c ) {
     cnt = vd->size();
     distr_count = vd->totalSize();
 
-    // Check cache/size/presence
+    // Check cache/size/presence. Note it assumes that each size
+    // only occurs once...
     //
     int cache_idx = -1;
     cached_distr* cd = NULL;
@@ -3130,11 +3132,32 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
     // cache_idx == -1 && cd != null: not cached, want to cache it.
-    // cache_idx  > -1 && cd == null: impossible?
+    // cache_idx  > -1 && cd == null: impossible
     // cache_idx  > -1 && cd != null: cached, cd points to cache.
+    // 0, 1, 2, 3
+    //
+    int cache_level = -1; // see above.
 
+    if (cache_idx == -1) {
+      if ( cd == NULL ) {
+	cache_level = 0;
+      } else {
+	cache_level = 1;
+      }
+    }
     if ( (cache_idx != -1) && (cd != NULL) ) {
       l.log( "Using cache."+to_str(cd->distr_size) );
+      cache_level = 3;
+      //
+      // How to use the cache? We need to see if target is in the
+      // distribution, and if it is, get the frequency.
+      //
+      std::map<std::string,int>::iterator wfi = cd->freqs.find( target );
+      if ( wfi != cd->freqs.end() ) {
+	l.log( "target in cache." );
+	target_freq = (long)(*wfi).second;
+	distr_vec = cd->distr_vec; // the [distr] we print
+      }
     }
     
     if ( target_unknown == true ) {
@@ -3143,56 +3166,62 @@ int pplx_simple( Logfile& l, Config& c ) {
       // this gives an empty [] in the .px file, and the entropy
       // will be 0. (Was it that already?)
     }
+    if ( target_freq > 0 ) { // not only this
+      it = vd->end(); 
+    }
 
-    // choose here if do_cache/cached/nothing
-    while ( it != vd->end() ) {
-      //const Timbl::TargetValue *tv = it->second->Value();
+    // check cache_level
+    if ( (cache_level == 1) || (cache_level == 0) ) {
+      while ( it != vd->end() ) {
+	//const Timbl::TargetValue *tv = it->second->Value();
 
-      std::string tvs           = it->second->Value()->Name();
-      double      wght          = it->second->Weight(); // absolute frequency.
-      double      smoothed_wght = wght;
-
-      // Is this the right place to use smoothed values?
-      // The Timbl distr. is built up from full corpus.
-      //
-      /*
-      std::map<int,double>::iterator cfi = c_stars.find( wght );
-      if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
-	smoothed_wght = (double)(*cfi).second;
-	//l.log( "smoothed_wght = " + to_str(smoothed_wght) );
-      }
-      smoothed_distr_count += smoothed_wght; // not used atm.
-      */
-
-      if ( topn > 0 ) { // only save if we want to sort/print them later.
-	distr_elem  d;
-	d.name   = tvs;
-	d.freq   = wght;
-	d.s_freq = smoothed_wght; // onzin.
-	distr_vec.push_back( d );
-      }
-
-      // Save it in the cache?
-      //
-      if ( cd != NULL ) {
-
-      }
-
-      // Prob. of this item in distribution.
-      //
-      prob     = (double)wght / (double)distr_count;
-      entropy -= ( prob * log2(prob) );
-
-      if ( target == tvs ) { // The correct answer was in the distribution!
-	target_freq = wght; // no smoothing here (or?)
-	if ( correct_answer == false ) {
-	  ++correct_distr;
-	  --wrong; // direct answer wrong, but right in distr. compensate count
+	std::string tvs           = it->second->Value()->Name();
+	double      wght          = it->second->Weight(); // absolute frequency.
+	double      smoothed_wght = wght;
+	
+	// Is this the right place to use smoothed values?
+	// The Timbl distr. is built up from full corpus.
+	//
+	/*
+	  std::map<int,double>::iterator cfi = c_stars.find( wght );
+	  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
+	  smoothed_wght = (double)(*cfi).second;
+	  //l.log( "smoothed_wght = " + to_str(smoothed_wght) );
+	  }
+	  smoothed_distr_count += smoothed_wght; // not used atm.
+	*/
+	
+	if ( topn > 0 ) { // only save if we want to sort/print them later.
+	  distr_elem  d;
+	  d.name   = tvs;
+	  d.freq   = wght;
+	  d.s_freq = smoothed_wght; // onzin.
+	  distr_vec.push_back( d );
 	}
-      }
+	
+	// Save it in the cache?
+	//
+	if ( cache_level == 1 ) {
+	  cd->freqs[tvs] = wght;
+	}
 
-      ++it;
-    } // end loop distribution
+	// Prob. of this item in distribution.
+	//
+	prob     = (double)wght / (double)distr_count;
+	entropy -= ( prob * log2(prob) );
+	
+	if ( target == tvs ) { // The correct answer was in the distribution!
+	  target_freq = wght; // no smoothing here (or?)
+	  if ( correct_answer == false ) {
+	    ++correct_distr;
+	    --wrong; // direct answer wrong, but right in distr. compensate
+	  }
+	}
+	
+	++it;
+      } // end loop distribution
+    } // cache_level == 1
+
     // Note that target_freq can be smoothed.
     target_distprob = (double)target_freq / (double)distr_count;
 
@@ -3241,14 +3270,20 @@ int pplx_simple( Logfile& l, Config& c ) {
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
     file_out << word_lp << ' ';
 
-    if ( topn > 0 ) { // we want a topn, sort and print them.
+    if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
       int cntr = topn;
       sort( distr_vec.begin(), distr_vec.end() );
       std::vector<distr_elem>::iterator fi;
       fi = distr_vec.begin();
       file_out << cnt << " [ ";
-      while ( (fi != distr_vec.end()) && (--cntr >= 0) ) {
+      while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
 	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	if ( cache_level == 1 ) {
+	  distr_elem d;
+	  d.name = (*fi).name;
+	  d.freq = (*fi).freq;
+	  (cd->distr_vec).push_back( d );
+	}
 	fi++;
       }
       file_out << "]";
