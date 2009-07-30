@@ -3381,9 +3381,9 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
   }
 
-  for ( int i = 0; i < cache_size; i++ ) {
+  /*for ( int i = 0; i < cache_size; i++ ) {
     l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).distr_size) );
-  }
+    }*/
 
   return 0;
 }
