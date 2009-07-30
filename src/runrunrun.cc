@@ -2808,6 +2808,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
+  int                cache_size       = stoi( c.get_value( "cache", "3" ) );
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -2825,6 +2826,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "topn:       "+to_str(topn) );
+  l.log( "cache:      "+to_str(cache_size) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.log( "OUTPUT:     "+output_filename1 );
@@ -2976,7 +2978,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   // Distribution cache
   //
-  int cache_size   = 3;
   int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
   std::vector<cached_distr> distr_cache;
   for ( int i = 0; i < cache_size; i++ ) {
