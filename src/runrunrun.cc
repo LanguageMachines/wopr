@@ -2789,7 +2789,7 @@ struct cached_distr {
   std::map<std::string,int> freqs; // word->frequency
   std::vector<distr_elem> distr_vec;
   bool operator<(const cached_distr& rhs) const {
-    return distr_size < rhs.distr_size;
+    return distr_size > rhs.distr_size;
   }
 };
 int pplx_simple( Logfile& l, Config& c ) {
@@ -3123,12 +3123,12 @@ int pplx_simple( Logfile& l, Config& c ) {
       if ( cache_idx == -1 ) {
 	l.log( "caching " + to_str(cnt) );
 	
-	cd = &distr_cache.at(0);
+	cd = &distr_cache.at(cache_size-1);
 	cd->distr_size = cnt;
 	cd->sum_freqs = distr_count;
 	// find new lowest here.
 	sort( distr_cache.begin(), distr_cache.end() );
-	lowest_cache = distr_cache.at(0).distr_size;
+	lowest_cache = distr_cache.at(cache_size-1).distr_size;
       }
     }
     // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
@@ -3147,7 +3147,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
     }
     if ( (cache_idx != -1) && (cd != NULL) ) {
-      l.log( "Using cache."+to_str(cd->distr_size) );
+      l.log( "Using cache #"+to_str(cache_idx) );
       cache_level = 3;
       //
       // How to use the cache? We need to see if target is in the
@@ -3155,7 +3155,6 @@ int pplx_simple( Logfile& l, Config& c ) {
       //
       std::map<std::string,int>::iterator wfi = cd->freqs.find( target );
       if ( wfi != cd->freqs.end() ) {
-	l.log( "target in cache." );
 	target_freq = (long)(*wfi).second;
 	distr_vec = cd->distr_vec; // the [distr] we print
       }
@@ -3167,7 +3166,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       // this gives an empty [] in the .px file, and the entropy
       // will be 0. (Was it that already?)
     }
-    if ( target_freq > 0 ) { // not only this
+    if ( target_freq > 0 ) { // not only this use chachelevel!
       it = vd->end(); 
     }
 
