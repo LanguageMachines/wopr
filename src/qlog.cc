@@ -3,20 +3,20 @@
 /*****************************************************************************
  * Copyright 2005 Peter Berck                                                *
  *                                                                           *
- * This file is part of wpred.                                          *
+ * This file is part of wpred.                                               *
  *                                                                           *
- * wpred is free software; you can redistribute it and/or modify it     *
+ * wpred is free software; you can redistribute it and/or modify it          *
  * under the terms of the GNU General Public License as published by the     *
  * Free Software Foundation; either version 2 of the License, or (at your    *
  * option) any later version.                                                *
  *                                                                           *
- * wpred is distributed in the hope that it will be useful, but WITHOUT *
+ * wpred is distributed in the hope that it will be useful, but WITHOUT      *
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or     *
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License      *
  * for more details.                                                         *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with wpred; if not, write to the Free Software Foundation,     *
+ * along with wpred; if not, write to the Free Software Foundation,          *
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
  *****************************************************************************/
 
@@ -183,6 +183,27 @@ void Logfile::log( std::string s, int sl ) {
   if ( sl != 0 ) {
     syslog( LOG_INFO, &(s[0]) );
   }
+}
+
+void Logfile::log_raw( std::string s ) {
+  char      timestring[32];
+  timeval   tv;
+  struct tm *t;
+
+  pthread_mutex_lock( &mtx );
+
+  gettimeofday( &tv, 0 );
+  t = localtime( &tv.tv_sec );
+  
+  strftime( timestring, 32, time_format.c_str(),  t );
+
+  int msec = tv.tv_usec;
+
+  std::cout << timestring << "." << std::setfill( '0' )
+	    << std::setw( 6 ) << msec << ": " << prefix;
+  std::cout << s << std::endl;
+
+  pthread_mutex_unlock( &mtx );
 }
 
 /*!

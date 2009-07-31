@@ -3127,16 +3127,13 @@ int pplx_simple( Logfile& l, Config& c ) {
 	break;
       }
     }
-    if ( cnt > lowest_cache ) { // It should be cached, if not present.
-      if ( cache_idx == -1 ) {
-	l.log( "caching " + to_str(cnt) );
+    if ( cache_idx == -1 ) { // It should be cached, if not present.
+      if ( cnt > lowest_cache ) {
+	l.log( "caching " + to_str(cnt) ); // done in the timbl loop
 	
-	cd = &distr_cache.at(cache_size-1);
+	cd = &distr_cache.at( cache_size-1 ); // the lowest.
 	cd->distr_size = cnt;
 	cd->sum_freqs = distr_count;
-	// find new lowest here.
-	sort( distr_cache.begin(), distr_cache.end() );
-	lowest_cache = distr_cache.at(cache_size-1).distr_size;
       }
     }
     // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
@@ -3215,6 +3212,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	
 	// Move this to a better spot...
 	//
+	/*
 	if ( target == tvs ) { // The correct answer was in the distribution!
 	  target_freq = wght; // no smoothing here (or?)
 	  if ( correct_answer == false ) {
@@ -3222,6 +3220,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	    --wrong; // direct answer wrong, but right in distr. compensate
 	  }
 	}
+	*/
 	
 	++it;
       } // end loop distribution
@@ -3279,7 +3278,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
       int cntr = topn;
-      sort( distr_vec.begin(), distr_vec.end() );
+      sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
       std::vector<distr_elem>::iterator fi;
       fi = distr_vec.begin();
       file_out << cnt << " [ ";
@@ -3336,6 +3335,11 @@ int pplx_simple( Logfile& l, Config& c ) {
       ++sentence_count;
       w_pplx.clear();
     }
+
+    // find new lowest here. Overdreven om sort te gebruiken...
+    // dit gooit cd = & in de war.
+    sort( distr_cache.begin(), distr_cache.end() );
+    lowest_cache = distr_cache.at(cache_size-1).distr_size;
 
   } // while getline()
 
