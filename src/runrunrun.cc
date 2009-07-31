@@ -3120,7 +3120,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	l.log( "caching " + to_str(cnt) ); // done in the timbl loop
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
 	cd->distr_size = cnt;
-	cd->sum_freqs = distr_count;
+	cd->sum_freqs  = distr_count;
       }
     }
     // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
@@ -3148,8 +3148,8 @@ int pplx_simple( Logfile& l, Config& c ) {
     // ----
 
     if ( cache_level == 3 ) {
-      std::map<std::string,int>::iterator wfi = cd->freqs.find( target );
-      if ( wfi != cd->freqs.end() ) {
+      std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
+      if ( wfi != (cd->freqs).end() ) {
 	target_freq = (long)(*wfi).second;
       }
       entropy = cd->entropy;
@@ -3160,8 +3160,8 @@ int pplx_simple( Logfile& l, Config& c ) {
       while ( it != vd->end() ) {
 	//const Timbl::TargetValue *tv = it->second->Value();
 
-	std::string tvs           = it->second->Value()->Name();
-	double      wght          = it->second->Weight(); // absolute frequency.
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight(); // absolute frequency.
 	
 	if ( topn > 0 ) { // only save if we want to sort/print them later.
 	  distr_elem  d;
