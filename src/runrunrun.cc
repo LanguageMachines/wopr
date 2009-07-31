@@ -3148,7 +3148,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       if ( cd == NULL ) {
 	cache_level = 0;
       } else {
-	cache_level = 1;
+	cache_level = 1; // want to cache
       }
     } else if (cache_idx != -1) {
       if ( cd != NULL ) {
@@ -3338,8 +3338,10 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     // find new lowest here. Overdreven om sort te gebruiken...
     // dit gooit cd = & in de war.
-    sort( distr_cache.begin(), distr_cache.end() );
-    lowest_cache = distr_cache.at(cache_size-1).distr_size;
+    if ( cache_level == 1 ) {
+      sort( distr_cache.begin(), distr_cache.end() );
+      lowest_cache = distr_cache.at(cache_size-1).distr_size;
+    }
 
   } // while getline()
 
