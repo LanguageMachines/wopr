@@ -2985,7 +2985,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   // Distribution cache
   //
-  int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
+  int lowest_cache = 10; // size of distr. (prolly need a higher starting value)
+  int cache_threshold = 22000;
   std::vector<cached_distr> distr_cache;
   for ( int i = 0; i < cache_size; i++ ) {
 	cached_distr c;
@@ -3100,6 +3101,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     double answer_prob     = 0.0;
     double entropy         = 0.0;
     std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+    std::vector<distr_elem>* distr_vecp = &distr_vec;
     cnt = vd->size();
     distr_count = vd->totalSize();
 
@@ -3116,7 +3118,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
     }
     if ( cache_idx == -1 ) { // It should be cached, if not present.
-      if ( cnt > lowest_cache ) {
+      if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	l.log( "caching " + to_str(cnt) ); // done in the timbl loop
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
 	cd->distr_size = cnt;
