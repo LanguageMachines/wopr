@@ -3077,7 +3077,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     // Do we change this answer to what is in the distr. (if it is?)
     //
     tv = My_Experiment->Classify( a_line, vd );
-    // check for vd == NULL
+
     std::string answer = tv->Name();
     if ( vd == NULL ) {
       l.log( "Classify( a_line, vd ) was null, skipping current line." );
@@ -3085,19 +3085,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       continue;
     }
 
-    //l.log( "Answer: '" + answer + "' / '" + target + "'" );
-
-    // Statistics to be printed at the end. Not so very usefull.
-    //
-    if ( target == answer ) {
-      ++correct;
-      correct_answer = true;
-    } else {
-      ++wrong;
-    }
-
     // Loop over distribution returned by Timbl.
-    // Skip if taregt unknown.
     //
     // entropy over distribution: sum( p log(p) ). 
     //
@@ -3130,7 +3118,6 @@ int pplx_simple( Logfile& l, Config& c ) {
     if ( cache_idx == -1 ) { // It should be cached, if not present.
       if ( cnt > lowest_cache ) {
 	l.log( "caching " + to_str(cnt) ); // done in the timbl loop
-	
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
 	cd->distr_size = cnt;
 	cd->sum_freqs = distr_count;
@@ -3158,12 +3145,9 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
     }
 
+    // ----
+
     if ( cache_level == 3 ) {
-      //l.log( "Using cache #"+to_str(cache_idx) );
-      //
-      // How to use the cache? We need to see if target is in the
-      // distribution, and if it is, get the frequency.
-      //
       std::map<std::string,int>::iterator wfi = cd->freqs.find( target );
       if ( wfi != cd->freqs.end() ) {
 	target_freq = (long)(*wfi).second;
@@ -3172,33 +3156,25 @@ int pplx_simple( Logfile& l, Config& c ) {
       distr_vec = cd->distr_vec; // the [distr] we print
     }
     if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
+
       while ( it != vd->end() ) {
 	//const Timbl::TargetValue *tv = it->second->Value();
 
 	std::string tvs           = it->second->Value()->Name();
 	double      wght          = it->second->Weight(); // absolute frequency.
-	double      smoothed_wght = wght;
-	
-	// Is this the right place to use smoothed values?
-	// The Timbl distr. is built up from full corpus.
-	//
-	/*
-	  std::map<int,double>::iterator cfi = c_stars.find( wght );
-	  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
-	  smoothed_wght = (double)(*cfi).second;
-	  //l.log( "smoothed_wght = " + to_str(smoothed_wght) );
-	  }
-	  smoothed_distr_count += smoothed_wght; // not used atm.
-	*/
 	
 	if ( topn > 0 ) { // only save if we want to sort/print them later.
 	  distr_elem  d;
 	  d.name   = tvs;
 	  d.freq   = wght;
-	  d.s_freq = smoothed_wght; // onzin.
+	  d.s_freq = wght;
 	  distr_vec.push_back( d );
 	}
 	
+	if ( tvs == target ) { // The correct answer was in the distribution!
+	  target_freq = wght;
+	}
+
 	// Save it in the cache?
 	//
 	if ( cache_level == 1 ) {
@@ -3209,18 +3185,6 @@ int pplx_simple( Logfile& l, Config& c ) {
 	//
 	prob     = (double)wght / (double)distr_count;
 	entropy -= ( prob * log2(prob) );
-	
-	// Move this to a better spot...
-	//
-	/*
-	if ( target == tvs ) { // The correct answer was in the distribution!
-	  target_freq = wght; // no smoothing here (or?)
-	  if ( correct_answer == false ) {
-	    ++correct_distr;
-	    --wrong; // direct answer wrong, but right in distr. compensate
-	  }
-	}
-	*/
 	
 	++it;
       } // end loop distribution
@@ -3251,7 +3215,6 @@ int pplx_simple( Logfile& l, Config& c ) {
 	//
 	w_prob = p0;
 	info = "P(new_particular)";
-	//l.log( target + " unk" );
       }
     }
 
