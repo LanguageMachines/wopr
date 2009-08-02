@@ -2784,13 +2784,13 @@ struct distr_elem {
   }
 };
 struct cached_distr {
-  int distr_size;
+  int cnt;
   long sum_freqs;
   double entropy;
   std::map<std::string,int> freqs; // word->frequency
-  std::vector<distr_elem> distr_vec;
+  std::vector<distr_elem> distr_vec; // top-n to print
   bool operator<(const cached_distr& rhs) const {
-    return distr_size > rhs.distr_size;
+    return cnt > rhs.cnt;
   }
 };
 int pplx_simple( Logfile& l, Config& c ) {
@@ -2810,6 +2810,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
   int                cache_size       = stoi( c.get_value( "cache", "3" ) );
+  int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -2824,19 +2825,20 @@ int pplx_simple( Logfile& l, Config& c ) {
     cache_size = 1;
   }
   l.inc_prefix();
-  l.log( "filename:   "+filename );
-  l.log( "ibasefile:  "+ibasefile );
-  l.log( "lexicon:    "+lexicon_filename );
-  l.log( "counts:     "+counts_filename );
-  l.log( "timbl:      "+timbl );
-  l.log( "hapax:      "+to_str(hapax) );
-  l.log( "ws:         "+to_str(ws) );
-  l.log( "lowercase:  "+to_str(to_lower) );
-  l.log( "topn:       "+to_str(topn) );
-  l.log( "cache:      "+to_str(cache_size) );
-  l.log( "id:         "+id );
-  l.log( "OUTPUT:     "+output_filename );
-  l.log( "OUTPUT:     "+output_filename1 );
+  l.log( "filename:       "+filename );
+  l.log( "ibasefile:      "+ibasefile );
+  l.log( "lexicon:        "+lexicon_filename );
+  l.log( "counts:         "+counts_filename );
+  l.log( "timbl:          "+timbl );
+  l.log( "hapax:          "+to_str(hapax) );
+  l.log( "ws:             "+to_str(ws) );
+  l.log( "lowercase:      "+to_str(to_lower) );
+  l.log( "topn:           "+to_str(topn) );
+  l.log( "cache:          "+to_str(cache_size) );
+  l.log( "cache threshold:"+to_str(cache_threshold) );
+  l.log( "id:             "+id );
+  l.log( "OUTPUT:         "+output_filename );
+  l.log( "OUTPUT:         "+output_filename1 );
   l.dec_prefix();
 
   std::ifstream file_in( filename.c_str() );
@@ -2986,13 +2988,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   // Distribution cache
   //
   int lowest_cache = 10; // size of distr. (prolly need a higher starting value)
-  int cache_threshold = 22000;
   std::vector<cached_distr> distr_cache;
   for ( int i = 0; i < cache_size; i++ ) {
 	cached_distr c;
-	c.distr_size = 0;
-	c.sum_freqs  = 0;
-	c.entropy    = 0.0;
+	c.cnt       = 0;
+	c.sum_freqs = 0;
+	c.entropy   = 0.0;
 	distr_cache.push_back( c );
   }
 
@@ -3084,7 +3085,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       l.log( "Classify( a_line, vd ) was null, skipping current line." );
       file_out << a_line << ' ' << answer << " ERROR" << std::endl;
       continue;
-    }
+    } 
 
     // Loop over distribution returned by Timbl.
     //
@@ -3101,8 +3102,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     double answer_prob     = 0.0;
     double entropy         = 0.0;
     std::vector<distr_elem> distr_vec;// see correct in levenshtein.
-    std::vector<distr_elem>* distr_vecp = &distr_vec;
-    cnt = vd->size();
+    cnt         = vd->size();
     distr_count = vd->totalSize();
 
     // Check cache/size/presence. Note it assumes that each size
@@ -3111,17 +3111,19 @@ int pplx_simple( Logfile& l, Config& c ) {
     int cache_idx = -1;
     cached_distr* cd = NULL;
     for ( int i = 0; i < cache_size; i++ ) {
-      if ( distr_cache.at(i).distr_size == cnt ) {
-	cache_idx = i; // it's cached already!
-	cd = &distr_cache.at(i);
-	break;
+      if ( distr_cache.at(i).cnt == cnt ) {
+	if ( distr_cache.at(i).sum_freqs == distr_count ) {
+	  cache_idx = i; // it's cached already!
+	  cd = &distr_cache.at(i);
+	  break;
+	}
       }
     }
     if ( cache_idx == -1 ) { // It should be cached, if not present.
       if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	l.log( "caching " + to_str(cnt) ); // done in the timbl loop
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	cd->distr_size = cnt;
+	cd->cnt = cnt;
 	cd->sum_freqs  = distr_count;
       }
     }
@@ -3305,7 +3307,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     // dit gooit cd = & in de war.
     if ( cache_level == 1 ) {
       sort( distr_cache.begin(), distr_cache.end() );
-      lowest_cache = distr_cache.at(cache_size-1).distr_size;
+      lowest_cache = distr_cache.at(cache_size-1).cnt;
     }
 
   } // while getline()
@@ -3360,7 +3362,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   }
 
   /*for ( int i = 0; i < cache_size; i++ ) {
-    l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).distr_size) );
+    l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).cnt) );
     }*/
 
   return 0;
