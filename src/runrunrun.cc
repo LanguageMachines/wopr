@@ -2794,6 +2794,7 @@ struct cached_distr {
   }
 };
 int pplx_simple( Logfile& l, Config& c ) {
+  l.log( "pplxs" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -2839,6 +2840,11 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "OUTPUT:         "+output_filename );
   l.log( "OUTPUT:         "+output_filename1 );
   l.dec_prefix();
+
+  if ( file_exists(l,c,output_filename) && file_exists(l,c,output_filename1) ) {
+    l.log( "OUTPUT files exist, not overwriting." );
+    return 0;
+  }
 
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
@@ -2996,6 +3002,8 @@ int pplx_simple( Logfile& l, Config& c ) {
 	distr_cache.push_back( c );
   }
 
+  long timbl_time = 0;
+
   while( std::getline( file_in, a_line )) {
 
     if ( to_lower ) {
@@ -3075,9 +3083,17 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
 
     // What does Timbl think?
-    // Do we change this answer to what is in the distr. (if it is?)
     //
+    // We can also cache this to avoid calling Timbl for 
+    // "_ _ xx" patterns, to avoid calling Timbl in the beginning
+    // of every sentence and taking a lot of time.
+    //
+    //
+    long us0 = clock_u_secs();
     tv = My_Experiment->Classify( a_line, vd );
+    long us1 = clock_u_secs();
+    //l.log("Timbl took: "+to_str(us1-us0, 6, ' ')+" usecs.");
+    timbl_time += (us1-us0);
 
     std::string answer = tv->Name();
     if ( vd == NULL ) {
@@ -3316,11 +3332,18 @@ int pplx_simple( Logfile& l, Config& c ) {
       w_pplx.clear();
     }
 
-    // find new lowest here. Overdreven om sort te gebruiken...
-    // dit gooit cd = & in de war.
+    // Find new lowest here. Overdreven om sort te gebruiken?
+    //
     if ( cache_level == 1 ) {
       sort( distr_cache.begin(), distr_cache.end() );
       lowest_cache = distr_cache.at(cache_size-1).cnt;
+      //}
+    lowest_cache = 1000000; // hmmm.....
+    for ( int i = 0; i < cache_size; i++ ) {
+      if ( (distr_cache.at(i)).cnt < lowest_cache ) {
+	lowest_cache = (distr_cache.at(i)).cnt;
+      }
+    }
     }
 
   } // while getline()
@@ -3377,6 +3400,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   /*for ( int i = 0; i < cache_size; i++ ) {
     l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).cnt) );
     }*/
+
+  l.log("Timbl took: "+to_str(timbl_time/1000)+" msecs.");
 
   return 0;
 }

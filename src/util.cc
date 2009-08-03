@@ -445,4 +445,24 @@ bool is_numeric( std::string s ) {
   }
 }
 
+long clock_u_secs() {
+  timeval tv;
+
+  gettimeofday(&tv, 0);
+
+  long u_secs = tv.tv_sec * 1000000 + tv.tv_usec;
+
+  return u_secs ;
+}
+
+long clock_m_secs() {
+  timeval tv;
+
+  gettimeofday(&tv, 0);
+
+  long m_secs = tv.tv_sec * 1000 + (tv.tv_usec + 500)/1000;
+
+  return m_secs ;
+}
+
 //-----------------------------------------------------------------------------
