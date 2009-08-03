@@ -3059,7 +3059,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     std::map<std::string,int>::iterator wfi = wfreqs.find( target );
     bool   target_unknown = false;
-    bool   correct_answer = false;
+    bool   target_in_dist = false;
     double target_lexfreq = 0.0;// should be double because smoothing
     double target_lexprob = 0.0;
     if ( wfi == wfreqs.end() ) {
@@ -3146,16 +3146,16 @@ int pplx_simple( Logfile& l, Config& c ) {
 	cache_level = 3;
       } else {
 	cache_level = 2;// play mission impossible theme
-	l.log(" Aaaarrrrgggghhhhhh!" );
       }
     }
 
     // ----
 
-    if ( cache_level == 3 ) {
+    if ( cache_level == 3 ) { // Use the cache, Luke.
       std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
       if ( wfi != (cd->freqs).end() ) {
 	target_freq = (long)(*wfi).second;
+	target_in_dist = true;
       }
       entropy = cd->entropy;
       distr_vec = cd->distr_vec; // the [distr] we print
@@ -3178,6 +3178,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	
 	if ( tvs == target ) { // The correct answer was in the distribution!
 	  target_freq = wght;
+	  target_in_dist = true;
 	}
 
 	// Save it in the cache?
@@ -3197,6 +3198,17 @@ int pplx_simple( Logfile& l, Config& c ) {
 	cd->entropy = entropy;
       }
     } // cache_level == 1 or 0
+
+
+    // Counting correct guesses
+    //
+    if ( answer == target ) {
+      ++correct;
+    } else if ( (answer != target) && (target_in_dist == true) ) {
+      ++correct_distr; 
+    } else {
+      ++wrong;
+    }
 
     target_distprob = (double)target_freq / (double)distr_count;
 
