@@ -2794,7 +2794,6 @@ struct cached_distr {
   }
 };
 int pplx_simple( Logfile& l, Config& c ) {
-  l.log( "pplx" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -2987,7 +2986,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   // Distribution cache
   //
-  int lowest_cache = 10; // size of distr. (prolly need a higher starting value)
+  int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
   std::vector<cached_distr> distr_cache;
   for ( int i = 0; i < cache_size; i++ ) {
 	cached_distr c;
@@ -3121,10 +3120,11 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     if ( cache_idx == -1 ) { // It should be cached, if not present.
       if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
-	l.log( "caching " + to_str(cnt) ); // done in the timbl loop
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
+	l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
 	cd->cnt = cnt;
 	cd->sum_freqs  = distr_count;
+	(cd->distr_vec).clear();
       }
     }
     // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
@@ -3146,6 +3146,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	cache_level = 3;
       } else {
 	cache_level = 2;// play mission impossible theme
+	l.log(" Aaaarrrrgggghhhhhh!" );
       }
     }
 
