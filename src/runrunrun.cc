@@ -1602,7 +1602,7 @@ int lexicon(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+anaval_filename );
   l.dec_prefix();
 
-  if ( file_exists(l, c, output_filename) && file_exists(l, c, counts_filename) ) {
+  if ( file_exists(l,c,output_filename) && file_exists(l,c,counts_filename) ) {
     l.log( "LEXICON and COUNTSFILE exists, not overwriting." );
     c.add_kv( "lexicon", output_filename );
     l.log( "SET lexicon to "+output_filename );
@@ -2856,7 +2856,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .px output file." ); // for px
     return -1;
   }
-  file_out << "# instance+target classification logprob entropy word_lp (dist.cnt [topn])" << std::endl;
+  file_out << "# instance+target classification logprob entropy word_lp guess (dist.cnt [topn])" << std::endl;
 
   std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
   if ( ! file_out1 ) {
@@ -3271,6 +3271,14 @@ int pplx_simple( Logfile& l, Config& c ) {
     file_out << a_line << ' ' << answer << ' '
 	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
     file_out << word_lp << ' ';
+
+    if ( answer == target ) {
+      file_out << "cg "; // correct guess
+    } else if ( (answer != target) && (target_in_dist == true) ) {
+      file_out << "cd "; // correct distr.
+    } else {
+      file_out << "ic "; // incorrect
+    }
 
     if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
       int cntr = topn;

@@ -170,6 +170,8 @@ int main( int argc, char* argv[] ) {
       if ( long_options[option_index].name == "run" ) {
 	co.add_kv( "run", optarg );
 	// Note that one can override settings by having them after.
+	// Depending on the force parameter, which is false here, and
+	// true in scripts.
       }
       break;
       
