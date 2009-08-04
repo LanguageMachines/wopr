@@ -42,6 +42,7 @@ EXTRA_DIST = \
 	etc/nscript1 \
 	etc/generator.script \
 	etc/graph_wplex.pl \
+	etc/examine_px.pl \
 	bootstrap.sh \
 	web/generator/generator.css \
 	web/generator/generator.php \
