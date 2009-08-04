@@ -136,9 +136,11 @@ if ( $wcnt > 0 ) {
   print "sum($var) = $var_summed\n";
   print "avg($var) = ".($var_summed/$wcnt)."\n";
 }
-print "correct guess: $cg\n";
-print "correct dist.: $cd\n";
-print "correct total: ".($cd+$cg)."\n";
-print "incorrect    : $ic\n";
+my $total = $cd+$cg+$ic;
+printf( "correct guess: %8i (%5.2f)\n", $cg, $cg/$total*100 );
+printf( "correct dist.: %8i (%5.2f)\n", $cd, $cd/$total*100 );
+printf( "correct total: %8i (%5.2f)\n", ($cd+$cg), ($cd+$cg)/$total*100 );
+printf( "incorrect    : %8i (%5.2f)\n", $ic, $ic/$total*100 );
+printf( "total guesses: %8i\n", $total );
 
 # To compare: judge sentences (as in mbmt), compare "rankings" from both.
