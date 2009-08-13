@@ -79,17 +79,17 @@ while ( my $line = <FH> ) {
 
   my $trgt = $parts[$ws];
 
-  # 0,1,2   : context
-  # 3 ws    : target
-  # 4 ws+1  : prediction
-  # 5 ws+2  : logprob of prediction
-  # 6 ws+3  : entropy of distro returned (sum (p * log(p)) )
-  # 7 ws+4  : word level entropy (2 ** -logprob) (from _word_ logprob)
-  # 8 ws+5  : cg/cd/ic
-  # 9 ws+6  : size of distro
+  #  0,1,2   : context
+  #  3 ws    : target
+  #  4 ws+1  : prediction
+  #  5 ws+2  : logprob of prediction
+  #  6 ws+3  : entropy of distro returned (sum (p * log(p)) )
+  #  7 ws+4  : word level entropy (2 ** -logprob) (from _word_ logprob)
+  #  8 ws+5  : cg/cd/ic
+  #  9 ws+6  : MD
+  # 10 ws+7  : mal
+  # 11 ws+8  : size of distro
   #
-  #print $wcnt++."\t".$parts[$ws+2]."\t".$parts[$ws+4]."\t".$parts[$ws+5]."\t".$parts[$ws]."\t".$parts[$ws+3]."\n";
-
   $distr_entropy += $parts[$ws+3]; # Sum of all distro-entropies
   $word_entropy += $parts[$ws+4];     # Sum of all WL-entropies
   $correct = $parts[$ws+5];
@@ -101,7 +101,7 @@ while ( my $line = <FH> ) {
   } elsif ( $var eq "lp" ) {
     $val = $parts[$ws+2];
   } elsif ( $var eq "sz" ) {
-    $val = $parts[$ws+6];
+    $val = $parts[$ws+8];
   }
   $var_summed += $val;
 

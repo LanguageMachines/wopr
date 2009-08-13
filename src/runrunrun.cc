@@ -2980,7 +2980,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   int    sentence_wordcount = 0;
   int    sentence_count     = 0;
   
-  // Could cache a map(string:freq) of the top-3 distributions returned
+  // Cache a map(string:freq) of the top-n distributions returned
   // by Timbl.
   // We get the size first, if it is bigger than the ones we have cached,
   // we can save the map when we cycle through the distribution. Next
@@ -3101,6 +3101,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       file_out << a_line << ' ' << answer << " ERROR" << std::endl;
       continue;
     } 
+
+    size_t md  = My_Experiment->matchDepth();
+    bool   mal = My_Experiment->matchedAtLeaf();
+    //l.log( "md="+to_str(md)+", mal="+to_str(mal) );
 
     // Loop over distribution returned by Timbl.
     //
@@ -3279,6 +3283,10 @@ int pplx_simple( Logfile& l, Config& c ) {
     } else {
       file_out << "ic "; // incorrect
     }
+
+    // New in 1.10.0, the matchDepth and matchedAtLeaf
+    //
+    file_out << md << ' ' << mal << ' ';
 
     if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
       int cntr = topn;
