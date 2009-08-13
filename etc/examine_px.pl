@@ -13,19 +13,25 @@ use Getopt::Std;
 #
 # TODO: two separate checks for end-of-sentence is ugly, should be improved.
 #
+# Changed ws paramater to l and r.
+# ws3 === l3, r0
+#
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_e $opt_f $opt_v $opt_w /;
+use vars qw/ $opt_b $opt_e $opt_f $opt_l $opt_r $opt_v $opt_w /;
 
-getopts('b:e:f:v:w:');
+getopts('b:e:f:l:r:v:w:');
 
-my $basename   = $opt_b ||  "out";
-my $file       = $opt_f ||  0;
-my $eos_mode   = $opt_e ||  0;
-my $var        = $opt_v ||  "lp"; #wlp, dp, lp, sz
-my $ws         = $opt_w ||  3;
+my $basename   = $opt_b || "out";
+my $file       = $opt_f || 0;
+my $eos_mode   = $opt_e || 0;
+my $var        = $opt_v || "lp"; #wlp, dp, lp, sz, md
+my $lc         = $opt_l || 0;
+my $rc         = $opt_r || 0;
 
 #------------------------------------------------------------------------------
+
+my $ws = $lc + $rc;
 
 my $div  = "_ _ _ _ _ _ _ _ _ _";
 my $wcnt =  0;
@@ -86,7 +92,7 @@ while ( my $line = <FH> ) {
   #  6 ws+3  : entropy of distro returned (sum (p * log(p)) )
   #  7 ws+4  : word level entropy (2 ** -logprob) (from _word_ logprob)
   #  8 ws+5  : cg/cd/ic
-  #  9 ws+6  : MD
+  #  9 ws+6  : md
   # 10 ws+7  : mal
   # 11 ws+8  : size of distro
   #
@@ -102,6 +108,8 @@ while ( my $line = <FH> ) {
     $val = $parts[$ws+2];
   } elsif ( $var eq "sz" ) {
     $val = $parts[$ws+8];
+  } elsif ( $var eq "md" ) {
+    $val = $parts[$ws+6];
   }
   $var_summed += $val;
 
@@ -118,7 +126,7 @@ while ( my $line = <FH> ) {
   $p0 = $wcnt++;
   $p1 = $parts[$ws];
   $p2 = $parts[$ws+1];
-  $p3 = $parts[$ws+6];
+  $p3 = $parts[$ws+8];
   $p4 = $val;
   write ;
 
