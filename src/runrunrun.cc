@@ -2803,7 +2803,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                hapax            = stoi( c.get_value( "hpx", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   int                ws               = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  int                lc               = stoi( c.get_value( "lc", "0" ));
+  int                rc               = stoi( c.get_value( "rc", "0" ));
   std::string        output_filename  = filename + "_" + id + ".px";
   std::string        output_filename1 = filename + "_" + id + ".pxs";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
@@ -2817,6 +2818,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::vector<std::string> distribution;
   std::string        result;
   double             distance;
+
+  // This is better for l0r3 contexts &c.
+  // It should really only say the length of the context, i.e the
+  // number of features before the target.
+  //
+  ws = lc + rc;
 
   // Sanity check.
   //
@@ -2832,7 +2839,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "timbl:          "+timbl );
   l.log( "hapax:          "+to_str(hapax) );
   l.log( "ws:             "+to_str(ws) );
-  l.log( "lowercase:      "+to_str(to_lower) );
+  l.log( "lc:             "+to_str(lc) );
+  l.log( "rc:             "+to_str(rc) );
   l.log( "topn:           "+to_str(topn) );
   l.log( "cache:          "+to_str(cache_size) );
   l.log( "cache threshold:"+to_str(cache_threshold) );
@@ -3005,10 +3013,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   long timbl_time = 0;
 
   while( std::getline( file_in, a_line )) {
-
-    if ( to_lower ) {
-      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
-    }
 
     words.clear();
     a_line = trim( a_line );

@@ -66,6 +66,7 @@ while ( my $line = <FH> ) {
   chomp $line;
 
   # If we find a "_ _ _ ..." we have started a new sentence...
+  # With only right context, it is the next one...
   #
   if ( ($eos_mode == 0) && (substr( $line, 0, $ws*2 ) eq substr( $div, 0, $ws*2)) ) {
     if ( $wcnt > 0 ) {
@@ -126,14 +127,21 @@ while ( my $line = <FH> ) {
   $p0 = $wcnt++;
   $p1 = $parts[$ws];
   $p2 = $parts[$ws+1];
-  $p3 = $parts[$ws+8];
+  $p3 = $parts[$ws+6]; #########################################! was 8
   $p4 = $val;
   write ;
 
   # If not "_ _ _" we look for end of line punctuation.
   #
   if ( ($eos_mode > 0) && ($trgt =~ m/[.?!]/) ) {
-    print "Line!\n";
+    if ( $wcnt > 0 ) {
+      print "sum($var) = $var_summed\n";
+      print "avg($var) = ".($var_summed/$wcnt)."\n";
+    }
+    $wcnt = 0;
+    $distr_entropy = 0;
+    $word_entropy = 0;
+    $var_summed = 0;
   }
 
 }
