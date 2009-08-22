@@ -3421,7 +3421,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).cnt) );
     }*/
 
-  l.log("Timbl took: "+to_str(timbl_time/1000)+" msecs.");
+  l.log("Timbl took: "+secs_to_str(timbl_time/1000) );
 
   return 0;
 }

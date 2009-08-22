@@ -162,7 +162,8 @@ int lcontext( Logfile& l, Config& c ) {
   const std::string& rng_filename    = c.get_value( "range" );
   int                gcs             = stoi( c.get_value( "gcs", "10" ));
   int                gcd             = stoi( c.get_value( "gcd", "10" ));
-  std::string        output_filename = filename + ".rn";
+  std::string        output_filename = filename + ".gc" + to_str(gcs)
+                                                + "d" + to_str(gcd);
 
   l.inc_prefix();
   l.log( "filename: "+filename );
@@ -218,13 +219,24 @@ int lcontext( Logfile& l, Config& c ) {
   // Third parameter: length of global context "trail", when will we 'forget'
   // a word.
   //
+  // Make a global_context class which is used in window_lr to update
+  // and retrieve.
+  // GC->add(word), GC->get_context(4), GC->decay(), etc.
+  //
+  // Or we give this function another ws3/lnrn dataset, we use the target
+  // to generate the g-c, add it to the data, save in new data set.
+  //
+  // So how is this different from longer context, which doesn't seem
+  // to help...?
+  //
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
   
-  // File to make data from
+  // File to make data from. If this is a wopr-data set, we should
+  // only look at the last word (target).
   //
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
@@ -236,12 +248,19 @@ int lcontext( Logfile& l, Config& c ) {
   std::string a_line;
   std::map<std::string, int>::iterator ri;
   // initialize empty global context
-  std::vector<gc_elem> global_context; // hmmm, like this?
+  gc_elem empty;
+  empty.word = "_";
+  empty.strength = 999999;
+  std::vector<gc_elem> global_context; //(10, empty); // hmmm, like this?
   std::vector<gc_elem>::iterator di;
   while( std::getline( file_in, a_line ) ) { 
 
     Tokenize( a_line, words, ' ' );
-    for( int i = 0; i < words.size(); i++ ) {
+    int start = 0;
+    if ( true ) {
+      start = words.size()-1; // only target
+    }
+    for( int i = start; i < words.size(); i++ ) {
 
       //std::find(v1.begin(), v1.end(), string); // slower than find in map?
 
@@ -249,38 +268,57 @@ int lcontext( Logfile& l, Config& c ) {
 
       ri = range.find( wrd ); // word in data is in .rng list?
       if ( ri != range.end() ) {
-	l.log( "gc word: "+wrd );
+	//l.log( "gc word: "+wrd );
+	//
 	// check if present? or more is better?
+	// if present, we can add to strength instead of doubling the entry?
+	//
 	gc_elem gce;
 	gce.word     = wrd;
 	gce.strength = gcd;
 	global_context.push_back( gce );
+	//global_context.insert( global_context.begin(), gce );
 
-	di = global_context.begin();
+	/*di = global_context.begin();
 	int cnt = gcs;
 	while ( ( cnt-- > 0) && (di != global_context.end())) {
 	  std::cout << " " << (*di).word << "/" << (*di).strength;
 	  *di++;
 	}
-	std::cout << std::endl;	
+	std::cout << std::endl;	*/
       }
 
+      //--
       di = global_context.begin();
       int cnt = gcs;
+      while ( ( cnt-- > 0) && (di != global_context.end())) {
+	file_out << (*di).word << " "; // << "/" << (*di).strength;
+	*di++;
+      }
+      while ( cnt-- >= 0 ) {
+	file_out << "_ "; // should be different from out-of-sentence char?
+      }
+      if ( true ) { // add to data set mode.
+	file_out << a_line;
+      }
+      file_out << std::endl;	
+      //--
+
+      //--
+      di = global_context.begin();
+      cnt = gcs;
       while ( ( cnt-- > 0) && (di != global_context.end())) {
 	--((*di).strength);
 	if ( (*di).strength <= 0 ) {
 	  //global_context.erase( di );
 	  (*di).strength = 0;
-	  l.log( "Decayed: " + (*di).word );
+	  //l.log( "Decayed: " + (*di).word );
 	}
 	*di++;
       }
-
-      di = remove_if( global_context.begin(), global_context.end(), 
-		      is_dead );
+      di = remove_if( global_context.begin(), global_context.end(), is_dead );
       global_context.erase( di, global_context.end() );
-
+      //--
 
     }
     words.clear();
