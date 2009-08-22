@@ -40,6 +40,7 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <deque>
 
 #include "qlog.h"
 #include "Config.h"
@@ -59,6 +60,9 @@ struct lex_elem {
   }
 };
 
+/*
+  Take words from lexicon if frequency within bounds.
+*/
 int bounds_from_lex( Logfile& l, Config& c ) {
   l.log( "bounds_from_lex" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -124,7 +128,7 @@ int bounds_from_lex( Logfile& l, Config& c ) {
     li++;
   }
   range_out.close();
-  l.log( "Range contains "+to_str(num)+" items." );
+  l.log( "Range contains "+to_str(num)+" items, out of "+to_str(lex_vec.size()) );
 
   // set RANGE_FILE to range_filename ofzo
 
@@ -141,15 +145,30 @@ int bounds_from_lex( Logfile& l, Config& c ) {
 
   end of discourse? reset after nnn words? track changes?
 */
+struct gc_elem {
+  std::string word;
+  int         strength;
+  bool operator<(const gc_elem& rhs) const {
+    return strength > rhs.strength;
+  }
+};
+bool is_dead(const gc_elem& gce) {
+  return gce.strength <= 0;
+}
+
 int lcontext( Logfile& l, Config& c ) {
   l.log( "lcontext" );
-  const std::string& filename        = c.get_value( "filename" );
+  const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& rng_filename    = c.get_value( "range" );
+  int                gcs             = stoi( c.get_value( "gcs", "10" ));
+  int                gcd             = stoi( c.get_value( "gcd", "10" ));
   std::string        output_filename = filename + ".rn";
 
   l.inc_prefix();
   l.log( "filename: "+filename );
   l.log( "range:    "+rng_filename );
+  l.log( "gcs:      "+to_str(gcs) );
+  l.log( "gcd:      "+to_str(gcd) );
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
@@ -157,7 +176,7 @@ int lcontext( Logfile& l, Config& c ) {
     l.log( "OUTPUT exists, not overwriting." );
     //c.add_kv( "filename", output_filename );
     //l.log( "SET filename to "+output_filename );
-    return 0;
+    //return 0;
   }
 
   // Open range file.
@@ -170,19 +189,106 @@ int lcontext( Logfile& l, Config& c ) {
   l.log( "Reading range file." );
   std::string a_word;
   long wfreq;
-  std::vector<std::string> range;
+  std::map<std::string, int> range;
   while( file_rng >> a_word >> wfreq ) {
-    // foo, bar, quux.
+    range[ a_word ] = 1; //ignore frequency?
   }
-  l.log( "Loaded range file." );
+  l.log( "Loaded range file, "+to_str(range.size())+" items." );
   file_rng.close();
 
+  // What will the output look like....?
+  //   Pierre Vinken, 61 years old, will join the board as a 
+  //   nonexecutive director Nov. 29. 
+  // Imagine, years is focus word. ws2 context, plus global context.
+  // Instance: (global) , 61 years
+  // global looks like: bit vector? The words or empty words?
+  // Imagine the .rng files contains "business, Vinken, good"
+  // gc: 0 1 0
+  // gc: _ Vinken _
+  // Second parameter: size of global context, i.e 10 out of a possible 831.
+  //
+  // expand global context "vertically", 10x one global context plus rest 
+  // of context:
+  // _ , 61 years
+  // Vinken , 61 years
+  // _ , 61 years (double..)
+  //
+  // Elastigrams!
+  //
+  // Third parameter: length of global context "trail", when will we 'forget'
+  // a word.
+  //
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
   
+  // File to make data from
+  //
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load data file." );
+    return -1;
+  }
+
+  std::vector<std::string> words;
+  std::string a_line;
+  std::map<std::string, int>::iterator ri;
+  // initialize empty global context
+  std::vector<gc_elem> global_context; // hmmm, like this?
+  std::vector<gc_elem>::iterator di;
+  while( std::getline( file_in, a_line ) ) { 
+
+    Tokenize( a_line, words, ' ' );
+    for( int i = 0; i < words.size(); i++ ) {
+
+      //std::find(v1.begin(), v1.end(), string); // slower than find in map?
+
+      std::string wrd = words.at(i);
+
+      ri = range.find( wrd ); // word in data is in .rng list?
+      if ( ri != range.end() ) {
+	l.log( "gc word: "+wrd );
+	// check if present? or more is better?
+	gc_elem gce;
+	gce.word     = wrd;
+	gce.strength = gcd;
+	global_context.push_back( gce );
+
+	di = global_context.begin();
+	int cnt = gcs;
+	while ( ( cnt-- > 0) && (di != global_context.end())) {
+	  std::cout << " " << (*di).word << "/" << (*di).strength;
+	  *di++;
+	}
+	std::cout << std::endl;	
+      }
+
+      di = global_context.begin();
+      int cnt = gcs;
+      while ( ( cnt-- > 0) && (di != global_context.end())) {
+	--((*di).strength);
+	if ( (*di).strength <= 0 ) {
+	  //global_context.erase( di );
+	  (*di).strength = 0;
+	  l.log( "Decayed: " + (*di).word );
+	}
+	*di++;
+      }
+
+      di = remove_if( global_context.begin(), global_context.end(), 
+		      is_dead );
+      global_context.erase( di, global_context.end() );
+
+
+    }
+    words.clear();
+      
+  }
+
+  file_in.close();
+  file_out.close();
 
   return 0;
 }
