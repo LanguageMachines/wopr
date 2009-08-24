@@ -177,9 +177,9 @@ int lcontext( Logfile& l, Config& c ) {
 
   if ( file_exists( l, c, output_filename ) ) {
     l.log( "OUTPUT exists, not overwriting." );
-    //c.add_kv( "filename", output_filename );
-    //l.log( "SET filename to "+output_filename );
-    //return 0;
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
   }
 
   // Open range file.
@@ -253,8 +253,8 @@ int lcontext( Logfile& l, Config& c ) {
   gc_elem empty;
   empty.word = "_";
   empty.strength = 999999;
-  std::vector<gc_elem> global_context; //(10, empty); // hmmm, like this?
-  std::vector<gc_elem>::iterator di;
+  std::deque<gc_elem> global_context(10, empty); // hmmm, like this?
+  std::deque<gc_elem>::iterator di;
   while( std::getline( file_in, a_line ) ) { 
 
     Tokenize( a_line, words, ' ' );
@@ -278,27 +278,16 @@ int lcontext( Logfile& l, Config& c ) {
 	gc_elem gce;
 	gce.word     = wrd;
 	gce.strength = gcd;
-	global_context.push_back( gce );
+	global_context.push_front( gce );
 	//global_context.insert( global_context.begin(), gce );
-
-	/*di = global_context.begin();
-	int cnt = gcs;
-	while ( ( cnt-- > 0) && (di != global_context.end())) {
-	  std::cout << " " << (*di).word << "/" << (*di).strength;
-	  *di++;
-	}
-	std::cout << std::endl;	*/
       }
 
       //--
-      di = global_context.begin();
+      di = global_context.begin()+gcs;
       int cnt = gcs;
-      while ( ( cnt-- > 0) && (di != global_context.end())) {
+      while ( di != global_context.begin() ) {
 	file_out << (*di).word << " "; // << "/" << (*di).strength;
-	*di++;
-      }
-      while ( cnt-- >= 0 ) {
-	file_out << "_ "; // should be different from out-of-sentence char?
+	*di--;
       }
       if ( true ) { // add to data set mode.
 	file_out << a_line;
@@ -307,19 +296,22 @@ int lcontext( Logfile& l, Config& c ) {
       //--
 
       //--
-      di = global_context.begin();
-      cnt = gcs;
-      while ( ( cnt-- > 0) && (di != global_context.end())) {
+      di = global_context.begin()+gcs;
+      while ( di != global_context.begin() ) {
 	--((*di).strength);
 	if ( (*di).strength <= 0 ) {
 	  //global_context.erase( di );
 	  (*di).strength = 0;
 	  //l.log( "Decayed: " + (*di).word );
 	}
-	*di++;
+	*di--;
       }
-      di = remove_if( global_context.begin(), global_context.end(), is_dead );
-      global_context.erase( di, global_context.end() );
+      //
+      std::deque<gc_elem>::iterator end_di;
+      end_di = global_context.end();
+      di = remove_if( global_context.begin(), end_di, 
+		      is_dead );
+      global_context.erase( di, end_di );
       //--
 
     }
