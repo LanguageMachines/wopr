@@ -68,7 +68,7 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   int                m                = stoi( c.get_value( "m", "10" ));
   int                n                = stoi( c.get_value( "n", "20" ));
-  std::string        range_filename   = lexicon_filename + ".rng";
+  std::string        range_filename   = lexicon_filename + ".r"+to_str(m)+"n"+to_str(n);
 
   l.inc_prefix();
   l.log( "lexicon: "+lexicon_filename );
@@ -130,8 +130,10 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   range_out.close();
   l.log( "Range contains "+to_str(num)+" items, out of "+to_str(lex_vec.size()) );
 
-  // set RANGE_FILE to range_filename ofzo
-
+  // set RANGE_FILE to range_filename 
+  //
+  c.add_kv( "range", range_filename );
+  l.log( "SET range to "+range_filename );
   return 0;
 }
   
@@ -160,8 +162,8 @@ int lcontext( Logfile& l, Config& c ) {
   l.log( "lcontext" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& rng_filename    = c.get_value( "range" );
-  int                gcs             = stoi( c.get_value( "gcs", "10" ));
-  int                gcd             = stoi( c.get_value( "gcd", "10" ));
+  int                gcs             = stoi( c.get_value( "gcs",   "3" ));
+  int                gcd             = stoi( c.get_value( "gcd", "500" ));
   std::string        output_filename = filename + ".gc" + to_str(gcs)
                                                 + "d" + to_str(gcd);
 
@@ -328,6 +330,8 @@ int lcontext( Logfile& l, Config& c ) {
   file_in.close();
   file_out.close();
 
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
   return 0;
 }
 
