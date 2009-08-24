@@ -77,6 +77,13 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   l.log( "OUTPUT:  "+range_filename );
   l.dec_prefix();
 
+  if ( file_exists( l, c, range_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "range", range_filename );
+    l.log( "SET range to "+range_filename );
+    return 0;
+  }
+
   // Load lexicon.
   //
   int wfreq;
@@ -301,17 +308,20 @@ int lcontext( Logfile& l, Config& c ) {
 	--((*di).strength);
 	if ( (*di).strength <= 0 ) {
 	  //global_context.erase( di );
-	  (*di).strength = 0;
+	  *di = empty;
+	  //(*di).word = "_";
 	  //l.log( "Decayed: " + (*di).word );
 	}
 	*di--;
       }
       //
+      /*
       std::deque<gc_elem>::iterator end_di;
       end_di = global_context.end();
       di = remove_if( global_context.begin(), end_di, 
 		      is_dead );
       global_context.erase( di, end_di );
+      */
       //--
 
     }
