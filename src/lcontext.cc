@@ -171,15 +171,17 @@ int lcontext( Logfile& l, Config& c ) {
   const std::string& rng_filename    = c.get_value( "range" );
   int                gcs             = stoi( c.get_value( "gcs",   "3" ));
   int                gcd             = stoi( c.get_value( "gcd", "500" ));
+  bool               from_data       = stoi( c.get_value( "fd", "1" )) == 1;
   std::string        output_filename = filename + ".gc" + to_str(gcs)
                                                 + "d" + to_str(gcd);
 
   l.inc_prefix();
-  l.log( "filename: "+filename );
-  l.log( "range:    "+rng_filename );
-  l.log( "gcs:      "+to_str(gcs) );
-  l.log( "gcd:      "+to_str(gcd) );
-  l.log( "OUTPUT:   "+output_filename );
+  l.log( "filename:  "+filename );
+  l.log( "range:     "+rng_filename );
+  l.log( "gcs:       "+to_str(gcs) );
+  l.log( "gcd:       "+to_str(gcd) );
+  l.log( "from_data: "+to_str(from_data) );
+  l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
   if ( file_exists( l, c, output_filename ) ) {
@@ -260,13 +262,13 @@ int lcontext( Logfile& l, Config& c ) {
   gc_elem empty;
   empty.word = "_";
   empty.strength = 999999;
-  std::deque<gc_elem> global_context(10, empty); // hmmm, like this?
+  std::deque<gc_elem> global_context(gcs+1, empty); // hmmm, like this?
   std::deque<gc_elem>::iterator di;
   while( std::getline( file_in, a_line ) ) { 
 
     Tokenize( a_line, words, ' ' );
     int start = 0;
-    if ( true ) {
+    if ( from_data == true ) {
       start = words.size()-1; // only target
     }
     for( int i = start; i < words.size(); i++ ) {
@@ -296,7 +298,7 @@ int lcontext( Logfile& l, Config& c ) {
 	file_out << (*di).word << " "; // << "/" << (*di).strength;
 	*di--;
       }
-      if ( true ) { // add to data set mode.
+      if ( from_data == true ) { // add to data set mode.
 	file_out << a_line;
       }
       file_out << std::endl;	
@@ -307,9 +309,7 @@ int lcontext( Logfile& l, Config& c ) {
       while ( di != global_context.begin() ) {
 	--((*di).strength);
 	if ( (*di).strength <= 0 ) {
-	  //global_context.erase( di );
 	  *di = empty;
-	  //(*di).word = "_";
 	  //l.log( "Decayed: " + (*di).word );
 	}
 	*di--;
