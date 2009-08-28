@@ -104,8 +104,13 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   //
   l.log( "Reading lexicon." );
   std::string a_word;
+  std::map<int,int> freqs_list;
+  std::map<int,int>::iterator fli;
+  std::vector<int> wanted_freqs;
+  std::vector<int>::iterator wfi;
   while ( file_lexicon >> a_word >> wfreq ) {
     wfreqs[a_word] = wfreq;
+    freqs_list[wfreq] = 1;
     lex_elem l;
     l.name = a_word;
     l.freq = wfreq;
@@ -117,25 +122,50 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   sort( lex_vec.begin(), lex_vec.end() );
   std::vector<lex_elem>::iterator li;
 
-  // top n frequency
-  //
+  int num_freqs = freqs_list.size();
+  l.log( "Frequency list: "+to_str(num_freqs)+" items." );
+
   /*
-  li = lex_vec.begin();
-  int idx = 0;
-  int num_count = lex_vec.size();
-  l.log( "lex vec items: "+to_str(num_count) );
-  n = num_count - n;
-  while ( li != lex_vec.end() ) {
+  fli = freqs_list.begin();
+  int idx = 1;
+  while ( fli != freqs_list.end() ) {
     if ( (idx >= m) && (idx < n) ) {
-      int freq = (*li).freq;
-      l.log( to_str(idx)+") "+ (*li).name +" - " + to_str(freq) );
+      //l.log( to_str( (*fli).first ) );//+ "/" + to_str( (*fli).second ) );
+      wanted_freqs.push_back( (*fli).first ); // words with these freqs we want.
     }
     ++idx;
+    *fli++;
+  };
+  */
+  fli = freqs_list.end();
+  int idx = 0;
+  do {
+    *fli--;
+    ++idx;
+    if ( (idx >= m) && (idx < n) ) {
+      wanted_freqs.push_back( (*fli).first ); // words with these freqs we want.
+    }
+  } while ( fli != freqs_list.begin() );
+
+  // top n frequency
+  //
+  li = lex_vec.begin();
+  int cnt = 0;
+  while ( li != lex_vec.end() ) {
+    int freq = (*li).freq;
+    wfi = std::find( wanted_freqs.begin(), wanted_freqs.end(), freq );
+    if ( wfi != wanted_freqs.end() ) {
+      //l.log( (*li).name +" - " + to_str(freq) );
+      range_out << (*li).name << " " << freq << "\n";
+      ++cnt;
+    }
     li++;
   }
-  */
+  l.log( "Range file contains "+to_str(cnt)+ " items." );
   // --
   
+  // Just frequencies
+  /*
   li = lex_vec.begin();
   int num = 0;
   while ( li != lex_vec.end() ) {
@@ -152,8 +182,10 @@ int bounds_from_lex( Logfile& l, Config& c ) {
     }
     li++;
   }
-  range_out.close();
   l.log( "Range contains "+to_str(num)+" items, out of "+to_str(lex_vec.size()) );
+  */
+
+  range_out.close();
 
   // set RANGE_FILE to range_filename 
   //
