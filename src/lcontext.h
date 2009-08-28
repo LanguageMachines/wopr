@@ -32,7 +32,7 @@
 
 // ----------------------------------------------------------------------------
 
-int bounds_from_lex( Logfile&, Config& );
+int range_from_lex( Logfile&, Config& );
 int bounds_from_cnt( Logfile&, Config& );
 int lcontext( Logfile&, Config& );
 

@@ -62,8 +62,8 @@ struct lex_elem {
 /*
   Take words from lexicon if frequency within bounds.
 */
-int bounds_from_lex( Logfile& l, Config& c ) {
-  l.log( "bounds_from_lex" );
+int range_from_lex( Logfile& l, Config& c ) {
+  l.log( "range_from_lex" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   int                m                = stoi( c.get_value( "m", "10" ));
   int                n                = stoi( c.get_value( "n", "20" ));
