@@ -1,4 +1,3 @@
-
 // ---------------------------------------------------------------------------
 // $Id: lcontext.cc 2426 2009-01-07 12:24:00Z pberck $
 // ---------------------------------------------------------------------------
@@ -95,7 +94,6 @@ int bounds_from_lex( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
   }
-
   std::ofstream range_out( range_filename.c_str(), std::ios::out );
   if ( ! range_out ) {
     l.log( "ERROR: cannot write range file." );
@@ -118,6 +116,26 @@ int bounds_from_lex( Logfile& l, Config& c ) {
 
   sort( lex_vec.begin(), lex_vec.end() );
   std::vector<lex_elem>::iterator li;
+
+  // top n frequency
+  //
+  /*
+  li = lex_vec.begin();
+  int idx = 0;
+  int num_count = lex_vec.size();
+  l.log( "lex vec items: "+to_str(num_count) );
+  n = num_count - n;
+  while ( li != lex_vec.end() ) {
+    if ( (idx >= m) && (idx < n) ) {
+      int freq = (*li).freq;
+      l.log( to_str(idx)+") "+ (*li).name +" - " + to_str(freq) );
+    }
+    ++idx;
+    li++;
+  }
+  */
+  // --
+  
   li = lex_vec.begin();
   int num = 0;
   while ( li != lex_vec.end() ) {
@@ -136,6 +154,128 @@ int bounds_from_lex( Logfile& l, Config& c ) {
   }
   range_out.close();
   l.log( "Range contains "+to_str(num)+" items, out of "+to_str(lex_vec.size()) );
+
+  // set RANGE_FILE to range_filename 
+  //
+  c.add_kv( "range", range_filename );
+  l.log( "SET range to "+range_filename );
+  return 0;
+}
+
+/*
+  Take words from lexicon if frequency within counts bounds.
+*/
+int bounds_from_cnt( Logfile& l, Config& c ) {
+  l.log( "bounds_from_cnt" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& counts_filename  = c.get_value( "counts" );
+  int                m                = stoi( c.get_value( "m", "10" ));
+  int                n                = stoi( c.get_value( "n", "20" ));
+  std::string        range_filename   = lexicon_filename + ".r"+to_str(m)+"n"+to_str(n);
+
+  l.inc_prefix();
+  l.log( "lexicon: "+lexicon_filename );
+  l.log( "counts:  "+counts_filename );
+  l.log( "m:       "+to_str(m) );
+  l.log( "n:       "+to_str(n) );
+  l.log( "OUTPUT:  "+range_filename );
+  l.dec_prefix();
+
+  if ( file_exists( l, c, range_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "range", range_filename );
+    l.log( "SET range to "+range_filename );
+    return 0;
+  }
+
+  // Load lexicon.
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::vector<lex_elem> lex_vec;
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "ERROR: cannot load counts file." );
+    return -1;
+  }
+
+  std::ofstream range_out( range_filename.c_str(), std::ios::out );
+  if ( ! range_out ) {
+    l.log( "ERROR: cannot write range file." );
+    return -1;
+  }
+
+  // Read the counts of counts.
+  //
+  l.log( "Reading counts." );
+  std::map<int,int> ffreqs; // sort order?
+  std::vector<int> wanted_freqs;
+  std::map<int,int> freqs_list;
+  std::map<int,int>::iterator fli;
+  int count;
+  int Nc0;
+  double Nc1;
+  while( file_counts >> count >> Nc0 >> Nc1 ) {
+    if ( Nc0 > 0 ) {
+      freqs_list[Nc0] = count;
+    }
+  }
+  file_counts.close();
+
+  int num_freqs = freqs_list.size();
+  l.log( "Freq_list contains "+to_str(num_freqs)+" frequencies." );
+  l.log( to_str(num_freqs-n)+" - "+to_str(m) );
+
+  /*
+  fli = freqs_list.end();
+  do {
+    *fli--;
+    l.log( to_str( (*fli).first ) + "/" + to_str( (*fli).second ) );
+  } while ( fli != freqs_list.begin() );
+  */
+  fli = freqs_list.begin();
+  while ( fli != freqs_list.end() ) {
+    l.log( to_str( (*fli).first ) + "/" + to_str( (*fli).second ) );
+    *fli++;
+  };
+
+  l.log( "Read counts." );
+
+  // Read the lexicon with word frequencies, take those from wanted
+  // frequencies.
+  //
+  l.log( "Reading lexicon." );
+  int num = 0;
+  std::string a_word;
+  std::vector<int>::iterator wfi;
+  while ( file_lexicon >> a_word >> wfreq ) {
+
+    wfi = std::find( wanted_freqs.begin(), wanted_freqs.end(), wfreq );
+    //wfi = wanted_freqs.find( wfreq );
+
+    if ( wfi != wanted_freqs.end() ) {
+      l.log( "Wanted: " + to_str(wfreq) );
+      lex_elem l;
+      l.name = a_word;
+      l.freq = wfreq;
+      lex_vec.push_back( l );
+      // can output to .rng direct here.
+      range_out << a_word << " " << wfreq << "\n";
+      ++num;
+    }
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon." );
+
+  range_out.close();
+  l.log( "Range contains "+to_str(num)+" items." );
 
   // set RANGE_FILE to range_filename 
   //
@@ -175,11 +315,14 @@ int lcontext( Logfile& l, Config& c ) {
   std::string        output_filename = filename + ".gc" + to_str(gcs)
                                                 + "d" + to_str(gcd);
 
+  int gct = 0; // global context type.
+
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "range:     "+rng_filename );
   l.log( "gcs:       "+to_str(gcs) );
   l.log( "gcd:       "+to_str(gcd) );
+  l.log( "gct:       "+to_str(gct) );
   l.log( "from_data: "+to_str(from_data) );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
@@ -287,8 +430,15 @@ int lcontext( Logfile& l, Config& c ) {
 	gc_elem gce;
 	gce.word     = wrd;
 	gce.strength = gcd;
-	global_context.push_front( gce );
-	//global_context.insert( global_context.begin(), gce );
+
+	if ( gct == 0 ) { // the looks-like-data type
+	  global_context.push_front( gce );
+	} else if ( gct == 1 ) { // binary features
+	  //
+	  // For binary features , fixed position array. Of >0 output 1,
+	  // else 0. Then instead of push_front we insert at found
+	  // position (ri).
+	}
       }
 
       //--

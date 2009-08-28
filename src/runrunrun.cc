@@ -420,6 +420,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &generate_server;
   } else if ( a_fname == "bfl" ) { // bounds_from_lex in lcontext.cc
     return &bounds_from_lex;
+  } else if ( a_fname == "bfc" ) { // bounds_from_cnt in lcontext.cc
+    return &bounds_from_cnt;
   } else if ( a_fname == "lcontext" ) { // from lcontext.cc
     return &lcontext;
   }
