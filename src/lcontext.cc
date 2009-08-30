@@ -193,128 +193,6 @@ int range_from_lex( Logfile& l, Config& c ) {
   l.log( "SET range to "+range_filename );
   return 0;
 }
-
-/*
-  Take words from lexicon if frequency within counts bounds.
-*/
-int bounds_from_cnt( Logfile& l, Config& c ) {
-  l.log( "bounds_from_cnt" );
-  const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const std::string& counts_filename  = c.get_value( "counts" );
-  int                m                = stoi( c.get_value( "m", "10" ));
-  int                n                = stoi( c.get_value( "n", "20" ));
-  std::string        range_filename   = lexicon_filename + ".r"+to_str(m)+"n"+to_str(n);
-
-  l.inc_prefix();
-  l.log( "lexicon: "+lexicon_filename );
-  l.log( "counts:  "+counts_filename );
-  l.log( "m:       "+to_str(m) );
-  l.log( "n:       "+to_str(n) );
-  l.log( "OUTPUT:  "+range_filename );
-  l.dec_prefix();
-
-  if ( file_exists( l, c, range_filename ) ) {
-    l.log( "OUTPUT exists, not overwriting." );
-    c.add_kv( "range", range_filename );
-    l.log( "SET range to "+range_filename );
-    return 0;
-  }
-
-  // Load lexicon.
-  //
-  int wfreq;
-  unsigned long total_count = 0;
-  std::map<std::string,int> wfreqs; // whole lexicon
-  std::vector<lex_elem> lex_vec;
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "ERROR: cannot load lexicon file." );
-    return -1;
-  }
-
-  std::ifstream file_counts( counts_filename.c_str() );
-  if ( ! file_counts ) {
-    l.log( "ERROR: cannot load counts file." );
-    return -1;
-  }
-
-  std::ofstream range_out( range_filename.c_str(), std::ios::out );
-  if ( ! range_out ) {
-    l.log( "ERROR: cannot write range file." );
-    return -1;
-  }
-
-  // Read the counts of counts.
-  //
-  l.log( "Reading counts." );
-  std::map<int,int> ffreqs; // sort order?
-  std::vector<int> wanted_freqs;
-  std::map<int,int> freqs_list;
-  std::map<int,int>::iterator fli;
-  int count;
-  int Nc0;
-  double Nc1;
-  while( file_counts >> count >> Nc0 >> Nc1 ) {
-    if ( Nc0 > 0 ) {
-      freqs_list[Nc0] = count;
-    }
-  }
-  file_counts.close();
-
-  int num_freqs = freqs_list.size();
-  l.log( "Freq_list contains "+to_str(num_freqs)+" frequencies." );
-  l.log( to_str(num_freqs-n)+" - "+to_str(m) );
-
-  /*
-  fli = freqs_list.end();
-  do {
-    *fli--;
-    l.log( to_str( (*fli).first ) + "/" + to_str( (*fli).second ) );
-  } while ( fli != freqs_list.begin() );
-  */
-  fli = freqs_list.begin();
-  while ( fli != freqs_list.end() ) {
-    l.log( to_str( (*fli).first ) + "/" + to_str( (*fli).second ) );
-    *fli++;
-  };
-
-  l.log( "Read counts." );
-
-  // Read the lexicon with word frequencies, take those from wanted
-  // frequencies.
-  //
-  l.log( "Reading lexicon." );
-  int num = 0;
-  std::string a_word;
-  std::vector<int>::iterator wfi;
-  while ( file_lexicon >> a_word >> wfreq ) {
-
-    wfi = std::find( wanted_freqs.begin(), wanted_freqs.end(), wfreq );
-    //wfi = wanted_freqs.find( wfreq );
-
-    if ( wfi != wanted_freqs.end() ) {
-      l.log( "Wanted: " + to_str(wfreq) );
-      lex_elem l;
-      l.name = a_word;
-      l.freq = wfreq;
-      lex_vec.push_back( l );
-      // can output to .rng direct here.
-      range_out << a_word << " " << wfreq << "\n";
-      ++num;
-    }
-  }
-  file_lexicon.close();
-  l.log( "Read lexicon." );
-
-  range_out.close();
-  l.log( "Range contains "+to_str(num)+" items." );
-
-  // set RANGE_FILE to range_filename 
-  //
-  c.add_kv( "range", range_filename );
-  l.log( "SET range to "+range_filename );
-  return 0;
-}
   
 /*
   Create data with a the .rng file.
@@ -445,6 +323,10 @@ int lcontext( Logfile& l, Config& c ) {
     int start = 0;
     if ( from_data == true ) {
       start = words.size()-1; // only target
+      // NB, can we say that we have "seen" the target already? If the
+      // target is word_n, word_n could already end up in the global context.
+      // To correct this, we should insert the *previous* global context
+      // before the instance.
     }
     for( int i = start; i < words.size(); i++ ) {
 

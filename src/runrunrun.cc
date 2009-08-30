@@ -183,7 +183,14 @@ int make_ibase( Logfile& l, Config& c ) {
   l.log( "make_ibase");
   const std::string& timbl =  c.get_value("timbl");
   const std::string& filename = c.get_value( "filename" );
-  const std::string& ibase_filename = filename + ".ibase";
+  std::string        id       = c.get_value( "id", "" );
+  std::string        ibase_filename;
+
+  if ( id == "" ) {
+    ibase_filename = filename + ".ibase";
+  } else {
+    ibase_filename = filename + "_" + id + ".ibase";
+  }
 
   if ( file_exists(l, c, ibase_filename) ) {
     l.log( "IBASE exists, not overwriting." );
@@ -420,8 +427,6 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &generate_server;
   } else if ( a_fname == "rfl" ) { // range_from_lex in lcontext.cc
     return &range_from_lex;
-  } else if ( a_fname == "bfc" ) { // bounds_from_cnt in lcontext.cc
-    return &bounds_from_cnt;
   } else if ( a_fname == "lcontext" ) { // from lcontext.cc
     return &lcontext;
   }
@@ -3409,11 +3414,14 @@ int pplx_simple( Logfile& l, Config& c ) {
   file_out.close();
   file_in.close();
 
-  l.log( "Correct:       " + to_str(correct) );
-  l.log( "Correct Distr: " + to_str(correct_distr) );
+  double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
+  l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
+  double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
+  l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
   int correct_total = correct_distr+correct;
-  l.log( "Correct Total: " + to_str(correct_total) );
-  l.log( "Wrong:         " + to_str(wrong) );
+  double ct_perc = correct_perc+cd_perc;
+  l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
+  l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
   if ( sentence_wordcount > 0 ) {
     l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
     l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
