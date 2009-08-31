@@ -1,0 +1,41 @@
+msg: Script to run one experiment from data to pplxs.
+msg: ------------------------------------------------
+#
+# ----
+# Takes a trainset and testset (plain text), and runs through
+# the steps required to make a lexicon, window the data, make
+# the instance base and run pplxs.
+#
+# Invocation: "wopr -s do_pplxs_wopr_script -p testset:F1,trainset:F2
+# where F1 and F2 are plain text files.
+# ----
+#
+params: timbl:-a1 +D
+params: lc:0
+params: rc:2
+params: topn:5
+params: cth:100
+#
+# Parameter from cmd line.
+set:filename:$testset
+run:window_lr
+#Copy the generated filename back to the $testset variable.
+set:testset:$filename
+#
+# ----
+#
+# From cmd line
+set:filename:$trainset
+run:lexicon
+run:window_lr
+run:make_ibase
+#
+# get filename from saved $testset variable.
+set:filename:$testset
+params:id:1e3
+run:pplxs
+#
+# ----
+#
+msg: Ready.
+msg: ------

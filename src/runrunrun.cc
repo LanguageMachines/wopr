@@ -1613,6 +1613,8 @@ int lexicon(Logfile& l, Config& c) {
     l.log( "LEXICON and COUNTSFILE exists, not overwriting." );
     c.add_kv( "lexicon", output_filename );
     l.log( "SET lexicon to "+output_filename );
+    c.add_kv( "counts", counts_filename );
+    l.log( "SET counts to "+counts_filename );
     return 0;
   }
 
@@ -1698,6 +1700,8 @@ int lexicon(Logfile& l, Config& c) {
 
   c.add_kv( "lexicon", output_filename );
   l.log( "SET lexicon to "+output_filename );
+  c.add_kv( "counts", counts_filename );
+  l.log( "SET counts to "+counts_filename );
   return 0;
 }
 
