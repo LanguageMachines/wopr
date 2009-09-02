@@ -321,8 +321,14 @@ int lcontext( Logfile& l, Config& c ) {
   empty.strength = 999999;
   std::deque<gc_elem> global_context(gcs+1, empty); // hmmm, like this?
   std::deque<gc_elem>::iterator di;
-  std::string prev_lc = "";
 
+  std::string lc_str = "";
+  di = global_context.begin()+gcs;
+  do {
+    *di--;
+    lc_str = lc_str + (*di).word + " ";
+  } while ( di != global_context.begin() );
+  
   while( std::getline( file_in, a_line ) ) { 
 
     Tokenize( a_line, words, ' ' );
@@ -359,25 +365,23 @@ int lcontext( Logfile& l, Config& c ) {
 	}
       }
 
-      // Create the global context.
+      // Output line of data
+      //
+      file_out << lc_str;
+      if ( from_data == true ) { // add to data set mode.
+	file_out << a_line;
+      }
+      file_out << std::endl;
+
+      // Create the new global context.
       //
       di = global_context.begin()+gcs;
       int cnt = gcs;      
-      std::string lc_str = "";
+      lc_str = "";
       do {
 	*di--;
 	lc_str = lc_str + (*di).word + " ";
       } while ( di != global_context.begin() );
-      
-      if ( prev_lc != "" ) {
-	file_out << prev_lc;
-
-	if ( from_data == true ) { // add to data set mode.
-	  file_out << a_line;
-	}
-	file_out << std::endl;
-      }
-      prev_lc = lc_str;
       //--
 
       // Decay gc.
