@@ -328,7 +328,7 @@ int script(Logfile& l, Config& c)  {
 	kv_pairs.clear();
 
 	l.log( "EXTERN:"+expanded_rhs );
-	int r = system( rhs.c_str() );
+	int r = system( expanded_rhs.c_str() );
 	l.log( "EXTERN result: "+to_str(r) );
       }
       // SET: optiones:
