@@ -225,7 +225,8 @@ int lcontext( Logfile& l, Config& c ) {
   std::string        id              = c.get_value( "id", "" );
   std::string        output_filename = filename + ".gc" + to_str(gcs)
 					+ "d" + to_str(gcd);
-  if ( id != "" ) {
+
+  if ( (id != "") && (contains_id(filename, id) == false) ) {
     output_filename = output_filename + "_" + id;
   }
 

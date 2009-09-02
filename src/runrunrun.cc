@@ -181,16 +181,15 @@ int timbl( Logfile& l, Config& c ) {
 #ifdef TIMBL
 int make_ibase( Logfile& l, Config& c ) {
   l.log( "make_ibase");
-  const std::string& timbl =  c.get_value("timbl");
-  const std::string& filename = c.get_value( "filename" );
-  std::string        id       = c.get_value( "id", "" );
-  std::string        ibase_filename;
+  const std::string& timbl          =  c.get_value("timbl");
+  const std::string& filename       = c.get_value( "filename" );
+  std::string        id             = c.get_value( "id", "" );
+  std::string        ibase_filename = filename;
 
-  if ( id == "" ) {
-    ibase_filename = filename + ".ibase";
-  } else {
-    ibase_filename = filename + "_" + id + ".ibase";
-  }
+  if ( (id != "") && ( ! contains_id( filename, id)) ) {
+    ibase_filename = ibase_filename + "_" + id;
+  }  
+  ibase_filename = ibase_filename + ".ibase";
 
   if ( file_exists(l, c, ibase_filename) ) {
     l.log( "IBASE exists, not overwriting." );
@@ -310,6 +309,11 @@ int script(Logfile& l, Config& c)  {
       }
       if ( lhs == "msg" ) {
 	l.log( rhs );
+      }
+      if ( lhs == "extern" ) {
+	l.log( "EXTERN:"+rhs );
+	int r = system( rhs.c_str() );
+	l.log( "EXTERN result: "+to_str(r) );
       }
       // SET: optiones:
       // set: filename:output01
@@ -2816,8 +2820,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                ws               = stoi( c.get_value( "ws", "3" ));
   int                lc               = stoi( c.get_value( "lc", "0" ));
   int                rc               = stoi( c.get_value( "rc", "0" ));
-  std::string        output_filename  = filename + "_" + id + ".px";
-  std::string        output_filename1 = filename + "_" + id + ".pxs";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
@@ -2829,6 +2831,14 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::vector<std::string> distribution;
   std::string        result;
   double             distance;
+
+  if ( contains_id(filename, id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+  std::string        output_filename  = filename + id + ".px";
+  std::string        output_filename1 = filename + id + ".pxs";
 
   // This is better for l0r3 contexts &c.
   // It should really only say the length of the context, i.e the
@@ -3764,5 +3774,13 @@ bool file_exists( Logfile& l, Config& c, const std::string& fn ) {
     return true;
   }
 
+  return false;
+}
+
+bool contains_id( const std::string& str, const std::string& id  ) {
+  int pos = str.find( id, 0 );
+  if ( pos != std::string::npos ) {
+    return true;
+  }
   return false;
 }

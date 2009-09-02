@@ -81,4 +81,5 @@ int multi( Logfile&, Config& );
 int read_kv_from_file(std::ifstream&, std::map<std::string, std::string>&);
 int read_classifiers_from_file( std::ifstream& file,std::vector<Classifier*>& );
 bool file_exists( Logfile&, Config&, const std::string& );
+bool contains_id( const std::string&, const std::string& );
 #endif
