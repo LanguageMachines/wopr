@@ -321,6 +321,8 @@ int lcontext( Logfile& l, Config& c ) {
   empty.strength = 999999;
   std::deque<gc_elem> global_context(gcs+1, empty); // hmmm, like this?
   std::deque<gc_elem>::iterator di;
+  std::string prev_lc = "";
+
   while( std::getline( file_in, a_line ) ) { 
 
     Tokenize( a_line, words, ' ' );
@@ -333,8 +335,6 @@ int lcontext( Logfile& l, Config& c ) {
       // before the instance.
     }
     for( int i = start; i < words.size(); i++ ) {
-
-      //std::find(v1.begin(), v1.end(), string); // slower than find in map?
 
       std::string wrd = words.at(i);
 
@@ -359,43 +359,44 @@ int lcontext( Logfile& l, Config& c ) {
 	}
       }
 
-      //--
+      // Create the global context.
+      //
       di = global_context.begin()+gcs;
-      int cnt = gcs;
-      while ( di != global_context.begin() ) {
-	file_out << (*di).word << " "; // << "/" << (*di).strength;
+      int cnt = gcs;      
+      std::string lc_str = "";
+      do {
 	*di--;
+	lc_str = lc_str + (*di).word + " ";
+      } while ( di != global_context.begin() );
+      
+      if ( prev_lc != "" ) {
+	file_out << prev_lc;
+
+	if ( from_data == true ) { // add to data set mode.
+	  file_out << a_line;
+	}
+	file_out << std::endl;
       }
-      if ( from_data == true ) { // add to data set mode.
-	file_out << a_line;
-      }
-      file_out << std::endl;	
+      prev_lc = lc_str;
       //--
 
-      //--
+      // Decay gc.
+      //
       di = global_context.begin()+gcs;
-      while ( di != global_context.begin() ) {
+      do {
+	*di--;
 	--((*di).strength);
 	if ( (*di).strength <= 0 ) {
 	  *di = empty;
 	  //l.log( "Decayed: " + (*di).word );
 	}
-	*di--;
-      }
-      //
-      /*
-      std::deque<gc_elem>::iterator end_di;
-      end_di = global_context.end();
-      di = remove_if( global_context.begin(), end_di, 
-		      is_dead );
-      global_context.erase( di, end_di );
-      */
+      } while ( di != global_context.begin() );
       //--
 
     }
     words.clear();
       
-  }
+  } //while
 
   file_in.close();
   file_out.close();
