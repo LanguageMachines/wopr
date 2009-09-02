@@ -311,7 +311,23 @@ int script(Logfile& l, Config& c)  {
 	l.log( rhs );
       }
       if ( lhs == "extern" ) {
-	l.log( "EXTERN:"+rhs );
+	//
+	// Go over each chunk, see if we gave $vars,
+	// expand them.
+	//
+	Tokenize( rhs, kv_pairs, ' ' );
+	std::string expanded_rhs = "";
+	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	  std::string chunk = kv_pairs.at(j);
+	  if ( chunk.substr(0, 1) == "$" ) {
+	    std::string var = chunk.substr(1, chunk.length()-1);
+	    chunk = c.get_value( var );
+	  }
+	  expanded_rhs = expanded_rhs + chunk + " ";
+	}
+	kv_pairs.clear();
+
+	l.log( "EXTERN:"+expanded_rhs );
 	int r = system( rhs.c_str() );
 	l.log( "EXTERN result: "+to_str(r) );
       }
@@ -326,13 +342,13 @@ int script(Logfile& l, Config& c)  {
 	std::string kv = kv_pairs.at(0);
 	int pos = kv.find( ':', 0 );
 	if ( pos != std::string::npos ) {
-	  std::string lhs = trim(kv.substr( 0, pos ));
-	  std::string rhs = trim(kv.substr( pos+1 ));
-	  if ( rhs.substr(0, 1) == "$" ) {
-	    rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
-	  }
-	  c.add_kv( lhs, rhs );
-	  l.log( "SET "+lhs+" to "+rhs );
+          std::string lhs = trim(kv.substr( 0, pos ));
+          std::string rhs = trim(kv.substr( pos+1 ));
+          if ( rhs.substr(0, 1) == "$" ) {
+            rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
+          }
+          c.add_kv( lhs, rhs );
+          l.log( "SET "+lhs+" to "+rhs );
 	}
       }
     }
@@ -2872,6 +2888,10 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   if ( file_exists(l,c,output_filename) && file_exists(l,c,output_filename1) ) {
     l.log( "OUTPUT files exist, not overwriting." );
+    c.add_kv( "px_file", output_filename );
+    l.log( "SET px_file to "+output_filename );
+    c.add_kv( "pxs_file", output_filename1 );
+    l.log( "SET pxs_file to "+output_filename1 );
     return 0;
   }
 
@@ -3446,6 +3466,11 @@ int pplx_simple( Logfile& l, Config& c ) {
     }*/
 
   l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
+
+  c.add_kv( "px_file", output_filename );
+  l.log( "SET px_file to "+output_filename );
+  c.add_kv( "pxs_file", output_filename1 );
+  l.log( "SET pxs_file to "+output_filename1 );
 
   return 0;
 }
