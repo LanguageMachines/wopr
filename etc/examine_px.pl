@@ -18,9 +18,9 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_e $opt_f $opt_l $opt_r $opt_v $opt_w /;
+use vars qw/ $opt_b $opt_e $opt_f $opt_g $opt_l $opt_r $opt_v $opt_w /;
 
-getopts('b:e:f:l:r:v:w:');
+getopts('b:e:f:g:l:r:v:w:');
 
 my $basename   = $opt_b || "out";
 my $file       = $opt_f || 0;
@@ -28,10 +28,11 @@ my $eos_mode   = $opt_e || 0;
 my $var        = $opt_v || "lp"; #wlp, dp, lp, sz, md
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
+my $gcs        = $opt_g || 0; #for global context
 
 #------------------------------------------------------------------------------
 
-my $ws = $lc + $rc;
+my $ws = $lc + $rc + $gcs;
 
 my $div  = "_ _ _ _ _ _ _ _ _ _";
 my $wcnt =  0;
