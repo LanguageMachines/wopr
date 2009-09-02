@@ -222,8 +222,12 @@ int lcontext( Logfile& l, Config& c ) {
   int                gcs             = stoi( c.get_value( "gcs",   "3" ));
   int                gcd             = stoi( c.get_value( "gcd", "500" ));
   bool               from_data       = stoi( c.get_value( "fd", "1" )) == 1;
+  std::string        id              = c.get_value( "id", "" );
   std::string        output_filename = filename + ".gc" + to_str(gcs)
-                                                + "d" + to_str(gcd);
+					+ "d" + to_str(gcd);
+  if ( id != "" ) {
+    output_filename = output_filename + "_" + id;
+  }
 
   int gct = 0; // global context type.
 

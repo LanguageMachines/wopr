@@ -28,11 +28,11 @@ set:testset:$filename
 set:filename:$trainset
 run:lexicon
 run:window_lr
+params:id:FOO
 run:make_ibase
 #
 # get filename from saved $testset variable.
 set:filename:$testset
-params:id:1e3
 run:pplxs
 #
 # ----
