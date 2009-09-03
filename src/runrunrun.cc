@@ -1288,6 +1288,13 @@ int window_lr( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
+  if ( file_exists( l, c, output_filename )) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
