@@ -237,13 +237,13 @@ int dummy( Logfile* l, Config *c ) {
   return -1;
 }
 
-int count_lines( Logfile *l, Config *c ) {
-  const std::string& filename = c->get_value( "filename" );
-  l->log( "count_lines(filename/"+filename+")" );
+int count_lines( Logfile& l, Config& c ) {
+  const std::string& filename = c.get_value( "filename" );
+  l.log( "count_lines(filename/"+filename+")" );
 
   std::ifstream file( filename.c_str() );
   if ( ! file ) {
-    l->log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file." );
     return -1;
   }
 
@@ -252,7 +252,7 @@ int count_lines( Logfile *l, Config *c ) {
   while( std::getline( file, a_line )) {
     ++lcount;
   }
-  l->log( "lcount = " + to_str( lcount ));
+  l.log( "lcount = " + to_str( lcount ));
   return 0;
 }
 
@@ -308,7 +308,20 @@ int script(Logfile& l, Config& c)  {
 	kv_pairs.clear();
       }
       if ( lhs == "msg" ) {
-	l.log( rhs );
+
+	Tokenize( rhs, kv_pairs, ' ' );
+	std::string expanded_rhs = "";
+	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	  std::string chunk = kv_pairs.at(j);
+	  if ( chunk.substr(0, 1) == "$" ) {
+	    std::string var = chunk.substr(1, chunk.length()-1);
+	    chunk = c.get_value( var );
+	  }
+	  expanded_rhs = expanded_rhs + chunk + " ";
+	}
+	kv_pairs.clear();
+
+	l.log( expanded_rhs );
       }
       if ( lhs == "extern" ) {
 	//
@@ -327,7 +340,7 @@ int script(Logfile& l, Config& c)  {
 	}
 	kv_pairs.clear();
 
-	l.log( "EXTERN:"+expanded_rhs );
+	l.log( "EXTERN: "+expanded_rhs );
 	int r = system( expanded_rhs.c_str() );
 	l.log( "EXTERN result: "+to_str(r) );
       }
@@ -350,6 +363,7 @@ int script(Logfile& l, Config& c)  {
           c.add_kv( lhs, rhs );
           l.log( "SET "+lhs+" to "+rhs );
 	}
+	kv_pairs.clear();
       }
     }
   }
@@ -359,9 +373,7 @@ int script(Logfile& l, Config& c)  {
 
 typedef int(*pt2Func)(Logfile*, Config*);
 pt2Func fun_factory( const std::string& a_fname ) {
-  if ( a_fname == "count_lines" ) {
-    return &count_lines;
-  } else if ( a_fname == "dump_kv" ) {
+   if ( a_fname == "dump_kv" ) {
     return &dump_kv;
   } else if ( a_fname == "clear_kv" ) {
     return &clear_kv;
@@ -383,6 +395,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &timbl;
   } else if ( a_fname == "flatten" ) {
     return &flatten;
+  } else if ( a_fname == "count_lines" ) {
+    return &count_lines;
   } else if ( a_fname == "lowercase" ) {
     return &lowercase;
   } else if ( a_fname == "make_ibase" ) {
@@ -1596,6 +1610,7 @@ int timbl_test(Logfile& l, Config& c) {
   const std::string& timbl     =  c.get_value("timbl");
   const std::string& ibasefile =  c.get_value("ibasefile");
   const std::string& testfile  =  c.get_value("testfile");
+
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "testfile:  "+testfile );

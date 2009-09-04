@@ -36,7 +36,7 @@ typedef int(*pt2Func2)(Logfile&, Config&);
 
 int dummy( Logfile*, Config* );
 pt2Func fun_factory( const std::string& );
-int count_lines( Logfile*, Config* );
+int count_lines( Logfile&, Config& );
 int msg( Logfile*, Config* );
 
 int script( Logfile&, Config& );
