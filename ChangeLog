@@ -1,1 +1,9 @@
+1.19.18 Binary GC type implemented. First version, could be bugs.
+	Added type (gct) to auto-filename generation in lcontext.
+	
+1.10.17 count_lines reinstated.
+	Small fixes, improvements.
+	
+1.10.16 Working lcontext and rfl
+	
 20070919 Autoconf version

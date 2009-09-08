@@ -125,7 +125,7 @@ int range_from_lex( Logfile& l, Config& c ) {
   int num_freqs = freqs_list.size();
   l.log( "Frequency list: "+to_str(num_freqs)+" items." );
 
-  /*
+  /* // Reversed list, top-1 is lowest.
   fli = freqs_list.begin();
   int idx = 1;
   while ( fli != freqs_list.end() ) {
@@ -138,13 +138,13 @@ int range_from_lex( Logfile& l, Config& c ) {
   };
   */
   fli = freqs_list.end();
-  int idx = 0;
+  int idx = 1; // top-1 is the first one---+
   do {
     *fli--;
-    ++idx;
-    if ( (idx >= m) && (idx < n) ) {
+    if ( (idx >= m) && (idx < n) ) { 
       wanted_freqs.push_back( (*fli).first ); // words with these freqs we want.
     }
+    ++idx;
   } while ( fli != freqs_list.begin() );
 
   // top n frequency
@@ -221,16 +221,50 @@ int lcontext( Logfile& l, Config& c ) {
   const std::string& rng_filename    = c.get_value( "range" );
   int                gcs             = stoi( c.get_value( "gcs",   "3" ));
   int                gcd             = stoi( c.get_value( "gcd", "500" ));
+  int                gct             = stoi( c.get_value( "gct", "0" ));
   bool               from_data       = stoi( c.get_value( "fd", "1" )) == 1;
   std::string        id              = c.get_value( "id", "" );
-  std::string        output_filename = filename + ".gc" + to_str(gcs)
-					+ "d" + to_str(gcd);
+
+  // Open range file. Annoying, but we need to read the file, even though
+  // we might decide later that we don't have to do anything here.
+  // We need to red the file to be able to count it for the gct type...
+  //
+  std::ifstream file_rng( rng_filename.c_str() );
+  if ( ! file_rng ) {
+    l.log( "ERROR: cannot load range file." );
+    return -1;
+  }
+  l.log( "Reading range file." );
+  std::string a_word;
+  long wfreq;
+  std::map<std::string, int> range;
+  int i = 1;
+  while( file_rng >> a_word >> wfreq ) {
+    range[ a_word ] = i; //ignore frequency? Use as pos for gct:1 ?
+    //                ^was 1
+    ++i;
+  }
+  l.log( "Loaded range file, "+to_str(range.size())+" items." );
+  file_rng.close();
+
+  if ( gct == 1 ) {
+    gcs = range.size();
+    l.log( "NOTICE: setting gcs to "+to_str(gcs)+" for binary gc." );
+    //
+    // WE could also do this WITHOUT the spaces...
+    // "0 0 1 0" of "0010" als EEN feature...
+  }
+  std::string gc_sep = " ";
+
+  // So, NOW we can do this.
+  //
+  std::string output_filename = filename + ".gc" + to_str(gcs)
+    + "d" + to_str(gcd)
+    + "t" + to_str(gct);
 
   if ( (id != "") && (contains_id(filename, id) == false) ) {
     output_filename = output_filename + "_" + id;
   }
-
-  int gct = 0; // global context type.
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
@@ -248,23 +282,6 @@ int lcontext( Logfile& l, Config& c ) {
     l.log( "SET filename to "+output_filename );
     return 0;
   }
-
-  // Open range file.
-  //
-  std::ifstream file_rng( rng_filename.c_str() );
-  if ( ! file_rng ) {
-    l.log( "ERROR: cannot load range file." );
-    return -1;
-  }
-  l.log( "Reading range file." );
-  std::string a_word;
-  long wfreq;
-  std::map<std::string, int> range;
-  while( file_rng >> a_word >> wfreq ) {
-    range[ a_word ] = 1; //ignore frequency?
-  }
-  l.log( "Loaded range file, "+to_str(range.size())+" items." );
-  file_rng.close();
 
   // What will the output look like....?
   //   Pierre Vinken, 61 years old, will join the board as a 
@@ -327,7 +344,11 @@ int lcontext( Logfile& l, Config& c ) {
   di = global_context.begin()+gcs;
   do {
     *di--;
-    lc_str = lc_str + (*di).word + " ";
+    if ( gct == 0 ) { // Normal
+      lc_str = lc_str + (*di).word + " ";
+    } else { // binary
+      lc_str = lc_str + "0" + gc_sep;
+    }
   } while ( di != global_context.begin() );
   
   while( std::getline( file_in, a_line ) ) { 
@@ -360,15 +381,22 @@ int lcontext( Logfile& l, Config& c ) {
 	  global_context.push_front( gce );
 	} else if ( gct == 1 ) { // binary features
 	  //
-	  // For binary features , fixed position array. Of >0 output 1,
-	  // else 0. Then instead of push_front we insert at found
-	  // position (ri).
+	  // For binary features , fixed position array. If >0 output 1,
+	  // else 0. Then instead of push_front we insert at right
+	  // position.
+	  //
+	  int pos = (*ri).second - 1; // gcs must be big enough!
+	  //l.log( "binary gc pos="+to_str(pos)+" "+wrd );
+	  global_context.at( pos ) = gce;
 	}
       }
 
       // Output line of data
       //
       file_out << lc_str;
+      //
+      // Check if ends in space? (gc-sep could be "").
+      //
       if ( from_data == true ) { // add to data set mode.
 	file_out << a_line;
       }
@@ -381,7 +409,16 @@ int lcontext( Logfile& l, Config& c ) {
       lc_str = "";
       do {
 	*di--;
-	lc_str = lc_str + (*di).word + " ";
+	if ( gct == 0 ) { // Normal
+	  lc_str = lc_str + (*di).word + " ";
+	} else { // binary
+	  if ( (*di).word == "_" ) {
+	    lc_str = lc_str + "0";
+	  } else {
+	    lc_str = lc_str + "1";
+	  }
+	  lc_str = lc_str + gc_sep;
+	}
       } while ( di != global_context.begin() );
       //--
 
