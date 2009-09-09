@@ -219,15 +219,21 @@ int lcontext( Logfile& l, Config& c ) {
   l.log( "lcontext" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& rng_filename    = c.get_value( "range" );
-  int                gcs             = stoi( c.get_value( "gcs",   "3" ));
-  int                gcd             = stoi( c.get_value( "gcd", "500" ));
-  int                gct             = stoi( c.get_value( "gct", "0" ));
+  int                gcs             = stoi( c.get_value( "gcs",  "3" ));
+  int                gcd             = stoi( c.get_value( "gcd", "50" ));
+  int                gct             = stoi( c.get_value( "gct",  "0" ));
   bool               from_data       = stoi( c.get_value( "fd", "1" )) == 1;
   std::string        id              = c.get_value( "id", "" );
+  bool               gc_sep          = stoi(c.get_value( "gc_sep", "1" )) == 1;
+
+  std::string gc_space = " ";
+  if ( gc_sep == false ) {
+    gc_space = "";
+  }
 
   // Open range file. Annoying, but we need to read the file, even though
   // we might decide later that we don't have to do anything here.
-  // We need to red the file to be able to count it for the gct type...
+  // We need to read the file to be able to count it for the gct type...
   //
   std::ifstream file_rng( rng_filename.c_str() );
   if ( ! file_rng ) {
@@ -240,7 +246,7 @@ int lcontext( Logfile& l, Config& c ) {
   std::map<std::string, int> range;
   int i = 1;
   while( file_rng >> a_word >> wfreq ) {
-    range[ a_word ] = i; //ignore frequency? Use as pos for gct:1 ?
+    range[ a_word ] = i; //ignore frequency? Use as pos for gct:1 !
     //                ^was 1
     ++i;
   }
@@ -254,7 +260,8 @@ int lcontext( Logfile& l, Config& c ) {
     // WE could also do this WITHOUT the spaces...
     // "0 0 1 0" of "0010" als EEN feature...
   }
-  std::string gc_sep = " ";
+  
+  //std::string gc_sep = " ";
 
   // So, NOW we can do this.
   //
@@ -273,6 +280,7 @@ int lcontext( Logfile& l, Config& c ) {
   l.log( "gcd:       "+to_str(gcd) );
   l.log( "gct:       "+to_str(gct) );
   l.log( "from_data: "+to_str(from_data) );
+  l.log( "gc_sep:    "+to_str(gc_sep) );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
@@ -347,7 +355,7 @@ int lcontext( Logfile& l, Config& c ) {
     if ( gct == 0 ) { // Normal
       lc_str = lc_str + (*di).word + " ";
     } else { // binary
-      lc_str = lc_str + "0" + gc_sep;
+      lc_str = lc_str + "0" + gc_space;
     }
   } while ( di != global_context.begin() );
   
@@ -368,7 +376,7 @@ int lcontext( Logfile& l, Config& c ) {
 
       ri = range.find( wrd ); // word in data is in .rng list?
       if ( ri != range.end() ) {
-	//l.log( "gc word: "+wrd );
+	l.log( "gc word: "+wrd );
 	//
 	// check if present? or more is better?
 	// if present, we can add to strength instead of doubling the entry?
@@ -395,7 +403,13 @@ int lcontext( Logfile& l, Config& c ) {
       //
       file_out << lc_str;
       //
-      // Check if ends in space? (gc-sep could be "").
+      // Check if ends in space? (gc_space could be "").
+      //
+      if ( gc_space == "" ) {
+	file_out << " ";
+      }
+      //
+      // And the rest...
       //
       if ( from_data == true ) { // add to data set mode.
 	file_out << a_line;
@@ -417,7 +431,7 @@ int lcontext( Logfile& l, Config& c ) {
 	  } else {
 	    lc_str = lc_str + "1";
 	  }
-	  lc_str = lc_str + gc_sep;
+	  lc_str = lc_str + gc_space;
 	}
       } while ( di != global_context.begin() );
       //--
