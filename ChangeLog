@@ -1,3 +1,5 @@
+1.10.20 Removed some debugging output.
+	
 1.10.19 Default gcd to 50.
 	gc_sep became a boolean parameter in lcontext. Default is gc_sep:1
 	which means spaces between the binary features. gc_sep:0 means no

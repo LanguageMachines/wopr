@@ -376,7 +376,7 @@ int lcontext( Logfile& l, Config& c ) {
 
       ri = range.find( wrd ); // word in data is in .rng list?
       if ( ri != range.end() ) {
-	l.log( "gc word: "+wrd );
+	//l.log( "gc word: "+wrd );
 	//
 	// check if present? or more is better?
 	// if present, we can add to strength instead of doubling the entry?
