@@ -244,11 +244,14 @@ int lcontext( Logfile& l, Config& c ) {
   std::string a_word;
   long wfreq;
   std::map<std::string, int> range;
+  std::map<std::string, int> range_stats;
   int i = 1;
   while( file_rng >> a_word >> wfreq ) {
     range[ a_word ] = i; //ignore frequency? Use as pos for gct:1 !
     //                ^was 1
     ++i;
+
+    range_stats[ a_word ] = 0;
   }
   l.log( "Loaded range file, "+to_str(range.size())+" items." );
   file_rng.close();
@@ -368,7 +371,8 @@ int lcontext( Logfile& l, Config& c ) {
       // NB, can we say that we have "seen" the target already? If the
       // target is word_n, word_n could already end up in the global context.
       // To correct this, we should insert the *previous* global context
-      // before the instance.
+      // before the instance. We should have a start-pause (# of instances)
+      // before we start adding gc?
     }
     for( int i = start; i < words.size(); i++ ) {
 
@@ -384,6 +388,8 @@ int lcontext( Logfile& l, Config& c ) {
 	gc_elem gce;
 	gce.word     = wrd;
 	gce.strength = gcd;
+
+	++range_stats[ wrd ];
 
 	if ( gct == 0 ) { // the looks-like-data type
 	  global_context.push_front( gce );
@@ -456,6 +462,14 @@ int lcontext( Logfile& l, Config& c ) {
 
   file_in.close();
   file_out.close();
+
+  // Save in outputfilename.stats ?
+  //
+  /*
+  for ( ri = range_stats.begin(); ri != range_stats.end(); ri++ ) {
+    l.log( (*ri).first + ": " + to_str( (*ri).second ));
+  }
+  */
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );

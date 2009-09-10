@@ -184,11 +184,20 @@ int make_ibase( Logfile& l, Config& c ) {
   const std::string& timbl          =  c.get_value("timbl");
   const std::string& filename       = c.get_value( "filename" );
   std::string        id             = c.get_value( "id", "" );
-  std::string        ibase_filename = filename;
 
+  std::string t_ext = timbl;
+  std::string ibase_filename = filename;
+  t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '),
+	       t_ext.end());
+  if ( t_ext != "" ) {
+    ibase_filename = ibase_filename+"_"+t_ext;
+  }
+  
+  /* DISABLED because of the t_ext string.
   if ( (id != "") && ( ! contains_id( filename, id)) ) {
     ibase_filename = ibase_filename + "_" + id;
-  }  
+  }
+  */
   ibase_filename = ibase_filename + ".ibase";
 
   if ( file_exists(l, c, ibase_filename) ) {

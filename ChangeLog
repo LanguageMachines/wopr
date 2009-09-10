@@ -1,3 +1,7 @@
+1.10.21	I broke down and put the Timbl settings in the ibase filename. It
+	does not make pretty filenames (okay, it makes ugly ones), but
+	useful. Also took out the id: string from the ibase filename!
+	
 1.10.20 Removed some debugging output.
 	
 1.10.19 Default gcd to 50.
