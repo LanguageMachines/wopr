@@ -311,7 +311,13 @@ int script(Logfile& l, Config& c)  {
       if ( lhs == "params" ) {
 	Tokenize( rhs, kv_pairs, ',' );
 	for ( int j = 0; j < kv_pairs.size(); j++ ) {
-	  c.process_line( kv_pairs.at(j), true ); // Can override!
+	  //
+	  // Can override params in script from cmdline if false.
+	  // This works because override is NOT (false) allowed and
+	  // the script parameters are set AFTER the cmdline params.
+	  // If true, cmdline params canno override script params.
+	  //
+	  c.process_line( kv_pairs.at(j), true );
 	  l.log( "Parameter: " + kv_pairs.at(j) );
 	}
 	kv_pairs.clear();
@@ -1807,6 +1813,12 @@ int hapax(Logfile& l, Config& c)  {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
+  if ( file_exists(l, c, output_filename) ) {
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+filename );
+    return 0;
+  }
+
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
@@ -3012,7 +3024,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   // We need to load .cnt file as well...
   //
   double p0 = 0.00001; // Arbitrary low probability for unknown words.
-  if ( total_count > 0 ) { // Better estimate if we have a lexicon
+  if ( (total_count > 0) && (N_1 > 0) ) {// Better estimate if we have a lexicon
     p0 = (double)N_1 / (double)total_count;
     // Assume N_0 equals N_1...
     p0 = p0 / (double)N_1;
@@ -3168,14 +3180,17 @@ int pplx_simple( Logfile& l, Config& c ) {
     long us0 = clock_u_secs();
     tv = My_Experiment->Classify( a_line, vd );
     long us1 = clock_u_secs();
-    //l.log("Timbl took: "+to_str(us1-us0, 6, ' ')+" usecs.");
     timbl_time += (us1-us0);
 
     std::string answer = tv->Name();
     if ( vd == NULL ) {
       l.log( "Classify( a_line, vd ) was null, skipping current line." );
       file_out << a_line << ' ' << answer << " ERROR" << std::endl;
-      continue;
+      //continue;
+      file_out1.close();
+      file_out.close();
+      file_in.close();
+      return 1; // Abort
     } 
 
     size_t md  = My_Experiment->matchDepth();

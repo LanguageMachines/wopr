@@ -19,6 +19,7 @@ params: cth:100
 # Parameter from cmd line.
 set:filename:$testset
 run:window_lr
+run:hapax
 #Copy the generated filename back to the $testset variable.
 set:testset:$filename
 #
@@ -28,6 +29,7 @@ set:testset:$filename
 set:filename:$trainset
 run:lexicon
 run:window_lr
+run:hapax
 params:id:FOO
 run:make_ibase
 #

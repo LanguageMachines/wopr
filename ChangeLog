@@ -1,3 +1,8 @@
+1.10.22	Wopr will now abort pplx_simple if Timbl classify returns null for
+	the distribution.
+	hapax function now checks if file already exists.
+	P(0) caclulation checks for division by 0.
+	
 1.10.21	I broke down and put the Timbl settings in the ibase filename. It
 	does not make pretty filenames (okay, it makes ugly ones), but
 	useful. Also took out the id: string from the ibase filename!
