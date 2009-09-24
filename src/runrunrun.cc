@@ -394,7 +394,6 @@ int script(Logfile& l, Config& c)  {
           std::string rhs = trim(kv.substr( pos+1 ));
           if ( rhs.substr(0, 1) == "$" ) {
             rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
-	    l.log("("+rhs+")");
           }
 	  std::string lhs_val = c.get_value( lhs ) + rhs;
           c.add_kv( lhs, lhs_val );
@@ -3419,7 +3418,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     file_out << md << ' ' << mal << ' ';
 
-    // New in 1.10.22, the rank. Should be determined on a SORTED distribution.
+    // (not)New in 1.10.22, the rank. Should be determined on a SORTED distribution.
     // This extra number will break the examine_px script.
     //
     //file_out << 1.0/rank << ' ';

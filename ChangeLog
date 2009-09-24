@@ -1,3 +1,5 @@
+1.11.1	Changes in date_time_stamp in scripts.
+	
 1.11.0	First version with focus.
 	Added "add: filename:.txt" to scripting.
 	Added $datetime, $date and $time to kv pairs for scripts.
