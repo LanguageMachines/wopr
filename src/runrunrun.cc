@@ -3071,6 +3071,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   double sum_wlp            = 0.0; // word level pplx
   int    sentence_wordcount = 0;
   int    sentence_count     = 0;
+  double sum_rrank          = 0.0;
   
   // Cache a map(string:freq) of the top-n distributions returned
   // by Timbl.
@@ -3096,7 +3097,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   long timbl_time = 0;
 
-  while( std::getline( file_in, a_line )) {
+  while( std::getline( file_in, a_line )) { ///// GETLINE <---------- /////
 
     words.clear();
     a_line = trim( a_line );
@@ -3211,6 +3212,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     double target_distprob = 0.0;
     double answer_prob     = 0.0;
     double entropy         = 0.0;
+    int    rank            = 1;
     std::vector<distr_elem> distr_vec;// see correct in levenshtein.
     cnt         = vd->size();
     distr_count = vd->totalSize();
@@ -3273,6 +3275,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
 
+      int rank_counter = 1;
       while ( it != vd->end() ) {
 	//const Timbl::TargetValue *tv = it->second->Value();
 
@@ -3290,6 +3293,16 @@ int pplx_simple( Logfile& l, Config& c ) {
 	if ( tvs == target ) { // The correct answer was in the distribution!
 	  target_freq = wght;
 	  target_in_dist = true;
+	  rank = rank_counter;
+	  //sum_rrank += 1.0 / rank; // Only count mrr when in distro answer! What
+	  // if more-than-one with certain freq. Should be on ranking?
+	  // And we need to sort first....!!
+	  /*
+	  l.log( "Rank:" + to_str(rank) );
+	  if ( rank == 0 ) {
+	    l.log( "    :answer=" + answer + "/tvs=" + tvs+"/targt="+target );
+	  }
+	  */
 	}
 
 	// Save it in the cache?
@@ -3303,6 +3316,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	prob     = (double)wght / (double)distr_count;
 	entropy -= ( prob * log2(prob) );
 	
+	++rank_counter;
 	++it;
       } // end loop distribution
       if ( cache_level == 1 ) {
@@ -3317,6 +3331,8 @@ int pplx_simple( Logfile& l, Config& c ) {
       ++correct;
     } else if ( (answer != target) && (target_in_dist == true) ) {
       ++correct_distr; 
+      sum_rrank += (1.0 / rank); // THESE are unsorted!
+      l.log( "rrank: "+to_str(rank) );
     } else {
       ++wrong;
     }
@@ -3378,6 +3394,36 @@ int pplx_simple( Logfile& l, Config& c ) {
     // New in 1.10.0, the matchDepth and matchedAtLeaf
     //
     file_out << md << ' ' << mal << ' ';
+
+    // New in 1.10.22, the rank. Should be determined on a SORTED distribution.
+    // This extra number will break the examine_px script.
+    //
+    //file_out << 1.0/rank << ' ';
+
+    /* Sort and print and determine rank in one fell swoop?
+    int cntr = topn;
+    sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+    std::vector<distr_elem>::iterator fi;
+    fi = distr_vec.begin();
+    if ( topn > 0 ) {
+      file_out << cnt << " [ ";
+    }
+    while ( fi != distr_vec.end() ) { 
+      if ( --cntr >= 0 ) {
+	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+      }
+      if ( cache_level == 1 ) {
+	distr_elem d;
+	d.name = (*fi).name;
+	d.freq = (*fi).freq;
+	(cd->distr_vec).push_back( d );
+      }
+      fi++;
+    }
+    if ( topn > 0 ) {
+      file_out << "]";
+    }
+    */
 
     if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
       int cntr = topn;
@@ -3458,7 +3504,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   if ( sentence_wordcount > 0 ) { // Left over (or all)
       double avg_ent  = sum_logprob / (double)sentence_wordcount;
       double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
-      double avg_pplx = pow( 2, -avg_ent ); 
+      double avg_pplx = pow( 2, -avg_ent );
       file_out1 << sentence_count << " "
 		<< sentence_wordcount << " "
 		<< sum_logprob << " "
@@ -3502,6 +3548,11 @@ int pplx_simple( Logfile& l, Config& c ) {
   double ct_perc = correct_perc+cd_perc;
   l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
   l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
+
+  l.log( "sum_rrank: " + to_str(sum_rrank) );
+  double mrr = sum_rrank / (double)(correct_distr); 
+  l.log( "MRR: " + to_str(mrr) );
+
   if ( sentence_wordcount > 0 ) {
     l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
     l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );

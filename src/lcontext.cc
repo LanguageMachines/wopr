@@ -465,11 +465,14 @@ int lcontext( Logfile& l, Config& c ) {
 
   // Save in outputfilename.stats ?
   //
-  /*
-  for ( ri = range_stats.begin(); ri != range_stats.end(); ri++ ) {
-    l.log( (*ri).first + ": " + to_str( (*ri).second ));
+  std::string stats_filename = output_filename + ".stats";
+  file_out.open( stats_filename.c_str(), std::ios::out );
+  if ( file_out ) {
+    for ( ri = range_stats.begin(); ri != range_stats.end(); ri++ ) {
+      file_out << (*ri).first << "\t" <<  (*ri).second << std::endl;
+    }
+    file_out.close();
   }
-  */
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
