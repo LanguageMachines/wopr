@@ -29,6 +29,8 @@ wopr_SOURCES = \
 	src/generator.cc \
 	src/lcontext.cc \
 	src/lcontext.h \
+	src/focus.h \
+	src/focus.cc \
 	src/MersenneTwister.h
 
 woprsm_SOURCES = \

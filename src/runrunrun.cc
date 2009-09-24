@@ -56,6 +56,7 @@
 #include "levenshtein.h"
 #include "generator.h"
 #include "lcontext.h"
+#include "focus.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -380,6 +381,27 @@ int script(Logfile& l, Config& c)  {
 	}
 	kv_pairs.clear();
       }
+      //
+      // add: filename:foo
+      // add: filename:$time
+      //
+      if ( lhs == "add" ) { 
+	Tokenize( rhs, kv_pairs, ',' );
+	std::string kv = kv_pairs.at(0);
+	int pos = kv.find( ':', 0 );
+	if ( pos != std::string::npos ) {
+          std::string lhs = trim(kv.substr( 0, pos ));
+          std::string rhs = trim(kv.substr( pos+1 ));
+          if ( rhs.substr(0, 1) == "$" ) {
+            rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
+	    l.log("("+rhs+")");
+          }
+	  std::string lhs_val = c.get_value( lhs ) + rhs;
+          c.add_kv( lhs, lhs_val );
+          l.log( "SET "+lhs+" to "+lhs_val );
+	}
+	kv_pairs.clear();
+      }
     }
   }
   
@@ -478,6 +500,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &range_from_lex;
   } else if ( a_fname == "lcontext" ) { // from lcontext.cc
     return &lcontext;
+  } else if ( a_fname == "focus" ) { // from focus.cc
+    return &focus;
   }
   return &tst;
 }

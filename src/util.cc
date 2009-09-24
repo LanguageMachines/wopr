@@ -223,6 +223,28 @@ std::string the_date_time() {
   strftime(timestring, 32, time_format.c_str(),  t);
   return( std::string( timestring ) );
 }
+std::string the_time() {
+  char               timestring[32];
+  timeval            tv;
+  struct tm          *t;
+  
+  std::string time_format = std::string("%H:%M:%S");
+  gettimeofday(&tv, 0);
+  t = localtime(&tv.tv_sec);
+  strftime(timestring, 32, time_format.c_str(),  t);
+  return( std::string( timestring ) );
+}
+std::string the_date() {
+  char               timestring[32];
+  timeval            tv;
+  struct tm          *t;
+  
+  std::string time_format = std::string("%Y/%m/%d");
+  gettimeofday(&tv, 0);
+  t = localtime(&tv.tv_sec);
+  strftime(timestring, 32, time_format.c_str(),  t);
+  return( std::string( timestring ) );
+}
 
 /*!
   Return epoch seconds s as "yyyy/mm/dd hh:mm:ss"

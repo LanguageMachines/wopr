@@ -134,6 +134,13 @@ void Config::add_kv( const std::string& k, const std::string& v ) {
 }
 
 const std::string& Config::get_value( const std::string& k ) {
+  if ( k == "datetime" ) {
+    add_kv( "datetime", the_date_time() );
+  } else if ( k == "time" ) {
+    add_kv( "time", the_time() );
+  } else if ( k == "date" ) {
+    add_kv( "date", the_date() );
+  }
   return kv[k];
 }
 

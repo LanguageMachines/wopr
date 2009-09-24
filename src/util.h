@@ -46,6 +46,8 @@ std::string to_str(bool);
 long now();
 long utc();
 std::string the_date_time();
+std::string the_time();
+std::string the_date();
 std::string the_date_time(long);
 std::string the_date_time_utc(long);
 long parse_date_time( const std::string& );
