@@ -3355,7 +3355,6 @@ int pplx_simple( Logfile& l, Config& c ) {
     } else if ( (answer != target) && (target_in_dist == true) ) {
       ++correct_distr; 
       sum_rrank += (1.0 / rank); // THESE are unsorted!
-      l.log( "rrank: "+to_str(rank) );
     } else {
       ++wrong;
     }
@@ -3572,9 +3571,9 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
   l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
 
-  l.log( "sum_rrank: " + to_str(sum_rrank) );
-  double mrr = sum_rrank / (double)(correct_distr); 
-  l.log( "MRR: " + to_str(mrr) );
+  //l.log( "sum_rrank: " + to_str(sum_rrank) );
+  //double mrr = sum_rrank / (double)(correct_distr); 
+  //l.log( "MRR: " + to_str(mrr) );
 
   if ( sentence_wordcount > 0 ) {
     l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );

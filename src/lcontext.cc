@@ -272,7 +272,7 @@ int lcontext( Logfile& l, Config& c ) {
     + "d" + to_str(gcd)
     + "t" + to_str(gct);
 
-  if ( (id != "") && (contains_id(filename, id) == false) ) {
+  if ( (id != "") && (contains_id(output_filename, id) == false) ) { //was filename?
     output_filename = output_filename + "_" + id;
   }
 

@@ -1,3 +1,7 @@
+1.11.3	Added fco parameter in focus.
+	
+1.11.2	Removed excess printing from pplxs.
+	
 1.11.1	Changes in date_time_stamp in scripts.
 	
 1.11.0	First version with focus.

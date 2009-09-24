@@ -54,14 +54,21 @@ int focus( Logfile& l, Config& c ) {
   l.log( "focus" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
-  std::string        output_filename = filename + ".fcs";
+  int                fco             = stoi( c.get_value( "fco", "0" ));
+  std::string        id              = c.get_value( "id", "" );
+  std::string        output_filename = filename + ".fcs"+to_str(fco);
+
+  if ( (id != "") && (contains_id(output_filename, id) == false) ) {
+    output_filename = output_filename + "_" + id;
+  }
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "focus:      "+focus_filename );
+  l.log( "fco:        "+to_str(fco) ); // target offset
+  l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
-
 
   if ( file_exists( l, c, output_filename ) ) {
     l.log( "OUTPUT exists, not overwriting." );
@@ -103,6 +110,7 @@ int focus( Logfile& l, Config& c ) {
   std::string a_line;
   std::string target;
   std::string a_str;
+  int         pos;
   std::map<std::string, int>::iterator ri;
 
   while( std::getline( file_in, a_line ) ) { 
@@ -110,7 +118,9 @@ int focus( Logfile& l, Config& c ) {
     words.clear();
     Tokenize( a_line, words, ' ' );
    
-    target = words[words.size()-1];
+    pos = words.size()-1-fco;
+    pos = (pos < 0) ? 0 : pos;
+    target = words[pos];
     a_str  = words[0];
 
     ri = focus_words.find( target );
