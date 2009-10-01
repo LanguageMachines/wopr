@@ -1819,9 +1819,17 @@ unsigned long long anahash( std::string& s ) {
 //
 int hapax(Logfile& l, Config& c)  {
   l.log( "hapax" );
+
   const std::string& filename = c.get_value( "filename" );
   int hapax = stoi( c.get_value( "hpx", "1" ));
-  std::string output_filename = filename + ".hpx" + to_str(hapax);
+
+  std::string output_filename = filename;
+  std::string        id             = c.get_value( "id", "" );
+  if ( (id != "") && ( ! contains_id( filename, id)) ) {
+    output_filename = output_filename + "_" + id;
+  }
+  output_filename = output_filename + ".hpx" + to_str(hapax);
+
   std::string lexicon_filename = c.get_value("lexicon");
   std::string hpx_sym = c.get_value("hpx_sym", "<unk>");
   int type = 0;
@@ -3001,6 +3009,8 @@ int pplx_simple( Logfile& l, Config& c ) {
 	wfreqs[a_word] = wfreq;
 	total_count += wfreq;
 	if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
+	  // or we calculate everything <= hapax as mass for the unknown. An
+	  // unknown token will also be HAPAX...
 	  ++N_1;
 	}
       }
@@ -3047,6 +3057,9 @@ int pplx_simple( Logfile& l, Config& c ) {
   // We need to load .cnt file as well...
   //
   double p0 = 0.00001; // Arbitrary low probability for unknown words.
+  //
+  // PJB: FIX: hapaxing makes that there is no N_1 !
+  //
   if ( (total_count > 0) && (N_1 > 0) ) {// Better estimate if we have a lexicon
     p0 = (double)N_1 / (double)total_count;
     // Assume N_0 equals N_1...

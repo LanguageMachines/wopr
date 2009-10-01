@@ -1,3 +1,5 @@
+1.11.4	Added id to hapax function (useful for testset)
+	
 1.11.3	Added fco parameter in focus.
 	
 1.11.2	Removed excess printing from pplxs.
