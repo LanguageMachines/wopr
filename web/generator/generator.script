@@ -1,0 +1,13 @@
+msg: Script to train and start word salad server
+msg: -------------------------------------------
+#
+run: window_s
+#
+params: timbl:-a1 +D
+run: make_ibase
+#
+params: len:30
+params: n:10
+params: end:,?!
+params: port:1984
+run: generate_server
