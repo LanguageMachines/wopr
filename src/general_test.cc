@@ -1,0 +1,443 @@
+// ---------------------------------------------------------------------------
+// $Id: lcontext.cc 2426 2009-01-07 12:24:00Z pberck $
+// ---------------------------------------------------------------------------
+
+/*****************************************************************************
+ * Copyright 2007 - 2009 Peter Berck                                         *
+ *                                                                           *
+ * This file is part of wopr.                                                *
+ *                                                                           *
+ * wopr is free software; you can redistribute it and/or modify it           *
+ * under the terms of the GNU General Public License as published by the     *
+ * Free Software Foundation; either version 2 of the License, or (at your    *
+ * option) any later version.                                                *
+ *                                                                           *
+ * wopr is distributed in the hope that it will be useful, but WITHOUT       *
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or     *
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License      *
+ * for more details.                                                         *
+ *                                                                           *
+ * You should have received a copy of the GNU General Public License         *
+ * along with wpred; if not, write to the Free Software Foundation,          *
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
+ *****************************************************************************/
+
+// ---------------------------------------------------------------------------
+//  Includes.
+// ---------------------------------------------------------------------------
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
+#include <map>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+#include <deque>
+
+#include "qlog.h"
+#include "Config.h"
+#include "util.h"
+#include "lcontext.h"
+#include "runrunrun.h"
+
+// ---------------------------------------------------------------------------
+//  Code.
+// ---------------------------------------------------------------------------
+
+#ifdef TIMBL
+struct distr_elem {
+  std::string name;
+  double      freq;
+  double      s_freq;
+  bool operator<(const distr_elem& rhs) const {
+    return freq > rhs.freq;
+  }
+};
+struct cached_distr {
+  int cnt;
+  long sum_freqs;
+  double entropy;
+  std::map<std::string,int> freqs; // word->frequency
+  std::vector<distr_elem> distr_vec; // top-n to print
+  bool operator<(const cached_distr& rhs) const {
+    return cnt > rhs.cnt;
+  }
+};
+int gen_test( Logfile& l, Config& c ) {
+  l.log( "gen_test" );
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& ibasefile        = c.get_value( "ibasefile" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& counts_filename  = c.get_value( "counts" );
+  const std::string& timbl            = c.get_value( "timbl" );
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
+  int                topn             = stoi( c.get_value( "topn", "0" ) );
+  int                cache_size       = stoi( c.get_value( "cache", "3" ) );
+  int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
+  int                skip             = 0;
+
+  Timbl::TimblAPI   *My_Experiment;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  if ( contains_id(filename, id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+  std::string        output_filename  = filename + id + ".gt";
+
+  // Sanity check.
+  //
+  if ( cache_size <= 0 ) {
+    l.log( "WARNING: cache_size should be > 0, setting to 1." );
+    cache_size = 1;
+  }
+  l.inc_prefix();
+  l.log( "filename:       "+filename );
+  l.log( "ibasefile:      "+ibasefile );
+  l.log( "timbl:          "+timbl );
+  l.log( "topn:           "+to_str(topn) );
+  l.log( "cache:          "+to_str(cache_size) );
+  l.log( "cache threshold:"+to_str(cache_threshold) );
+  l.log( "id:             "+id );
+  l.log( "OUTPUT:         "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists(l,c,output_filename) ) {
+    l.log( "OUTPUT files exist, not overwriting." );
+    c.add_kv( "gt_file", output_filename );
+    l.log( "SET gt_file to "+output_filename );
+    return 0;
+  }
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load inputfile." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write .gt output file." ); // for px
+    return -1;
+  }
+  file_out << "# target class ci md mal (dist.cnt [topn])" << std::endl;
+  
+  try {
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;      
+    }
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;
+    }
+    // My_Experiment->Classify( cl, result, distrib, distance );
+  } catch (...) {
+    l.log( "Cannot create Timbl Experiment..." );
+    return 1;
+  }
+  l.log( "Instance base loaded." );
+
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  std::vector<std::string> words;
+  int correct = 0;
+  int wrong   = 0;
+  int correct_unknown = 0;
+  int correct_distr = 0;
+    
+  // Recognise <s> or similar, reset pplx calculations.
+  // Output results on </s> or similar.
+  // Or a divisor which is not processed?
+  //
+  double sentence_prob      = 0.0;
+  double sum_logprob        = 0.0;
+  double sum_wlp            = 0.0; // word level pplx
+  int    sentence_count     = 0;
+  double sum_rrank          = 0.0;
+  
+  // Cache a map(string:freq) of the top-n distributions returned
+  // by Timbl.
+  // We get the size first, if it is bigger than the ones we have cached,
+  // we can save the map when we cycle through the distribution. Next
+  // time we can use the map to check if the target is in there.
+  // What do we need?
+  //   map with word->freq
+  //   sum(freqs)
+  //   number of entries
+  //
+  // Distribution cache
+  //
+  int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
+  std::vector<cached_distr> distr_cache;
+  for ( int i = 0; i < cache_size; i++ ) {
+	cached_distr c;
+	c.cnt       = 0;
+	c.sum_freqs = 0;
+	c.entropy   = 0.0;
+	distr_cache.push_back( c );
+  }
+
+  long timbl_time = 0;
+
+  while( std::getline( file_in, a_line )) { ///// GETLINE <---------- \\\\\\\
+
+    words.clear();
+    a_line = trim( a_line );
+    Tokenize( a_line, words, ' ' );
+
+    std::string target         = words.at( words.size()-1 );
+    bool        target_in_dist = false;
+
+    // What does Timbl think?
+    //
+    long us0 = clock_u_secs();
+    tv = My_Experiment->Classify( a_line, vd );
+    long us1 = clock_u_secs();
+    timbl_time += (us1-us0);
+
+    std::string answer = tv->Name();
+    if ( vd == NULL ) {
+      l.log( "Classify( a_line, vd ) was null, skipping current line." );
+      file_out << a_line << ' ' << answer << " ERROR" << std::endl;
+      //continue;
+      file_out.close();
+      file_in.close();
+      return 1; // Abort
+    } 
+
+    size_t md  = My_Experiment->matchDepth();
+    bool   mal = My_Experiment->matchedAtLeaf();
+
+    // Loop over distribution returned by Timbl.
+    //
+    // entropy over distribution: sum( p log(p) ). 
+    //
+    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+    int cnt = 0;
+    int distr_count = 0;
+    double smoothed_distr_count = 0.0;
+    int target_freq = 0;
+    int answer_freq = 0;
+    double prob            = 0.0;
+    double target_distprob = 0.0;
+    double answer_prob     = 0.0;
+    double entropy         = 0.0;
+    int    rank            = 1;
+    std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+    cnt         = vd->size();
+    distr_count = vd->totalSize();
+
+    // Check cache/size/presence. Note it assumes that each size
+    // only occurs once...
+    //
+    int cache_idx = -1;
+    cached_distr* cd = NULL;
+    for ( int i = 0; i < cache_size; i++ ) {
+      if ( distr_cache.at(i).cnt == cnt ) {
+	if ( distr_cache.at(i).sum_freqs == distr_count ) {
+	  cache_idx = i; // it's cached already!
+	  cd = &distr_cache.at(i);
+	  break;
+	}
+      }
+    }
+    if ( cache_idx == -1 ) { // It should be cached, if not present.
+      if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
+	cd = &distr_cache.at( cache_size-1 ); // the lowest.
+	l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
+	cd->cnt = cnt;
+	cd->sum_freqs  = distr_count;
+	(cd->distr_vec).clear();
+      }
+    }
+    // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
+    // cache_idx == -1 && cd != null: not cached, want to cache it.
+    // cache_idx  > -1 && cd == null: impossible
+    // cache_idx  > -1 && cd != null: cached, cd points to cache.
+    // 0, 1, 2, 3
+    //
+    int cache_level = -1; // see above.
+
+    if (cache_idx == -1) {
+      if ( cd == NULL ) {
+	cache_level = 0;
+      } else {
+	cache_level = 1; // want to cache
+      }
+    } else if (cache_idx != -1) {
+      if ( cd != NULL ) {
+	cache_level = 3;
+      } else {
+	cache_level = 2;// play mission impossible theme
+      }
+    }
+
+    // ----
+
+    if ( cache_level == 3 ) { // Use the cache, Luke.
+      std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
+      if ( wfi != (cd->freqs).end() ) {
+	target_freq = (long)(*wfi).second;
+	target_in_dist = true;
+      }
+      entropy = cd->entropy;
+      distr_vec = cd->distr_vec; // the [distr] we print
+    }
+    if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
+
+      int rank_counter = 1;
+      while ( it != vd->end() ) {
+	//const Timbl::TargetValue *tv = it->second->Value();
+
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight(); // absolute frequency.
+	
+	if ( topn > 0 ) { // only save if we want to sort/print them later.
+	  distr_elem  d;
+	  d.name   = tvs;
+	  d.freq   = wght;
+	  d.s_freq = wght;
+	  distr_vec.push_back( d );
+	}
+	
+	if ( tvs == target ) { // The correct answer was in the distribution!
+	  target_freq = wght;
+	  target_in_dist = true;
+	  rank = rank_counter;
+	}
+
+	// Save it in the cache?
+	//
+	if ( cache_level == 1 ) {
+	  cd->freqs[tvs] = wght;
+	}
+
+	// Entropy of whole distr. Cache.
+	//
+	prob     = (double)wght / (double)distr_count;
+	entropy -= ( prob * log2(prob) );
+	
+	++rank_counter;
+	++it;
+      } // end loop distribution
+      if ( cache_level == 1 ) {
+	cd->entropy = entropy;
+      }
+    } // cache_level == 1 or 0
+
+
+    // Counting correct guesses
+    //
+    if ( answer == target ) {
+      ++correct;
+    } else if ( (answer != target) && (target_in_dist == true) ) {
+      ++correct_distr; 
+      sum_rrank += (1.0 / rank); // THESE are unsorted!
+    } else {
+      ++wrong;
+    }
+
+    target_distprob = (double)target_freq / (double)distr_count;
+
+    // What do we want in the output file? Write the pattern and answer,
+    // the logprob, followed by the entropy (of distr.), the size of the
+    // distribution returned, and the top-10 (or less) of the distribution.
+    //
+    // #target classification logprob entropy word_lp (dist.cnt [topn])
+    //
+    file_out << /*a_line << ' ' <<*/ target << ' ' << answer << ' '
+      /*<< entropy << ' '*/ ;
+
+    if ( answer == target ) {
+      file_out << "cg "; // correct guess
+    } else if ( (answer != target) && (target_in_dist == true) ) {
+      file_out << "cd "; // correct distr.
+    } else {
+      file_out << "ic "; // incorrect
+    }
+
+    // New in 1.10.0, the matchDepth and matchedAtLeaf
+    //
+    file_out << md << ' ' << mal << ' ';
+
+    if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
+      int cntr = topn;
+      sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+      std::vector<distr_elem>::iterator fi;
+      fi = distr_vec.begin();
+      file_out << cnt << " [ ";
+      while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
+	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	if ( cache_level == 1 ) {
+	  distr_elem d;
+	  d.name = (*fi).name;
+	  d.freq = (*fi).freq;
+	  (cd->distr_vec).push_back( d );
+	}
+	fi++;
+      }
+      file_out << "]";
+    }
+
+    file_out << std::endl;
+
+    // Find new lowest here. Overdreven om sort te gebruiken?
+    //
+    if ( cache_level == 1 ) {
+      sort( distr_cache.begin(), distr_cache.end() );
+      lowest_cache = distr_cache.at(cache_size-1).cnt;
+      //}
+      lowest_cache = 1000000; // hmmm.....
+      for ( int i = 0; i < cache_size; i++ ) {
+	if ( (distr_cache.at(i)).cnt < lowest_cache ) {
+	  lowest_cache = (distr_cache.at(i)).cnt;
+	}
+      }
+    }
+
+  } // while getline() ///////////// <-------------- \\\\\\\\\\\\\\\\/7
+
+  file_out.close();
+  file_in.close();
+
+  double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
+  l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
+  double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
+  l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
+  int correct_total = correct_distr+correct;
+  double ct_perc = correct_perc+cd_perc;
+  l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
+  l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
+
+  l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
+
+  c.add_kv( "gt_file", output_filename );
+  l.log( "SET gt_file to "+output_filename );
+
+  return 0;
+}
+#else
+int gen_test( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}  
+#endif
+
+// ---------------------------------------------------------------------------

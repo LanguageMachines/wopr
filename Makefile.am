@@ -33,6 +33,8 @@ wopr_SOURCES = \
 	src/focus.cc \
 	src/tr.h \
 	src/tr.cc \
+	src/general_test.h \
+	src/general_test.cc \
 	src/MersenneTwister.h
 
 woprsm_SOURCES = \

@@ -58,6 +58,7 @@
 #include "lcontext.h"
 #include "focus.h"
 #include "tr.h"
+#include "general_test.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -504,6 +505,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &focus;
   } else if ( a_fname == "tr" ) { // from tr.cc
     return &tr;
+  } else if ( a_fname == "gt" ) { // from general_test.cc
+    return &gen_test;
   }
   return &tst;
 }
