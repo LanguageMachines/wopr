@@ -427,7 +427,9 @@ void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
   pos = buffer.find(delimiter, pos_ant);
   while ( pos != std::string::npos ) {
     std::string token = buffer.substr(pos_ant, pos-pos_ant);
-    tokens.push_back(token);
+    if ( token != "" ) { // "normalize" spaces
+      tokens.push_back(token);
+    }
     pos_ant = pos+1;
     pos = buffer.find(delimiter, pos_ant);
   }

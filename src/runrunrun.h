@@ -50,6 +50,7 @@ int window( Logfile&, Config& );
 int window_s( Logfile&, Config& );
 int ngram( Logfile&, Config& );
 int ngram_s( Logfile&, Config& );
+int ngram_list( Logfile&, Config& );
 int prepare( Logfile&, Config& );
 int arpa( Logfile&, Config& );
 int window( std::string, std::string, int, int, bool, std::vector<std::string>& );

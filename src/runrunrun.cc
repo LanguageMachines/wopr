@@ -447,6 +447,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &ngram;
   } else if ( a_fname == "ngram_s" ) {
     return &ngram_s;
+  } else if ( a_fname == "ngl" ) {
+    return &ngram_list;
   } else if ( a_fname == "prepare" ) {
     return &prepare;
   } else if ( a_fname == "arpa" ) {
@@ -885,7 +887,6 @@ int ngram_s( Logfile& l, Config& c ) {
   std::string a_line;
   std::vector<std::string> results;
   std::vector<std::string>::iterator ri;
-  std::map<std::string,int> grams;
 
   while( std::getline( file_in, a_line )) {
 
@@ -893,12 +894,68 @@ int ngram_s( Logfile& l, Config& c ) {
     for ( ri = results.begin(); ri != results.end(); ri++ ) {
       std::string cl = *ri;
       file_out << cl << std::endl;
-      //grams[cl] += 1;
     }
     results.clear();
   }
   file_out.close();
   file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// Sentence/line based ngram function.
+//
+int ngram_list( Logfile& l, Config& c ) {
+  l.log( "ngl" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                n               = stoi( c.get_value( "n", "3" ));
+  std::string        output_filename = filename + ".ngl" + to_str(n);
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "n:         "+to_str(n) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string> results;
+  std::vector<std::string>::iterator ri;
+  std::map<std::string,int> grams;
+
+  while( std::getline( file_in, a_line )) {
+
+    for ( int i = 1; i <= n; i++ ) {
+      results.clear();
+      if ( ngram_line( a_line, i, results ) == 0 ) {
+	for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	  std::string cl = *ri;
+	  grams[cl] += 1; //assuming 0 if new
+	}
+      }
+    }
+
+  }
+  file_in.close();
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::map<std::string,int>::iterator gi;
+  for ( gi = grams.begin(); gi != grams.end(); gi++ ) {
+    file_out << (*gi).first << " " << (*gi).second << std::endl;
+  }
+
+  file_out.close();
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
@@ -1631,7 +1688,6 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
     for ( ngri= wi; ngri < wi+n; ngri++ ) {
       w_line = w_line + *ngri + " "; // no out of bounds checking.
     }
-    //std::cout << w_line << std::endl;
     res.push_back( w_line );
 
     w_line.clear();
