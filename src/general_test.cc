@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// $Id: lcontext.cc 2426 2009-01-07 12:24:00Z pberck $
+// $Id: general_test.cc 2426 2009-01-07 12:24:00Z pberck $
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
@@ -71,11 +71,9 @@ struct cached_distr {
   }
 };
 int gen_test( Logfile& l, Config& c ) {
-  l.log( "gen_test" );
+  l.log( "gt" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
-  const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
@@ -130,7 +128,7 @@ int gen_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .gt output file." ); // for px
     return -1;
   }
-  file_out << "# target class ci md mal (dist.cnt [topn])" << std::endl;
+  file_out << "# target class ci md mal (dist.cnt sumF [topn])" << std::endl;
   
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
@@ -362,7 +360,8 @@ int gen_test( Logfile& l, Config& c ) {
     //
     // #target classification logprob entropy word_lp (dist.cnt [topn])
     //
-    file_out << /*a_line << ' ' <<*/ target << ' ' << answer << ' '
+    file_out << /*a_line << ' ' <<*/ target 
+	     << ' ' << answer << ' '
       /*<< entropy << ' '*/ ;
 
     if ( answer == target ) {
@@ -382,7 +381,7 @@ int gen_test( Logfile& l, Config& c ) {
       sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
       std::vector<distr_elem>::iterator fi;
       fi = distr_vec.begin();
-      file_out << cnt << " [ ";
+      file_out << cnt << ' ' << distr_count << " [ ";
       while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
 	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
 	if ( cache_level == 1 ) {

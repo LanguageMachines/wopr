@@ -865,7 +865,6 @@ int ngram_s( Logfile& l, Config& c ) {
   const std::string& filename        = c.get_value( "filename" );
   int                ws              = stoi( c.get_value( "ws", "3" ));
   std::string        output_filename = filename + ".ng" + to_str(ws);
-  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "ws:        "+to_str(ws) );
@@ -886,17 +885,15 @@ int ngram_s( Logfile& l, Config& c ) {
   std::string a_line;
   std::vector<std::string> results;
   std::vector<std::string>::iterator ri;
+  std::map<std::string,int> grams;
 
   while( std::getline( file_in, a_line )) {
-
-    if ( to_lower ) {
-      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
-    }
 
     ngram_line( a_line, ws, results );
     for ( ri = results.begin(); ri != results.end(); ri++ ) {
       std::string cl = *ri;
       file_out << cl << std::endl;
+      //grams[cl] += 1;
     }
     results.clear();
   }
@@ -2325,7 +2322,7 @@ int smooth_old( Logfile& l, Config& c ) {
   const std::string& counts_filename = c.get_value( "counts" );
   const int precision = stoi( c.get_value( "precision", "6" ));
   int k = stoi( c.get_value( "k", "10" ));
-  std::string gt_filename = counts_filename + ".gt";
+  std::string gt_filename = counts_filename + ".gts";
   l.inc_prefix();
   l.log( "counts: " + counts_filename );
   l.log( "k:      " + to_str(k) );

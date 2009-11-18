@@ -1,7 +1,7 @@
 .TH wopr 1 16/10/2007 "UvT"
 
 .SH WOPR
-WOrd PRediction
+WOrd PRedictor
 
 .SH SYNOPSIS
 .BI "./wopr"
@@ -9,6 +9,8 @@ WOrd PRediction
 .BI "./wopr --script make_data --params filename:foo.data"
 
 .BI "./wopr -r server2 -p ibasefile:tekst.txt.l1000.ws7.ibase,lexicon:tekst.txt.l1000.lex,timbl:'-a1 +vdb +D'"
+
+.BI "./wopr -r window_lr -p filename:textfile,lc:3,rc:0"
 
 .SH DESCRIPTION
 .I wopr
@@ -59,11 +61,6 @@ SETS: internal parameters which are changed or added.
 
 .TP 12
 .B
-timbl
-Calls Timbl
-
-.TP 12
-.B
 make_ibase
 Creates and saves an ibase file using Timbl
 
@@ -71,125 +68,115 @@ Creates and saves an ibase file using Timbl
 IN: filename (data file)
 IN: timbl (timbl parameters, quote if more than one)
 OUT: filename.ibase (the saved instance base)
-
 .fi
 
+\" .TP 12
+\" .B
+\" run_external
+\" Runs an external program.
+
+\" .nf
+\" IN: external program
+\" .fi
+
+\" Example:
+
+\" .nf
+\" ./wopr -r run_external -p:external:"sleep 10"
+\" .fi
+
+\" .TP 12
+\" .B
+\" count_lines
+\" Displays the number of lines in <filename>.
+
+\" .nf
+\" IN: filename
+\" OUT: stdout
+\" .fi
+
+\" .TP 12
+\" .B
+\" dump_kv
+\" Displays all the settings stored in 
+\" .I wopr .
+
+\" .TP 12
+\" .B
+\" clear_kv
+\" Clears all the settings.
+
+\" .TP 12
+\" .B
+\" cut
+\" Takes the first <lines> lines from the file <filename>, and
+\" saves them in a new file. The <filename> parameter will point to
+\" this new file after cutting.
+
+\" .nf
+\" IN: filename
+\" IN: lines:nn
+\" SETS(filename): filename.clnn
+\" OUT: filename.clnn
+\" .fi
+
+\" .TP 12
+\" .B
+\" flatten
+\" Read the file <filename> and writes a new file which contains one
+\" word per line. The <filename> parameter will point to
+\" this new file after cutting. The <lines> parameters specifies how
+\" many lines (i.e. words) will end up in the output file. Leaving
+\" this parameter out will convert the whole file.
+
+\" .nf
+\" IN: filename
+\" IN: lines:nn
+\" SETS(filename): filename.flnn
+\" OUT: filename.lnn
+\" .fi
+
+\" .TP 12
+\" .B
+\" lowercase
+\" Read the file <filename> and writes a new file which contains the
+\" contents of the file in lowercase. The <filename> parameter will point to
+\" this new file after conversion.
+
+\" .nf
+\" IN: filename
+\" SETS(filename): filename.lc
+\" OUT: filename.lc
+\" .fi
+
 .TP 12
 .B
-run_external
-Runs an external program.
-
-.nf
-IN: external program
-.fi
-
-Example:
-
-.nf
-./wopr -r run_external -p:external:"sleep 10"
-.fi
-
-.TP 12
-.B
-count_lines
-Displays the number of lines in <filename>.
-
-.nf
-IN: filename
-OUT: stdout
-.fi
-
-.TP 12
-.B
-dump_kv
-Displays all the settings stored in 
-.I wopr .
-
-.TP 12
-.B
-clear_kv
-Clears all the settings.
-
-.TP 12
-.B
-cut
-Takes the first <lines> lines from the file <filename>, and
-saves them in a new file. The <filename> parameter will point to
-this new file after cutting.
-
-.nf
-IN: filename
-IN: lines:nn
-SETS(filename): filename.clnn
-OUT: filename.clnn
-.fi
-
-.TP 12
-.B
-flatten
-Read the file <filename> and writes a new file which contains one
-word per line. The <filename> parameter will point to
-this new file after cutting. The <lines> parameters specifies how
-many lines (i.e. words) will end up in the output file. Leaving
-this parameter out will convert the whole file.
-
-.nf
-IN: filename
-IN: lines:nn
-SETS(filename): filename.flnn
-OUT: filename.lnn
-.fi
-
-.TP 12
-.B
-lowercase
-Read the file <filename> and writes a new file which contains the
-contents of the file in lowercase. The <filename> parameter will point to
-this new file after conversion.
-
-.nf
-IN: filename
-SETS(filename): filename.lc
-OUT: filename.lc
-.fi
-
-.TP 12
-.B
-window
+window_lr
 Takes a file, and writes a new file with windowed data. The size of
-the window is in the <ws> parameter. The <filename> parameter points
+the window is in the <lc> and <rc> parameters. The <filename> parameter points
 to the new file after processing. 
 
 .nf
 IN: filename
-IN: ws:n
-SETS(filename): filename.wn
-OUT: filename.wn
+IN: lc:n
+IN: rc:m
+SETS(filename): filename.lnrm
+OUT: filename.lnrm
 .fi
 
 .TP 12
 .B
-window_line
-
-.nf
-IN:	classify:str
-IN:	timbl
-OUT:	stdout
-.fi
-
-.TP 12
-.B
-timbl_test
-Takes the file <testfile>, and tests it using
+gt
+Takes the file <filename>, and tests it using
 .I Timbl
 with the parameters set in the <timbl> and <ibase> parameters. The output
-is written to <testfile>.out.
+is written to <testfile>.gt.
 
 .nf
 IN:	timbl
 IN:	ibasefile
-IN:	testfile
-OUT:	testfile.out
+IN:	filename
+OUT:	filename.gt
 .fi
 
 .TP 12
@@ -197,68 +184,25 @@ OUT:	testfile.out
 lexicon
 Creates a 'lexicon' from the file <filename>. The lexicon is a list of
 words with their frequency in the <file>. Written in <filename>.lex. The
-<lexicon> parameter will be set with this new filename.
+<lexicon> parameter will be set with this new filename. The
+<filename>.cnt file will contain a list of counts of counts.
 
 .nf
 IN:	filename
 OUT:	filename.lex
+OUT:	filename.cnt
 .fi
 
 .TP 12
 .B
 hapax
-Sets the <testfile> or <trainfile> parameters to <filename>.hpxt or
-<filename>.hpxt depending on the <type> parameter. It will
-hapax the file according to the <hpx> parameter. Tokens with a frequency
-less than the <hpx> value (taken from lexicon) will be replaced by
-the string HAPAX. The lexicon is taken from the <lexicon> parameter.
 
 .nf
 IN:	filename
-IN:	type:{train|test}
 IN:	hpx:n
-IN:	lexicon (default:filename.lex)
-SETS({train|test}file):	filename.{hpx|hpxt}n
-OUT:	filename.{hpx|hpxt}n
-.fi
-
-.TP 12
-.B
-trainfile
-Sets the <filename> parameter to <trainfile>. Use this after for example
-.B hapax
-and before running
-.B make_ibase.
-This way, make_ibase will take the .hpx filename as input. If this
-is not done,
-.B make_ibase
-will take the filename before the hapaxing.
-
-.nf
-IN:	trainfile
-SETS:	filename <- trainfile
-.fi
-
-.TP 12
-.B
-testfile
-Sets the <filename> parameter to <testfile>. See the trainfile entry.
-
-.nf
-IN:	testfile
-SETS:	filename <- testfile
-.fi
-
-.TP 12
-.B
-window_usenet
-Experimental.
-
-.nf
-IN: filename
-IN: ws:n
-SETS: filename.wsn
-OUT: filename.wsn
+IN:	lexicon
+SETS(filename):	filename.hpxn
+OUT:	filename.hpxn
 .fi
 
 .TP 12
@@ -291,7 +235,7 @@ OUT: filename.xa3
 Not known.
 
 .SH COPYRIGHT
-Copyright (C) 2007 UvT
+Copyright (C) 2007, 2008, 2009 Tilburg University
 
 .SH AUTHOR
 .PP
