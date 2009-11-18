@@ -1,3 +1,5 @@
+1.13.0	Moved ngl to own source file.
+	
 1.12.5	Added probability calculations to ngl.
 	
 1.12.4	ngl (ngram lists) added.

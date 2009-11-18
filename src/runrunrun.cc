@@ -59,6 +59,7 @@
 #include "focus.h"
 #include "tr.h"
 #include "general_test.h"
+#include "ngrams.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -899,101 +900,6 @@ int ngram_s( Logfile& l, Config& c ) {
   }
   file_out.close();
   file_in.close();
-
-  c.add_kv( "filename", output_filename );
-  l.log( "SET filename to "+output_filename );
-  return 0;
-}
-
-// Sentence/line based ngram function.
-//
-struct ngl_elem {
-  long freq;
-  int  n;
-};
-int ngram_list( Logfile& l, Config& c ) {
-  l.log( "ngl" );
-  const std::string& filename        = c.get_value( "filename" );
-  int                n               = stoi( c.get_value( "n", "3" ));
-  std::string        output_filename = filename + ".ngl" + to_str(n);
-  l.inc_prefix();
-  l.log( "filename:  "+filename );
-  l.log( "n:         "+to_str(n) );
-  l.log( "OUTPUT:    "+output_filename );
-  l.dec_prefix();
-
-  std::ifstream file_in( filename.c_str() );
-  if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
-    return -1;
-  }
-
-  std::string a_line;
-  std::vector<std::string> results;
-  std::vector<std::string>::iterator ri;
-  std::map<std::string,ngl_elem> grams;
-  std::map<std::string,ngl_elem>::iterator gi;
-  long sum_freq = 0;
-
-  while( std::getline( file_in, a_line )) {
-
-    for ( int i = 1; i <= n; i++ ) {
-      results.clear();
-      if ( ngram_line( a_line, i, results ) == 0 ) {
-	for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	  if ( i == 1 ) {
-	    ++sum_freq;
-	  }
-	  std::string cl = *ri;
-	  gi = grams.find( cl );
-	  if ( gi == grams.end() ) {
-	    ngl_elem e;
-	    e.freq    = 1;
-	    e.n       = i;
-	    grams[cl] = e;
-	  } else {
-	    grams[cl].freq++;
-	  }
-	}
-      }
-    }
-
-  }
-  file_in.close();
-
-  // a  2
-  // a b  2
-  // a b c  1
-  // a b d  1
-  // P(w3 | w1,w2) = C(w1,w2,w3) / C(w1,w2)
-  // P(d | a,b) = C(a,b,d) / C(a,b)
-  //            = 1 / 2
-
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
-  if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
-    return -1;
-  }
-
-  for ( gi = grams.begin(); gi != grams.end(); gi++ ) {
-    std::string ngram = (*gi).first;
-    ngl_elem e = (*gi).second;
-    //file_out << (*gi).first << " " << e.freq << std::endl;
-    if ( e.n == 1 ) {
-      // srilm takes log10 of probability
-      file_out << ngram << " " << e.freq / (float)sum_freq << std::endl;
-    } else if ( e.n > 1 ) {
-      size_t pos = ngram.rfind( ' ' );
-      if ( pos != std::string::npos ) {
-	std::string n_minus_1_gram = ngram.substr(0, pos);
-	ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
-	file_out << ngram << " " << e.freq / (float)em1.freq << std::endl;
-      }
-    }
-
-  }
-
-  file_out.close();
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
