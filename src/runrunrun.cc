@@ -449,7 +449,9 @@ pt2Func2 get_function( const std::string& a_fname ) {
   } else if ( a_fname == "ngram_s" ) {
     return &ngram_s;
   } else if ( a_fname == "ngl" ) {
-    return &ngram_list;
+    return &ngram_list; // from ngrams.cc
+  } else if ( a_fname == "ngt" ) {
+    return &ngram_test; // from ngrams.cc
   } else if ( a_fname == "prepare" ) {
     return &prepare;
   } else if ( a_fname == "arpa" ) {

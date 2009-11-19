@@ -148,4 +148,144 @@ int ngram_list( Logfile& l, Config& c ) {
   return 0;
 }
 
+void last_word( std::string& str, std::string& res ) {
+    size_t pos = str.rfind( ' ' );
+    if ( pos != std::string::npos ) {
+      //res = str.substr(0, pos);
+      res = str.substr(pos+1);
+    } else {
+      res = str;
+    }
+}
+
+struct ngram_elem {
+  double p;
+  int    n;
+};
+int ngram_test( Logfile& l, Config& c ) {
+  l.log( "ngt" );
+  const std::string& filename        = c.get_value( "filename" );
+  const std::string& ngl_filename    = c.get_value( "ngl" );
+  int                n               = stoi( c.get_value( "n", "3" ));
+  std::string        output_filename = filename + ".ngt" + to_str(n);
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "ngl file:  "+ngl_filename );
+  l.log( "n:         "+to_str(n) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_ngl( ngl_filename.c_str() );
+  if ( ! file_ngl ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::string a_line;
+  std::vector<std::string> results;
+  std::map<std::string,double> ngrams; // NB no ngl_elem here!
+  std::map<std::string,double>::iterator gi;
+
+  while( std::getline( file_ngl, a_line )) {
+
+    size_t pos = a_line.rfind( ' ' );
+    if ( pos != std::string::npos ) {
+      std::string ngram    = a_line.substr(0, pos);
+      std::string prob_str = a_line.substr(pos+1);
+      double prob = stod(prob_str);
+      ngrams[ngram] = prob;
+    }
+  }
+  file_ngl.close();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  // Maybe I need a reverse index to get some speed...
+  // We need to find n-grams which END with a certain word.
+  // map<std::string,std::vector<std::string>> oid.
+
+  // Just need a last-word-of-ngram to size/prob
+
+  // First extract all possible ngrams, then go over input
+  // sentence, and for each word, look at n-grams which end
+  // with said word.
+
+  std::vector<std::string>::iterator ri;
+
+  std::map<std::string,std::string>::iterator mi;
+  std::vector<ngram_elem> best_ngrams;
+  std::vector<ngram_elem>::iterator ni;
+ 
+  while( std::getline( file_in, a_line )) {
+    l.log( "("+a_line+")" );
+
+    // Tokenize the input, create a vector for each word
+    // with a pointer to best n-gram.
+    //
+    best_ngrams.clear();
+
+    for ( int i = 1; i <= n; i++ ) {
+      results.clear();
+      if ( ngram_line( a_line, i, results ) == 0 ) {
+	int word_idx = i-1;
+	for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	  std::string cl = *ri;
+	  //l.log( cl );
+	  //l.log( to_str(word_idx) );
+	  gi = ngrams.find( cl );
+	  if ( gi != ngrams.end() ) {
+	    //l.log( (*gi).first + "/" + to_str((*gi).second) );
+	    std::string matchgram = (*gi).first;
+	    std::string lw;
+	    last_word( matchgram, lw );
+	    //
+	    // Store in the best_ngrams vector.
+	    //
+	    if ( i == 1 ) { // start with unigrams, no element present.
+	      ngram_elem ne;
+	      ne.p = (*gi).second;
+	      ne.n = i;
+	      l.log( to_str(ne.p));
+	      best_ngrams.push_back(ne);
+	    } else {
+	      ngram_elem& ne = best_ngrams.at(word_idx);
+	      if ( (*gi).second > ne.p ) { // Higher prob than stored.
+		ne.p = (*gi).second;
+		ne.n = i;
+		l.log( "Replace with: "+to_str(ne.p));
+	      }
+	    }
+	    
+	  } else {
+	    //l.log( "unknown" );
+	    if ( i == 1 ) { // start with unigrams
+	      ngram_elem ne;
+	      ne.p = 0;
+	      ne.n = 0;
+	      l.log( to_str(ne.p));
+	      best_ngrams.push_back(ne);
+	    }
+
+	  }
+	  ++word_idx;
+	} // for
+      }
+    }
+    l.log( "Matches:" );
+    for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
+      l.log( to_str((*ni).p) + "/" + to_str((*ni).n) );
+    }
+    
+  }
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+
 // ---------------------------------------------------------------------------

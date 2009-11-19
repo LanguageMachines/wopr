@@ -33,5 +33,6 @@
 // ----------------------------------------------------------------------------
 
 int ngram_list( Logfile&, Config& );
+int ngram_test( Logfile&, Config& );
 
 #endif

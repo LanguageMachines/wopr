@@ -1,3 +1,5 @@
+1.13.1	Pure ngram LM code working. Not ready for prime time yet.
+	
 1.13.0	Moved ngl to own source file.
 	
 1.12.5	Added probability calculations to ngl.
