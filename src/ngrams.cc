@@ -161,6 +161,7 @@ void last_word( std::string& str, std::string& res ) {
 struct ngram_elem {
   double p;
   int    n;
+  std::string ngram;
 };
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
@@ -248,14 +249,16 @@ int ngram_test( Logfile& l, Config& c ) {
 	      ngram_elem ne;
 	      ne.p = (*gi).second;
 	      ne.n = i;
-	      l.log( to_str(ne.p));
+	      ne.ngram = matchgram;
+	      //l.log( to_str(ne.p));
 	      best_ngrams.push_back(ne);
 	    } else {
 	      ngram_elem& ne = best_ngrams.at(word_idx);
 	      if ( (*gi).second > ne.p ) { // Higher prob than stored.
 		ne.p = (*gi).second;
 		ne.n = i;
-		l.log( "Replace with: "+to_str(ne.p));
+		ne.ngram = matchgram;
+		//l.log( "Replace with: "+to_str(ne.p));
 	      }
 	    }
 	    
@@ -265,7 +268,6 @@ int ngram_test( Logfile& l, Config& c ) {
 	      ngram_elem ne;
 	      ne.p = 0;
 	      ne.n = 0;
-	      l.log( to_str(ne.p));
 	      best_ngrams.push_back(ne);
 	    }
 
@@ -274,11 +276,28 @@ int ngram_test( Logfile& l, Config& c ) {
 	} // for
       }
     }
-    l.log( "Matches:" );
+    //
+    // Print.
+    //
+    results.clear();
+    double H  = 0.0;
+    int    wc = 0;
+    Tokenize( a_line, results, ' ' );
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
-      l.log( to_str((*ni).p) + "/" + to_str((*ni).n) );
+      double p = (*ni).p;
+      if ( p == 0 ) {
+	p = 1e-5; // TODO: smoothing, p(0) calculations, ...
+      }
+      l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
+	     + "   " + (*ni).ngram );
+      H += log2(p);
+      ++wc;
     }
-    
+    double pplx = pow( 2, -H/(double)wc );
+    l.log( "H="+to_str(H) );
+    l.log( "pplx="+to_str(pplx) );
+    // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
+    // in our code, SRILM takes log10s and then pow(10) in the end.
   }
   file_in.close();
 
