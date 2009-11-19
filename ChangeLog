@@ -1,3 +1,7 @@
+1.13.3	File output in ngram output. The ngt functions writes two
+	output files; one with a probability per word, and one
+	with sentence perplexities. Still to fix: snoothing &c.
+	
 1.13.2	Entropy and perplexity calculations added.
 	
 1.13.1	Pure ngram LM code working. Not ready for prime time yet.

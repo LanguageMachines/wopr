@@ -165,22 +165,35 @@ struct ngram_elem {
 };
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
-  const std::string& filename        = c.get_value( "filename" );
-  const std::string& ngl_filename    = c.get_value( "ngl" );
-  int                n               = stoi( c.get_value( "n", "3" ));
-  std::string        output_filename = filename + ".ngt" + to_str(n);
+  const std::string& filename     = c.get_value( "filename" );
+  const std::string& ngl_filename = c.get_value( "ngl" );
+  int                n            = stoi( c.get_value( "n", "3" ));
+  std::string        ngt_filename = filename + ".ngt" + to_str(n);
+  std::string        ngp_filename = filename + ".ngp" + to_str(n);
+
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "ngl file:  "+ngl_filename );
   l.log( "n:         "+to_str(n) );
-  l.log( "OUTPUT:    "+output_filename );
+  l.log( "OUTPUT:    "+ngt_filename );
+  l.log( "OUTPUT:    "+ngp_filename );
   l.dec_prefix();
+
+  if ( file_exists(l,c,ngt_filename) ) {
+    l.log( "OUTPUT files exist, not overwriting." );
+    c.add_kv( "ngt_file", ngt_filename );
+    l.log( "SET ngt_file to "+ngt_filename );
+    c.add_kv( "ngp_file", ngp_filename );
+    l.log( "SET ngp_file to "+ngp_filename );
+    return 0;
+  }
 
   std::ifstream file_ngl( ngl_filename.c_str() );
   if ( ! file_ngl ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
+
   std::string a_line;
   std::vector<std::string> results;
   std::map<std::string,double> ngrams; // NB no ngl_elem here!
@@ -204,6 +217,19 @@ int ngram_test( Logfile& l, Config& c ) {
     return -1;
   }
 
+  std::ofstream file_out( ngt_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write .ngt output file." );
+    return -1;
+  }
+  file_out << "# word prob n ngram" << std::endl;
+
+  std::ofstream ngp_out( ngp_filename.c_str(), std::ios::out );
+  if ( ! ngp_out ) {
+    l.log( "ERROR: cannot write .ngp output file." );
+    return -1;
+  }
+
   // Maybe I need a reverse index to get some speed...
   // We need to find n-grams which END with a certain word.
   // map<std::string,std::vector<std::string>> oid.
@@ -221,7 +247,10 @@ int ngram_test( Logfile& l, Config& c ) {
   std::vector<ngram_elem>::iterator ni;
  
   while( std::getline( file_in, a_line )) {
-    l.log( "("+a_line+")" );
+
+    if ( a_line == "" ) {
+      continue;
+    }
 
     // Tokenize the input, create a vector for each word
     // with a pointer to best n-gram.
@@ -238,7 +267,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	  //l.log( to_str(word_idx) );
 	  gi = ngrams.find( cl );
 	  if ( gi != ngrams.end() ) {
-	    //l.log( (*gi).first + "/" + to_str((*gi).second) );
+	    //l.log( "Checking: " + (*gi).first + "/" + to_str((*gi).second) );
 	    std::string matchgram = (*gi).first;
 	    std::string lw;
 	    last_word( matchgram, lw );
@@ -288,21 +317,33 @@ int ngram_test( Logfile& l, Config& c ) {
       if ( p == 0 ) {
 	p = 1e-5; // TODO: smoothing, p(0) calculations, ...
       }
-      l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
-	     + "   " + (*ni).ngram );
+      file_out << results.at(wc) << " "
+	       << p << " "
+	       << (*ni).n << " "
+	       << (*ni).ngram
+	       << std::endl;
+      /*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
+	+ "   " + (*ni).ngram );*/
       H += log2(p);
       ++wc;
     }
     double pplx = pow( 2, -H/(double)wc );
-    l.log( "H="+to_str(H) );
-    l.log( "pplx="+to_str(pplx) );
+    //l.log( "H="+to_str(H) );
+    //l.log( "pplx="+to_str(pplx) );
+    ngp_out << H << " " 
+	    << pplx << " "
+	    << a_line << std::endl;
     // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
     // in our code, SRILM takes log10s and then pow(10) in the end.
   }
+  ngp_out.close();
+  file_out.close();
   file_in.close();
 
-  c.add_kv( "filename", output_filename );
-  l.log( "SET filename to "+output_filename );
+  c.add_kv( "ngt_file", ngt_filename );
+  l.log( "SET ngt_file to "+ngt_filename );
+  c.add_kv( "ngp_file", ngp_filename );
+  l.log( "SET ngp_file to "+ngp_filename );
   return 0;
 }
 
