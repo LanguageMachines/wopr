@@ -85,6 +85,8 @@ int ngram_list( Logfile& l, Config& c ) {
 
   while( std::getline( file_in, a_line )) {
 
+    a_line = trim( a_line, "\n\r " );
+
     for ( int i = 1; i <= n; i++ ) {
       results.clear();
       if ( ngram_line( a_line, i, results ) == 0 ) {
@@ -174,15 +176,17 @@ struct ngram_elem {
 };
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
-  const std::string& filename     = c.get_value( "filename" );
-  const std::string& ngl_filename = c.get_value( "ngl" );
-  int                n            = stoi( c.get_value( "n", "3" ));
-  std::string        ngt_filename = filename + ".ngt" + to_str(n);
-  std::string        ngp_filename = filename + ".ngp" + to_str(n);
+  const std::string& filename        = c.get_value( "filename" );
+  const std::string& ngl_filename    = c.get_value( "ngl" );
+  const std::string& counts_filename = c.get_value( "counts" );
+  int                n               = stoi( c.get_value( "n", "3" ));
+  std::string        ngt_filename    = filename + ".ngt" + to_str(n);
+  std::string        ngp_filename    = filename + ".ngp" + to_str(n);
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "ngl file:  "+ngl_filename );
+  l.log( "counts:    "+counts_filename );
   l.log( "n:         "+to_str(n) );
   l.log( "OUTPUT:    "+ngt_filename );
   l.log( "OUTPUT:    "+ngp_filename );
@@ -196,6 +200,34 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "SET ngp_file to "+ngp_filename );
     return 0;
   }
+
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  std::map<int,double> c_stars;
+  int    Nc0;
+  double Nc1;
+  int    count;
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+  } else {
+    l.log( "Reading counts." );
+    while( file_counts >> count >> Nc0 >> Nc1 ) {
+      c_stars[count] =  Nc1;
+      total_count    += Nc0;
+      if ( count == 1 ) {
+	N_1 = Nc0;
+      }
+    }
+    file_counts.close();
+  }
+  double p0 = 1e-6;
+  if ( (total_count > 0) && (N_1 > 0) ) {
+    p0 = (double)N_1 / (double)total_count;
+    // Assume N_0 equals N_1...
+    p0 = p0 / (double)N_1;
+  }
+  l.log( "P(0) = " + to_str(p0) );
 
   std::ifstream file_ngl( ngl_filename.c_str() );
   if ( ! file_ngl ) {
@@ -267,6 +299,8 @@ int ngram_test( Logfile& l, Config& c ) {
 
   while( std::getline( file_in, a_line )) {
 
+    a_line = trim( a_line, "\n\r " );
+
     if ( a_line == "" ) {
       continue;
     }
@@ -332,7 +366,7 @@ int ngram_test( Logfile& l, Config& c ) {
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       double p = (*ni).p;
       if ( p == 0 ) {
-	p = 1e-5; // TODO: smoothing, p(0) calculations, ...
+	p = p0;
       }
       file_out << results.at(wc) << " "
 	       << p << " "

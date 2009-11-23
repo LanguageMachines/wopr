@@ -1,3 +1,6 @@
+1.13.5	Added Turing estimator for unknown words. Uses counts file
+	to calculate.
+	
 1.13.4	Changed ngl output format. Added raw frequencies.
 	
 1.13.3	File output in ngram output. The ngt functions writes two
