@@ -801,6 +801,8 @@ int window_s( Logfile& l, Config& c ) {
   return 0;
 }
 
+// Superceded by ngram.cc code
+//
 int ngram( Logfile& l, Config& c ) {
   l.log( "ngram" );
   const std::string& filename        = c.get_value( "filename" );
@@ -1516,7 +1518,6 @@ int unk_pred( Logfile& l, Config& c ) {
     while( std::getline( file_in, a_line ) ) {  
 
       a_line = trim( a_line, " \n\r" );
-      //std::cout << a_line << std::endl;
 
       std::string new_line; // The new one with unk words replaced.
 

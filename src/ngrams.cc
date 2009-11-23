@@ -50,7 +50,8 @@
 //  Code.
 // ---------------------------------------------------------------------------
 
-// Sentence/line based ngram function.
+// Sentence/line based ngram function. ngl creates a list of n-grams
+// from an input text file.
 //
 struct ngl_elem {
   long freq;
@@ -79,6 +80,8 @@ int ngram_list( Logfile& l, Config& c ) {
   std::map<std::string,ngl_elem> grams;
   std::map<std::string,ngl_elem>::iterator gi;
   long sum_freq = 0;
+
+  l.log( "Reading..." );
 
   while( std::getline( file_in, a_line )) {
 
@@ -123,19 +126,25 @@ int ngram_list( Logfile& l, Config& c ) {
     return -1;
   }
 
+  l.log( "Writing..." );
+
+  // Format is:
+  // n-gram frequency probability
+  //
   for ( gi = grams.begin(); gi != grams.end(); gi++ ) {
     std::string ngram = (*gi).first;
     ngl_elem e = (*gi).second;
-    //file_out << (*gi).first << " " << e.freq << std::endl;
     if ( e.n == 1 ) {
-      // srilm takes log10 of probability
-      file_out << ngram << " " << e.freq / (float)sum_freq << std::endl;
+      // srilm saves log10 of probability in its files.
+      file_out << ngram << " " << e.freq << " "
+	       << e.freq / (float)sum_freq << std::endl;
     } else if ( e.n > 1 ) {
       size_t pos = ngram.rfind( ' ' );
       if ( pos != std::string::npos ) {
 	std::string n_minus_1_gram = ngram.substr(0, pos);
 	ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
-	file_out << ngram << " " << e.freq / (float)em1.freq << std::endl;
+	file_out << ngram << " " << e.freq << " " 
+		 << e.freq / (float)em1.freq << std::endl;
       }
     }
 
@@ -199,15 +208,29 @@ int ngram_test( Logfile& l, Config& c ) {
   std::map<std::string,double> ngrams; // NB no ngl_elem here!
   std::map<std::string,double>::iterator gi;
 
-  while( std::getline( file_ngl, a_line )) {
+  std::string ngram;
+  std::string prob_str;
+  std::string freq_str;
+  long   freq;
+  double prob;
+  size_t pos, pos1;
 
-    size_t pos = a_line.rfind( ' ' );
-    if ( pos != std::string::npos ) {
-      std::string ngram    = a_line.substr(0, pos);
-      std::string prob_str = a_line.substr(pos+1);
-      double prob = stod(prob_str);
-      ngrams[ngram] = prob;
-    }
+  l.log( "Reading ngrams..." );
+
+  // format: ngram freq prob
+  // ngram can contain spaces. freq is ignored at the mo.
+  // NB: input and stod are not checked for errors (TODO).
+  //
+  while( std::getline( file_ngl, a_line ) ) {  
+    pos      = a_line.rfind(' ');
+    prob_str = a_line.substr(pos+1);
+    prob     = stod( prob_str );
+
+    pos1     = a_line.rfind(' ', pos-1);
+    //freq_str = a_line.substr(pos1+1, pos-pos1-1);
+    ngram    = a_line.substr(0, pos1);
+    
+    ngrams[ngram] = prob;
   }
   file_ngl.close();
 
@@ -230,22 +253,18 @@ int ngram_test( Logfile& l, Config& c ) {
     return -1;
   }
 
-  // Maybe I need a reverse index to get some speed...
-  // We need to find n-grams which END with a certain word.
-  // map<std::string,std::vector<std::string>> oid.
-
   // Just need a last-word-of-ngram to size/prob
-
   // First extract all possible ngrams, then go over input
   // sentence, and for each word, look at n-grams which end
   // with said word.
 
   std::vector<std::string>::iterator ri;
-
   std::map<std::string,std::string>::iterator mi;
   std::vector<ngram_elem> best_ngrams;
   std::vector<ngram_elem>::iterator ni;
  
+  l.log( "Writing output..." );
+
   while( std::getline( file_in, a_line )) {
 
     if ( a_line == "" ) {
@@ -263,8 +282,6 @@ int ngram_test( Logfile& l, Config& c ) {
 	int word_idx = i-1;
 	for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	  std::string cl = *ri;
-	  //l.log( cl );
-	  //l.log( to_str(word_idx) );
 	  gi = ngrams.find( cl );
 	  if ( gi != ngrams.end() ) {
 	    //l.log( "Checking: " + (*gi).first + "/" + to_str((*gi).second) );
@@ -328,14 +345,12 @@ int ngram_test( Logfile& l, Config& c ) {
       ++wc;
     }
     double pplx = pow( 2, -H/(double)wc );
-    //l.log( "H="+to_str(H) );
-    //l.log( "pplx="+to_str(pplx) );
     ngp_out << H << " " 
 	    << pplx << " "
 	    << a_line << std::endl;
     // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
     // in our code, SRILM takes log10s and then pow(10) in the end.
-  }
+  } // getline
   ngp_out.close();
   file_out.close();
   file_in.close();
@@ -347,5 +362,9 @@ int ngram_test( Logfile& l, Config& c ) {
   return 0;
 }
 
+/*
+  a b c, where c is unknow
+  calculate prob. of unknown word after a b, not just "any unknown word".
+*/
 
 // ---------------------------------------------------------------------------
