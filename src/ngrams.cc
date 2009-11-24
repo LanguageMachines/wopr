@@ -61,10 +61,13 @@ int ngram_list( Logfile& l, Config& c ) {
   l.log( "ngl" );
   const std::string& filename        = c.get_value( "filename" );
   int                n               = stoi( c.get_value( "n", "3" ));
-  std::string        output_filename = filename + ".ngl" + to_str(n);
+  int                fco             = stoi( c.get_value( "fco", "1" ));
+  std::string        output_filename = filename + ".ngl" + to_str(n) +
+                                                  "f"+to_str(fco);
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "n:         "+to_str(n) );
+  l.log( "fco:       "+to_str(fco) );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
@@ -136,20 +139,22 @@ int ngram_list( Logfile& l, Config& c ) {
   for ( gi = grams.begin(); gi != grams.end(); gi++ ) {
     std::string ngram = (*gi).first;
     ngl_elem e = (*gi).second;
-    if ( e.n == 1 ) {
+    if ( e.n == 1 ) { // unigram
       // srilm saves log10 of probability in its files.
       file_out << ngram << " " << e.freq << " "
 	       << e.freq / (float)sum_freq << std::endl;
     } else if ( e.n > 1 ) {
-      size_t pos = ngram.rfind( ' ' );
-      if ( pos != std::string::npos ) {
-	std::string n_minus_1_gram = ngram.substr(0, pos);
-	ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
-	file_out << ngram << " " << e.freq << " " 
-		 << e.freq / (float)em1.freq << std::endl;
-      }
-    }
-
+      // filter before we calculate probs?
+      if ( e.freq > fco ) { // for n > 1, only if > frequency cut off.
+	size_t pos = ngram.rfind( ' ' );
+	if ( pos != std::string::npos ) {
+	  std::string n_minus_1_gram = ngram.substr(0, pos);
+	  ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
+	  file_out << ngram << " " << e.freq << " " 
+		   << e.freq / (float)em1.freq << std::endl;
+	}
+      } // freq>1
+    } // e.n>1
   }
 
   file_out.close();

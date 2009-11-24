@@ -1,3 +1,5 @@
+1.13.6	Added rudimentary frequency filtering to ngl.
+	
 1.13.5	Added Turing estimator for unknown words. Uses counts file
 	to calculate.
 	
