@@ -1223,8 +1223,13 @@ int window_line( Logfile& l, Config& c ) {
 // a b c -> d
 // a b ->d with a '1 backoff'
 //
+// For target offset, we can shift the target vector left or right,
+// while copying it into another vector (for the data that falls off).
+// vector<string> new_targets(size);
+// copy ( targets.begin(), targets.end(), new_targets.begin()+to );
+//
 int window( std::string a_line, std::string target_str, 
-	    int lc, int rc, bool var, 
+	    int lc, int rc, bool var,
 	    std::vector<std::string>& res ) {
 
   std::vector<std::string> words; //(10000000,"foo");
@@ -1270,8 +1275,73 @@ int window( std::string a_line, std::string target_str,
 	windowed_line = windowed_line + "(T) ";
 	}*/
     }
-    windowed_line = windowed_line + *ti; // target. function to make target?
+    windowed_line = windowed_line + *(ti); // target. function to make target?
     res.push_back( windowed_line );
+    windowed_line.clear();
+    si++;
+    ti++;
+    if ( factor > 0 ) {
+      --factor;
+    }
+  }
+
+  return 0;
+}
+
+// With target offset
+//
+int window( std::string a_line, std::string target_str, 
+	    int lc, int rc, bool var, int to,
+	    std::vector<std::string>& res ) {
+
+  std::vector<std::string> words;
+
+  Tokenize( a_line, words );
+
+  std::vector<std::string> targets;
+  if ( target_str == "" ) {
+    targets = std::vector<std::string>( words.size(), "" ); // or nothing?
+  } else {
+    Tokenize( target_str, targets );
+  }
+
+  std::vector<std::string> new_targets( targets.size(), "_" );
+    copy( targets.begin()+to, targets.end(),
+	  std::inserter( new_targets, new_targets.begin() ));
+
+  std::vector<std::string> full(lc+rc, "_"); // initialise a full window.
+  //full[lc+rc-1] = "<S>";
+
+  //
+  // ...and insert the words at the position after the left context.
+  //                                     can we do this from a file?
+  //                                               |
+  std::copy( words.begin(), words.end(), std::inserter(full, full.begin()+lc));
+
+  std::vector<std::string>::iterator si;
+  std::vector<std::string>::iterator fi;
+  std::vector<std::string>::iterator ti = new_targets.begin();
+  std::string windowed_line = "";
+  si = full.begin()+lc; // first word of sentence.
+  int factor = 0; // lc for variable length instances.
+  if ( var == true ) {
+    factor = lc;
+  }
+  for ( int i = 0; i < words.size(); i++ ) {
+    //mark/target is at full(i+lc)
+    
+    for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
+      if ( fi != si ) {
+	//spacer = (*fi == "") ? "" : " ";
+	windowed_line = windowed_line + *fi + " ";
+      }/* else { // the target, but we don't show that here.
+	  windowed_line = windowed_line + "(T) ";
+	  }*/
+    }
+    windowed_line = windowed_line + *(ti); // target. function to make target?
+    if ( *ti != "_" ) {
+      res.push_back( windowed_line );
+    }
     windowed_line.clear();
     si++;
     ti++;
@@ -1340,11 +1410,16 @@ int window_lr( Logfile& l, Config& c ) {
   const std::string& filename        = c.get_value( "filename" );
   int                lc              = stoi( c.get_value( "lc", "3" ));
   int                rc              = stoi( c.get_value( "rc", "3" ));
+  int                to              = stoi( c.get_value( "to", "0" ));
   std::string        output_filename = filename + ".l" + to_str(lc) + "r" + to_str(rc);
+  if ( to > 0 ) {
+    output_filename = output_filename + "t" + to_str(to);
+  }
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "lc:        "+to_str(lc) );
   l.log( "rc:        "+to_str(rc) );
+  l.log( "to:        "+to_str(to) );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
@@ -1369,12 +1444,23 @@ int window_lr( Logfile& l, Config& c ) {
   std::string                        a_line;
   std::vector<std::string>           results;
   std::vector<std::string>::iterator ri;
-  while( std::getline( file_in, a_line ) ) { 
-    window( a_line, a_line, lc, rc, false, results );
-    for ( ri = results.begin(); ri != results.end(); ri++ ) {
-      file_out << *ri << "\n";
+
+  if ( to == 0 ) {  
+    while( std::getline( file_in, a_line ) ) { 
+      window( a_line, a_line, lc, rc, false, results );
+      for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	file_out << *ri << "\n";
+      }
+      results.clear();
     }
-    results.clear();
+  } else {
+    while( std::getline( file_in, a_line ) ) { 
+      window( a_line, a_line, lc, rc, false, to, results );
+      for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	file_out << *ri << "\n";
+      }
+      results.clear();
+    }
   }
 
   file_out.close();

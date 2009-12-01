@@ -133,6 +133,15 @@ int ngram_list( Logfile& l, Config& c ) {
 
   l.log( "Writing..." );
 
+  /*
+    Smooth here? We have a bunch of local probabilities. Seems silly
+    to smooth them with the globaly calculated count*s. A local prob
+    of 2 / 40 must be smoothed in a different way than 2 / 3.
+    Smoothing per 2-grams, 3-grams, &c? Then we need a different
+    data structure, per n-gram.
+    Word-trie? Nah.
+  */
+  
   // Format is:
   // n-gram frequency probability
   //
@@ -164,10 +173,11 @@ int ngram_list( Logfile& l, Config& c ) {
   return 0;
 }
 
+// Return last word in "string with spaces".
+// 
 void last_word( std::string& str, std::string& res ) {
     size_t pos = str.rfind( ' ' );
     if ( pos != std::string::npos ) {
-      //res = str.substr(0, pos);
       res = str.substr(pos+1);
     } else {
       res = str;
@@ -185,14 +195,23 @@ int ngram_test( Logfile& l, Config& c ) {
   const std::string& ngl_filename    = c.get_value( "ngl" );
   const std::string& counts_filename = c.get_value( "counts" );
   int                n               = stoi( c.get_value( "n", "3" ));
-  std::string        ngt_filename    = filename + ".ngt" + to_str(n);
-  std::string        ngp_filename    = filename + ".ngp" + to_str(n);
+  std::string        id             = c.get_value( "id", "" );
+
+  std::string        ngt_filename    = filename;
+  std::string        ngp_filename    = filename;
+  if ( (id != "") && ( ! contains_id( filename, id)) ) {
+    ngt_filename = ngt_filename + "_" + id;
+    ngp_filename = ngp_filename + "_" + id;
+  }
+  ngt_filename = ngt_filename + ".ngt" + to_str(n);
+  ngp_filename = ngp_filename + ".ngp" + to_str(n);
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "ngl file:  "+ngl_filename );
   l.log( "counts:    "+counts_filename );
   l.log( "n:         "+to_str(n) );
+  l.log( "id:        "+id );
   l.log( "OUTPUT:    "+ngt_filename );
   l.log( "OUTPUT:    "+ngp_filename );
   l.dec_prefix();
@@ -315,9 +334,9 @@ int ngram_test( Logfile& l, Config& c ) {
     //
     best_ngrams.clear();
 
-    for ( int i = 1; i <= n; i++ ) {
+    for ( int i = 1; i <= n; i++ ) { // loop over ngram sizes
       results.clear();
-      if ( ngram_line( a_line, i, results ) == 0 ) {
+      if ( ngram_line( a_line, i, results ) == 0 ) { // input to ngrams
 	int word_idx = i-1;
 	for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	  std::string cl = *ri;
@@ -339,6 +358,9 @@ int ngram_test( Logfile& l, Config& c ) {
 	      best_ngrams.push_back(ne);
 	    } else {
 	      ngram_elem& ne = best_ngrams.at(word_idx);
+	      // If equal probs, take smallest or largest ngram?
+	      // This takes the smallest:
+	      //
 	      if ( (*gi).second > ne.p ) { // Higher prob than stored.
 		ne.p = (*gi).second;
 		ne.n = i;

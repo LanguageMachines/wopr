@@ -62,6 +62,11 @@ int focus( Logfile& l, Config& c ) {
     output_filename = output_filename + "_" + id;
   }
 
+  if ( fco < 0 ) {
+    l.log( "ERROR: fco cannot be less than zero." );
+    return 1;
+  }
+
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "focus:      "+focus_filename );

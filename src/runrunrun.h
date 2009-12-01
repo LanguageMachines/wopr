@@ -54,6 +54,7 @@ int ngram_list( Logfile&, Config& );
 int prepare( Logfile&, Config& );
 int arpa( Logfile&, Config& );
 int window( std::string, std::string, int, int, bool, std::vector<std::string>& );
+int window( std::string, std::string, int, int, bool, int, std::vector<std::string>& );
 int window( std::string, std::string, int, int, int, std::vector<std::string>& );
 int window_line( Logfile&, Config& );
 int window_lr( Logfile&, Config& );
