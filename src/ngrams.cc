@@ -63,7 +63,7 @@ int ngram_list( Logfile& l, Config& c ) {
   l.log( "ngl" );
   const std::string& filename        = c.get_value( "filename" );
   int                n               = stoi( c.get_value( "n", "3" ));
-  int                fco             = stoi( c.get_value( "fco", "1" ));
+  int                fco             = stoi( c.get_value( "fco", "0" ));
   std::string        output_filename = filename + ".ngl" + to_str(n) +
                                                   "f"+to_str(fco);
   l.inc_prefix();
@@ -170,8 +170,8 @@ int ngram_list( Logfile& l, Config& c ) {
 
   file_out.close();
 
-  c.add_kv( "filename", output_filename );
-  l.log( "SET filename to "+output_filename );
+  c.add_kv( "ngl", output_filename );
+  l.log( "SET ngl to "+output_filename );
   return 0;
 }
 
@@ -193,7 +193,7 @@ struct ngram_elem {
 };
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
-  const std::string& filename        = c.get_value( "filename" );
+  const std::string& filename        = c.get_value( "testfile" );//filename?
   const std::string& ngl_filename    = c.get_value( "ngl" );
   const std::string& counts_filename = c.get_value( "counts" );
   int                n               = stoi( c.get_value( "n", "3" ));

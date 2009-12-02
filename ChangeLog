@@ -1,3 +1,8 @@
+1.13.9	Set "fco" parameter in ngl to default 0.
+	Disallow negative "to" parameter in window_lr.
+	Function ngl now sets "ngl" prameter instead of "filename".
+	Changed "filename" parameter to "testfile" in ngt for consistency.
+	
 1.13.8	Added forgotten math.h
 	
 1.13.7	Added id parameter to ngt.

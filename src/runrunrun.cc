@@ -1411,10 +1411,14 @@ int window_lr( Logfile& l, Config& c ) {
   int                lc              = stoi( c.get_value( "lc", "3" ));
   int                rc              = stoi( c.get_value( "rc", "3" ));
   int                to              = stoi( c.get_value( "to", "0" ));
-  std::string        output_filename = filename + ".l" + to_str(lc) + "r" + to_str(rc);
+  std::string        output_filename = filename + ".l" + to_str(lc) + 
+                                                  "r" + to_str(rc);
   if ( to > 0 ) {
     output_filename = output_filename + "t" + to_str(to);
+  } else {
+    to = 0;
   }
+
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "lc:        "+to_str(lc) );
