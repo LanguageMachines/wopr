@@ -1,3 +1,5 @@
+1.13.10	Added file-exists check in ngl.
+	
 1.13.9	Set "fco" parameter in ngl to default 0.
 	Disallow negative "to" parameter in window_lr.
 	Function ngl now sets "ngl" prameter instead of "filename".

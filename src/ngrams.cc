@@ -73,6 +73,13 @@ int ngram_list( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
+  if ( file_exists(l,c,output_filename) ) {
+    l.log( "OUTPUT files exist, not overwriting." );
+    c.add_kv( "ngl", output_filename );
+    l.log( "SET ngl to "+output_filename );
+    return 0;
+  }
+
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
