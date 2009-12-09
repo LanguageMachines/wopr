@@ -3013,6 +3013,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                topn             = stoi( c.get_value( "topn", "0" ) );
   int                cache_size       = stoi( c.get_value( "cache", "3" ) );
   int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
+  bool               inc_sen          = stoi( c.get_value( "is", "0" )) == 1;
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -3053,6 +3054,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "topn:           "+to_str(topn) );
   l.log( "cache:          "+to_str(cache_size) );
   l.log( "cache threshold:"+to_str(cache_threshold) );
+  l.log( "incl. sentence: "+to_str(inc_sen) );
   l.log( "id:             "+id );
   l.log( "OUTPUT:         "+output_filename );
   l.log( "OUTPUT:         "+output_filename1 );
@@ -3184,6 +3186,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "Instance base loaded." );
 
   std::string a_line;
+  std::string sentence;
   std::vector<std::string> results;
   std::vector<std::string> targets;
   std::vector<std::string>::iterator ri;
@@ -3276,7 +3279,11 @@ int pplx_simple( Logfile& l, Config& c ) {
       double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
       //file_out1 << std_dev;
       file_out1 << std_dev << tmp_output;
+      if ( inc_sen == true ) {
+	file_out1 << sentence;
+      }
       file_out1 << std::endl;
+      sentence.clear();
       sum_logprob = 0.0;
       sentence_wordcount = 0;
       ++sentence_count;
@@ -3284,6 +3291,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     } // end bos
 
     ++sentence_wordcount;
+    sentence += " " + target;
 
     // Is the target in the lexicon? We could calculate a smoothed
     // value here if we load the .cnt file too...

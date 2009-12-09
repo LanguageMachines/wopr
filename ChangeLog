@@ -1,3 +1,6 @@
+1.13.11	Added sentence printout in pplxs. The parameter is "is:" ("include
+	sentence"). Value is '1' or '0'.
+	
 1.13.10	Added file-exists check in ngl.
 	
 1.13.9	Set "fco" parameter in ngl to default 0.

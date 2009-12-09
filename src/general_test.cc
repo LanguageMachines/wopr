@@ -72,7 +72,7 @@ struct cached_distr {
 };
 int gen_test( Logfile& l, Config& c ) {
   l.log( "gt" );
-  const std::string& filename         = c.get_value( "filename" );
+  const std::string& filename         = c.get_value( "filename" );//testfile
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
