@@ -1,4 +1,4 @@
-// $Id$
+// $Id: wex.h 1826 2007-12-05 10:16:34Z pberck $
 
 /*****************************************************************************
  * Copyright 2009 Peter Berck                                                *
@@ -22,13 +22,18 @@
 
 // ----------------------------------------------------------------------------
 
-#ifndef _general_test_h
-#define _general_test_h
+#ifndef _wex_h
+#define _wex_h
+
+#include <string>
+#include <vector>
 
 #include "Config.h"
 
 // ----------------------------------------------------------------------------
 
-int gen_test( Logfile& l, Config& c );
+int multi( Logfile&, Config& );
+int read_kv_from_file(std::ifstream&, std::map<std::string, std::string>&);
+int read_classifiers_from_file( std::ifstream& file,std::vector<Classifier*>& );
 
 #endif

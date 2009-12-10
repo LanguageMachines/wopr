@@ -37,6 +37,8 @@ wopr_SOURCES = \
 	src/general_test.cc \
 	src/ngrams.h \
 	src/ngrams.cc \
+	src/wex.h \
+	src/wex.cc \
 	src/MersenneTwister.h
 
 woprsm_SOURCES = \

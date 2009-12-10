@@ -1,3 +1,5 @@
+1.14.0	Added wex.cc/h. 
+	
 1.13.11	Added sentence printout in pplxs. The parameter is "is:" ("include
 	sentence"). Value is '1' or '0'.
 	
