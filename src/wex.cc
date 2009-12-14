@@ -359,12 +359,12 @@ int read_classifiers_from_file( std::ifstream& file,
 // After discussion with Antal 09/12/09, mixing of distributions.
 // 
 #ifdef TIMBL
-struct distr_elem {
+struct distr_probs {
   std::string name;
-  double      freq;
-  double      dummy;
-  bool operator<(const distr_elem& rhs) const {
-    return freq > rhs.freq;
+  long        freq;
+  double      prob;
+  bool operator<(const distr_probs& rhs) const {
+    return prob > rhs.prob;
   }
 };
 int multi_dist( Logfile& l, Config& c ) {
@@ -462,10 +462,9 @@ int multi_dist( Logfile& l, Config& c ) {
   // read kvs
   // in multi_dist we don't need the size, we read a testfile instead.
   //
-  std::map<int, Classifier*> ws_classifier; // size -> classifier.
-  std::map<int, Classifier*>::iterator wsci;
   std::vector<Classifier*> cls;
   std::vector<Classifier*>::iterator cli;
+  int classifier_count = 0;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::ifstream file_kvs( kvs_filename.c_str() );
@@ -479,8 +478,7 @@ int multi_dist( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
       (*cli)->init();
-      int c_ws = (*cli)->get_ws();
-      ws_classifier[c_ws] = *cli;
+      ++classifier_count;
     }
     l.log( "Read classifiers." );
   }
@@ -494,18 +492,22 @@ int multi_dist( Logfile& l, Config& c ) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
-  std::vector<distr_elem> distr_vec;
-  std::vector<distr_elem>::iterator dei;
+  std::vector<distr_probs> distr_vec;
+  std::vector<distr_probs>::iterator dei;
   std::map<std::string, double> combined_distr;
   std::map<std::string, double>::iterator mi;
+  std::vector<double> distr_counts(classifier_count); // to calculate probs
 
   while( std::getline( file_in, a_line )) { // in right instance format
 
     words.clear();
     Tokenize( a_line, words, ' ' );
 
+    file_out << a_line;
+
     // We loop over classifiers. We need a summed_distribution.
     //
+    int classifier_idx = 0;
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
 
       Classifier *classifier = *cli;
@@ -514,37 +516,37 @@ int multi_dist( Logfile& l, Config& c ) {
       // get a line from the file, above cls loop!
 
       std::string cl = a_line;
-      file_out << cl << std::endl;
       
       tv = timbl->Classify( cl, vd );
       std::string answer = tv->Name();
 
       int cnt = vd->size(); // size of distr.
       int distr_count = vd->totalSize(); // sum of freqs in distr.
-      
-      l.log( (*cli)->id + ":" + cl + "/" + answer + " " + 
-	     to_str(cnt) + "/" + to_str(distr_count) );
+      distr_counts[classifier_idx] = distr_count;
+
+      /*l.log( (*cli)->id + ":" + cl + "/" + answer + " " + 
+	to_str(cnt) + "/" + to_str(distr_count) );*/
+      file_out << " " << (*cli)->id << ":" << answer;
 
       Timbl::ValueDistribution::dist_iterator it = vd->begin();      
       while ( it != vd->end() ) {
 	std::string tvs  = it->second->Value()->Name();
-	double      wght = it->second->Weight(); // absolute frequency.
+	long        wght = it->second->Weight(); // absolute frequency.
+	double      p    = (double)wght / (double)distr_count;
 
-	combined_distr[tvs] += wght;
-	/*if ( tvs == answer ) {
-	  l.log( to_str(wght) );
-	  }*/
+	combined_distr[tvs] += p;
+
 	++it;
       }
-
+      ++classifier_idx;
     } // classifiers
 
     // sort combined, get top-n, etc.
     //
     for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
-      distr_elem  d;
+      distr_probs  d;
       d.name   = mi->first;
-      d.freq   = mi->second;
+      d.prob   = mi->second; // was d.freq
       distr_vec.push_back( d );
     }
 
@@ -555,10 +557,12 @@ int multi_dist( Logfile& l, Config& c ) {
     while ( dei != distr_vec.end() ) { 
       if ( --cntr >= 0 ) {
 	//file_out << (*dei).name << ' ' << (*dei).freq << ' ';
-	l.log( (*dei).name + ' ' + to_str((*dei).freq) );
+	//l.log( (*dei).name + ' ' + to_str((*dei).prob) ); // was .freq
+	file_out << " " << (*dei).name;
       }
       dei++;
     }
+    file_out << std::endl;
     distr_vec.clear();
     combined_distr.clear();
   } // get_line

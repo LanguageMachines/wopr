@@ -1,3 +1,5 @@
+1.14.2	Fixes, changed multi_distr to use probabilities. Added file output.
+	
 1.14.1	Added multi_dist function in wex.cc, called 'md' in command
 	line. Miscellaneous changes in runrunrun.cc
 	
