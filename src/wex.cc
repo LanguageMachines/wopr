@@ -356,4 +356,225 @@ int read_classifiers_from_file( std::ifstream& file,
   return 0;
 }
 
+// After discussion with Antal 09/12/09, mixing of distributions.
+// 
+#ifdef TIMBL
+struct distr_elem {
+  std::string name;
+  double      freq;
+  double      dummy;
+  bool operator<(const distr_elem& rhs) const {
+    return freq > rhs.freq;
+  }
+};
+int multi_dist( Logfile& l, Config& c ) {
+  l.log( "multi_dist" );
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& counts_filename  = c.get_value( "counts" );
+  const std::string& kvs_filename     = c.get_value( "kvs" );
+  std::string        output_filename  = filename + ".md";
+
+  Timbl::TimblAPI   *My_Experiment;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  l.inc_prefix();
+  l.log( "filename:   "+filename );
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "counts:     "+counts_filename );
+  l.log( "kvs:        "+kvs_filename );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load inputfile." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    file_in.close();
+    return -1;
+  }
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  }
+
+  // If we want smoothed counts, we need this file...
+  // Make mapping <int, double> from c to c* ?
+  //
+  std::map<int,double> c_stars;
+  int Nc0;
+  double Nc1; // this is c*
+  int count;
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+  } else {
+    while( file_counts >> count >> Nc0 >> Nc1 ) {
+      c_stars[count] = Nc1;
+    }
+    file_counts.close();
+  }
+
+  // The P(new_word) according to GoodTuring-3.pdf
+  // We need the filename.cnt for this, because we really need to
+  // discount the rest if we assign probability to the unseen words.
+  //
+  // We need to esitmate the total number of unseen words. Same as
+  // vocab, i.e assume we saw half? Ratio of N_1 to total_count?
+  //
+  // We need to load .cnt file as well...
+  //
+  double p0 = 0.00001; // Arbitrary low probability for unknown words.
+  if ( total_count > 0 ) { // Better estimate if we have a lexicon
+    p0 = (double)N_1 / ((double)total_count * total_count);
+  }
+
+  // read kvs
+  // in multi_dist we don't need the size, we read a testfile instead.
+  //
+  std::map<int, Classifier*> ws_classifier; // size -> classifier.
+  std::map<int, Classifier*>::iterator wsci;
+  std::vector<Classifier*> cls;
+  std::vector<Classifier*>::iterator cli;
+  if ( kvs_filename != "" ) {
+    l.log( "Reading classifiers." );
+    std::ifstream file_kvs( kvs_filename.c_str() );
+    if ( ! file_kvs ) {
+      l.log( "ERROR: cannot load kvs file." );
+      return -1;
+    }
+    read_classifiers_from_file( file_kvs, cls );
+    l.log( to_str((int)cls.size()) );
+    file_kvs.close();
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+      l.log( (*cli)->id );
+      (*cli)->init();
+      int c_ws = (*cli)->get_ws();
+      ws_classifier[c_ws] = *cli;
+    }
+    l.log( "Read classifiers." );
+  }
+
+  std::vector<std::string>::iterator vi;
+  std::ostream_iterator<std::string> output( file_out, " " );
+
+  std::string a_line;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  std::vector<std::string> words;
+  std::vector<distr_elem> distr_vec;
+  std::vector<distr_elem>::iterator dei;
+  std::map<std::string, double> combined_distr;
+  std::map<std::string, double>::iterator mi;
+
+  while( std::getline( file_in, a_line )) { // in right instance format
+
+    words.clear();
+    Tokenize( a_line, words, ' ' );
+
+    // We loop over classifiers. We need a summed_distribution.
+    //
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+
+      Classifier *classifier = *cli;
+      Timbl::TimblAPI *timbl = classifier->get_exp();
+
+      // get a line from the file, above cls loop!
+
+      std::string cl = a_line;
+      file_out << cl << std::endl;
+      
+      tv = timbl->Classify( cl, vd );
+      std::string answer = tv->Name();
+
+      int cnt = vd->size(); // size of distr.
+      int distr_count = vd->totalSize(); // sum of freqs in distr.
+      
+      l.log( (*cli)->id + ":" + cl + "/" + answer + " " + 
+	     to_str(cnt) + "/" + to_str(distr_count) );
+
+      Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+      while ( it != vd->end() ) {
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight(); // absolute frequency.
+
+	combined_distr[tvs] += wght;
+	/*if ( tvs == answer ) {
+	  l.log( to_str(wght) );
+	  }*/
+	++it;
+      }
+
+    } // classifiers
+
+    // sort combined, get top-n, etc.
+    //
+    for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
+      distr_elem  d;
+      d.name   = mi->first;
+      d.freq   = mi->second;
+      distr_vec.push_back( d );
+    }
+
+    sort( distr_vec.begin(), distr_vec.end() );
+
+    int cntr = 1;
+    dei = distr_vec.begin();
+    while ( dei != distr_vec.end() ) { 
+      if ( --cntr >= 0 ) {
+	//file_out << (*dei).name << ' ' << (*dei).freq << ' ';
+	l.log( (*dei).name + ' ' + to_str((*dei).freq) );
+      }
+      dei++;
+    }
+    distr_vec.clear();
+    combined_distr.clear();
+  } // get_line
+
+  file_out.close();
+  file_in.close();
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+#else
+int multi_dist( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );  
+  return -1;
+}
+#endif
+
 // ---------------------------------------------------------------------------

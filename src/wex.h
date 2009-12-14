@@ -35,5 +35,6 @@
 int multi( Logfile&, Config& );
 int read_kv_from_file(std::ifstream&, std::map<std::string, std::string>&);
 int read_classifiers_from_file( std::ifstream& file,std::vector<Classifier*>& );
+int multi_dist( Logfile&, Config& );
 
 #endif

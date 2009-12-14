@@ -495,8 +495,10 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &pplx;
   } else if ( a_fname == "pplxs" ) {
     return &pplx_simple;
-  } else if ( a_fname == "multi" ) {
+  } else if ( a_fname == "multi" ) { // from wex.cc
     return &multi;
+  } else if ( a_fname == "md" ) { // from wex.cc
+    return &multi_dist;
   } else if ( a_fname == "correct" ) {
     return &correct;
   } else if ( a_fname == "generate" ) {
