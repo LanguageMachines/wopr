@@ -373,8 +373,15 @@ int multi_dist( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
   int                topn             = stoi( c.get_value( "topn", "1" ) );
-  std::string        output_filename  = filename + ".md";
+
+  if ( contains_id(filename, id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+  std::string        output_filename  = filename + id + ".md";
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -388,6 +395,7 @@ int multi_dist( Logfile& l, Config& c ) {
   l.log( "counts:     "+counts_filename );
   l.log( "kvs:        "+kvs_filename );
   l.log( "topn:       "+to_str(topn) );
+  l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 

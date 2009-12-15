@@ -1,3 +1,5 @@
+1.14.5	Added 'id' parameter to 'md'.
+	
 1.14.4	Added score per classifier in 'md'.
 	
 1.14.3	Better file output in 'md'.
