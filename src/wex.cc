@@ -346,6 +346,10 @@ int read_classifiers_from_file( std::ifstream& file,
 	if ( c != NULL) {
 	    c->set_timbl( rhs );
 	}
+      } else if ( lhs == "testfile" ) {
+	if ( c != NULL) {
+	    c->set_testfile( rhs );
+	}
       }
     }
   }
@@ -358,7 +362,6 @@ int read_classifiers_from_file( std::ifstream& file,
 
 // After discussion with Antal 09/12/09, mixing of distributions.
 // 
-#ifdef TIMBL
 struct distr_probs {
   std::string name;
   long        freq;
@@ -367,6 +370,7 @@ struct distr_probs {
     return prob > rhs.prob;
   }
 };
+#ifdef TIMBL
 int multi_dist( Logfile& l, Config& c ) {
   l.log( "multi_dist" );
   const std::string& filename         = c.get_value( "filename" );
@@ -619,6 +623,132 @@ int multi_dist( Logfile& l, Config& c ) {
 }
 #else
 int multi_dist( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );  
+  return -1;
+}
+#endif
+
+#ifdef TIMBL
+int multi_dist2( Logfile& l, Config& c ) {
+  l.log( "multi_dist" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& kvs_filename     = c.get_value( "kvs" );
+  int                topn             = stoi( c.get_value( "topn", "1" ) );
+  std::string        output_filename  = "foo.md";
+
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  l.inc_prefix();
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "kvs:        "+kvs_filename );
+  l.log( "topn:       "+to_str(topn) );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  }
+
+  // read kvs
+  // in multi_dist we don't need the size, we read a testfile instead.
+  //
+  std::vector<Classifier*> cls;
+  std::vector<Classifier*>::iterator cli;
+  int classifier_count = 0;
+  if ( kvs_filename != "" ) {
+    l.log( "Reading classifiers." );
+    std::ifstream file_kvs( kvs_filename.c_str() );
+    if ( ! file_kvs ) {
+      l.log( "ERROR: cannot load kvs file." );
+      return -1;
+    }
+    read_classifiers_from_file( file_kvs, cls );
+    l.log( to_str((int)cls.size()) );
+    file_kvs.close();
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+      l.log( (*cli)->id );
+      (*cli)->init();
+      ++classifier_count;
+    }
+    l.log( "Read classifiers. Starting classification." );
+  }
+
+  std::vector<std::string>::iterator vi;
+  std::string a_line;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  std::vector<std::string> words;
+  std::vector<distr_probs> distr_vec;
+  std::vector<distr_probs>::iterator dei;
+  std::map<std::string, double> combined_distr;
+  std::map<std::string, double>::iterator mi;
+  std::vector<double> distr_counts(classifier_count); // to calculate probs
+  long combined_correct = 0;
+
+  // We loop over classifiers.
+  //
+  int classifier_idx = 0;
+  bool go_on = true;
+  while ( go_on ) {
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+      
+      Classifier *classifier = *cli;
+      go_on = classifier->classify_next();
+      md2 foo = classifier->classification;
+      l.log( foo.answer + " : " + foo.cl );
+
+      ++classifier_idx;
+    } // classifiers
+  } // go_on
+
+  file_out.close();
+  
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
+    Classifier *classifier = *cli;
+    l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) );
+  }
+  l.log( "Combined: "+to_str(combined_correct) );
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+#else
+int multi_dist2( Logfile& l, Config& c ) {
   l.log( "Timbl support not built in." );  
   return -1;
 }

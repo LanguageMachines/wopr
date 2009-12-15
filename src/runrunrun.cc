@@ -499,6 +499,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &multi;
   } else if ( a_fname == "md" ) { // from wex.cc
     return &multi_dist;
+  } else if ( a_fname == "md2" ) { // from wex.cc
+    return &multi_dist2;
   } else if ( a_fname == "correct" ) {
     return &correct;
   } else if ( a_fname == "generate" ) {
