@@ -13,6 +13,7 @@ class Classifier {
   std::string            ibasefile;
   int                    ws;
   std::string            timbl;
+  long                   correct; 
 #ifdef TIMBL
   Timbl::TimblAPI       *My_Experiment;
 #endif
@@ -40,7 +41,15 @@ class Classifier {
     timbl = t;
   }
 
+  void inc_correct() {
+    ++correct;
+  }
+  long get_correct(){
+    return correct;
+  }
+
   void init() {
+    correct = 0;
 #ifdef TIMBL
     My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );

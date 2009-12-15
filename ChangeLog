@@ -1,3 +1,5 @@
+1.14.4	Added score per classifier in 'md'.
+	
 1.14.3	Better file output in 'md'.
 	
 1.14.2	Fixes, changed multi_distr to use probabilities. Added file output.

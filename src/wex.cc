@@ -499,6 +499,7 @@ int multi_dist( Logfile& l, Config& c ) {
   std::map<std::string, double> combined_distr;
   std::map<std::string, double>::iterator mi;
   std::vector<double> distr_counts(classifier_count); // to calculate probs
+  long combined_correct = 0;
 
   while( std::getline( file_in, a_line )) { // in right instance format
 
@@ -531,6 +532,10 @@ int multi_dist( Logfile& l, Config& c ) {
 	to_str(cnt) + "/" + to_str(distr_count) );*/
       //file_out << " " << (*cli)->id << ":" << answer;
       file_out << " " << answer;
+
+      if ( answer == target ) {
+	(*cli)->inc_correct();
+      }
 
       Timbl::ValueDistribution::dist_iterator it = vd->begin();      
       while ( it != vd->end() ) {
@@ -581,19 +586,25 @@ int multi_dist( Logfile& l, Config& c ) {
     }
     file_out << " }";
     if ( target == combined_guess ) {
-      file_out << " 1";
+      ++combined_correct;
     }
     file_out << std::endl;
     distr_vec.clear();
     combined_distr.clear();
   } // get_line
-
+  
   //and sat down [ some time ] down 1
   //Elinor and Marianne [ her it ] Marianne 1
 
   file_out.close();
   file_in.close();
-
+  
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
+    Classifier *classifier = *cli;
+    l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) );
+  }
+  l.log( "Combined: "+to_str(combined_correct) );
+  
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;
