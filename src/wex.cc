@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// $Id: wex.cc 2426 2009-01-07 12:24:00Z pberck $
+// $Id$
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
@@ -373,6 +373,7 @@ int multi_dist( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
+  int                topn             = stoi( c.get_value( "topn", "1" ) );
   std::string        output_filename  = filename + ".md";
 
   Timbl::TimblAPI   *My_Experiment;
@@ -386,6 +387,7 @@ int multi_dist( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "kvs:        "+kvs_filename );
+  l.log( "topn:       "+to_str(topn) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -480,7 +482,7 @@ int multi_dist( Logfile& l, Config& c ) {
       (*cli)->init();
       ++classifier_count;
     }
-    l.log( "Read classifiers." );
+    l.log( "Read classifiers. Starting classification." );
   }
 
   std::vector<std::string>::iterator vi;
@@ -502,8 +504,9 @@ int multi_dist( Logfile& l, Config& c ) {
 
     words.clear();
     Tokenize( a_line, words, ' ' );
+    std::string target = words.at( words.size()-1 );
 
-    file_out << a_line;
+    file_out << a_line << " [";
 
     // We loop over classifiers. We need a summed_distribution.
     //
@@ -526,7 +529,8 @@ int multi_dist( Logfile& l, Config& c ) {
 
       /*l.log( (*cli)->id + ":" + cl + "/" + answer + " " + 
 	to_str(cnt) + "/" + to_str(distr_count) );*/
-      file_out << " " << (*cli)->id << ":" << answer;
+      //file_out << " " << (*cli)->id << ":" << answer;
+      file_out << " " << answer;
 
       Timbl::ValueDistribution::dist_iterator it = vd->begin();      
       while ( it != vd->end() ) {
@@ -536,10 +540,19 @@ int multi_dist( Logfile& l, Config& c ) {
 
 	combined_distr[tvs] += p;
 
+	if ( tvs == answer ) {
+	  file_out << " " << p;
+	}
+	if ( tvs == target ) {
+	  //was somewhere in target, keep score per classifier?
+	}
+
 	++it;
       }
       ++classifier_idx;
     } // classifiers
+    
+    file_out << " ] {";
 
     // sort combined, get top-n, etc.
     //
@@ -552,20 +565,31 @@ int multi_dist( Logfile& l, Config& c ) {
 
     sort( distr_vec.begin(), distr_vec.end() );
 
-    int cntr = 1;
+    int cntr = topn;
+    std::string combined_guess = "";
     dei = distr_vec.begin();
     while ( dei != distr_vec.end() ) { 
       if ( --cntr >= 0 ) {
 	//file_out << (*dei).name << ' ' << (*dei).freq << ' ';
 	//l.log( (*dei).name + ' ' + to_str((*dei).prob) ); // was .freq
-	file_out << " " << (*dei).name;
+	file_out << " " << (*dei).name << " " << (*dei).prob;
+	if ( cntr == 0 ) {
+	  combined_guess = (*dei).name;
+	}
       }
       dei++;
+    }
+    file_out << " }";
+    if ( target == combined_guess ) {
+      file_out << " 1";
     }
     file_out << std::endl;
     distr_vec.clear();
     combined_distr.clear();
   } // get_line
+
+  //and sat down [ some time ] down 1
+  //Elinor and Marianne [ her it ] Marianne 1
 
   file_out.close();
   file_in.close();
