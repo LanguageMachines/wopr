@@ -12,6 +12,8 @@
 # include "timbl/TimblAPI.h"
 #endif
 
+#include "ngrams.h"
+
 struct md2_distr {
   std::string name;
   long        freq;
@@ -41,7 +43,9 @@ class Classifier {
   std::string timbl;
   std::string testfile;
   long        correct; 
+  long        classification_count; 
   std::string cl;
+  std::string target;
   md2         classification;
 #ifdef TIMBL
   Timbl::TimblAPI       *My_Experiment;
@@ -84,12 +88,17 @@ class Classifier {
   bool classify_next() {
     if ( std::getline( file_in, cl ) ) {
       classification.cl = cl;
+      last_word( cl, target );
 #ifdef TIMBL    
       tv = My_Experiment->Classify( cl, vd );
       classification.answer = tv->Name();
-      
+      ++classification_count;      
       classification.cnt = vd->size(); // size of distr.
       classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
+
+      if ( classification.answer == target ) {
+	++correct;
+      }
 #endif
       return true;
     } else {
@@ -106,6 +115,10 @@ class Classifier {
   }
   long get_correct(){
     return correct;
+  }
+
+  long get_cc(){
+    return classification_count;
   }
 
   void init() {

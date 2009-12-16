@@ -47,6 +47,7 @@
 #include "util.h"
 #include "runrunrun.h"
 #include "Multi.h"
+#include "ngrams.h"
 #include "wex.h"
 
 // ---------------------------------------------------------------------------
@@ -739,7 +740,8 @@ int multi_dist2( Logfile& l, Config& c ) {
   
   for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
     Classifier *classifier = *cli;
-    l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) );
+    l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
+	   to_str((*cli)->get_cc()) );
   }
   l.log( "Combined: "+to_str(combined_correct) );
   

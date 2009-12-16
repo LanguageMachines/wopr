@@ -34,5 +34,6 @@
 
 int ngram_list( Logfile&, Config& );
 int ngram_test( Logfile&, Config& );
+void last_word( std::string&, std::string& );
 
 #endif
