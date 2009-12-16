@@ -14,11 +14,11 @@
 
 #include "ngrams.h"
 
-struct md2_distr {
-  std::string name;
+struct md2_elem {
+  std::string token;
   long        freq;
   double      prob;
-  bool operator<(const md2_distr& rhs) const {
+  bool operator<(const md2_elem& rhs) const {
     return prob > rhs.prob;
   }
 };
@@ -26,9 +26,11 @@ struct md2 {
   std::string name;
   std::string cl;
   std::string answer;
+  double      prob;
+  std::string target;
   long        cnt;
   long        distr_count;
-  std::vector<md2_distr> distr;
+  std::vector<md2_elem> distr;
 };
 
 class Classifier {
@@ -44,8 +46,6 @@ class Classifier {
   std::string testfile;
   long        correct; 
   long        classification_count; 
-  std::string cl;
-  std::string target;
   md2         classification;
 #ifdef TIMBL
   Timbl::TimblAPI       *My_Experiment;
@@ -86,17 +86,33 @@ class Classifier {
   }
 
   bool classify_next() {
-    if ( std::getline( file_in, cl ) ) {
-      classification.cl = cl;
-      last_word( cl, target );
+    if ( std::getline( file_in, classification.cl ) ) {
+      last_word( classification.cl, classification.target );
+      classification.distr.clear();
 #ifdef TIMBL    
-      tv = My_Experiment->Classify( cl, vd );
+      tv = My_Experiment->Classify( classification.cl, vd );
       classification.answer = tv->Name();
       ++classification_count;      
       classification.cnt = vd->size(); // size of distr.
       classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
 
-      if ( classification.answer == target ) {
+      Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+      while ( it != vd->end() ) {
+	std::string tvs  = it->second->Value()->Name();
+	long        wght = it->second->Weight(); // absolute frequency.
+	double      p    = (double)wght / (double)vd->totalSize();
+	md2_elem md2e;
+	md2e.token = tvs;
+	md2e.freq = wght;
+	md2e.prob = p;
+	classification.distr.push_back( md2e );
+	if ( tvs == classification.answer ) {
+	  classification.prob = p;
+	}
+	++it;
+      }
+
+      if ( classification.answer == classification.target ) {
 	++correct;
       }
 #endif

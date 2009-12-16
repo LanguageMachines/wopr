@@ -635,7 +635,8 @@ int multi_dist2( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   int                topn             = stoi( c.get_value( "topn", "1" ) );
-  std::string        output_filename  = "foo.md";
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
+  std::string        output_filename  = kvs_filename + "_" + id + ".md";
 
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -646,6 +647,7 @@ int multi_dist2( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "kvs:        "+kvs_filename );
   l.log( "topn:       "+to_str(topn) );
+  l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -706,34 +708,43 @@ int multi_dist2( Logfile& l, Config& c ) {
     l.log( "Read classifiers. Starting classification." );
   }
 
-  std::vector<std::string>::iterator vi;
-  std::string a_line;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
-  std::vector<std::string> words;
-  std::vector<distr_probs> distr_vec;
-  std::vector<distr_probs>::iterator dei;
-  std::map<std::string, double> combined_distr;
-  std::map<std::string, double>::iterator mi;
-  std::vector<double> distr_counts(classifier_count); // to calculate probs
-  long combined_correct = 0;
-
   // We loop over classifiers.
   //
+  long combined_correct = 0;
   int classifier_idx = 0;
   bool go_on = true;
+  std::string outline;
+  std::string outtarget;
   while ( go_on ) {
+    outline.clear();
+    
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       
       Classifier *classifier = *cli;
       go_on = classifier->classify_next();
       md2 foo = classifier->classification;
-      l.log( foo.answer + " : " + foo.cl );
+      //l.log( foo.answer + " : " + foo.cl );
 
+      outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
+      outtarget = foo.target;
+
+      /*
+      sort( foo.distr.begin(), foo.distr.end() );
+      int cntr = 3;
+      std::vector<md2_elem>::iterator dei;
+      dei = foo.distr.begin();
+      while ( dei != foo.distr.end() ) { 
+	if ( --cntr >= 0 ) {
+	  std::cout << " " << (*dei).token << " " << (*dei).prob << std::endl;;
+	}
+	++dei;
+      }
+      */
       ++classifier_idx;
     } // classifiers
+
+    file_out << outtarget << " [ " << outline << "] ";
+    file_out << std::endl;
   } // go_on
 
   file_out.close();
