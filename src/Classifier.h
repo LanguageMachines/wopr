@@ -143,7 +143,6 @@ class Classifier {
     My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 #endif
-    open_file();
   }
 
 #ifdef TIMBL

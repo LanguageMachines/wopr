@@ -533,7 +533,7 @@ int multi_dist( Logfile& l, Config& c ) {
       // get a line from the file, above cls loop!
 
       std::string cl = a_line;
-      
+
       tv = timbl->Classify( cl, vd );
       std::string answer = tv->Name();
 
@@ -703,6 +703,7 @@ int multi_dist2( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
       (*cli)->init();
+      (*cli)->open_file();
       ++classifier_count;
     }
     l.log( "Read classifiers. Starting classification." );
