@@ -636,7 +636,7 @@ int multi_dist2( Logfile& l, Config& c ) {
   const std::string& kvs_filename     = c.get_value( "kvs" );
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  std::string        output_filename  = kvs_filename + "_" + id + ".md";
+  std::string        output_filename  = kvs_filename + "_" + id + ".md2";
 
   std::string        distrib;
   std::vector<std::string> distribution;

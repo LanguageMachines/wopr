@@ -1,3 +1,5 @@
+1.14.10	Renamed multi_dist2 output .md2. Added example_md.pl script.
+	
 1.14.9	Moved open_file() outside init() in Classifier.h
 	
 1.14.8	Added file output to multi_dist2.
