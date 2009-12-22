@@ -1,3 +1,5 @@
+1.14.12	Small fixes in md2 output and md2 file output.
+	
 1.14.11 Fixed extra output line in 'md2'.
 	
 1.14.10	Renamed multi_dist2 output .md2. Added example_md.pl script.

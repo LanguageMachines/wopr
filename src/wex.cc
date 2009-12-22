@@ -646,7 +646,7 @@ int multi_dist2( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "kvs:        "+kvs_filename );
-  l.log( "topn:       "+to_str(topn) );
+  //l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
@@ -711,7 +711,6 @@ int multi_dist2( Logfile& l, Config& c ) {
 
   // We loop over classifiers.
   //
-  long combined_correct = 0;
   int classifier_idx = 0;
   bool go_on = true;
   std::string outline;
@@ -723,27 +722,30 @@ int multi_dist2( Logfile& l, Config& c ) {
       
       Classifier *classifier = *cli;
       go_on = classifier->classify_next();
-      md2 foo = classifier->classification;
-      //l.log( foo.answer + " : " + foo.cl );
 
-      outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
-      outtarget = foo.target;
-
-      /*
-      sort( foo.distr.begin(), foo.distr.end() );
-      int cntr = 3;
-      std::vector<md2_elem>::iterator dei;
-      dei = foo.distr.begin();
-      while ( dei != foo.distr.end() ) { 
-	if ( --cntr >= 0 ) {
+      if ( go_on == true ) {
+	md2 foo = classifier->classification;
+	//l.log( foo.answer + " : " + foo.cl );
+	
+	outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
+	outtarget = foo.target;
+	
+	/*
+	  sort( foo.distr.begin(), foo.distr.end() );
+	  int cntr = 3;
+	  std::vector<md2_elem>::iterator dei;
+	  dei = foo.distr.begin();
+	  while ( dei != foo.distr.end() ) { 
+	  if ( --cntr >= 0 ) {
 	  std::cout << " " << (*dei).token << " " << (*dei).prob << std::endl;;
-	}
-	++dei;
+	  }
+	  ++dei;
+	  }
+	*/
       }
-      */
       ++classifier_idx;
     } // classifiers
-
+    
     if ( go_on == true ) {
       file_out << outtarget << " [ " << outline << "] ";
       file_out << std::endl;
@@ -758,7 +760,6 @@ int multi_dist2( Logfile& l, Config& c ) {
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
 	   to_str((*cli)->get_cc()) );
   }
-  l.log( "Combined: "+to_str(combined_correct) );
   
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
