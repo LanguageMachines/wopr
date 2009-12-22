@@ -1,3 +1,6 @@
+1.14.14 Made combined in 'md2' optional with 'c' parameter. 'c:1' to
+	combine distributions. Added combined count to 'md2'.
+	
 1.14.13	Added weight parameter to Classifiers for 'md' and
 	'md2'. Implemented combined distribution in 'md2'.
 	

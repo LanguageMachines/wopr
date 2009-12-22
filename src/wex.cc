@@ -638,6 +638,7 @@ int multi_dist2( Logfile& l, Config& c ) {
   l.log( "multi_dist" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
+  bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   std::string        output_filename  = kvs_filename + "_" + id + ".md2";
@@ -650,6 +651,7 @@ int multi_dist2( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "kvs:        "+kvs_filename );
+  l.log( "combined:   "+to_str(do_combined) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
@@ -720,6 +722,8 @@ int multi_dist2( Logfile& l, Config& c ) {
   std::string outline;
   std::string outtarget;
   std::map<std::string, double> combined_distr;
+  long combined_correct = 0;
+
   while ( go_on ) {
     outline.clear();
     combined_distr.clear();
@@ -737,13 +741,15 @@ int multi_dist2( Logfile& l, Config& c ) {
 	outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
 	outtarget = foo.target;
 	
-	// The distribution is in classification.distr
-	std::vector<md2_elem>::iterator dei;
-	dei = foo.distr.begin();
-	while ( dei != foo.distr.end() ) { 
-	  //std::cout << " " << (*dei).token << " " << (*dei).prob;
-	  combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
-	  ++dei;
+	if ( do_combined == true ) {
+	  // The distribution is in classification.distr
+	  std::vector<md2_elem>::iterator dei;
+	  dei = foo.distr.begin();
+	  while ( dei != foo.distr.end() ) { 
+	    //std::cout << " " << (*dei).token << " " << (*dei).prob;
+	    combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	    ++dei;
+	  }
 	}
 	
       } // go_on
@@ -751,53 +757,53 @@ int multi_dist2( Logfile& l, Config& c ) {
     } // classifiers
 
     if ( go_on == true ) {
-      file_out << outtarget << " [ " << outline << "] {";
-      ////file_out << std::endl;
-
-
-    // Calculate the combined guess, and write top-n to output file.
-    //
-    int cntr = topn;
-    std::string combined_guess = "";
-    std::string target;
-    std::vector<distr_probs> distr_vec;
-    std::vector<distr_probs>::iterator dei;
-    std::map<std::string, double>::iterator mi;
-    std::vector<double> distr_counts(classifier_count);
-
-    // Convert hash to vector so we can sort it.
-    //
-    for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
-      distr_probs  d;
-      d.name   = mi->first;
-      d.prob   = mi->second;
-      distr_vec.push_back( d );
-    }
-    sort( distr_vec.begin(), distr_vec.end() );
-
-    // Loop over sorted vector, take top-n.
-    //
-    dei = distr_vec.begin();
-    while ( dei != distr_vec.end() ) { 
-      if ( --cntr >= 0 ) {
-	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
-	file_out << " " << (*dei).name << " " << (*dei).prob;
-	if ( cntr == 0 ) { // take the first (could be more with same p).
-	  combined_guess = (*dei).name;
+      file_out << outtarget << " [ " << outline << "]";
+      
+      if ( do_combined == true ) {
+	file_out << " {";
+	// Calculate the combined guess, and write top-n to output file.
+	//
+	int cntr = topn;
+	std::string combined_guess = "";
+	std::vector<distr_probs> distr_vec;
+	std::vector<distr_probs>::iterator dei;
+	std::map<std::string, double>::iterator mi;
+	std::vector<double> distr_counts(classifier_count);
+	
+	// Convert hash to vector so we can sort it.
+	//
+	for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
+	  distr_probs  d;
+	  d.name   = mi->first;
+	  d.prob   = mi->second;
+	  distr_vec.push_back( d );
 	}
-      }
-      dei++;
+	sort( distr_vec.begin(), distr_vec.end() );
+	
+	// Loop over sorted vector, take top-n.
+	//
+	dei = distr_vec.begin();
+	while ( dei != distr_vec.end() ) { 
+	  if ( --cntr >= 0 ) {
+	    //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
+	    file_out << " " << (*dei).name << " " << (*dei).prob;
+	    if ( cntr == 0 ) { // take the first (could be more with same p).
+	      combined_guess = (*dei).name;
+	    }
+	  }
+	  dei++;
+	}
+	file_out << " }";
+	if ( outtarget == combined_guess ) {
+	  ++combined_correct;
+	}
+	distr_vec.clear();
+	combined_distr.clear();
+      } // do_combined
+      file_out << std::endl;
     }
-    file_out << " }";
-    if ( target == combined_guess ) {
-      //++combined_correct;
-    }
-    file_out << std::endl;
-    distr_vec.clear();
-    combined_distr.clear();
-    }
-
-  } // go_on
+      
+  } // while go_on
 
   file_out.close();
   
@@ -806,7 +812,10 @@ int multi_dist2( Logfile& l, Config& c ) {
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
 	   to_str((*cli)->get_cc()) );
   }
-  
+  if ( do_combined == true ) {
+    l.log( "Combined: "+to_str(combined_correct) );
+  }
+
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;
