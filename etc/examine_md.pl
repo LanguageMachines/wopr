@@ -56,7 +56,6 @@ while ( my $line = <FH> ) {
   }
 
   chomp $line;
-  #print $line;
   
   my $instance;
   my $classifications;

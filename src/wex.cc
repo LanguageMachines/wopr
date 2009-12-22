@@ -744,8 +744,11 @@ int multi_dist2( Logfile& l, Config& c ) {
       ++classifier_idx;
     } // classifiers
 
-    file_out << outtarget << " [ " << outline << "] ";
-    file_out << std::endl;
+    if ( go_on == true ) {
+      file_out << outtarget << " [ " << outline << "] ";
+      file_out << std::endl;
+    }
+
   } // go_on
 
   file_out.close();
