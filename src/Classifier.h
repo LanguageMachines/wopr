@@ -44,6 +44,7 @@ class Classifier {
   int         ws;
   std::string timbl;
   std::string testfile;
+  double      weight;
   long        correct; 
   long        classification_count; 
   md2         classification;
@@ -78,6 +79,13 @@ class Classifier {
 
   void set_testfile( const std::string t ) {
     testfile = t;
+  }
+
+  void set_weight( double w ) {
+    weight = w;
+  }
+  double get_weight() {
+    return weight;
   }
 
   void open_file() {
@@ -139,6 +147,7 @@ class Classifier {
 
   void init() {
     correct = 0;
+    weight  = 1.0;
 #ifdef TIMBL
     My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
@@ -157,6 +166,10 @@ class Classifier {
     tv = My_Experiment->Classify( cl, vd );
   }
 #endif
+
+/*
+transform( result.begin(), result.end(), vectors[i].begin(),result.begin(), plus<T>() ) ;
+*/
 };
 
 #endif

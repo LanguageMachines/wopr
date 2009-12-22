@@ -351,6 +351,10 @@ int read_classifiers_from_file( std::ifstream& file,
 	if ( c != NULL) {
 	    c->set_testfile( rhs );
 	}
+      } else if ( lhs == "weight" ) {
+	if ( c != NULL) {
+	  c->set_weight( stod(rhs) );
+	}
       }
     }
   }
@@ -527,8 +531,9 @@ int multi_dist( Logfile& l, Config& c ) {
     int classifier_idx = 0;
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
 
-      Classifier *classifier = *cli;
-      Timbl::TimblAPI *timbl = classifier->get_exp();
+      Classifier *classifier   = *cli;
+      Timbl::TimblAPI *timbl   = classifier->get_exp();
+      double classifier_weight = classifier->get_weight();
 
       // get a line from the file, above cls loop!
 
@@ -556,7 +561,7 @@ int multi_dist( Logfile& l, Config& c ) {
 	long        wght = it->second->Weight(); // absolute frequency.
 	double      p    = (double)wght / (double)distr_count;
 
-	combined_distr[tvs] += p;
+	combined_distr[tvs] += (p * classifier_weight); // multiply with weight
 
 	if ( tvs == answer ) {
 	  file_out << " " << p;
@@ -583,6 +588,8 @@ int multi_dist( Logfile& l, Config& c ) {
 
     sort( distr_vec.begin(), distr_vec.end() );
 
+    // Calculate the combined guess, and write top-n to output file.
+    //
     int cntr = topn;
     std::string combined_guess = "";
     dei = distr_vec.begin();
@@ -591,7 +598,7 @@ int multi_dist( Logfile& l, Config& c ) {
 	//file_out << (*dei).name << ' ' << (*dei).freq << ' ';
 	//l.log( (*dei).name + ' ' + to_str((*dei).prob) ); // was .freq
 	file_out << " " << (*dei).name << " " << (*dei).prob;
-	if ( cntr == 0 ) {
+	if ( cntr == 0 ) { // take the first (could be more with same p).
 	  combined_guess = (*dei).name;
 	}
       }
@@ -606,9 +613,6 @@ int multi_dist( Logfile& l, Config& c ) {
     combined_distr.clear();
   } // get_line
   
-  //and sat down [ some time ] down 1
-  //Elinor and Marianne [ her it ] Marianne 1
-
   file_out.close();
   file_in.close();
   
@@ -646,7 +650,7 @@ int multi_dist2( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "kvs:        "+kvs_filename );
-  //l.log( "topn:       "+to_str(topn) );
+  l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
@@ -715,9 +719,11 @@ int multi_dist2( Logfile& l, Config& c ) {
   bool go_on = true;
   std::string outline;
   std::string outtarget;
+  std::map<std::string, double> combined_distr;
   while ( go_on ) {
     outline.clear();
-    
+    combined_distr.clear();
+
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       
       Classifier *classifier = *cli;
@@ -725,30 +731,70 @@ int multi_dist2( Logfile& l, Config& c ) {
 
       if ( go_on == true ) {
 	md2 foo = classifier->classification;
+	double classifier_weight = classifier->get_weight();
 	//l.log( foo.answer + " : " + foo.cl );
 	
 	outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
 	outtarget = foo.target;
 	
-	/*
-	  sort( foo.distr.begin(), foo.distr.end() );
-	  int cntr = 3;
-	  std::vector<md2_elem>::iterator dei;
-	  dei = foo.distr.begin();
-	  while ( dei != foo.distr.end() ) { 
-	  if ( --cntr >= 0 ) {
-	  std::cout << " " << (*dei).token << " " << (*dei).prob << std::endl;;
-	  }
+	// The distribution is in classification.distr
+	std::vector<md2_elem>::iterator dei;
+	dei = foo.distr.begin();
+	while ( dei != foo.distr.end() ) { 
+	  //std::cout << " " << (*dei).token << " " << (*dei).prob;
+	  combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
 	  ++dei;
-	  }
-	*/
-      }
+	}
+	
+      } // go_on
       ++classifier_idx;
     } // classifiers
-    
+
     if ( go_on == true ) {
-      file_out << outtarget << " [ " << outline << "] ";
-      file_out << std::endl;
+      file_out << outtarget << " [ " << outline << "] {";
+      ////file_out << std::endl;
+
+
+    // Calculate the combined guess, and write top-n to output file.
+    //
+    int cntr = topn;
+    std::string combined_guess = "";
+    std::string target;
+    std::vector<distr_probs> distr_vec;
+    std::vector<distr_probs>::iterator dei;
+    std::map<std::string, double>::iterator mi;
+    std::vector<double> distr_counts(classifier_count);
+
+    // Convert hash to vector so we can sort it.
+    //
+    for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
+      distr_probs  d;
+      d.name   = mi->first;
+      d.prob   = mi->second;
+      distr_vec.push_back( d );
+    }
+    sort( distr_vec.begin(), distr_vec.end() );
+
+    // Loop over sorted vector, take top-n.
+    //
+    dei = distr_vec.begin();
+    while ( dei != distr_vec.end() ) { 
+      if ( --cntr >= 0 ) {
+	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
+	file_out << " " << (*dei).name << " " << (*dei).prob;
+	if ( cntr == 0 ) { // take the first (could be more with same p).
+	  combined_guess = (*dei).name;
+	}
+      }
+      dei++;
+    }
+    file_out << " }";
+    if ( target == combined_guess ) {
+      //++combined_correct;
+    }
+    file_out << std::endl;
+    distr_vec.clear();
+    combined_distr.clear();
     }
 
   } // go_on
