@@ -73,7 +73,7 @@ while ( my $line = <FH> ) {
 
     $classifications = $2;
     @c_parts  = split (/ /, $classifications);
-    for ( my $i = 0; $i <= $#c_parts;  $i += 2 ) {
+    for ( my $i = 0; $i <= $#c_parts;  $i += 4 ) {
       if ( $c_parts[$i] eq $target ) {
 	print "1";
 	$binary .= "1";
@@ -103,7 +103,7 @@ while ( my $line = <FH> ) {
     $classifications = $2;
     @c_parts  = split (/ /, $classifications);
     for ( my $i = 0; $i <= $#c_parts;  $i += 2 ) {
-      ++$scores_count{$i/2};
+      ++$scores_count{$i/4};
       if ( $c_parts[$i] eq $target ) {
 	print "1";
 	++$scores_right{$i/2};

@@ -542,6 +542,9 @@ int multi_dist( Logfile& l, Config& c ) {
       tv = timbl->Classify( cl, vd );
       std::string answer = tv->Name();
 
+      size_t md  = timbl->matchDepth();
+      bool   mal = timbl->matchedAtLeaf();
+
       int cnt = vd->size(); // size of distr.
       int distr_count = vd->totalSize(); // sum of freqs in distr.
       distr_counts[classifier_idx] = distr_count;
@@ -564,7 +567,7 @@ int multi_dist( Logfile& l, Config& c ) {
 	combined_distr[tvs] += (p * classifier_weight); // multiply with weight
 
 	if ( tvs == answer ) {
-	  file_out << " " << p;
+	  file_out << " " << p << " " << md << " " << to_str(mal);
 	}
 	if ( tvs == target ) {
 	  //was somewhere in target, keep score per classifier?
@@ -734,11 +737,14 @@ int multi_dist2( Logfile& l, Config& c ) {
       go_on = classifier->classify_next();
 
       if ( go_on == true ) {
-	md2 foo = classifier->classification;
+
+	md2    foo = classifier->classification;
 	double classifier_weight = classifier->get_weight();
+
 	//l.log( foo.answer + " : " + foo.cl );
 	
 	outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
+	outline   = outline + to_str(foo.md) + " " + to_str(foo.mal) + " ";
 	outtarget = foo.target;
 	
 	if ( do_combined == true ) {

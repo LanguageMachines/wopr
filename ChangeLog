@@ -1,3 +1,6 @@
+1.14.15	Added match depth and match-at-leaf to md(2) output. Fixed
+	examine_md.pl script for new output.
+	
 1.14.14 Made combined in 'md2' optional with 'c' parameter. 'c:1' to
 	combine distributions. Added combined count to 'md2'.
 	

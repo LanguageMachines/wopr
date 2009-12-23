@@ -30,6 +30,8 @@ struct md2 {
   std::string target;
   long        cnt;
   long        distr_count;
+  size_t      md;
+  bool        mal;
   std::vector<md2_elem> distr;
 };
 
@@ -100,6 +102,10 @@ class Classifier {
 #ifdef TIMBL    
       tv = My_Experiment->Classify( classification.cl, vd );
       classification.answer = tv->Name();
+
+      classification.md  = My_Experiment->matchDepth();
+      classification.mal = My_Experiment->matchedAtLeaf();
+
       ++classification_count;      
       classification.cnt = vd->size(); // size of distr.
       classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
