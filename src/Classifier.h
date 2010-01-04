@@ -12,6 +12,7 @@
 # include "timbl/TimblAPI.h"
 #endif
 
+#include "util.h"
 #include "ngrams.h"
 
 struct md2_elem {
@@ -82,6 +83,9 @@ class Classifier {
   void set_testfile( const std::string t ) {
     testfile = t;
   }
+  const std::string& get_testfile() {
+    return testfile;
+  }
 
   void set_weight( double w ) {
     weight = w;
@@ -151,9 +155,12 @@ class Classifier {
     return classification_count;
   }
 
+  std::string info_str() {
+    return id+"/"+ibasefile+"/"+testfile+"/"+to_str(weight);
+  }
+
   void init() {
     correct = 0;
-    weight  = 1.0;
 #ifdef TIMBL
     My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );

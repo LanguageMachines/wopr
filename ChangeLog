@@ -1,3 +1,8 @@
+1.14.16	Fixed bug in classifier weight (which was ignored) in 'md' and
+	'md2'. Added filename parameter in 'md2' to be able to collapse
+	'md' and 'md2' in one function.
+	Extra info_str() in Classifier for 'md2'.
+	
 1.14.15	Added match depth and match-at-leaf to md(2) output. Fixed
 	examine_md.pl script for new output.
 	

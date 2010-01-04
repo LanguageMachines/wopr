@@ -332,6 +332,8 @@ int read_classifiers_from_file( std::ifstream& file,
 	  c = NULL;
 	}
 	c = new Classifier( rhs );
+	c->set_weight( 1.0 );
+	c->set_testfile( "NONE" );
       } else if ( lhs == "ibasefile" ) {
 	// store this ibasefile
 	if ( c != NULL ) {
@@ -498,6 +500,7 @@ int multi_dist( Logfile& l, Config& c ) {
       l.log( (*cli)->id );
       (*cli)->init();
       ++classifier_count;
+      l.log( (*cli)->info_str() );
     }
     l.log( "Read classifiers. Starting classification." );
   }
@@ -640,6 +643,7 @@ int multi_dist( Logfile& l, Config& c ) {
 int multi_dist2( Logfile& l, Config& c ) {
   l.log( "multi_dist" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
   int                topn             = stoi( c.get_value( "topn", "1" ) );
@@ -653,6 +657,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
+  l.log( "filename:   "+filename );
   l.log( "kvs:        "+kvs_filename );
   l.log( "combined:   "+to_str(do_combined) );
   l.log( "topn:       "+to_str(topn) );
@@ -712,8 +717,12 @@ int multi_dist2( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
       (*cli)->init();
+      if ( (*cli)->get_testfile() == "NONE" ) {
+	(*cli)->set_testfile( filename );
+      }
       (*cli)->open_file();
       ++classifier_count;
+      l.log( (*cli)->info_str() );
     }
     l.log( "Read classifiers. Starting classification." );
   }
