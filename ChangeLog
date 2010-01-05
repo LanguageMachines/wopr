@@ -1,3 +1,5 @@
+1.15.1	Added algorithm include.
+	
 1.15.0	Function 'md2' can now take a file with a distribution (generated
 	by the 'lcontext' function) and add it like it was output from a
 	classifier to the merged distribution. In this version the

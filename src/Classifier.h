@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
