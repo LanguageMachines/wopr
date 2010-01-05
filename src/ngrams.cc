@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2009 Peter Berck                                         *
+ * Copyright 2007 - 2010 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -188,6 +188,15 @@ void last_word( std::string& str, std::string& res ) {
     size_t pos = str.rfind( ' ' );
     if ( pos != std::string::npos ) {
       res = str.substr(pos+1);
+    } else {
+      res = str;
+    }
+}
+
+void but_last_word( std::string& str, std::string& res ) {
+    size_t pos = str.rfind( ' ' );
+    if ( pos != std::string::npos ) {
+      res = str.substr(0, pos);
     } else {
       res = str;
     }

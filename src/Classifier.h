@@ -43,14 +43,18 @@ class Classifier {
 
  public:
   std::string id;
+  int         type;
   std::string ibasefile;
   int         ws;
   std::string timbl;
   std::string testfile;
+  std::string distfile;
   double      weight;
+  double      distprob;
   long        correct; 
   long        classification_count; 
   md2         classification;
+  std::vector<std::string> words;
 #ifdef TIMBL
   Timbl::TimblAPI       *My_Experiment;
   const Timbl::ValueDistribution *vd;
@@ -60,6 +64,7 @@ class Classifier {
   //! Constructor.
   //!
   Classifier( const std::string& );
+  Classifier( const std::string&, int );
 
   //! Destructor.
   //!
@@ -87,6 +92,13 @@ class Classifier {
     return testfile;
   }
 
+  void set_distfile( const std::string t ) {
+    distfile = t;
+  }
+  const std::string& get_distfile() {
+    return distfile;
+  }
+
   void set_weight( double w ) {
     weight = w;
   }
@@ -94,46 +106,114 @@ class Classifier {
     return weight;
   }
 
-  void open_file() {
-    file_in.open( testfile.c_str() );
-    std::cerr << "Opened file: " << testfile << std::endl;
+  void set_distprob( double p ) {
+    distprob = p;
+  }
+  double get_distprob() {
+    return distprob;
   }
 
+  void set_type( int t ) {
+    type = t;
+  }
+  int get_type() {
+    return type;
+  }
+
+  bool open_file() {
+    if ( type == 1 ) {
+      file_in.open( testfile.c_str() );
+    } else if ( type == 2 ) {
+      file_in.open( distfile.c_str() );
+    }
+    return file_in.is_open();
+  }
+
+  // Depending on type...
+  //
   bool classify_next() {
     if ( std::getline( file_in, classification.cl ) ) {
       last_word( classification.cl, classification.target );
       classification.distr.clear();
+      // Here we could discern type. target we have in gc data also.
+      if ( type == 1 ) {
 #ifdef TIMBL    
-      tv = My_Experiment->Classify( classification.cl, vd );
-      classification.answer = tv->Name();
-
-      classification.md  = My_Experiment->matchDepth();
-      classification.mal = My_Experiment->matchedAtLeaf();
-
-      ++classification_count;      
-      classification.cnt = vd->size(); // size of distr.
-      classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
-
-      Timbl::ValueDistribution::dist_iterator it = vd->begin();      
-      while ( it != vd->end() ) {
-	std::string tvs  = it->second->Value()->Name();
-	long        wght = it->second->Weight(); // absolute frequency.
-	double      p    = (double)wght / (double)vd->totalSize();
-	md2_elem md2e;
-	md2e.token = tvs;
-	md2e.freq = wght;
-	md2e.prob = p;
-	classification.distr.push_back( md2e );
-	if ( tvs == classification.answer ) {
-	  classification.prob = p;
+	tv = My_Experiment->Classify( classification.cl, vd );
+	classification.answer = tv->Name();
+	
+	classification.md  = My_Experiment->matchDepth();
+	classification.mal = My_Experiment->matchedAtLeaf();
+	
+	++classification_count;      
+	classification.cnt = vd->size(); // size of distr.
+	classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
+	
+	Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+	while ( it != vd->end() ) {
+	  std::string tvs  = it->second->Value()->Name();
+	  long        wght = it->second->Weight(); // absolute frequency.
+	  double      p    = (double)wght / (double)vd->totalSize();
+	  md2_elem md2e;
+	  md2e.token = tvs;
+	  md2e.freq = wght;
+	  md2e.prob = p;
+	  classification.distr.push_back( md2e );
+	  if ( tvs == classification.answer ) {
+	    classification.prob = p;
+	  }
+	  ++it;
 	}
-	++it;
-      }
 
-      if ( classification.answer == classification.target ) {
-	++correct;
-      }
+	if ( classification.answer == classification.target ) {
+	  ++correct;
+	}
 #endif
+      } else if ( type == 2 ) {
+	// Probabilities from...?
+	words.clear();
+
+	// Remove target, tokenize.
+	//
+	but_last_word( classification.cl, classification.cl );
+	Tokenize( classification.cl, words, ' ' ); // remove doubles, like "_"?
+	
+	classification.answer = "DIST";
+	classification.md  = 0;
+	classification.mal = false;
+	classification.cnt = 0;
+	classification.distr_count = -1;
+
+	++classification_count;  
+
+	std::vector<std::string>::iterator it;
+
+	// Make the distribution unique? Or do we let the frequency
+	// affect the distribution as well (probs will be added)?
+	//
+	sort( words.begin(), words.end() );
+	it = unique (words.begin(), words.end());
+	words.resize( it - words.begin() );
+
+	it = words.begin();      
+	while ( it != words.end() ) {
+	  std::string tvs  = *it;
+	  if ( tvs != "_" ) {
+	    long        wght = 1;// ?!
+	    double      p    = distprob; // ?!
+	    md2_elem md2e;
+	    md2e.token = tvs;
+	    md2e.freq = wght;
+	    md2e.prob = p;
+	    classification.distr.push_back( md2e );
+	    if ( tvs == classification.answer ) {
+	      classification.prob = p;
+	    }
+	  }
+	  ++it;	  
+	} //while
+
+      } //type == 2
+
       return true;
     } else {
       return false;
@@ -162,8 +242,10 @@ class Classifier {
   void init() {
     correct = 0;
 #ifdef TIMBL
-    My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( ibasefile );
+    if ( type == 1 ) {
+      My_Experiment = new Timbl::TimblAPI( timbl );
+      (void)My_Experiment->GetInstanceBase( ibasefile );
+    }
 #endif
   }
 

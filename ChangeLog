@@ -1,3 +1,10 @@
+1.15.0	Function 'md2' can now take a file with a distribution (generated
+	by the 'lcontext' function) and add it like it was output from a
+	classifier to the merged distribution. In this version the
+	probability for each element is set to a fixed value in the kvs
+	file (parameter 'distprob'). Fixed small bug in counting of
+	correct classifications in the merged distribution.
+	
 1.14.16	Fixed bug in classifier weight (which was ignored) in 'md' and
 	'md2'. Added filename parameter in 'md2' to be able to collapse
 	'md' and 'md2' in one function.

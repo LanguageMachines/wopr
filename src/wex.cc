@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2009 Peter Berck                                         *
+ * Copyright 2007 - 2010 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -282,15 +282,7 @@ int multi( Logfile& l, Config& c ) {
 }
 #endif
 
-// Fill a keyword value hash
-// What we want:
-//
-// classifier:one
-// one:ibasefile:something.ws3.ibase
-// one:ws:3
-// one:foo:bar
-// classifier:two
-// ...
+// Fill a keyword value.
 //
 int read_kv_from_file( std::ifstream& file,
 		       std::map<std::string, std::string>& res )  {
@@ -310,6 +302,15 @@ int read_kv_from_file( std::ifstream& file,
   return 0;
 }
 
+// Read the classifiers.
+// classifier: <NAME> begins a new classifier "block"
+// ibasefile: <FILE> the trained instance base
+// ws: <N> windowing size, only used in old multi function
+// timbl: <PARAMS> how the instance based was trained
+// testfile: <FILE> file to run through the classifier
+// weight: <N> weight for this classifier when merging
+// distfile: <FILE> file with (global) distribution to merge
+//
 int read_classifiers_from_file( std::ifstream& file,
 				std::vector<Classifier*>& cl )  {
   std::string a_line;
@@ -338,6 +339,7 @@ int read_classifiers_from_file( std::ifstream& file,
 	// store this ibasefile
 	if ( c != NULL ) {
 	  c->set_ibasefile( rhs );
+	  c->set_type( 1 );
 	}
       } else if ( lhs == "ws" ) {
 	// store this window size
@@ -356,6 +358,15 @@ int read_classifiers_from_file( std::ifstream& file,
       } else if ( lhs == "weight" ) {
 	if ( c != NULL) {
 	  c->set_weight( stod(rhs) );
+	}
+      } else if ( lhs == "distprob" ) {
+	if ( c != NULL) {
+	  c->set_distprob( stod(rhs) );
+	}
+      } else if ( lhs == "distfile" ) {
+	if ( c != NULL) {
+	  c->set_distfile( rhs );
+	  c->set_type( 2 );
 	}
       }
     }
@@ -717,10 +728,13 @@ int multi_dist2( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       l.log( (*cli)->id );
       (*cli)->init();
-      if ( (*cli)->get_testfile() == "NONE" ) {
+      if ( ((*cli)->get_type() == 1) && ((*cli)->get_testfile() == "NONE" ) ) {
 	(*cli)->set_testfile( filename );
       }
-      (*cli)->open_file();
+      if ( (*cli)->open_file() == false ) {
+	l.log( "ERROR: cannot open testfile" );
+	return -1;
+      }
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
@@ -751,9 +765,10 @@ int multi_dist2( Logfile& l, Config& c ) {
 	double classifier_weight = classifier->get_weight();
 
 	//l.log( foo.answer + " : " + foo.cl );
-	
-	outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
-	outline   = outline + to_str(foo.md) + " " + to_str(foo.mal) + " ";
+	if ( classifier->get_type() == 1 ) {
+	  outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
+	  outline   = outline + to_str(foo.md) + " " + to_str(foo.mal) + " ";
+	}
 	outtarget = foo.target;
 	
 	if ( do_combined == true ) {
@@ -798,13 +813,11 @@ int multi_dist2( Logfile& l, Config& c ) {
 	// Loop over sorted vector, take top-n.
 	//
 	dei = distr_vec.begin();
+	combined_guess = (*dei).name; // take the first
 	while ( dei != distr_vec.end() ) { 
 	  if ( --cntr >= 0 ) {
 	    //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
 	    file_out << " " << (*dei).name << " " << (*dei).prob;
-	    if ( cntr == 0 ) { // take the first (could be more with same p).
-	      combined_guess = (*dei).name;
-	    }
 	  }
 	  dei++;
 	}
