@@ -7,30 +7,7 @@ use Getopt::Std;
 #
 # Usage:
 #
-# examine_md.pl -f testset.md 
-#
-# Input:
-#  one girl will break [ move 0.121212 , 0.0534477 ] { move 0.121458 }
-#  girl will break to [ the 0.127706 , 0.0534477 ] { the 0.173267 }
-#  will break to humiliate [ them 1 , 0.0534477 ] { them 1.00112 }
-#
-# Output (0 for wrong, 1 for right, target):
-#  00 0 break
-#  00 0 to
-#  00 0 humiliate
-#  ...
-#  00: 20/0         both wrong/combined_correct
-#  01: 1/0          second right/combined_correct
-#  10: 4/3          first right ...
-#  11: 1/1          both right ...
-#
-# Output for md2 file:
-#  00 Cady's        (0=wrong, 1=right) for each classiier,
-#  00 passion       followed by target
-#  10 for
-#  ...
-#  0: 7/1           classifier 0: 1 right out of 7
-#  1: 7/0           classifier 1: 0 right out of 7
+# examine_mc.pl -f testset.mc 
 #
 #------------------------------------------------------------------------------
 
@@ -42,7 +19,7 @@ my $file = $opt_f || 0;
 
 #------------------------------------------------------------------------------
 
-# All classifiers is binary from 0..n
+# All classifier is binary from 0..n
 
 my %scores_count;
 my %scores_right;
@@ -67,13 +44,11 @@ while ( my $line = <FH> ) {
 
   if ( $line =~ /(.*) \[ (.*) \] \{ (.*) \}/ ) {
 
-    $instance = $1;
-    @i_parts  = split (/ /, $instance);
-    $target = $i_parts[$#i_parts];
+    $target = $1;
 
     $classifications = $2;
     @c_parts  = split (/ /, $classifications);
-    for ( my $i = 0; $i <= $#c_parts;  $i += 4 ) {
+    for ( my $i = 0; $i <= $#c_parts;  $i += 4 ) { # 4 values per classifier
       if ( $c_parts[$i] eq $target ) {
 	print "1";
 	$binary .= "1";
@@ -83,10 +58,12 @@ while ( my $line = <FH> ) {
       }
     }
 
-    $best = $3;
+    $best = $3; # merged distribution
     @b_parts  = split (/ /, $best);
     $best_token = $b_parts[0];
     
+    # Combined classifier.
+    #
     ++$scores_count{$binary};
     if ( $best_token eq $target ) {
       print " 1";
@@ -96,9 +73,7 @@ while ( my $line = <FH> ) {
     }
   } elsif ( $line =~ /(.*) \[ (.*) \]/ ) {
     
-    $instance = $1;
-    @i_parts  = split (/ /, $instance);
-    $target = $i_parts[$#i_parts];
+    $target = $1;
     
     $classifications = $2;
     @c_parts  = split (/ /, $classifications);

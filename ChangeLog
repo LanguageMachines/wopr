@@ -1,3 +1,6 @@
+1.16.0	Deprecated 'md' and 'md2', put together in new 'mc':
+	multi-classifiers.  Added perl script 'examine_mc.pl'.
+	
 1.15.1	Added algorithm include.
 	
 1.15.0	Function 'md2' can now take a file with a distribution (generated

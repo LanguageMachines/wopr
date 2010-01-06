@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2009 Peter Berck                                         *
+ * Copyright 2007 - 2010 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -498,8 +498,10 @@ pt2Func2 get_function( const std::string& a_fname ) {
   } else if ( a_fname == "multi" ) { // from wex.cc
     return &multi;
   } else if ( a_fname == "md" ) { // from wex.cc
-    return &multi_dist;
+    return &multi_dist; //deprecate
   } else if ( a_fname == "md2" ) { // from wex.cc
+    return &multi_dist2;
+  } else if ( a_fname == "mc" ) { // from wex.cc
     return &multi_dist2;
   } else if ( a_fname == "correct" ) {
     return &correct;

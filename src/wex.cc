@@ -652,14 +652,14 @@ int multi_dist( Logfile& l, Config& c ) {
 
 #ifdef TIMBL
 int multi_dist2( Logfile& l, Config& c ) {
-  l.log( "multi_dist" );
+  l.log( "multi_clasifiers" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  std::string        output_filename  = kvs_filename + "_" + id + ".md2";
+  std::string        output_filename  = kvs_filename + "_" + id + ".mc";
 
   std::string        distrib;
   std::vector<std::string> distribution;
