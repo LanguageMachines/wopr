@@ -23,6 +23,8 @@ my $file = $opt_f || 0;
 
 my %scores_count;
 my %scores_right;
+my %classifiers_count;
+my %classifiers_right;
 
 open(FH, $file) || die "Can't open file.";
 
@@ -49,13 +51,16 @@ while ( my $line = <FH> ) {
     $classifications = $2;
     @c_parts  = split (/ /, $classifications);
     for ( my $i = 0; $i <= $#c_parts;  $i += 4 ) { # 4 values per classifier
+      my $cfr = sprintf("C#%01i", $i/4);
       if ( $c_parts[$i] eq $target ) {
 	print "1";
 	$binary .= "1";
+	++$classifiers_right{$cfr};
       } else {
 	print "0";
 	$binary .= "0";
       }
+      ++$classifiers_count{$cfr};
     }
 
     $best = $3; # merged distribution
@@ -78,10 +83,11 @@ while ( my $line = <FH> ) {
     $classifications = $2;
     @c_parts  = split (/ /, $classifications);
     for ( my $i = 0; $i <= $#c_parts;  $i += 4 ) {
-      ++$scores_count{$i/4};
+      my $cfr = sprintf("C#%01i", $i/4);
+      ++$classifiers_count{$cfr};
       if ( $c_parts[$i] eq $target ) {
 	print "1";
-	++$scores_right{$i/4};
+	++$classifiers_right{$cfr};
       } else {
 	print "0";
 	$binary .= "0";
@@ -92,12 +98,23 @@ while ( my $line = <FH> ) {
 }
 
 foreach my $key (sort (keys(%scores_count))) {
-  print "$key: $scores_count{$key}/";
+  print "all classifiers: $key: combined correct:";
   if ( defined $scores_right{$key} ) {
     print $scores_right{$key};
   } else {
     print "0";
   }
+  print "/$scores_count{$key}";
+  print "\n";
+}
+foreach my $key (sort (keys(%classifiers_count))) {
+  print "$key: ";
+  if ( defined $classifiers_right{$key} ) {
+    print $classifiers_right{$key};
+  } else {
+    print "0";
+  }
+  print "/$classifiers_count{$key}";
   print "\n";
 }
 

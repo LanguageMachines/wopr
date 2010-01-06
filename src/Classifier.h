@@ -176,13 +176,13 @@ class Classifier {
 	// Remove target, tokenize.
 	//
 	but_last_word( classification.cl, classification.cl );
-	Tokenize( classification.cl, words, ' ' ); // remove doubles, like "_"?
+	Tokenize( classification.cl, words, ' ' );
 	
 	classification.answer = "DIST";
 	classification.md  = 0;
 	classification.mal = false;
 	classification.cnt = 0;
-	classification.distr_count = -1;
+	classification.distr_count = words.size();
 
 	++classification_count;  
 
