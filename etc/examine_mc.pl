@@ -70,9 +70,11 @@ while ( my $line = <FH> ) {
     # Combined classifier.
     #
     ++$scores_count{$binary};
+    ++$classifiers_count{"CC"};
     if ( $best_token eq $target ) {
       print " 1";
       ++$scores_right{$binary};
+      ++$classifiers_right{"CC"};
     } else {
       print " 0";
     }
