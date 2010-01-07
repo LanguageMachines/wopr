@@ -765,6 +765,10 @@ int multi_dist2( Logfile& l, Config& c ) {
 	double classifier_weight = classifier->get_weight();
 	int    type = classifier->get_type();
 
+	if ( fabs(classifier_weight - 1.0) > 0.0001 ) { // != 1 
+	  type = 128; // we multiply
+	}
+
 	//l.log( foo.answer + " : " + foo.cl );
 	if ( classifier->get_type() == 1 ) {
 	  outline   = outline + foo.answer + " " + to_str(foo.prob)+ " ";
@@ -786,12 +790,10 @@ int multi_dist2( Logfile& l, Config& c ) {
 	    //
 	    if ( type == 1 ) {
 	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	    } else if ( type == 128 ) {
+	      combined_distr[(*dei).token] *= classifier_weight;
 	    } else if ( type == 2 ) {
-	      if ( fabs(classifier_weight - 1.0) > 0.0001 ) { // != 1
-		combined_distr[(*dei).token] *= classifier_weight;
-	      } else {
-		combined_distr[(*dei).token] += (*dei).prob;
-	      }
+	      combined_distr[(*dei).token] += (*dei).prob;
 	    }
 	    ++dei;
 	  }
