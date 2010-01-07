@@ -763,6 +763,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 
 	md2    foo = classifier->classification;
 	double classifier_weight = classifier->get_weight();
+	int    type = classifier->get_type();
 
 	//l.log( foo.answer + " : " + foo.cl );
 	if ( classifier->get_type() == 1 ) {
@@ -777,7 +778,21 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  dei = foo.distr.begin();
 	  while ( dei != foo.distr.end() ) { 
 	    //std::cout << " " << (*dei).token << " " << (*dei).prob;
-	    combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	    // If the current distr. is a type==2, we don't take the
+	    // fixed distprob, but multiply the current value with
+	    // the weight.
+	    // If the weight is 1.0, then we revert
+	    // to the old behaviour of adding the distprob.
+	    //
+	    if ( type == 1 ) {
+	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	    } else if ( type == 2 ) {
+	      if ( classifier_weight != 1.0 ) {
+		combined_distr[(*dei).token] *= classifier_weight;
+	      } else {
+		combined_distr[(*dei).token] += (*dei).prob;
+	      }
+	    }
 	    ++dei;
 	  }
 	}
