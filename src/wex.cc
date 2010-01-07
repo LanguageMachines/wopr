@@ -787,7 +787,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	    if ( type == 1 ) {
 	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
 	    } else if ( type == 2 ) {
-	      if ( classifier_weight != 1.0 ) {
+	      if ( fabs(classifier_weight - 1.0) > 0.0001 ) { // != 1
 		combined_distr[(*dei).token] *= classifier_weight;
 	      } else {
 		combined_distr[(*dei).token] += (*dei).prob;
