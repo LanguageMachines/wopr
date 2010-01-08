@@ -23,6 +23,9 @@ struct md2_elem {
   bool operator<(const md2_elem& rhs) const {
     return prob > rhs.prob;
   }
+  bool operator==(const md2_elem& rhs) const {
+    return token == rhs.token;
+  }
 };
 struct md2 {
   std::string name;
@@ -187,27 +190,36 @@ class Classifier {
 	++classification_count;  
 
 	std::vector<std::string>::iterator it;
+	std::vector<md2_elem>::iterator itf;
 
 	// Make the distribution unique? Or do we let the frequency
 	// affect the distribution as well (probs will be added)?
 	//
-	sort( words.begin(), words.end() );
-	it = unique (words.begin(), words.end());
-	words.resize( it - words.begin() );
+	// Make configurable...?
+	//
+	//sort( words.begin(), words.end() ); // sorting changes order...
+	//it = unique (words.begin(), words.end());
+	//words.resize( it - words.begin() );
 
 	it = words.begin();      
 	while ( it != words.end() ) {
 	  std::string tvs  = *it;
-	  if ( tvs != "_" ) {
+	  if ( tvs != "_" ) { // check here for if it is a double?
 	    long        wght = 1;// ?!
 	    double      p    = distprob; // ?!
 	    md2_elem md2e;
 	    md2e.token = tvs;
 	    md2e.freq = wght;
 	    md2e.prob = p;
-	    classification.distr.push_back( md2e );
-	    if ( tvs == classification.answer ) {
-	      classification.prob = p;
+	    //
+	    // Check for doubles.
+	    //
+	    itf = find(classification.distr.begin(), classification.distr.end(), md2e);
+	    if ( itf == classification.distr.end() ) { // not double
+	      classification.distr.push_back( md2e );
+	      if ( tvs == classification.answer ) {
+		classification.prob = p;
+	      }
 	    }
 	  }
 	  ++it;	  

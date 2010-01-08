@@ -1,3 +1,6 @@
+1.16.3	Internal changes: changed removal of doubles in 'mc' to checking for
+	doubles when adding to vector.
+	
 1.16.2	Added multiplication option to the added distribution.
 	
 1.16.1	Small fixes.

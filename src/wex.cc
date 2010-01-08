@@ -794,7 +794,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	      combined_distr[(*dei).token] *= classifier_weight;
 	    } else if ( type == 2 ) {
 	      combined_distr[(*dei).token] += (*dei).prob;
-	    }
+	    } // other type, divide by index number etc.
 	    ++dei;
 	  }
 	}
