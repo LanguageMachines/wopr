@@ -1,3 +1,6 @@
+1.16.4	Added extra subtype to Classifier.h to distinguish between the
+	multiplying and adding type-2.
+	
 1.16.3	Internal changes: changed removal of doubles in 'mc' to checking for
 	doubles when adding to vector.
 	

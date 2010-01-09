@@ -735,6 +735,15 @@ int multi_dist2( Logfile& l, Config& c ) {
 	l.log( "ERROR: cannot open testfile" );
 	return -1;
       }
+      if ( (*cli)->get_type() == 2 ) {
+	if ( fabs((*cli)->get_weight() - 1.0) > 0.0001 ) {
+	  l.log( "Merged will be multiplied." );
+	  (*cli)->set_subtype(1);
+	} else {
+	  l.log( "Distribution will be added." );
+	  (*cli)->set_subtype(2);
+	}
+      }
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
@@ -764,10 +773,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	md2    foo = classifier->classification;
 	double classifier_weight = classifier->get_weight();
 	int    type = classifier->get_type();
-
-	if ( fabs(classifier_weight - 1.0) > 0.0001 ) { // != 1 
-	  type = 128; // we multiply
-	}
+	int    subtype = classifier->get_subtype();
 
 	//l.log( foo.answer + " : " + foo.cl );
 	if ( classifier->get_type() == 1 ) {
@@ -790,10 +796,12 @@ int multi_dist2( Logfile& l, Config& c ) {
 	    //
 	    if ( type == 1 ) {
 	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
-	    } else if ( type == 128 ) {
-	      combined_distr[(*dei).token] *= classifier_weight;
 	    } else if ( type == 2 ) {
-	      combined_distr[(*dei).token] += (*dei).prob;
+	      if ( subtype == 1 ) {
+		combined_distr[(*dei).token] *= classifier_weight;
+	      } else if ( subtype == 2 ) {
+		combined_distr[(*dei).token] += (*dei).prob;
+	      }
 	    } // other type, divide by index number etc.
 	    ++dei;
 	  }

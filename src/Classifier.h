@@ -48,6 +48,7 @@ class Classifier {
  public:
   std::string id;
   int         type;
+  int         subtype;
   std::string ibasefile;
   int         ws;
   std::string timbl;
@@ -56,6 +57,7 @@ class Classifier {
   double      weight;
   double      distprob;
   long        correct; 
+  long        correct_distr;
   long        classification_count; 
   md2         classification;
   std::vector<std::string> words;
@@ -124,6 +126,13 @@ class Classifier {
     return type;
   }
 
+  void set_subtype( int t ) {
+    subtype = t;
+  }
+  int get_subtype() {
+    return subtype;
+  }
+
   bool open_file() {
     if ( type == 1 ) {
       file_in.open( testfile.c_str() );
@@ -139,8 +148,8 @@ class Classifier {
     if ( std::getline( file_in, classification.cl ) ) {
       last_word( classification.cl, classification.target );
       classification.distr.clear();
-      // Here we could discern type. target we have in gc data also.
-      if ( type == 1 ) {
+
+      if ( type == 1 ) { // A "real" classifier
 #ifdef TIMBL    
 	tv = My_Experiment->Classify( classification.cl, vd );
 	classification.answer = tv->Name();
@@ -148,7 +157,7 @@ class Classifier {
 	classification.md  = My_Experiment->matchDepth();
 	classification.mal = My_Experiment->matchedAtLeaf();
 	
-	++classification_count;      
+	++classification_count;
 	classification.cnt = vd->size(); // size of distr.
 	classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
 	
@@ -163,7 +172,7 @@ class Classifier {
 	  md2e.prob = p;
 	  classification.distr.push_back( md2e );
 	  if ( tvs == classification.answer ) {
-	    classification.prob = p;
+	    classification.prob = p; // in the distr.
 	  }
 	  ++it;
 	}
