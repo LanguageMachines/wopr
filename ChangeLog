@@ -1,3 +1,8 @@
+1.17.0	Changes in correct. Added the min_ratio variable which sets the
+	minimum ratio between the lexical freq. of a possible correction
+	to a type and the lexical frequency of the typo. Ignored when the
+	possible typo is unknown.a
+	
 1.16.4	Added extra subtype to Classifier.h to distinguish between the
 	multiplying and adding type-2.
 	

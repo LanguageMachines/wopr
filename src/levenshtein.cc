@@ -1,4 +1,26 @@
-// Include STL string type
+// ---------------------------------------------------------------------------
+// $Id$
+// ---------------------------------------------------------------------------
+
+/*****************************************************************************
+ * Copyright 2007 - 2010 Peter Berck                                         *
+ *                                                                           *
+ * This file is part of wopr.                                                *
+ *                                                                           *
+ * wopr is free software; you can redistribute it and/or modify it           *
+ * under the terms of the GNU General Public License as published by the     *
+ * Free Software Foundation; either version 2 of the License, or (at your    *
+ * option) any later version.                                                *
+ *                                                                           *
+ * wopr is distributed in the hope that it will be useful, but WITHOUT       *
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or     *
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License      *
+ * for more details.                                                         *
+ *                                                                           *
+ * You should have received a copy of the GNU General Public License         *
+ * along with wpred; if not, write to the Free Software Foundation,          *
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
+ *****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -183,7 +205,6 @@ int correct( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
-  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
@@ -195,6 +216,8 @@ int correct( Logfile& l, Config& c ) {
   int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
   int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  // ratio target_lexfreq:tvs_lexfreq
+  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -208,11 +231,11 @@ int correct( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
-  l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
   l.log( "max_distr:  "+to_str(max_distr) );
+  l.log( "min_ratio:  "+to_str(min_ratio) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -288,12 +311,20 @@ int correct( Logfile& l, Config& c ) {
 
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;      
+    }
     (void)My_Experiment->GetInstanceBase( ibasefile );
-    // My_Experiment->Classify( cl, result, distrib, distance );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;
+    }
   } catch (...) {
     l.log( "Cannot create Timbl Experiment..." );
     return 1;
   }
+  l.log( "Instance base loaded." );
 
   std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
@@ -319,9 +350,6 @@ int correct( Logfile& l, Config& c ) {
   int    sentence_wordcount = 0;
 
   while( std::getline( file_in, a_line )) {
-    if ( to_lower ) {
-      std::transform( a_line.begin(),a_line.end(),a_line.begin(),tolower ); 
-    }
 
     words.clear();
     a_line = trim( a_line );
@@ -447,38 +475,65 @@ int correct( Logfile& l, Config& c ) {
     }
     sum_logprob += logprob;
 
+    //l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
+
     // I we didn't have the correct answer in the distro, we take ld=1
     // Skip words shorter than mwl.
     //
     it = vd->begin();
     std::vector<distr_elem*> distr_vec;
     std::map<std::string,int>::iterator tvsfi;
-    if ( (target.length() > mwl) && (in_distr == false) ) {
+    double factor = 0.0;
+    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
+    if ( (target.length() > mwl) ) { //&& (in_distr == false) ) { /*new*/
       while ( it != vd->end() ) {
-	
+
+	// 20100111: freq voorspelde woord : te voorspellen woord > 1
+	//             uit de distr          target
+
 	std::string tvs  = it->second->Value()->Name();
 	double      wght = it->second->Weight();
 	int ld = lev_distance( target, tvs );
-	
+
 	// If the ld of the word is less than the minimum,
 	// we include the result in our output.
-	// Lexicon frequency of tvs...
 	//
 	if (
 	    (entropy <= max_ent) &&
-	    (cnt <= max_distr) &&
-	    ( ld <= mld ) 
+	    (cnt <= max_distr)   &&
+	    ( ld <= mld )        &&
+	    ( tvs != target ) /*<-new*/
 	    ) { 
-	  distr_elem* d = new distr_elem(); 
-	  d->name = tvs;
-	  d->freq = ld;
+	  //
+	  // So here we check frequency of tvs from the distr. with
+	  // frequency of the target.
+	  // 
+	  int tvs_lf = 0;
+	  double factor = 0.0;
+	  wfi = wfreqs.find( tvs );
+	  if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
+	    tvs_lf =  (int)(*wfi).second;
+	    factor = tvs_lf / target_lexfreq;
+	  }
+	  //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
+	  // If the target is not found (unknown words), we have no
+	  // ratio, and we only use the other parameters, ie. this
+	  // test falls through.
+	  //
+	  if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
+	    //
+	    distr_elem* d = new distr_elem(); 
+	    d->name = tvs;
+	    d->freq = ld;
 	    tvsfi = wfreqs.find( tvs );
 	    if ( tvsfi == wfreqs.end() ) {
 	      d->lexfreq = 0;
 	    } else {
 	      d->lexfreq = (double)(*tvsfi).second;
 	    }
+	    
 	    distr_vec.push_back( d );
+	  } // factor>min_ratio
 	}
 	
 	++it;

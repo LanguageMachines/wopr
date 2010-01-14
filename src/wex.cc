@@ -770,9 +770,9 @@ int multi_dist2( Logfile& l, Config& c ) {
 
       if ( go_on == true ) {
 
-	md2    foo = classifier->classification;
+	md2    foo     = classifier->classification;
 	double classifier_weight = classifier->get_weight();
-	int    type = classifier->get_type();
+	int    type    = classifier->get_type();
 	int    subtype = classifier->get_subtype();
 
 	//l.log( foo.answer + " : " + foo.cl );
@@ -788,18 +788,17 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  dei = foo.distr.begin();
 	  while ( dei != foo.distr.end() ) { 
 	    //std::cout << " " << (*dei).token << " " << (*dei).prob;
-	    // If the current distr. is a type==2, we don't take the
-	    // fixed distprob, but multiply the current value with
-	    // the weight.
-	    // If the weight is 1.0, then we revert
-	    // to the old behaviour of adding the distprob.
-	    //
-	    if ( type == 1 ) {
+	    if ( type == 1 ) { // merge normal classifier
 	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
-	    } else if ( type == 2 ) {
-	      if ( subtype == 1 ) {
+	    } else if ( type == 2 ) { // distribution
+	      if ( subtype == 1 ) { // multiply
 		combined_distr[(*dei).token] *= classifier_weight;
-	      } else if ( subtype == 2 ) {
+	      } else if ( subtype == 2 ) { // add
+		//
+		// We need some kind of normalisation here.
+		// Maybe related to best in the real/merged classification?
+		// Make these "just as important".
+		//
 		combined_distr[(*dei).token] += (*dei).prob;
 	      }
 	    } // other type, divide by index number etc.
