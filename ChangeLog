@@ -1,3 +1,5 @@
+1.17.1	Added 'id' parameter to ''correct'.
+	
 1.17.0	Changes in correct. Added the min_ratio variable which sets the
 	minimum ratio between the lexical freq. of a possible correction
 	to a type and the lexical frequency of the typo. Ignored when the

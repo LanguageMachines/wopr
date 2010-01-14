@@ -205,7 +205,13 @@ int correct( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
-  std::string        output_filename  = filename + ".sc";
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
+  if ( contains_id(filename, id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+  std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl)
@@ -231,6 +237,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
+  l.log( "id:         "+id );
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
@@ -485,7 +492,7 @@ int correct( Logfile& l, Config& c ) {
     std::map<std::string,int>::iterator tvsfi;
     double factor = 0.0;
     // if in_distr==true, we can look if att ld=1, and then at freq.factor!
-    if ( (target.length() > mwl) ) { //&& (in_distr == false) ) { /*new*/
+    if ( (target.length() > mwl) && (in_distr == false) ) {
       while ( it != vd->end() ) {
 
 	// 20100111: freq voorspelde woord : te voorspellen woord > 1
