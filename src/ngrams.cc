@@ -380,7 +380,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	      // This takes the smallest:
 	      //
 	      //if ( (*gi).second > ne.p ) { // Higher prob than stored.
-		if ( i > ne.n ) { // Higher length than stored, ignore prob
+		if ( i >= ne.n ) { // Higher length than stored, ignore prob
 		//l.log( "Replace "+ne.ngram+" with: "+matchgram+"/"+to_str(ne.p));
 		ne.p = (*gi).second;
 		ne.n = i;
@@ -406,8 +406,9 @@ int ngram_test( Logfile& l, Config& c ) {
     // Print.
     //
     results.clear();
-    double H  = 0.0;
-    int    wc = 0;
+    double H   = 0.0;
+    int    wc  = 0;
+    int    oov = 0;
     Tokenize( a_line, results, ' ' );
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       double p = (*ni).p;
@@ -418,6 +419,8 @@ int ngram_test( Logfile& l, Config& c ) {
 		 << 0 << " "
 		 << "OOV"
 		 << std::endl;
+	++wc;
+	++oov;
       } else {
 	file_out << results.at(wc) << " "
 		 << p << " "
@@ -430,7 +433,10 @@ int ngram_test( Logfile& l, Config& c ) {
 	++wc;
       }
     }
-    double pplx = pow( 2, -H/(double)wc );
+    double pplx = 0;
+    if ( (wc-oov) > 0 ) {
+      pplx = pow( 2, -H/(double)(wc-oov) );
+    }
     ngp_out << H << " " 
 	    << pplx << " "
 	    << a_line << std::endl;
