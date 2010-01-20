@@ -372,18 +372,19 @@ int ngram_test( Logfile& l, Config& c ) {
 	      ne.p = (*gi).second;
 	      ne.n = i;
 	      ne.ngram = matchgram;
-	      //l.log( to_str(ne.p));
+	      //l.log( matchgram+"/"+to_str(ne.p));
 	      best_ngrams.push_back(ne);
 	    } else {
 	      ngram_elem& ne = best_ngrams.at(word_idx);
 	      // If equal probs, take smallest or largest ngram?
 	      // This takes the smallest:
 	      //
-	      if ( (*gi).second > ne.p ) { // Higher prob than stored.
+	      //if ( (*gi).second > ne.p ) { // Higher prob than stored.
+		if ( i > ne.n ) { // Higher length than stored, ignore prob
+		//l.log( "Replace "+ne.ngram+" with: "+matchgram+"/"+to_str(ne.p));
 		ne.p = (*gi).second;
 		ne.n = i;
 		ne.ngram = matchgram;
-		//l.log( "Replace with: "+to_str(ne.p));
 	      }
 	    }
 	    
@@ -410,18 +411,24 @@ int ngram_test( Logfile& l, Config& c ) {
     Tokenize( a_line, results, ' ' );
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       double p = (*ni).p;
-      if ( p == 0 ) {
-	p = p0;
+      // Before, we set p to p0 and continued like nothing happened, but
+      if ( p == 0 ) { // OOV words are skipped in SRILM
+	file_out << "<unk> "
+		 << 0 << " "
+		 << 0 << " "
+		 << "OOV"
+		 << std::endl;
+      } else {
+	file_out << results.at(wc) << " "
+		 << p << " "
+		 << (*ni).n << " "
+		 << (*ni).ngram
+		 << std::endl;
+	/*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
+	  + "   " + (*ni).ngram );*/
+	H += log2(p);
+	++wc;
       }
-      file_out << results.at(wc) << " "
-	       << p << " "
-	       << (*ni).n << " "
-	       << (*ni).ngram
-	       << std::endl;
-      /*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
-	+ "   " + (*ni).ngram );*/
-      H += log2(p);
-      ++wc;
     }
     double pplx = pow( 2, -H/(double)wc );
     ngp_out << H << " " 

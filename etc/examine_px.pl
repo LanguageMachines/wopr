@@ -44,6 +44,9 @@ my $correct = "";
 my $cg = 0;
 my $cd = 0;
 my $ic = 0;
+my $sum_wlp = 0;
+my $sum_logprobs = 0;
+my $text_wordcount = 0;
 #--
 my $p0;
 my $p1;
@@ -115,6 +118,10 @@ while ( my $line = <FH> ) {
   }
   $var_summed += $val;
 
+  $sum_wlp += $parts[$ws+4];
+  $sum_logprobs += $parts[$ws+2];
+  ++$text_wordcount;
+
   if ( $correct eq "cg" ) {
     ++$cg;
   } elsif  ( $correct eq "cd" ) {
@@ -159,5 +166,8 @@ printf( "correct dist.: %8i (%5.2f)\n", $cd, $cd/$total*100 );
 printf( "correct total: %8i (%5.2f)\n", ($cd+$cg), ($cd+$cg)/$total*100 );
 printf( "incorrect    : %8i (%5.2f)\n", $ic, $ic/$total*100 );
 printf( "total guesses: %8i\n", $total );
-
-# To compare: judge sentences (as in mbmt), compare "rankings" from both.
+#
+printf( "sum wlp : %5.2f\n", $sum_wlp );
+printf( "ave wlp : %5.2f\n", $sum_wlp/$text_wordcount );
+#
+printf( "sum lps : %5.2f\n", $sum_logprobs );

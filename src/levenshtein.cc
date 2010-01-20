@@ -508,8 +508,7 @@ int correct( Logfile& l, Config& c ) {
 	if (
 	    (entropy <= max_ent) &&
 	    (cnt <= max_distr)   &&
-	    ( ld <= mld )        &&
-	    ( tvs != target ) /*<-new*/
+	    ( ld <= mld )     
 	    ) { 
 	  //
 	  // So here we check frequency of tvs from the distr. with

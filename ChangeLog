@@ -1,3 +1,5 @@
+1.17.2	Some clean up,  'ngt' now more like SRILM with OOV words.
+
 1.17.1	Added 'id' parameter to ''correct'.
 	
 1.17.0	Changes in correct. Added the min_ratio variable which sets the
