@@ -339,6 +339,10 @@ int ngram_test( Logfile& l, Config& c ) {
  
   l.log( "Writing output..." );
 
+  long   total_words = 0;
+  long   total_oovs  = 0;
+  double total_H     = 0.0;
+
   while( std::getline( file_in, a_line )) {
 
     a_line = trim( a_line, "\n\r " );
@@ -380,7 +384,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	      // This takes the smallest:
 	      //
 	      //if ( (*gi).second > ne.p ) { // Higher prob than stored.
-		if ( i >= ne.n ) { // Higher length than stored, ignore prob
+		if ( i > ne.n ) { // Higher length than stored, ignore prob
 		//l.log( "Replace "+ne.ngram+" with: "+matchgram+"/"+to_str(ne.p));
 		ne.p = (*gi).second;
 		ne.n = i;
@@ -439,14 +443,28 @@ int ngram_test( Logfile& l, Config& c ) {
     }
     ngp_out << H << " " 
 	    << pplx << " "
+	    << wc << " "
+	    << oov << " "
 	    << a_line << std::endl;
     // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
     // in our code, SRILM takes log10s and then pow(10) in the end.
+
+    total_words += wc;
+    total_oovs  += oov;
+    total_H     += H;
+
   } // getline
   ngp_out.close();
   file_out.close();
   file_in.close();
 
+  l.log( "Total words: "+to_str(total_words) );
+  l.log( "Total oovs: "+to_str(total_oovs) );
+  l.log( "Total log2prob: "+to_str(total_H) );
+  if ( (total_words-total_oovs) > 0 ) {
+    l.log( "Average log2prob: "+to_str( total_H/(total_words-total_oovs) ) );
+    l.log( "Average pplx: "+to_str( pow( 2, -total_H/(total_words-total_oovs))));
+  }
   c.add_kv( "ngt_file", ngt_filename );
   l.log( "SET ngt_file to "+ngt_filename );
   c.add_kv( "ngp_file", ngp_filename );

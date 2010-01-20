@@ -1,3 +1,6 @@
+1.17.4	Added avergare/word counts to 'ngt'. Added count of words and OOV
+	words to per sentence output '.ngp' files in 'ngt'.
+	
 1.17.3	Bug fixed in 'ngt', adjusted word counter with OOV words counter.
 	
 1.17.2	Some clean up,  'ngt' now more like SRILM with OOV words.
