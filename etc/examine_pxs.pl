@@ -36,7 +36,7 @@ while ( my $line = <FH> ) {
 
   # nr. #words sum(logprob) avg.pplx avg.wordlp nOOV sumlp(nOOV) std.dev(wordlp) [wordlp(each word)]
   # 0   1      2            3        4          5    6           
-  $sum_l2p += $parts[3];
+  $sum_l2p += $parts[2];
   $text_wordcount += $parts[1];
   $sum_noov_l2p += $parts[6];
   $text_noov_wordcount += $parts[5];
@@ -46,6 +46,8 @@ while ( my $line = <FH> ) {
 
 printf( "sum log2p      : %9.2f\n", $sum_l2p );
 printf( "word count     : %6i\n", $text_wordcount );
+printf( "ave log2p      : %9.2f\n", $sum_l2p/$text_wordcount );
+printf( "ave pplxs      : %9.2f\n", 2**(-$sum_l2p/$text_wordcount) );
 print "\n";
 #
 printf( "sum noov log2p : %9.2f\n", $sum_noov_l2p );
