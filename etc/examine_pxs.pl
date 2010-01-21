@@ -40,22 +40,26 @@ while ( my $line = <FH> ) {
   $text_wordcount += $parts[1];
   $sum_noov_l2p += $parts[6];
   $text_noov_wordcount += $parts[5];
-  ++$file_linecount;
 
+  #printf( "%7.2f %7.2f\n", $parts[2]/$parts[1], 2**(-$parts[2]/$parts[1]) );
+  #printf( "%7.2f %7.2f\n", $parts[6]/$parts[5], 2**(-$parts[6]/$parts[5]) );
+  printf( "%7.2f\n", 2**(-$parts[6]/$parts[5]) );
+
+  ++$file_linecount;
 }
 
 printf( "sum log2p      : %9.2f\n", $sum_l2p );
-printf( "word count     : %6i\n", $text_wordcount );
+printf( "word count     : %7i\n", $text_wordcount );
 printf( "ave log2p      : %9.2f\n", $sum_l2p/$text_wordcount );
 printf( "ave pplxs      : %9.2f\n", 2**(-$sum_l2p/$text_wordcount) );
 print "\n";
 #
 printf( "sum noov log2p : %9.2f\n", $sum_noov_l2p );
-printf( "number noov    : %6i\n", $text_noov_wordcount );
+printf( "number noov    : %7i\n", $text_noov_wordcount );
 printf( "ave noov log2p : %9.2f\n", $sum_noov_l2p/$text_noov_wordcount );
 printf( "ave pplxs      : %9.2f\n", 2**(-$sum_noov_l2p/$text_noov_wordcount) );
 print "\n";
-printf( "number oov     : %5i\n", $text_wordcount-$text_noov_wordcount );
+printf( "number oov     : %7i\n", $text_wordcount-$text_noov_wordcount );
 
 __END__
 
