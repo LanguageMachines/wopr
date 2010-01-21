@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: compare_px_srilm.pl 3546 2010-01-21 15:09:55Z pberck $
+# $Id$
 #
 use strict;
 use Getopt::Std;
@@ -66,17 +66,21 @@ while ( my $line = <FHS> ) {
 	    if ( $wopr_prob / $srilm_prob >= 2 ) { 
 		$indicators += 1;
 	    }
+	    if ( $wopr_prob / $srilm_prob < 0.5 ) { 
+		$indicators += 2;
+	    }
 	} else {
 	    printf( "%6.1f ", 0 );
 	}
 	if ( $parts[$unknown_pos] eq "icu" ) {
-	    $indicators += 2;
+	    $indicators += 4;
 	}
 	#
-	# _1 - wopr_Prob > 2*srilm_Prob
-	# 1_ - unknown words
+	# __1 - wopr_Prob >= 2*srilm_Prob
+	# _1_ - wopr_Prob < 1/2*srilm_Prob
+	# 1__ - unknown words
 	#
-	printf( "[%02b] ", $indicators );
+	printf( "[%03b] ", $indicators );
 	print "$parts[0]";
 	print "\n";
 	++$summary{$indicators};
@@ -85,11 +89,11 @@ while ( my $line = <FHS> ) {
 
 my $tot = 0;
 foreach my $key (sort (keys(%summary))) {
-  printf( "%02b:%6i\n", $key, $summary{$key} );
+  printf( "%03b:%6i\n", $key, $summary{$key} );
   $tot += $summary{$key};
 }
-print   "   ------\n";
-printf( "   %6i\n", $tot );
+print   "    ------\n";
+printf( "    %6i\n", $tot );
   
 close(FHS);
 close(FHW);
