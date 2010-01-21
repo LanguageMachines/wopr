@@ -11,9 +11,9 @@ use Getopt::Std;
 #                      -s nyt.tail1000.ngramlm_yt.1e5.srilm.dbg2.out 
 #
 # Wopr prob    SRILM prob      
-# 0.02734380 2 0.02352810 2    1.2 [000] is
-# 0.00032229 2 0.00015998 2    2.0 [010] indeed
-# 0.00002335 1 0.00000903 1    2.6 [010] alive
+# 0.02734380 2 0.02352810 2    1.2 [0000] is
+# 0.00032229 2 0.00015998 2    2.0 [0010] indeed
+# 0.00002335 1 0.00000903 1    2.6 [0010] alive
 #
 #------------------------------------------------------------------------------
 
@@ -58,21 +58,25 @@ while ( my $line = <FHS> ) {
 	    if ( $parts[1] / $srilm_prob >= 2 ) { 
 		$indicators += 2;
 	    }
+	    if ( $parts[1] / $srilm_prob < 0.5 ) { 
+		$indicators += 4;
+	    }
 	} else {
 	    printf( "%6.1f ", 0 );
 	}
 	if ( $parts[0] eq "<unk>" ) {
-	    $indicators += 4;
+	    $indicators += 8;
 	}
 	if ( $parts[2] != $srilm_n ) {
 	    $indicators += 1;
 	}
 	#
-	# __1 - different length grams
-	# _1_ - wopr_Prob > 2*srilm_Prob
-	# 1__ - <unk>
+	# ___1 - different length grams
+	# __1_ - wopr_Prob > 2*srilm_Prob
+	# _1__ - wopr_Prob < 1/2*srilm_Prob
+	# 1___ - <unk>
 	#
-	printf( "[%03b] ", $indicators );
+	printf( "[%04b] ", $indicators );
 	print "$parts[0]";
 	print "\n";
 	++$summary{$indicators};
@@ -81,11 +85,11 @@ while ( my $line = <FHS> ) {
 
 my $tot = 0;
 foreach my $key (sort (keys(%summary))) {
-  printf( "%03b:%6i\n", $key, $summary{$key} );
+  printf( "%04b:%6i\n", $key, $summary{$key} );
   $tot += $summary{$key};
 }
-print   "    ------\n";
-printf( "    %6i\n", $tot );
+print   "     ------\n";
+printf( "     %6i\n", $tot );
   
 close(FHS);
 close(FHW);
