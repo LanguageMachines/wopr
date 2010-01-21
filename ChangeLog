@@ -1,3 +1,6 @@
+1.18.1	Added "u" indication for unknown words in '.px' output. It is
+	appended to the "cg, cd, ic" indicator.
+	
 1.18.0	Added the logprob sum for none OOV words to 'pplx_simple', changed
 	fileformat for '.pxs' files!
 	

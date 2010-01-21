@@ -3543,12 +3543,16 @@ int pplx_simple( Logfile& l, Config& c ) {
     file_out << word_lp << ' ';
 
     if ( answer == target ) {
-      file_out << "cg "; // correct guess
+      file_out << "cg"; // correct guess
     } else if ( (answer != target) && (target_in_dist == true) ) {
-      file_out << "cd "; // correct distr.
+      file_out << "cd"; // correct distr.
     } else {
-      file_out << "ic "; // incorrect
+      file_out << "ic"; // incorrect
     }
+    if ( target_unknown == true ) {
+      file_out << "u";
+    }
+    file_out << " ";
 
     // New in 1.10.0, the matchDepth and matchedAtLeaf
     //

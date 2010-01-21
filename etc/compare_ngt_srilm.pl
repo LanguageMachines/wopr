@@ -10,6 +10,7 @@ use Getopt::Std;
 # compare_ngt_srilm.pl -f nyt.il1000_20100120_1e5.ngt3 
 #                      -s nyt.tail1000.ngramlm_yt.1e5.srilm.dbg2.out 
 #
+# Wopr prob    SRILM prob      
 # 0.02734380 2 0.02352810 2    1.2 [000] is
 # 0.00032229 2 0.00015998 2    2.0 [010] indeed
 # 0.00002335 1 0.00000903 1    2.6 [010] alive
@@ -25,6 +26,8 @@ my $srilm_file = $opt_s || 0;
 my $verbose    = $opt_v || 0;
 
 #------------------------------------------------------------------------------
+
+my %summary;
 
 open(FHW, $wopr_file)  || die "Can't open file.";
 open(FHS, $srilm_file) || die "Can't open file.";
@@ -72,9 +75,18 @@ while ( my $line = <FHS> ) {
 	printf( "[%03b] ", $indicators );
 	print "$parts[0]";
 	print "\n";
+	++$summary{$indicators};
     } 
 }
 
+my $tot = 0;
+foreach my $key (sort (keys(%summary))) {
+  printf( "%03b:%6i\n", $key, $summary{$key} );
+  $tot += $summary{$key};
+}
+print   "    ------\n";
+printf( "    %6i\n", $tot );
+  
 close(FHS);
 close(FHW);
 
