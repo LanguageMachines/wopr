@@ -85,8 +85,10 @@ while ( my $line = <FHS> ) {
 
 my $tot = 0;
 foreach my $key (sort (keys(%summary))) {
-  printf( "%04b:%6i\n", $key, $summary{$key} );
-  $tot += $summary{$key};
+    $tot += $summary{$key};
+}
+foreach my $key (sort (keys(%summary))) {
+  printf( "%04b:%6i (%6.2f%%)\n", $key, $summary{$key},  $summary{$key}*100/$tot );
 }
 print   "     ------\n";
 printf( "     %6i\n", $tot );
