@@ -40,7 +40,7 @@
 #include <algorithm>
 #include <iterator>
 
-#include "math.h"
+#include <math.h>
 
 #include "qlog.h"
 #include "Config.h"

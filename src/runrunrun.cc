@@ -3093,7 +3093,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .pxs output file." ); // for pxs
     return -1;
   }
-  file_out1 << "# nr. #words sum(logprob) avg.pplx avg.wordlp std.dev(wordlp) [wordlp(each word)]" << std::endl;
+  file_out1 << "# nr. #words sum(log2prob) avg.pplx avg.wordlp #nOOV sum(nOOVl2p) std.dev(wordlp) [wordlp(each word)]" << std::endl;
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
@@ -3210,13 +3210,15 @@ int pplx_simple( Logfile& l, Config& c ) {
   // Output results on </s> or similar.
   // Or a divisor which is not processed?
   //
-  double sentence_prob      = 0.0;
-  double sum_logprob        = 0.0;
-  double sum_wlp            = 0.0; // word level pplx
-  int    sentence_wordcount = 0;
-  int    sentence_count     = 0;
-  double sum_rrank          = 0.0;
-  
+  double sentence_prob       = 0.0;
+  double sum_logprob         = 0.0;
+  double sum_wlp             = 0.0; // word level pplx
+  int    sentence_wordcount  = 0;
+  int    sentence_count      = 0;
+  double sum_rrank           = 0.0;
+  double sum_noov_logprob    = 0.0; // none OOV words
+  int    sentence_noov_count = 0; // number of none OOV words
+
   // Cache a map(string:freq) of the top-n distributions returned
   // by Timbl.
   // We get the size first, if it is bigger than the ones we have cached,
@@ -3266,7 +3268,9 @@ int pplx_simple( Logfile& l, Config& c ) {
 		<< sentence_wordcount << " "
 		<< sum_logprob << " "
 		<< avg_pplx << " "
-		<< avg_wlp << " ";
+		<< avg_wlp << " "
+		<< sentence_noov_count << " "
+		<< sum_noov_logprob << " ";
 
       double sum_avg_diff = 0;
       std::string tmp_output;
@@ -3291,8 +3295,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
       file_out1 << std::endl;
       sentence.clear();
-      sum_logprob = 0.0;
-      sentence_wordcount = 0;
+      sum_logprob         = 0.0;
+      sentence_wordcount  = 0;
+      sum_noov_logprob    = 0.0;
+      sentence_noov_count = 0;
       ++sentence_count;
       w_pplx.clear();
     } // end bos
@@ -3521,6 +3527,11 @@ int pplx_simple( Logfile& l, Config& c ) {
     sum_wlp     += word_lp;
     w_pplx.push_back( word_lp );
 
+    if ( ! target_unknown ) {
+      sum_noov_logprob += logprob; // sum none-OOV words.
+      ++sentence_noov_count;
+    }
+
     // What do we want in the output file? Write the pattern and answer,
     // the logprob, followed by the entropy (of distr.), the size of the
     // distribution returned, and the top-10 (or less) of the distribution.
@@ -3606,7 +3617,9 @@ int pplx_simple( Logfile& l, Config& c ) {
 		<< sentence_wordcount << " "
 		<< sum_logprob << " "
 		<< avg_pplx << " "
-		<< avg_wlp << " ";
+		<< avg_wlp << " "
+		<< sentence_noov_count << " "
+		<< sum_noov_logprob << " ";
 
       double sum_avg_diff = 0;
       std::string tmp_output;
@@ -3627,8 +3640,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       //file_out1 << std_dev;
       file_out1 << std_dev << tmp_output;
       file_out1 << std::endl;
-      sum_logprob = 0.0;
-      sentence_wordcount = 0;
+      sum_logprob         = 0.0;
+      sentence_wordcount  = 0;
+      sentence_noov_count = 0;
+      sum_noov_logprob    = 0.0;
       ++sentence_count;
       w_pplx.clear();
     }
@@ -3657,7 +3672,9 @@ int pplx_simple( Logfile& l, Config& c ) {
 		<< sentence_wordcount << " "
 		<< sum_logprob << " "
 		<< avg_pplx << " "
-		<< avg_wlp << " ";
+		<< avg_wlp << " "
+		<< sentence_noov_count << " "
+		<< sum_noov_logprob << " ";
 
       double sum_avg_diff = 0;
       std::string tmp_output;
@@ -3678,8 +3695,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       //file_out1 << std_dev;
       file_out1 << std_dev << tmp_output;
       file_out1 << std::endl;
-      sum_logprob = 0.0;
-      sentence_wordcount = 0;
+      sum_logprob         = 0.0;
+      sentence_wordcount  = 0;
+      sentence_noov_count = 0;
+      sum_noov_logprob    = 0.0;
       ++sentence_count;
       w_pplx.clear();
   }

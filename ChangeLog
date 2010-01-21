@@ -1,3 +1,6 @@
+1.18.0	Added the logprob sum for none OOV words to 'pplx_simple', changed
+	fileformat for '.pxs' files!
+	
 1.17.4	Added avergare/word counts to 'ngt'. Added count of words and OOV
 	words to per sentence output '.ngp' files in 'ngt'.
 	
