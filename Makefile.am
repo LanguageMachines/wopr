@@ -53,6 +53,11 @@ EXTRA_DIST = \
 	etc/generator.script \
 	etc/graph_wplex.pl \
 	etc/examine_px.pl \
+	etc/examine_pxs.pl \
+	etc/compare_px_srilm.pl \
+	etc/compare_ngt_srilm.pl \
+	etc/examine_md.pl \
+	etc/examine_mc.pl \
 	bootstrap.sh \
 	web/generator/generator.css \
 	web/generator/generator.php \
