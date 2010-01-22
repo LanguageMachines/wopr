@@ -36,6 +36,8 @@ my $unknown_pos  = $lc + $rc + 5;
 open(FHW, $wopr_file)  || die "Can't open file.";
 open(FHS, $srilm_file) || die "Can't open file.";
 
+my $idx = 0;
+
 while ( my $line = <FHS> ) {
     
 #logprob= -24.6601 ppl= 292.419 ppl1= 549.549
@@ -53,6 +55,7 @@ while ( my $line = <FHS> ) {
 	my $sum_noov_l2p += $parts[6];
 	my $text_noov_wordcount += $parts[5];
 
+	printf( "%4d ", $idx++ );
 	printf( "%7.2f ", 2**(-$parts[2]/$parts[1]) );
 	printf( "%7.2f ", 2**(-$parts[6]/$parts[5]) );
 	printf( "%7.2f %7.2f\n", $srilm_ppl, $srilm_ppl1 );
