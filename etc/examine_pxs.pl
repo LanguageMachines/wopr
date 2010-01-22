@@ -1,8 +1,30 @@
 #!/usr/bin/perl -w
+# $Id$
 #
 use strict;
 use Getopt::Std;
 
+#------------------------------------------------------------------------------
+#
+# Shows a list with the perplexity of each sentence.
+
+# examine_pxs.pl -f nyt.tail1000.l2r0_20100121_1e5.pxs 
+#  285.45
+#  354.38
+# 1507.52
+#  ...
+# sum log2p      : -203123.32
+# word count     :   22829
+# ave log2p      :     -8.90
+# ave pplxs      :    476.92
+#
+# sum noov log2p : -179032.00
+# number noov    :   21688
+# ave noov log2p :     -8.25
+# ave pplxs      :    305.47
+#
+# number oov     :    1141
+#
 #------------------------------------------------------------------------------
 
 use vars qw/ $opt_b $opt_e $opt_f $opt_g $opt_l $opt_r $opt_v $opt_w /;
@@ -43,6 +65,7 @@ while ( my $line = <FH> ) {
 
   #printf( "%7.2f %7.2f\n", $parts[2]/$parts[1], 2**(-$parts[2]/$parts[1]) );
   #printf( "%7.2f %7.2f\n", $parts[6]/$parts[5], 2**(-$parts[6]/$parts[5]) );
+  printf( "%7.2f ", 2**(-$parts[2]/$parts[1]) );
   printf( "%7.2f\n", 2**(-$parts[6]/$parts[5]) );
 
   ++$file_linecount;
