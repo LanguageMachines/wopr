@@ -6,12 +6,13 @@ use Getopt::Std;
 
 #------------------------------------------------------------------------------
 #
-# Shows a list with the perplexity of each sentence.
-
+# Shows a list with the perplexity of each sentence, followed by
+# the perplexity calculated on only known words (a la SRILM).
+#
 # examine_pxs.pl -f nyt.tail1000.l2r0_20100121_1e5.pxs 
-#  285.45
-#  354.38
-# 1507.52
+#  877.19  285.45
+#  635.67  354.38
+# 1507.52 1507.52
 #  ...
 # sum log2p      : -203123.32
 # word count     :   22829
