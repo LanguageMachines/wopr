@@ -83,11 +83,11 @@ foreach my $key (sort (keys(%summary))) {
     $tot += $summary{$key};
 }
 foreach my $key (sort (keys(%summary))) {
-    printf( "%02b:%6i (%6.2f%%)\n", $key, $summary{$key},
+    printf( "# %02b:%6i (%6.2f%%)\n", $key, $summary{$key},
 	                            $summary{$key}*100/$tot );
 }
-print   "   ------\n";
-printf( "   %6i\n", $tot );
+print   "#    ------\n";
+printf( "#    %6i\n", $tot );
 
 close(FHS);
 close(FHW);
