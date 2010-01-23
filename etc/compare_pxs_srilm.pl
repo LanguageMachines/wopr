@@ -39,28 +39,55 @@ open(FHS, $srilm_file) || die "Can't open file.";
 my $idx = 0;
 
 while ( my $line = <FHS> ) {
-    
-#logprob= -24.6601 ppl= 292.419 ppl1= 549.549
+
+    if ( $line =~ /file / ) {
+	$line = <FHS>;
+	next; #end
+    }
+
+    #logprob= -24.6601 ppl= 292.419 ppl1= 549.549
     if ( $line =~ /ppl= (.*) ppl1= (.*)/ ) {
-	#print $line;
-	
+	print $line;
+
 	my $srilm_ppl  = $1;
 	my $srilm_ppl1 = $2;
 
 	my $wline = get_next_wopr();
 	my @parts  = split (/ /, $wline);
 
-	my $sum_l2p += $parts[2];
+	my $sum_l2p        += $parts[2];
 	my $text_wordcount += $parts[1];
-	my $sum_noov_l2p += $parts[6];
+	my $sum_noov_l2p   += $parts[6];
 	my $text_noov_wordcount += $parts[5];
 
-	printf( "%4d ", $idx++ );
-	printf( "%7.2f ", 2**(-$parts[2]/$parts[1]) );
-	printf( "%7.2f ", 2**(-$parts[6]/$parts[5]) );
+	#printf( "%4d ", $idx++ );
+	my $wopr_ppl  = 2**(-$parts[2]/$parts[1]);
+	my $wopr_ppl1 = 2**(-$parts[6]/$parts[5]); #comparable to SRILM
+
+	printf( "%7.2f %7.2f ", $wopr_ppl, $wopr_ppl1 );
 	printf( "%7.2f %7.2f\n", $srilm_ppl, $srilm_ppl1 );
+	
+	my $indicator = 0;
+	my $ratio = $wopr_ppl1 / $srilm_ppl;
+	if ( $ratio >= 2 ) {
+	    $indicator += 1;
+	} elsif ( $ratio < 0.5 ) {
+	    $indicator += 2;
+	}
+	++$summary{$indicator};
     } 
 }
+
+my $tot = 0;
+foreach my $key (sort (keys(%summary))) {
+    $tot += $summary{$key};
+}
+foreach my $key (sort (keys(%summary))) {
+    printf( "%02b:%6i (%6.2f%%)\n", $key, $summary{$key},
+	                            $summary{$key}*100/$tot );
+}
+print   "   ------\n";
+printf( "   %6i\n", $tot );
 
 close(FHS);
 close(FHW);
