@@ -47,7 +47,7 @@ while ( my $line = <FHS> ) {
 
     #logprob= -24.6601 ppl= 292.419 ppl1= 549.549
     if ( $line =~ /ppl= (.*) ppl1= (.*)/ ) {
-	print $line;
+	#print $line;
 
 	my $srilm_ppl  = $1;
 	my $srilm_ppl1 = $2;
