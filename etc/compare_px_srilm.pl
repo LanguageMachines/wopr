@@ -31,7 +31,7 @@ my $rc         = $opt_r || 0;
 
 my %summary;
 my $log2prob_pos = $lc + $rc + 2;
-my $target_pos   = $lc + $rc + 1;
+my $target_pos   = $lc + $rc + 0;
 my $unknown_pos  = $lc + $rc + 5;
 
 open(FHW, $wopr_file)  || die "Can't open file.";
@@ -81,7 +81,7 @@ while ( my $line = <FHS> ) {
 	# 1__ - unknown words
 	#
 	printf( "[%03b] ", $indicators );
-	print "$parts[0]";
+	print "$target";
 	print "\n";
 	++$summary{$indicators};
     } 
