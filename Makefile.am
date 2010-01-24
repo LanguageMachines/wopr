@@ -56,6 +56,7 @@ EXTRA_DIST = \
 	etc/examine_pxs.pl \
 	etc/compare_px_srilm.pl \
 	etc/compare_ngt_srilm.pl \
+	etc/compare_ngp_srilm.pl \
 	etc/examine_md.pl \
 	etc/examine_mc.pl \
 	bootstrap.sh \
