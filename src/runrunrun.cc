@@ -3549,7 +3549,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     } else {
       file_out << "ic"; // incorrect
     }
-    if ( target_unknown == true ) {
+    if ( (total_count > 0) && (target_unknown == true) ) {
       file_out << "u";
     }
     file_out << " ";

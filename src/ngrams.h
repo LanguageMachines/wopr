@@ -1,7 +1,7 @@
 // $Id$
 
 /*****************************************************************************
- * Copyright 2009 Peter Berck                                                *
+ * Copyright 2010 Peter Berck                                                *
  *                                                                           *
  * This file is part of PETeR.                                               *
  *                                                                           *
@@ -36,5 +36,6 @@ int ngram_list( Logfile&, Config& );
 int ngram_test( Logfile&, Config& );
 void last_word( std::string&, std::string& );
 void but_last_word( std::string&, std::string& );
+void split( std::string&, std::string&, std::string& );
 
 #endif

@@ -1,3 +1,5 @@
+1.18.2	Fixed unnecessary printing of "u" in '.px' output.
+	
 1.18.1	Added "u" indication for unknown words in '.px' output. It is
 	appended to the "cg, cd, ic" indicator.
 	
