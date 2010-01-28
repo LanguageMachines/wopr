@@ -67,8 +67,9 @@ while ( my $line = <FH> ) {
   #printf( "%7.2f %7.2f\n", $parts[2]/$parts[1], 2**(-$parts[2]/$parts[1]) );
   #printf( "%7.2f %7.2f\n", $parts[6]/$parts[5], 2**(-$parts[6]/$parts[5]) );
   printf( "%7.2f ", 2**(-$parts[2]/$parts[1]) );
-  printf( "%7.2f\n", 2**(-$parts[6]/$parts[5]) );
-
+  if ( $parts[5] != 0 ) {
+    printf( "%7.2f\n", 2**(-$parts[6]/$parts[5]) );
+  }
   ++$file_linecount;
 }
 
