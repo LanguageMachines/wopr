@@ -47,7 +47,7 @@ while ( my $line = <FHS> ) {
 
 	my $wline;
 	if ( $line =~ /p\( <\/s> / ) {
-	  $wline = "N.A 0 0 N.A.";
+	  $wline = "</s> 0 0 N.A.";
 	} else {
 	  $wline = get_next_wopr();
 	}
