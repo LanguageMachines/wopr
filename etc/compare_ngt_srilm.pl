@@ -45,7 +45,12 @@ while ( my $line = <FHS> ) {
 	}
 	#print "$srilm_prob\n";
 
-	my $wline = get_next_wopr();
+	my $wline;
+	if ( $line =~ /p\( <\/s> / ) {
+	  $wline = "N.A 0 0 N.A.";
+	} else {
+	  $wline = get_next_wopr();
+	}
 	my @parts  = split (/ /, $wline);
 
 	printf( "%.8f ", $parts[1] );
