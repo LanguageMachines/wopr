@@ -50,13 +50,29 @@ while ( my $line = <FHS> ) {
 	}
 	#print "$srilm_prob\n";
 
-	my $wline = get_next_wopr();
-	my @parts  = split (/ /, $wline);
+	my $wline;
+	my @parts = [];
+	my $target;
+	my $wopr_log2prob;
+	my $wopr_prob;
+	my $icu;
+	my $extra = 0;
+	if ( $line =~ /p\( <\/s> / ) {
+	  $extra = 1;
+	  $target        = "N.A.";
+	  $wopr_log2prob = 0.0;
+	  $wopr_prob     = 0.0;
+	  $icu     = "..";
+	} else {
+	  $wline = get_next_wopr();
+	  @parts  = split (/ /, $wline);
+	  $target        = $parts[ $target_pos ];
+	  $wopr_log2prob = $parts[ $log2prob_pos ];
+	  $wopr_prob     = 2 ** $wopr_log2prob;
+	  $icu           = $parts[$unknown_pos];
+	}
 
-	my $target        = $parts[ $target_pos ];
-	my $wopr_log2prob = $parts[ $log2prob_pos ];
-	my $wopr_prob     = 2 ** $wopr_log2prob;
-	
+
 	printf( "%.8f ", $wopr_prob );
 	printf( "%.8f ", $srilm_prob );
 	print "$srilm_n ";
@@ -72,7 +88,7 @@ while ( my $line = <FHS> ) {
 	} else {
 	    printf( "%6.1f ", 0 );
 	}
-	if ( $parts[$unknown_pos] eq "icu" ) {
+	if ( $icu eq "icu" ) {
 	    $indicators += 4;
 	}
 	#
