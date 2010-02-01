@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: compare_ngt_srilm.pl 3609 2010-01-29 11:38:13Z pberck $
+# $Id$
 #
 use strict;
 use Getopt::Std;
