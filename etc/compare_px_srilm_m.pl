@@ -84,6 +84,9 @@ while ( my $line = <FHS> ) {
 	  $icu           = $parts[$unknown_pos];
 	}
 
+	if ( $icu eq "icu" ) {
+	    $wopr_prob = 0.0;
+	}
 
 	printf( "%.8f ", $wopr_prob );
 	printf( "%.8f ", $srilm_prob );
