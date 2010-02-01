@@ -106,10 +106,10 @@ while ( my $line = <FHS> ) {
 	my $indicators = 0;
 	if ( $srilm_prob > 0 ) {
 	    printf( "%6.1f ", $wopr_prob / $srilm_prob );
-	    if ( $wopr_prob / $srilm_prob >= 2 ) { 
+	    if ( $wopr_prob / $srilm_prob > 1.1 ) {  
 		$indicators += 1;
 	    }
-	    if ( $wopr_prob / $srilm_prob < 0.5 ) { 
+	    if ( $srilm_prob / $wopr_prob > 1.1 ) {  
 		$indicators += 2;
 	    }
 	} else {
