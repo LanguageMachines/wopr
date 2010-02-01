@@ -69,6 +69,10 @@ while ( my $line = <FHS> ) {
 	} else {
 	    ++$wordcount;
 	}
+	my $unknown = 0;
+	if ( $line =~ /p\( <unk> / ) {
+	    $unknown = 1;
+	}
 	if ( 1 == 2 ) { #$line =~ /p\( <\/s> / ) {
 	  $extra = 1;
 	  $target        = "</s>";
@@ -84,7 +88,7 @@ while ( my $line = <FHS> ) {
 	  $icu           = $parts[$unknown_pos];
 	}
 
-	if ( $icu eq "icu" ) {
+	if ( $unknown == 1 ) { #if ( $icu eq "icu" ) {
 	    $wopr_prob = 0.0;
 	}
 
@@ -111,7 +115,7 @@ while ( my $line = <FHS> ) {
 	} else {
 	    printf( "%6.1f ", 0 );
 	}
-	if ( $icu eq "icu" ) {
+	if ( $unknown == 1 ) { # if ( $icu eq "icu" ) {
 	    $indicators += 4;
 	    ++$oovcount;
 	}
