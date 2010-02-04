@@ -23,21 +23,29 @@ then
 fi
 #
 PID=$1   # The process ID
-LIMIT=$2 # kB
+LIMIT=$ # kB
+#
+SLEEP=10
 #
 # Warn if we almost reach $LIMIT
 #
 WARN=$(echo "scale=0; $LIMIT-($LIMIT/95)" | bc)
 WARNED=0
 #
+PREV=`ps --no-header -p $PID -o rss`
+#
 echo "Watching pid:$PID, warn:$WARN, limit:$LIMIT"
 #
 while true;
   do
-  ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
+  #ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
   MEM=`ps --no-header -p $PID -o rss`
-  PERC=$(echo "scale=1; $MEM / $LIMIT * 100" | bc)
-  echo "$PID now $MEM/$LIMIT ($PERC %)."
+  PERC=$(echo "scale=1; $MEM * 100 / $LIMIT" | bc)
+  DIFF=$(echo "scale=0; $MEM - $PREV" | bc)
+  PREV=$MEM
+  TIME=`ps --no-header -p $PID -o etime`
+  echo -e "\r                                                                \c"
+  echo -e "\r$PID: $MEM/$LIMIT [$DIFF]  ($PERC %)  $TIME\c"
   if test $WARNED -eq 0 -a $MEM -gt $WARN
   then
     echo "Eeeeh! Limit almost reached"
@@ -60,5 +68,5 @@ while true;
     fi
     exit
   fi
-  sleep 10
+  sleep $SLEEP
 done
