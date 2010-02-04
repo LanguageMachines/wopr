@@ -34,12 +34,12 @@ while true;
   do
   ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
   MEM=`ps --no-header -p $PID -o rss`
-  if test $MEM -gt $WARN -a $WARNED -eq 0
+  if test $WARNED -eq 0 -a $MEM -gt $WARN
   then
     echo "Eeeeh! Limit almost reached"
     if test $MAILTO != ""
     then
-      echo "Warning limit!" | mail -s "Warning limit!" $MAILTO
+      echo "Warning:\n$PID reached $WARN" | mail -s "Warning limit!" $MAILTO
     fi
     WARNED=1
   fi
