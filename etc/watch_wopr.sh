@@ -25,9 +25,9 @@ fi
 PID=$1   # The process ID
 LIMIT=$2 # kB
 #
-# Warn if we reach 90% of limit.
+# Warn if we almost reach $LIMIT
 #
-WARN=$(echo "scale=0; $LIMIT-($LIMIT/10)" | bc)
+WARN=$(echo "scale=0; $LIMIT-($LIMIT/95)" | bc)
 WARNED=0
 #
 while true;
@@ -39,7 +39,7 @@ while true;
     echo "Eeeeh! Limit almost reached"
     if test $MAILTO != ""
     then
-      echo "Warning:\n$PID reached $WARN" | mail -s "Warning limit!" $MAILTO
+      echo "Warning: $PID reached $WARN" | mail -s "Warning limit!" $MAILTO
     fi
     WARNED=1
   fi
