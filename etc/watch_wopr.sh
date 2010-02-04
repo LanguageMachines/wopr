@@ -22,8 +22,8 @@ then
   exit
 fi
 #
-LIMIT=$1 # kB
-PID=$2   # The process ID
+PID=$1   # The process ID
+LIMIT=$2 # kB
 #
 # Warn if we reach 90% of limit.
 #
@@ -36,7 +36,11 @@ while true;
   MEM=`ps --no-header -p $PID -o rss`
   if test $MEM -gt $LIMIT -a $WARNED -eq 0
   then
-    echo "Warn!"
+    echo "Eeeeh! Limit almost reached"
+    if test $MAILTO != ""
+    then
+      echo "Warning limit!" | mail -s "Warning limit!" $MAILTO
+    fi
     $WARNED=1
   fi
   if test $MEM -gt $LIMIT
