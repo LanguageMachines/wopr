@@ -23,7 +23,7 @@ then
 fi
 #
 PID=$1   # The process ID
-LIMIT=$ # kB
+LIMIT=$2 # kB
 #
 SLEEP=10
 #
