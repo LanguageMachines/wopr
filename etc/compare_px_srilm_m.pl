@@ -18,7 +18,7 @@ use POSIX qw(log10);
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_s $opt_v $opt_l $opt_r /;
+use vars qw/ $opt_f $opt_s $opt_v $opt_l $opt_r $opt_p /;
 
 getopts('f:s:vl:r:');
 
@@ -27,6 +27,7 @@ my $srilm_file = $opt_s || 0;
 my $verbose    = $opt_v || 0;
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
+my $do_logs    = $opt_p || 0;
 
 #------------------------------------------------------------------------------
 
@@ -50,17 +51,23 @@ while ( my $line = <FHS> ) {
 	#print $line;
 	
 	my $srilm_prob = 0;
+	my $srilm_log10prob = 0;
 	my $srilm_n    = "0";#OOV is 0
-	if ( $line =~ /\[(\d)gram\] (.*) \[/ ) {
-	    $srilm_n = $1;#substr($1, 0, 1);
-	    $srilm_prob = $2;
+	if ( $line =~ /\[(\d)gram\] (.*) \[ (.*) \]/ ) {
+	  $srilm_n = $1;#substr($1, 0, 1);
+	  $srilm_prob = $2;
+	  $srilm_log10prob = $3;
+	  if ( $srilm_log10prob eq "-inf" ) {
+	    $srilm_log10prob = 0;
+	  }
 	}
-	#print "$srilm_prob\n";
+	#print "$srilm_log10prob\n";
 
 	my $wline;
 	my @parts = [];
 	my $target;
 	my $wopr_log2prob;
+	my $wopr_log10prob;
 	my $wopr_prob;
 	my $icu;
 	my $extra = 0;
@@ -77,29 +84,40 @@ while ( my $line = <FHS> ) {
 	  $extra = 1;
 	  $target        = "</s>";
 	  $wopr_log2prob = 0.0;
+	  $wopr_log10prob = 0.0;
 	  $wopr_prob     = 0.0;
 	  $icu     = "..";
 	} else {
 	  $wline = get_next_wopr();
 	  @parts  = split (/ /, $wline);
-	  $target        = $parts[ $target_pos ];
-	  $wopr_log2prob = $parts[ $log2prob_pos ];
-	  $wopr_prob     = 2 ** $wopr_log2prob;
-	  $icu           = $parts[$unknown_pos];
+	  $target         = $parts[ $target_pos ];
+	  $wopr_log2prob  = $parts[ $log2prob_pos ];
+	  $wopr_log10prob = log2tolog10( $wopr_log2prob );
+	  $wopr_prob      = 2 ** $wopr_log2prob;
+	  $icu            = $parts[$unknown_pos];
 	}
 
 	if ( $unknown == 1 ) { #if ( $icu eq "icu" ) {
 	    $wopr_prob = 0.0;
+	    $wopr_log10prob = 0.0;
 	}
 
 	printf( "%.8f ", $wopr_prob );
 	printf( "%.8f ", $srilm_prob );
+	#printf( "%.8f ", $wopr_log10prob );
+	#printf( "%.8f ", $srilm_log10prob );
 
+	if ( $wopr_log10prob != 0 ) {
+	    $wopr_sumlog10 += $wopr_log10prob; #log10($wopr_prob);
+	}
+	if ( $srilm_log10prob != 0 ) {
+	    $srilm_sumlog10 += $srilm_log10prob; #log10($srilm_prob);
+	}
 	if ( $wopr_prob > 0 ) {
-	    $wopr_sumlog10 += log10($wopr_prob);
+	    #$wopr_sumlog10 += log10($wopr_prob);
 	}
 	if ( $srilm_prob > 0 ) {
-	    $srilm_sumlog10 += log10($srilm_prob);
+	    #$srilm_sumlog10 += log10($srilm_prob);
 	}
 
 	print "$srilm_n ";

@@ -30,10 +30,14 @@ LIMIT=$2 # kB
 WARN=$(echo "scale=0; $LIMIT-($LIMIT/95)" | bc)
 WARNED=0
 #
+echo "Watching pid:$PID, warn:$WARN, limit:$LIMIT"
+#
 while true;
   do
   ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
   MEM=`ps --no-header -p $PID -o rss`
+  PERC=$(echo "scale=1; $MEM / $LIMIT * 100" | bc)
+  echo "$PID now $MEM/$LIMIT ($PERC %)."
   if test $WARNED -eq 0 -a $MEM -gt $WARN
   then
     echo "Eeeeh! Limit almost reached"
