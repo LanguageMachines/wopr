@@ -10,7 +10,6 @@
 # sh ./watch_wopr.sh PID SIZE
 #
 # NB: doesn't check for ownership, name of process &c.
-# NB: Does not work on OS X.
 # ----
 #
 #
@@ -27,38 +26,60 @@ LIMIT=$2 # kB
 #
 SLEEP=10
 #
+PS_MEM="ps --no-header -p $PID -o rss"
+PS_TIME="ps --no-header -p $PID -o etime"
+ECHO="-e"
+MACH=`uname`
+if test $MACH == "Darwin"
+then
+  echo "Mac!"
+  PS_MEM="ps -p $PID -o rss=''"
+  PS_TIME="ps -p $PID -o etime=''"
+  ECHO=""
+fi
+#
 # Warn if we almost reach $LIMIT
 #
 WARN=$(echo "scale=0; $LIMIT-($LIMIT/95)" | bc)
 WARNED=0
+CYCLE=0
 #
-PREV=`ps --no-header -p $PID -o rss`
+PREV=`eval $PS_MEM`
 #
 echo "Watching pid:$PID, warn:$WARN, limit:$LIMIT"
 #
 while true;
   do
   #ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
-  MEM=`ps --no-header -p $PID -o rss`
+  MEM=`eval $PS_MEM`
+  # Test if length of MEM is < 1xs
+  if test ${#MEM} -lt 1
+  then
+    echo "\nProcess gone."
+    exit
+  fi
   PERC=$(echo "scale=1; $MEM * 100 / $LIMIT" | bc)
   DIFF=$(echo "scale=0; $MEM - $PREV" | bc)
   PREV=$MEM
-  TIME=`ps --no-header -p $PID -o etime`
-  echo -e "\r                                                                \c"
-  echo -e "\r$PID: $MEM/$LIMIT [$DIFF]  ($PERC %)  $TIME\c"
+  TIME=`eval $PS_TIME`
+  #process could disappear before MEM=... and here...
+  echo $ECHO "\r                                                             \c"
+  echo $ECHO "\r$PID: $MEM/$LIMIT [$DIFF]  ($PERC %)  $TIME\c"
   if test $WARNED -eq 0 -a $MEM -gt $WARN
   then
-    echo "Eeeeh! Limit almost reached"
+    echo "\nEeeeh! Limit almost reached"
     if test $MAILTO != ""
     then
       echo "Warning: $PID reached $WARN" | mail -s "Warning limit!" $MAILTO
     fi
     WARNED=1
   fi
-  if test $MEM -gt $LIMIT
+  # We don't kill before we finished one cycle. If you specify
+  # too little memory you might have time to hit ctrl-C.
+  if test $MEM -gt $LIMIT -a $CYCLE -gt 0
   then
     echo "$MEM > $LIMIT"
-    echo "KILLING PID=$PID"
+    echo "\nKILLING PID=$PID"
     kill $PID
     RES=$?
     echo "EXIT CODE=$RES"
@@ -69,4 +90,5 @@ while true;
     exit
   fi
   sleep $SLEEP
+  CYCLE=$(( $CYCLE + 1 ))
 done
