@@ -32,7 +32,6 @@ ECHO="-e"
 MACH=`uname`
 if test $MACH == "Darwin"
 then
-  echo "Mac!"
   PS_MEM="ps -p $PID -o rss=''"
   PS_TIME="ps -p $PID -o etime=''"
   ECHO=""
@@ -52,10 +51,10 @@ while true;
   do
   #ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
   MEM=`eval $PS_MEM`
-  # Test if length of MEM is < 1xs
+  # Test if length of MEM is < 1
   if test ${#MEM} -lt 1
   then
-    echo "\nProcess gone."
+    echo $ECHO "\nProcess gone."
     exit
   fi
   PERC=$(echo "scale=1; $MEM * 100 / $LIMIT" | bc)
@@ -73,12 +72,13 @@ while true;
       echo $ECHO "Warning: $PID reached $WARN" | mail -s "Warning limit!" $MAILTO
     fi
     WARNED=1
+    CYCLE=0 #skip direct kill
   fi
   # We don't kill before we finished one cycle. If you specify
   # too little memory you might have time to hit ctrl-C.
   if test $MEM -gt $LIMIT -a $CYCLE -gt 0
   then
-    echo "$MEM > $LIMIT"
+    echo $ECHO "\n$MEM > $LIMIT"
     echo $ECHO "\nKILLING PID=$PID"
     kill $PID
     RES=$?
