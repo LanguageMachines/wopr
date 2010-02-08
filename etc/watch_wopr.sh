@@ -67,10 +67,10 @@ while true;
   echo $ECHO "\r$PID: $MEM/$LIMIT [$DIFF]  ($PERC %)  $TIME\c"
   if test $WARNED -eq 0 -a $MEM -gt $WARN
   then
-    echo "\nEeeeh! Limit almost reached"
+    echo $ECHO "\nEeeeh! Limit almost reached"
     if test $MAILTO != ""
     then
-      echo "Warning: $PID reached $WARN" | mail -s "Warning limit!" $MAILTO
+      echo $ECHO "Warning: $PID reached $WARN" | mail -s "Warning limit!" $MAILTO
     fi
     WARNED=1
   fi
@@ -79,7 +79,7 @@ while true;
   if test $MEM -gt $LIMIT -a $CYCLE -gt 0
   then
     echo "$MEM > $LIMIT"
-    echo "\nKILLING PID=$PID"
+    echo $ECHO "\nKILLING PID=$PID"
     kill $PID
     RES=$?
     echo "EXIT CODE=$RES"
