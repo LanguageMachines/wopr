@@ -62,6 +62,10 @@ while true;
   if test ${#MEM} -lt 1
   then
     echo $ECHO "\nProcess gone."
+    if test $MAILTO != ""
+    then
+      echo "Process gone." | mail -s "Process gone." $MAILTO
+    fi
     exit
   fi
   PERC=$(echo "scale=1; $MEM * 100 / $LIMIT" | bc)
