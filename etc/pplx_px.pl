@@ -11,12 +11,12 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_v $opt_l $opt_r /;
+use vars qw/ $opt_f $opt_i $opt_l $opt_r /;
 
-getopts('f:s:vl:r:');
+getopts('f:s:il:r:');
 
 my $wopr_file  = $opt_f || 0;
-my $verbose    = $opt_v || 0;
+my $ignore_oov = $opt_i || 0;
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
 
@@ -25,7 +25,7 @@ my $rc         = $opt_r || 0;
 my %summary;
 my $log2prob_pos = $lc + $rc + 2;
 my $target_pos   = $lc + $rc + 0;
-my $unknown_pos  = $lc + $rc + 5;
+my $unknown_pos  = $lc + $rc + 6;
 
 my $wopr_sumlog10  = 0.0;
 my $srilm_sumlog10 = 0.0;
@@ -58,15 +58,26 @@ while ( my $line = <FHW> ) {
     $wopr_log10prob = log2tolog10( $wopr_log2prob );
     $icu            = $parts[$unknown_pos];
     
-    if ( $wopr_log10prob != 0 ) {
-      $wopr_sumlog10 += $wopr_log10prob; #log10($wopr_prob);
+    if ( $ignore_oov ) {
+      $icu = "k";
+    }
+    if ( $line =~ /<\/s>/ ) {
+      ++$sentencecount;
+    } else {
+      ++$wordcount;
+    }
+    if ( $icu eq "u" ) {
+      $indicators += 1;
+      ++$oovcount;
+    }
+
+
+    if ( ($icu eq "k") && ($wopr_log10prob != 0) ) {
+      $wopr_sumlog10 += $wopr_log10prob;
     }
 
     printf( "%.8f %8.4f %8.4f ", $wopr_prob, $wopr_log2prob, $wopr_log10prob );
     
-    if ( $icu eq "icu" ) {
-      $indicators += 4;
-    }
     #
     printf( "[$f] ", $indicators );
     print "$target";
@@ -84,6 +95,21 @@ foreach my $key (sort (keys(%summary))) {
 }
 print   "    ------\n";
 printf( "    %6i\n", $tot );
+
+print "\n";
+print "Sum log10 probs:\n";
+printf( "Wopr:  %8.2f\n", $wopr_sumlog10 );
+printf( "Wordcount: %i sentencecount: %i oovcount: %i\n", 
+	$wordcount, $sentencecount, $oovcount );
+if ( ! $ignore_oov ) {
+  printf( "Wopr ppl:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount-$oovcount+$sentencecount)));
+  printf( "Wopr ppl1:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount-$oovcount)));
+  print " (No oov words.)\n";
+} else  {
+  printf( "Wopr ppl:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount+$sentencecount)));
+  printf( "Wopr ppl1:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount)));
+  print " (With oov words.)\n";
+}
 
 close(FHW);
 
