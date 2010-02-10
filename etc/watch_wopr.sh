@@ -24,16 +24,23 @@ fi
 PID=$1   # The process ID
 LIMIT=$2 # kB
 #
+MEM_FILE=$PID"_mem.txt"
+#
 SLEEP=10
+MEMWRITE_INTERVAL=60
+MEMWRITE_LAST=0;
+DATE_CMD="date '+%s'"
 #
 PS_MEM="ps --no-header -p $PID -o rss"
 PS_TIME="ps --no-header -p $PID -o etime"
+PS_MEMFILE="ps --no-header -p $PID -o etime,rss,vsize,pcpu"
 ECHO="-e"
 MACH=`uname`
 if test $MACH == "Darwin"
 then
   PS_MEM="ps -p $PID -o rss=''"
   PS_TIME="ps -p $PID -o etime=''"
+  PS_MEMFILE="ps -p $PID -o etime='',rss='',vsize='',pcpu=''"
   ECHO=""
 fi
 #
@@ -58,7 +65,7 @@ while true;
     exit
   fi
   PERC=$(echo "scale=1; $MEM * 100 / $LIMIT" | bc)
-  DIFF=$(echo "scale=0; $MEM - $PREV" | bc)
+  DIFF=$(( $MEM - $PREV ))
   PREV=$MEM
   TIME=`eval $PS_TIME`
   #process could disappear before MEM=... and here...
@@ -79,7 +86,7 @@ while true;
   if test $MEM -gt $LIMIT -a $CYCLE -gt 0
   then
     echo $ECHO "\n$MEM > $LIMIT"
-    echo $ECHO "\nKILLING PID=$PID"
+    echo $ECHO "KILLING PID=$PID"
     kill $PID
     RES=$?
     echo "EXIT CODE=$RES"
@@ -89,6 +96,18 @@ while true;
     fi
     exit
   fi
+  #
+  # If time > memwrite_interval, write mem to file.
+  #
+  CUR_DATE=`eval $DATE_CMD`
+  DATE_DIFF=$(( $CUR_DATE - $MEMWRITE_LAST ))
+  if test $DATE_DIFF -ge $MEMWRITE_INTERVAL
+  then
+    #echo "  $MEMWRITE_LAST"
+    echo `eval $PS_MEMFILE` >> $MEM_FILE
+    MEMWRITE_LAST=$CUR_DATE
+  fi
+  #
   sleep $SLEEP
   CYCLE=$(( $CYCLE + 1 ))
 done
