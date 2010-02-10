@@ -1,3 +1,6 @@
+1.19.0	Put the printing of "u" and "k" for un/known words in its own
+	field. Change in data format for '.px' files!
+	
 1.18.2	Fixed unnecessary printing of "u" in '.px' output.
 	
 1.18.1	Added "u" indication for unknown words in '.px' output. It is

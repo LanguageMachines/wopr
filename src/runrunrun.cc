@@ -3260,7 +3260,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     // We also need this at the end of the loop!
     //
-    if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount> 0) ) {
+    if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount > 0) ) {
       double avg_ent  = sum_logprob / (double)sentence_wordcount;
       double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
       double avg_pplx = pow( 2, -avg_ent ); 
@@ -3549,10 +3549,14 @@ int pplx_simple( Logfile& l, Config& c ) {
     } else {
       file_out << "ic"; // incorrect
     }
-    if ( (total_count > 0) && (target_unknown == true) ) {
+    /*if ( (total_count > 0) && (target_unknown == true) ) {
       file_out << "u";
+      }*/
+    if ( target_unknown ) {
+      file_out << " u ";
+    } else {
+      file_out << " k ";
     }
-    file_out << " ";
 
     // New in 1.10.0, the matchDepth and matchedAtLeaf
     //
