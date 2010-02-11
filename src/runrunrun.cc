@@ -364,6 +364,34 @@ int script(Logfile& l, Config& c)  {
 	int r = system( expanded_rhs.c_str() );
 	l.log( "EXTERN result: "+to_str(r) );
       }
+      if ( lhs == "extern2" ) {
+	Tokenize( rhs, kv_pairs, ' ' );
+	std::string expanded_rhs = "";
+	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	  std::string chunk = kv_pairs.at(j);
+	  if ( chunk.substr(0, 1) == "$" ) {
+	    std::string var = chunk.substr(1, chunk.length()-1);
+	    chunk = c.get_value( var );
+	  }
+	  expanded_rhs = expanded_rhs + chunk + " ";
+	}
+	kv_pairs.clear();
+	l.log( "EXTERN2: "+expanded_rhs );
+	FILE *fp;
+	int  status;
+	char line[1024];
+	fp = popen( expanded_rhs.c_str(), "r");
+	if (fp == NULL) {
+	  /* Handle error */;
+	}
+	// extern2: wc -l ChangeLog | egrep -o "[0-9]+"
+	while (fgets(line, 1024, fp) != NULL) {
+	  line[strlen(line)-1] = '\0'; // oooh
+	  //l.log( line ); // Tokenize? add_kv()?
+	  c.add_kv( "extern", line );
+	}
+	status = pclose(fp);
+      }
       // SET: optiones:
       // set: filename:output01
       // set: oldname:$filename
@@ -388,7 +416,7 @@ int script(Logfile& l, Config& c)  {
       // Unset a variable.
       if ( lhs == "unset" ) { 
 	c.del_kv( rhs );
-	l.log( "DEL "+rhs );
+	l.log( "UNSET "+rhs );
 	kv_pairs.clear();
       }
       //

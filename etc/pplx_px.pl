@@ -23,11 +23,12 @@ my $rc         = $opt_r || 0;
 #------------------------------------------------------------------------------
 
 my %summary;
-my $log2prob_pos = $lc + $rc + 2;
-my $target_pos   = $lc + $rc + 0;
-my $unknown_pos  = $lc + $rc + 6;
-my $md_pos       = $lc + $rc + 7; #match depth
-my $ml_pos       = $lc + $rc + 8; #matched at leaf
+my $log2prob_pos  = $lc + $rc + 2;
+my $target_pos    = $lc + $rc + 0;
+my $classtype_pos = $lc + $rc + 5;
+my $unknown_pos   = $lc + $rc + 6;
+my $md_pos        = $lc + $rc + 7; #match depth
+my $ml_pos        = $lc + $rc + 8; #matched at leaf
 
 my $wopr_sumlog10  = 0.0;
 my $srilm_sumlog10 = 0.0;
@@ -35,7 +36,7 @@ my $wordcount = 0;
 my $sentencecount = 0;
 my $oovcount = 0;
 
-my $f = "%02b"; # Number of binary indicators
+my $f = "%05b"; # Number of binary indicators
 
 open(FHW, $wopr_file)  || die "Can't open file.";
 
@@ -49,6 +50,7 @@ while ( my $line = <FHW> ) {
     my $wopr_log2prob;
     my $wopr_log10prob;
     my $wopr_prob;
+    my $classtype;
     my $icu;
     my $md;
     my $ml;
@@ -63,6 +65,7 @@ while ( my $line = <FHW> ) {
     $icu            = $parts[$unknown_pos];
     $md             = $parts[$md_pos];
     $ml             = $parts[$ml_pos];
+    $classtype      = $parts[$classtype_pos];
 
     if ( $ignore_oov ) {
       $icu = "k";
@@ -78,6 +81,13 @@ while ( my $line = <FHW> ) {
     }
     if ( $ml == 1 ) {
       $indicators += 2;
+    }
+    if ( $classtype eq "cg" ) {
+      $indicators += 4;
+    } elsif ( $classtype eq "cd" ) {
+      $indicators += 8;
+    } elsif ( $classtype eq "ic" ) {
+      $indicators += 16;
     }
 
 
@@ -100,7 +110,7 @@ my $tot = 0;
 foreach my $key (sort (keys(%summary))) {
   $tot += $summary{$key};
 }
-foreach my $key (sort (keys(%summary))) {
+foreach my $key (sort { $a <=> $b } (keys(%summary))) {
   printf( "$f:%6i (%6.2f%%)\n", $key, $summary{$key},  $summary{$key}*100/$tot );
 }
 print   "    ------\n";
