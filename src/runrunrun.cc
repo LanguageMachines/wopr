@@ -1236,12 +1236,8 @@ int window_line( Logfile& l, Config& c ) {
 // copy ( targets.begin(), targets.end(), new_targets.begin()+to );
 //
 int window( std::string a_line, std::string target_str, 
-	    int lc, int rc, bool var, bool sos, bool eos,
+	    int lc, int rc, bool var,
 	    std::vector<std::string>& res ) {
-
-  if ( eos ) {
-    a_line = a_line + " </s>";
-  }
 
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
@@ -1250,9 +1246,6 @@ int window( std::string a_line, std::string target_str,
   if ( target_str == "" ) {
     targets = std::vector<std::string>( words.size(), "" ); // or nothing?
   } else {
-    if ( eos ) {
-      target_str = target_str + " </s>";
-    }
     Tokenize( target_str, targets );
   }
 
@@ -1261,13 +1254,12 @@ int window( std::string a_line, std::string target_str,
   //     back_inserter(V));   
 
   std::vector<std::string> full(lc+rc, "_"); // initialise a full window.
-  //full[lc+rc-1] = "<S>";
 
-  // Sentence markers.
-  //
-  if ( sos && lc > 0 ) {
-    full[lc-1] = "<s>";
+  int offset = 0;
+  if ( words[0] == "<s>" ) {
+    offset = 1;
   }
+
 
   //
   // ...and insert the words at the position after the left context.
@@ -1279,12 +1271,12 @@ int window( std::string a_line, std::string target_str,
   std::vector<std::string>::iterator fi;
   std::vector<std::string>::iterator ti = targets.begin();
   std::string windowed_line = "";
-  si = full.begin()+lc; // first word of sentence.
+  si = full.begin()+lc+offset; // first word of sentence.
   int factor = 0; // lc for variable length instances.
   if ( var == true ) {
     factor = lc;
   }
-  for ( int i = 0; i < words.size(); i++ ) {
+  for ( int i = offset; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
     
     for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
@@ -1295,7 +1287,7 @@ int window( std::string a_line, std::string target_str,
 	windowed_line = windowed_line + "(T) ";
 	}*/
     }
-    windowed_line = windowed_line + *(ti); // target. function to make target?
+    windowed_line = windowed_line + *(ti+offset); // target. function to make target?
     res.push_back( windowed_line );
     windowed_line.clear();
     si++;
@@ -1431,16 +1423,8 @@ int window_lr( Logfile& l, Config& c ) {
   int                lc              = stoi( c.get_value( "lc", "3" ));
   int                rc              = stoi( c.get_value( "rc", "3" ));
   int                to              = stoi( c.get_value( "to", "0" ));
-  bool               sos             = stoi( c.get_value( "sos", "0" )) == 1;
-  bool               eos             = stoi( c.get_value( "eos", "0" )) == 1;
   std::string        output_filename = filename + ".l" + to_str(lc) + 
                                                   "r" + to_str(rc);
-  if ( sos ) {
-    output_filename = output_filename + "s";
-  }
-  if ( eos ) {
-    output_filename = output_filename + "e";
-  }
   if ( to > 0 ) {
     output_filename = output_filename + "t" + to_str(to);
   } else {
@@ -1482,7 +1466,7 @@ int window_lr( Logfile& l, Config& c ) {
       if ( a_line == "" ) {
 	continue;
       }
-      window( a_line, a_line, lc, rc, false, sos, eos, results );//line1238
+      window( a_line, a_line, lc, rc, false, results );//line1238
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	file_out << *ri << "\n";
       }
@@ -1809,10 +1793,9 @@ int lexicon(Logfile& l, Config& c) {
   std::string        counts_filename = filename + ".cnt";
   std::string        anaval_filename = filename + ".av";
   std::string        mode            = c.get_value( "mode", "word" );
-  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+
   l.inc_prefix();
   l.log( "filename: "+filename );
-  l.log( "lowercase: "+to_str(to_lower) );
   l.log( "OUTPUT:   "+output_filename );
   l.log( "OUTPUT:   "+counts_filename );
   l.log( "OUTPUT:   "+anaval_filename );
@@ -1827,6 +1810,8 @@ int lexicon(Logfile& l, Config& c) {
     return 0;
   }
 
+  long line_count = 0;
+
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
@@ -1838,19 +1823,20 @@ int lexicon(Logfile& l, Config& c) {
   if ( mode == "word" ) {
     while( file_in >> a_word ) {  //word based
       
-      if ( to_lower ) {
+      /*if ( to_lower ) {
 	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
-      }
+	}*/
       ++count[ a_word ];
     }
   }
   else {
     while( std::getline( file_in, a_word ) ) {  //linebased
       
-      if ( to_lower ) {
+      /*if ( to_lower ) {
 	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
-      }
+	}*/
       ++count[ a_word ];
+      ++line_count;
     }
   }
   file_in.close();
@@ -3039,8 +3025,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                ws               = stoi( c.get_value( "ws", "3" ));
   int                lc               = stoi( c.get_value( "lc", "0" ));
   int                rc               = stoi( c.get_value( "rc", "0" ));
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                topn             = stoi( c.get_value( "topn", "0" ) );
   int                cache_size       = stoi( c.get_value( "cache", "3" ) );
   int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
@@ -3120,6 +3104,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   file_out1 << "# nr. #words sum(log2prob) avg.pplx avg.wordlp #nOOV sum(nOOVl2p) std.dev(wordlp) [wordlp(each word)]" << std::endl;
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  // Insert counts for sentence markers?
   //
   int wfreq;
   unsigned long total_count = 0;

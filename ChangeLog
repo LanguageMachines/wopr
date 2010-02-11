@@ -1,3 +1,6 @@
+1.21.0	Threw the eos/sos parameters out again, solved in a better way
+	with the 'prepare' function.
+	
 1.20.0	Implemented "SRILM" style sentence makers in window_lr. New
 	parameters for 'window_lr', 'eos:1' and 'sos:1'. Note that using
 	'eos:1' with right context can give strange patterns.
