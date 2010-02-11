@@ -936,6 +936,13 @@ int prepare( Logfile& l, Config& c ) {
   l.log( "OUTPUT  : "+output_filename );
   l.dec_prefix();
 
+  if ( file_exists( l, c, output_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
@@ -955,6 +962,9 @@ int prepare( Logfile& l, Config& c ) {
     //
     // How to split the line?
     //
+    if ( a_line == "" ) {
+      continue;
+    }
     file_out << pre_s << " "; //std::endl;
 
     /*
@@ -972,6 +982,8 @@ int prepare( Logfile& l, Config& c ) {
   file_out.close();
   file_in.close();
 
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
   return 0;
 }
 
@@ -1420,8 +1432,8 @@ int window( std::string a_line, std::string target_str,
 int window_lr( Logfile& l, Config& c ) {
   l.log( "window_lr" );
   const std::string& filename        = c.get_value( "filename" );
-  int                lc              = stoi( c.get_value( "lc", "3" ));
-  int                rc              = stoi( c.get_value( "rc", "3" ));
+  int                lc              = stoi( c.get_value( "lc", "2" ));
+  int                rc              = stoi( c.get_value( "rc", "0" ));
   int                to              = stoi( c.get_value( "to", "0" ));
   std::string        output_filename = filename + ".l" + to_str(lc) + 
                                                   "r" + to_str(rc);
