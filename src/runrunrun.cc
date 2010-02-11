@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/stat.h> 
+#include <string.h> 
 
 #include "qlog.h"
 #include "util.h"
