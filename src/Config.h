@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2005 - 2009 Peter Berck                                         *
+ * Copyright 2005 - 2010 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -74,6 +74,7 @@ public:
   void dump_kv();
   void clear_kv();
   void add_kv( const std::string&, const std::string& );
+  void del_kv( const std::string& );
   const std::string& get_value( const std::string& );
   const std::string& get_value( const std::string&, const std::string& );
 

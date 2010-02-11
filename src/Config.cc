@@ -133,6 +133,10 @@ void Config::add_kv( const std::string& k, const std::string& v ) {
   kv[k] = v;
 }
 
+void Config::del_kv( const std::string& k ) {
+  kv.erase( k );
+}
+
 const std::string& Config::get_value( const std::string& k ) {
   if ( k == "datetime" ) {
     add_kv( "datetime", the_date_time_stamp() );

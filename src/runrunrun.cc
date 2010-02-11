@@ -385,6 +385,12 @@ int script(Logfile& l, Config& c)  {
 	}
 	kv_pairs.clear();
       }
+      // Unset a variable.
+      if ( lhs == "unset" ) { 
+	c.del_kv( rhs );
+	l.log( "DEL "+rhs );
+	kv_pairs.clear();
+      }
       //
       // add: filename:foo
       // add: filename:$time

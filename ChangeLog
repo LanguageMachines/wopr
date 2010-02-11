@@ -1,3 +1,5 @@
+1.21.2	Added deleting of parameters from scripts.
+	
 1.21.1	Small fixes in 'prepare'.
 	
 1.21.0	Threw the eos/sos parameters out again, solved in a better way
