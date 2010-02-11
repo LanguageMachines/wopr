@@ -26,6 +26,8 @@ my %summary;
 my $log2prob_pos = $lc + $rc + 2;
 my $target_pos   = $lc + $rc + 0;
 my $unknown_pos  = $lc + $rc + 6;
+my $md_pos       = $lc + $rc + 7; #match depth
+my $ml_pos       = $lc + $rc + 8; #matched at leaf
 
 my $wopr_sumlog10  = 0.0;
 my $srilm_sumlog10 = 0.0;
@@ -33,7 +35,7 @@ my $wordcount = 0;
 my $sentencecount = 0;
 my $oovcount = 0;
 
-my $f = "%01b"; # Number of binary indicators
+my $f = "%02b"; # Number of binary indicators
 
 open(FHW, $wopr_file)  || die "Can't open file.";
 
@@ -48,6 +50,8 @@ while ( my $line = <FHW> ) {
     my $wopr_log10prob;
     my $wopr_prob;
     my $icu;
+    my $md;
+    my $ml;
     my $extra = 0;
     my $indicators = 0;
     
@@ -57,11 +61,13 @@ while ( my $line = <FHW> ) {
     $wopr_prob      = 2 ** $wopr_log2prob;
     $wopr_log10prob = log2tolog10( $wopr_log2prob );
     $icu            = $parts[$unknown_pos];
-    
+    $md             = $parts[$md_pos];
+    $ml             = $parts[$ml_pos];
+
     if ( $ignore_oov ) {
       $icu = "k";
     }
-    if ( $line =~ /<\/s>/ ) {
+    if ( $target eq "<\/s>" ) {
       ++$sentencecount;
     } else {
       ++$wordcount;
@@ -70,6 +76,9 @@ while ( my $line = <FHW> ) {
       $indicators += 1;
       ++$oovcount;
     }
+    if ( $ml == 1 ) {
+      $indicators += 2;
+    }
 
 
     if ( ($icu eq "k") && ($wopr_log10prob != 0) ) {
@@ -77,7 +86,8 @@ while ( my $line = <FHW> ) {
     }
 
     printf( "%.8f %8.4f %8.4f ", $wopr_prob, $wopr_log2prob, $wopr_log10prob );
-    
+    printf( "%2i %1i ", $md, $ml );
+
     #
     printf( "[$f] ", $indicators );
     print "$target";

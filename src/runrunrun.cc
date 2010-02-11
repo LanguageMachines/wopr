@@ -1236,8 +1236,12 @@ int window_line( Logfile& l, Config& c ) {
 // copy ( targets.begin(), targets.end(), new_targets.begin()+to );
 //
 int window( std::string a_line, std::string target_str, 
-	    int lc, int rc, bool var,
+	    int lc, int rc, bool var, bool sos, bool eos,
 	    std::vector<std::string>& res ) {
+
+  if ( eos ) {
+    a_line = a_line + " </s>";
+  }
 
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
@@ -1246,6 +1250,9 @@ int window( std::string a_line, std::string target_str,
   if ( target_str == "" ) {
     targets = std::vector<std::string>( words.size(), "" ); // or nothing?
   } else {
+    if ( eos ) {
+      target_str = target_str + " </s>";
+    }
     Tokenize( target_str, targets );
   }
 
@@ -1255,6 +1262,12 @@ int window( std::string a_line, std::string target_str,
 
   std::vector<std::string> full(lc+rc, "_"); // initialise a full window.
   //full[lc+rc-1] = "<S>";
+
+  // Sentence markers.
+  //
+  if ( sos && lc > 0 ) {
+    full[lc-1] = "<s>";
+  }
 
   //
   // ...and insert the words at the position after the left context.
@@ -1418,8 +1431,16 @@ int window_lr( Logfile& l, Config& c ) {
   int                lc              = stoi( c.get_value( "lc", "3" ));
   int                rc              = stoi( c.get_value( "rc", "3" ));
   int                to              = stoi( c.get_value( "to", "0" ));
+  bool               sos             = stoi( c.get_value( "sos", "0" )) == 1;
+  bool               eos             = stoi( c.get_value( "eos", "0" )) == 1;
   std::string        output_filename = filename + ".l" + to_str(lc) + 
                                                   "r" + to_str(rc);
+  if ( sos ) {
+    output_filename = output_filename + "s";
+  }
+  if ( eos ) {
+    output_filename = output_filename + "e";
+  }
   if ( to > 0 ) {
     output_filename = output_filename + "t" + to_str(to);
   } else {
@@ -1458,7 +1479,10 @@ int window_lr( Logfile& l, Config& c ) {
 
   if ( to == 0 ) {  
     while( std::getline( file_in, a_line ) ) { 
-      window( a_line, a_line, lc, rc, false, results );
+      if ( a_line == "" ) {
+	continue;
+      }
+      window( a_line, a_line, lc, rc, false, sos, eos, results );//line1238
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	file_out << *ri << "\n";
       }
