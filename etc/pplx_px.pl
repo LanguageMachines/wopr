@@ -23,6 +23,7 @@ my $rc         = $opt_r || 0;
 #------------------------------------------------------------------------------
 
 my %summary;
+my @vsum;
 my $log2prob_pos  = $lc + $rc + 2;
 my $target_pos    = $lc + $rc + 0;
 my $classtype_pos = $lc + $rc + 5;
@@ -78,16 +79,21 @@ while ( my $line = <FHW> ) {
     if ( $icu eq "u" ) {
       $indicators += 1;
       ++$oovcount;
+      $vsum[0]++;
     }
     if ( $ml == 1 ) {
       $indicators += 2;
+      $vsum[1]++;
     }
     if ( $classtype eq "cg" ) {
       $indicators += 4;
+      $vsum[2]++;
     } elsif ( $classtype eq "cd" ) {
       $indicators += 8;
+      $vsum[3]++;
     } elsif ( $classtype eq "ic" ) {
       $indicators += 16;
+      $vsum[4]++;
     }
 
 
@@ -113,8 +119,11 @@ foreach my $key (sort (keys(%summary))) {
 foreach my $key (sort { $a <=> $b } (keys(%summary))) {
   printf( "$f:%6i (%6.2f%%)\n", $key, $summary{$key},  $summary{$key}*100/$tot );
 }
-print   "    ------\n";
-printf( "    %6i\n", $tot );
+for ( my $i = 0; $i < 5; $i++ ) {
+  my $frmt = "%".($i+1)."i";
+  printf( "Column: %2i %6i (%6.2f%%)\n", $i, $vsum[$i],  $vsum[$i]*100/$tot );
+}
+printf( "Total: %6i\n", $tot );
 
 print "\n";
 print "Sum log10 probs:\n";
