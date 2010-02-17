@@ -1,3 +1,5 @@
+1.21.3	Added pplx_px.pl script to distribution.
+	
 1.21.2	Added deleting of parameters from scripts.
 	
 1.21.1	Small fixes in 'prepare'.

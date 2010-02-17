@@ -59,6 +59,7 @@ EXTRA_DIST = \
 	etc/compare_ngp_srilm.pl \
 	etc/examine_md.pl \
 	etc/examine_mc.pl \
+	etc/pplx_px.pl \
 	bootstrap.sh \
 	web/generator/generator.css \
 	web/generator/generator.php \
