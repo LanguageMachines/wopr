@@ -520,6 +520,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &smooth_old;
   } else if ( a_fname == "server2" ) {
     return &server2;
+  } else if ( a_fname == "server3" ) {
+    return &server3;
   } else if ( a_fname == "read_a3" ) {
     return &read_a3;
   } else if ( a_fname == "tag" ) {
