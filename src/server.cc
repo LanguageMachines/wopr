@@ -1010,7 +1010,12 @@ int server3(Logfile& l, Config& c) {
 	  }
 
 	  // Check for commands? Some kind of protocol?
-	  
+
+	  // Let this also window and tokenize input? Seperate
+	  // "utility" server which does that?
+
+	  // Read an XML input packet with commands and "stuff" ?
+
 	  // Assume first line is n if we want to send n lines.
 	  //
 	  int num = stoi( tmp_buf );//.substr(4, std::string::npos) );
@@ -1036,7 +1041,7 @@ int server3(Logfile& l, Config& c) {
 	    tmp_buf = trim( tmp_buf, " \n\r" );
 
 	    instances.push_back( tmp_buf );
-	    l.log( "|" + tmp_buf + "|" );
+	    l.log( to_str(numbytes)+"|" + tmp_buf + "|" );
 	  }
 
 	  std::vector<std::string> results_output;

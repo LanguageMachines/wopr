@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id$
+# $Id: pplx_px.pl 3746 2010-02-17 10:44:20Z pberck $
 #
 use strict;
 use Getopt::Std;
@@ -9,25 +9,22 @@ use Getopt::Std;
 # ...
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_i $opt_l $opt_r /;
+use vars qw/ $opt_f $opt_i /;
 
-getopts('f:s:il:r:');
+getopts('f:i');
 
 my $wopr_file  = $opt_f || 0;
 my $ignore_oov = $opt_i || 0;
-my $lc         = $opt_l || 0;
-my $rc         = $opt_r || 0;
 
 #------------------------------------------------------------------------------
 
 my %summary;
 my @vsum;
-my $log2prob_pos  = $lc + $rc + 2;
-my $target_pos    = $lc + $rc + 0;
-my $classtype_pos = $lc + $rc + 5;
-my $unknown_pos   = $lc + $rc + 6;
-my $md_pos        = $lc + $rc + 7; #match depth
-my $ml_pos        = $lc + $rc + 8; #matched at leaf
+
+my $word_pos    = 0;
+my $target_pos  = 0;
+my $prob_pos    = 1;
+my $n1_pos      = 3; # first word of ngram
 
 my $wopr_sumlog10  = 0.0;
 my $srilm_sumlog10 = 0.0;
@@ -35,7 +32,7 @@ my $wordcount = 0;
 my $sentencecount = 0;
 my $oovcount = 0;
 
-my $f = "%05b"; # Number of binary indicators
+my $f = "%01b"; # Number of binary indicators
 
 open(FHW, $wopr_file)  || die "Can't open file.";
 
@@ -58,49 +55,32 @@ while ( my $line = <FHW> ) {
     
     @parts  = split (/ /, $line);
     $target         = $parts[ $target_pos ];
-    $wopr_log2prob  = $parts[ $log2prob_pos ]; # native logp value
-    $wopr_prob      = 2 ** $wopr_log2prob;
-    $wopr_log10prob = log2tolog10( $wopr_log2prob );
-    $icu            = $parts[$unknown_pos];
-    $md             = $parts[$md_pos];
-    $ml             = $parts[$ml_pos];
-    $classtype      = $parts[$classtype_pos];
+    $wopr_prob      = $parts[ $prob_pos ];
+    $wopr_log2prob  = log2( $wopr_prob );
+    $wopr_log10prob = log10( $wopr_prob );
+
+    $icu = $parts[ $n1_pos ];
 
     if ( $ignore_oov ) {
       $icu = "k";
     }
+
     if ( $target eq "<\/s>" ) {
       ++$sentencecount;
     } else {
       ++$wordcount;
     }
-    if ( $icu eq "u" ) {
+    if ( $icu eq "OOV" ) {
       $indicators += 1;
       ++$oovcount;
       $vsum[0]++;
     }
-    if ( $ml == 1 ) {
-      $indicators += 2;
-      $vsum[1]++;
-    }
-    if ( $classtype eq "cg" ) {
-      $indicators += 4;
-      $vsum[2]++;
-    } elsif ( $classtype eq "cd" ) {
-      $indicators += 8;
-      $vsum[3]++;
-    } elsif ( $classtype eq "ic" ) {
-      $indicators += 16;
-      $vsum[4]++;
-    }
-
 
     if ( ($icu eq "k") && ($wopr_log10prob != 0) ) {
       $wopr_sumlog10 += $wopr_log10prob;
     }
 
     printf( "%.8f %8.4f %8.4f ", $wopr_prob, $wopr_log2prob, $wopr_log10prob );
-    printf( "%2i %1i ", $md, $ml );
 
     #
     printf( "[$f] ", $indicators );
@@ -117,11 +97,6 @@ foreach my $key (sort (keys(%summary))) {
 foreach my $key (sort { $a <=> $b } (keys(%summary))) {
   printf( "$f:%6i (%6.2f%%)\n", $key, $summary{$key},  $summary{$key}*100/$tot );
 }
-for ( my $i = 0; $i < 5; $i++ ) {
-  my $frmt = "%".($i+1)."i";
-  printf( "Column: %2i %6i (%6.2f%%)\n", $i, $vsum[$i],  $vsum[$i]*100/$tot );
-}
-printf( "Total: %6i\n", $tot );
 
 print "\n";
 print "Sum log10 probs:\n";
@@ -150,7 +125,26 @@ sub log2tolog10 {
   return $l * $log2;
 }
 
+sub log2 {
+  my $l    = shift;
+
+  return log($l)/log(2);
+}
+
+sub log10 {
+  my $l    = shift;
+
+  return log($l)/log(10);
+}
+
 __END__
+
+ngt output:
+# word prob n ngram
+<s> 0.0403478 1 <s>
+The 0.0985 2 <s> The
+<unk> 0 0 OOV
+
 
 px output:
 
