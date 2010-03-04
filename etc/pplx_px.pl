@@ -44,6 +44,8 @@ while ( my $line = <FHW> ) {
     if ( substr($line, 0, 1) eq "#" ) {
       next;
     }
+    chomp $line;
+
     my @parts = [];
     my $target;
     my $wopr_log2prob;

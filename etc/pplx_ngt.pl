@@ -19,7 +19,6 @@ my $ignore_oov = $opt_i || 0;
 #------------------------------------------------------------------------------
 
 my %summary;
-my @vsum;
 
 my $word_pos    = 0;
 my $target_pos  = 0;
@@ -41,6 +40,11 @@ while ( my $line = <FHW> ) {
     if ( substr($line, 0, 1) eq "#" ) {
       next;
     }
+    if ( substr($line, 0, 3) eq "<s>" ) {
+      next; # Postproc hack to get sililar values to SRILM
+    }
+    chomp $line;
+
     my @parts = [];
     my $target;
     my $wopr_log2prob;
@@ -61,10 +65,6 @@ while ( my $line = <FHW> ) {
 
     $icu = $parts[ $n1_pos ];
 
-    if ( $ignore_oov ) {
-      $icu = "k";
-    }
-
     if ( $target eq "<\/s>" ) {
       ++$sentencecount;
     } else {
@@ -73,10 +73,9 @@ while ( my $line = <FHW> ) {
     if ( $icu eq "OOV" ) {
       $indicators += 1;
       ++$oovcount;
-      $vsum[0]++;
     }
 
-    if ( ($icu eq "k") && ($wopr_log10prob != 0) ) {
+    if ( ($icu ne "OOV") && ($wopr_prob != 0) ) {
       $wopr_sumlog10 += $wopr_log10prob;
     }
 
@@ -128,12 +127,18 @@ sub log2tolog10 {
 sub log2 {
   my $l    = shift;
 
+  if ( $l == 0 ) {
+    return 0;
+  }
   return log($l)/log(2);
 }
 
 sub log10 {
   my $l    = shift;
 
+  if ( $l == 0 ) {
+    return 0;
+  }
   return log($l)/log(10);
 }
 
@@ -144,11 +149,3 @@ ngt output:
 <s> 0.0403478 1 <s>
 The 0.0985 2 <s> The
 <unk> 0 0 OOV
-
-
-px output:
-
-# instance+target classification logprob entropy word_lp guess (dist.cnt [topn])
-_ _ The `` -3.34807 8.24174 10.1829 cd 1 0 9103 [ `` 14787 The 10598 But 4149  ]
-_ The Plastics Derby -21.1142 10.5035 2.26994e+06 icu 2 1 3236 [ Derby 152 New 74 ]
-
