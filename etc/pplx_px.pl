@@ -22,6 +22,7 @@ my $rc         = $opt_r || 0;
 
 my %summary;
 my @vsum;
+my @vsum_txt = ( "unk", "match leaf", "cg", "cd", "ig" );
 my $log2prob_pos  = $lc + $rc + 2;
 my $target_pos    = $lc + $rc + 0;
 my $classtype_pos = $lc + $rc + 5;
@@ -121,7 +122,7 @@ foreach my $key (sort { $a <=> $b } (keys(%summary))) {
 }
 for ( my $i = 0; $i < 5; $i++ ) {
   my $frmt = "%".($i+1)."i";
-  printf( "Column: %2i %6i (%6.2f%%)\n", $i, $vsum[$i],  $vsum[$i]*100/$tot );
+  printf( "Column: %2i %6i (%6.2f%%) %s\n", $i, $vsum[$i],  $vsum[$i]*100/$tot, $vsum_txt[$i] );
 }
 printf( "Total: %6i\n", $tot );
 

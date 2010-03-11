@@ -41,7 +41,13 @@ while ( my $line = <FHW> ) {
       next;
     }
     if ( substr($line, 0, 3) eq "<s>" ) {
-      next; # Postproc hack to get sililar values to SRILM
+      next; # Postproc hack to get similar values to SRILM
+      # The first line in a l2r0 *px file is like (like SRILM):
+      # _ <s> he </s> -7.65544 8.05521 201.613 cd k 1 1 
+      # but in out ngt file (first two lines):
+      # <s> 0.0918056 1 <s>
+      # he 0.00496 2 <s> he
+      # We skip the <s>... line
     }
     chomp $line;
 
