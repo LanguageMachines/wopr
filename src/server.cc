@@ -1018,20 +1018,54 @@ int server3(Logfile& l, Config& c) {
 	      std::string classify_line = tmp_buf;
 	      
 	      if ( classify_line != "" ) {
-		/*
+
+		std::vector<std::string> words;
+		Tokenize( classify_line, words, ' ' );
+		std::string target = words.at( words.size()-1 );
+		
 		tv = My_Experiment->Classify( classify_line, vd, distance );
 		result = tv->Name();
 		
+		l.log( result );
+
 		// Grok the distribution returned by Timbl.
 		//
 		std::map<std::string, double> res;
-		parse_distribution2( vd, res ); // was parse_distribution(...)
-		*/
-		std::string res_str = "123456"; // moses want exactly six characters.
-		if ( send( new_fd, res_str.c_str(), res_str.length(), 0 ) == -1 ) {
+
+		Timbl::ValueDistribution::dist_iterator it = vd->begin();
+		int cnt = vd->size();
+		int distr_count = vd->totalSize();
+		double res_p = 0.001;
+
+		while ( it != vd->end() ) {
+		  
+		  std::string tvs  = it->second->Value()->Name();
+		  double      wght = it->second->Weight();
+		  
+		  // Prob. of this item in distribution.
+		  //
+		  double prob = (double)wght / (double)distr_count;
+		  res[tvs] = prob;
+
+		  if ( tvs == target ) {
+		    res_p = prob;
+		  }
+
+		  ++it;
+		}
+
+		double res_pl10 = log10(res_p);
+		char res_str[7];
+		sprintf( res_str, "%f2.3", res_pl10 );
+		res_str[6] = 0;
+
+		std::cerr << "(" << res_str << ")" << std::endl;
+		//std::string res_str = "123456"; // moses want exactly six characters.
+
+		if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
 		  perror("send");
 		}
-		l.log( "sent |"+res_str+"|" );
+
 	      }
 	      //connection_open = false;
 	    } // numbytes > 0
