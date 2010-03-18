@@ -985,68 +985,38 @@ int server3(Logfile& l, Config& c) {
     //
     while ( c.get_status() != 0 ) {  // main accept() loop
       sin_size = sizeof their_addr;
-
+      
       if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
 			   &sin_size)) == -1) {
 	perror("accept");
 	continue;
       }
       l.log( "Connection from: " +std::string(inet_ntoa(their_addr.sin_addr)));
-
+      
       if ( c.get_status() && ( ! fork() )) { // this is the child process
 	close(sockfd); // child doesn't need the listener.	
 	
 	bool connection_open = true;
 	while ( connection_open ) {
 	  
-	  if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
-	    perror("recv");
-	    exit(1);
-	  }
-	  buf[numbytes] = '\0';
-	  
-	  std::string tmp_buf = buf;//str_clean( buf );
-	  tmp_buf = trim( tmp_buf, " \n\r" );
-	  
-	  if ( tmp_buf == "_CLOSE_" ) {
-	    connection_open = false;
-	    break;
-	  }
-	  if (tmp_buf == "") {
-	    tmp_buf = "test";
-	  }
-
-	  // Check for commands? Some kind of protocol?
-
-	  long f1 = l.clock_mu_secs();
-
-	  std::vector<std::string> instances;
-	  
-	  int num = 1;
-	  for ( int i = 0; i < num; i++ ) {
-
+	  while ( true ) {
+	    
 	    if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
 	      perror("recv");
 	      exit(1);
 	    }
 	    buf[numbytes] = '\0';
-
+	    
 	    std::string tmp_buf = buf;//str_clean( buf );
 	    tmp_buf = trim( tmp_buf, " \n\r" );
-
-	    instances.push_back( tmp_buf );
-	    l.log( to_str(numbytes)+"|" + tmp_buf + "|" );
-	  }
-
-	  std::vector<std::string> results_output;
-
-	  for ( int i = 0; i < num; i++ ) {
-
-	    std::string classify_line = instances.at(i);
-
-	    std::vector<std::string> results;
-	    std::vector<std::string> targets;
-	    std::vector<std::string>::iterator ri;
+	    
+	    if ( tmp_buf == "_CLOSE_" ) {
+	      connection_open = false;
+	      break;
+	    }
+	    l.log( "|" + tmp_buf + "|" );
+	    
+	    std::string classify_line = tmp_buf;
 	    
 	    tv = My_Experiment->Classify( classify_line, vd, distance );
 	    result = tv->Name();
@@ -1056,23 +1026,13 @@ int server3(Logfile& l, Config& c) {
 	    std::map<std::string, double> res;
 	    parse_distribution2( vd, res ); // was parse_distribution(...)
 	    
-	    std::string json = result;
-	    results_output.push_back( result );
-	    
-	  } // i
-
-	  for ( int i = 0; i < num; i++ ) {
-	    std::string json = results_output.at(i)+"\n";
-	    if ( send( new_fd, json.c_str(), json.length(), 0 ) == -1 ) {
+	    std::string res_str = "0.1";
+	    if ( send( new_fd, res_str.c_str(), res_str.length(), 0 ) == -1 ) {
 	      perror("send");
 	    }
-	  }
-
-	  long f2 = l.clock_mu_secs();
-	  long diff_mu_secs = f2 - f1;
+	    
+	  } // while true
 	  
-	  l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
-
 	} // connection_open
 	exit(0);
       } // fork
