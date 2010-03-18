@@ -999,41 +999,42 @@ int server3(Logfile& l, Config& c) {
 	bool connection_open = true;
 	while ( connection_open ) {
 	  
-	  while ( true ) {
-	    
 	    if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
 	      perror("recv");
 	      exit(1);
 	    }
 	    buf[numbytes] = '\0';
-	    
-	    std::string tmp_buf = buf;//str_clean( buf );
-	    tmp_buf = trim( tmp_buf, " \n\r" );
-	    
-	    if ( tmp_buf == "_CLOSE_" ) {
-	      connection_open = false;
-	      break;
-	    }
-	    l.log( "|" + tmp_buf + "|" );
-	    
-	    std::string classify_line = tmp_buf;
-	    
-	    if ( classify_line != "" ) {
-	      tv = My_Experiment->Classify( classify_line, vd, distance );
-	      result = tv->Name();
+
+	    if ( numbytes > 0 ) {
+	      std::string tmp_buf = buf;//str_clean( buf );
+	      tmp_buf = trim( tmp_buf, " \n\r" );
 	      
-	      // Grok the distribution returned by Timbl.
-	      //
-	      std::map<std::string, double> res;
-	      parse_distribution2( vd, res ); // was parse_distribution(...)
-	      
-	      std::string res_str = "0.1";
-	      if ( send( new_fd, res_str.c_str(), res_str.length(), 0 ) == -1 ) {
-		perror("send");
+	      if ( tmp_buf == "_CLOSE_" ) {
+		connection_open = false;
+		break;
 	      }
-	    }
-	    
-	  } // while true
+	      l.log( "|" + tmp_buf + "|" );
+	      
+	      std::string classify_line = tmp_buf;
+	      
+	      if ( classify_line != "" ) {
+		/*
+		tv = My_Experiment->Classify( classify_line, vd, distance );
+		result = tv->Name();
+		
+		// Grok the distribution returned by Timbl.
+		//
+		std::map<std::string, double> res;
+		parse_distribution2( vd, res ); // was parse_distribution(...)
+		*/
+		std::string res_str = "123456"; // moses want exactly six characters.
+		if ( send( new_fd, res_str.c_str(), res_str.length(), 0 ) == -1 ) {
+		  perror("send");
+		}
+		l.log( "sent |"+res_str+"|" );
+	      }
+	      //connection_open = false;
+	    } // numbytes > 0
 	  
 	} // connection_open
 	exit(0);
