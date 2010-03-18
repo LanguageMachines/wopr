@@ -1008,9 +1008,12 @@ int server3(Logfile& l, Config& c) {
 	  std::string tmp_buf = buf;//str_clean( buf );
 	  tmp_buf = trim( tmp_buf, " \n\r" );
 	  
-	  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
+	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
 	    break;
+	  }
+	  if (tmp_buf == "") {
+	    tmp_buf = "test";
 	  }
 
 	  // Check for commands? Some kind of protocol?
