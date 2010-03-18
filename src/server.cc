@@ -1018,17 +1018,19 @@ int server3(Logfile& l, Config& c) {
 	    
 	    std::string classify_line = tmp_buf;
 	    
-	    tv = My_Experiment->Classify( classify_line, vd, distance );
-	    result = tv->Name();
-	    
-	    // Grok the distribution returned by Timbl.
-	    //
-	    std::map<std::string, double> res;
-	    parse_distribution2( vd, res ); // was parse_distribution(...)
-	    
-	    std::string res_str = "0.1";
-	    if ( send( new_fd, res_str.c_str(), res_str.length(), 0 ) == -1 ) {
-	      perror("send");
+	    if ( classify_line != "" ) {
+	      tv = My_Experiment->Classify( classify_line, vd, distance );
+	      result = tv->Name();
+	      
+	      // Grok the distribution returned by Timbl.
+	      //
+	      std::map<std::string, double> res;
+	      parse_distribution2( vd, res ); // was parse_distribution(...)
+	      
+	      std::string res_str = "0.1";
+	      if ( send( new_fd, res_str.c_str(), res_str.length(), 0 ) == -1 ) {
+		perror("send");
+	      }
 	    }
 	    
 	  } // while true
