@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4 --install
+
 AUTOMAKE_OPTIONS = subdir-objects
 
 bin_PROGRAMS = wopr woprsm
