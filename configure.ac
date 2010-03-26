@@ -15,8 +15,22 @@ AC_PROG_INSTALL
 if test "x$PKG_CONFIG_PATH" = x; then
      export PKG_CONFIG_PATH=""
 fi
-# Checks for timbl library.
-AC_ARG_WITH(timbl,
+
+AC_ARG_WITH([timbl],
+            [AS_HELP_STRING([--without-timbl],
+              [disable support for timbl])],
+            [
+	    AC_MSG_NOTICE([Checking for Timbl])
+	    ],
+            [
+	    AC_MSG_NOTICE([Checking for Timbl])
+	    with_timbl=yes
+	    ])
+
+AS_IF([test "x$with_timbl" != xno],
+	    [
+	    AC_MSG_NOTICE([Checkign for Timbl])
+	    AC_ARG_WITH(timbl,
        [  --with-timbl=DIR        use timbl installed in <DIR>],
        [
        PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"
@@ -26,10 +40,13 @@ AC_ARG_WITH(timbl,
        PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$prefix/lib/pkgconfig"
        AC_DEFINE_UNQUOTED(TIMBL,"$prefix",[ Have Timbl ])
        ])
+  PKG_CHECK_MODULES([timbl], [timbl >= 6.2.1] )
+  CXXFLAGS="$CXXFLAGS $timbl_CFLAGS"
+  LIBS="$LIBS $timbl_LIBS"
+            ]
+	    )
 
-PKG_CHECK_MODULES([timbl], [timbl >= 6.2.1] )
-CXXFLAGS="$CXXFLAGS $timbl_CFLAGS"
-LIBS="$LIBS $timbl_LIBS"
+# Checks for timbl library.
 
 AC_CHECK_HEADER([pthread.h],
        [AC_DEFINE([PTHREADS], [1], [pthreads]) LIBS="-lpthread $LIBS"])

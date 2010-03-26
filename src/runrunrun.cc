@@ -68,56 +68,6 @@
 #endif
 
 // ---------------------------------------------------------------------------
-// ./wpred --run run_exp2,run_external -e "sleep 10"
-// ./wpred --run make_data --params filename:settings
-// ./wpred --run timbl --params -- timbl:-a
-// ./wpred --run make_wd --params filename:reuters.martin.tok,ws:8
-//
-// ./wopr --run make_wd --params filename:reuters.martin.tok,ws:8,ml:400
-// ./wopr --run hapax_data --params hpx:1,filename:reuters.martin.tok.data
-// ./wopr -r make_wd,hapax_data -p ws:7,filename:retrs.mrtn.tok,hpx:4,ml:1000
-// ./wopr --run script -p filename:"etc/script",hpx:1
-// ---------------------------------------------------------------------------
-
-/*
-  Anders.
-
-  in script:
-    set input file
-    set filetype
-    specify transformations.
-
-    eg:
-    input: text.txt (parameter)
-    type: train (params)
-    (parameters: lines:100, ws:7, hpx:3)
-    transform: cut/lines:100, window_data/ws:7, hapax_data/hpx:3
-*/
-
-/*
-  This file could have a number of functions which can be
-  chained together maybe, like small building blocks
-  to set up experiments.
-  Like "make_test_test( params )" &c.
-  These could be specified in config like:
-    make_data, run_exp, &c.
-  Make function factory, let all take same arguments (Config*),
-  call one after the other?
-
-  make data, filter1, make more data, run exp.
-
-  take/define datasets etc. in Config? read a script?
-
-  What do we want?
-  1)scripts to make data
-  2)run Timbl
-  3)eval results
-
-  Parse output of started programs, recognise KV pairs, store them.
-  e.g. prog1 outputs "foo=bar", and foo is usable in prog2. useful
-  to get Timbl output in this program?
-  We need exec/fork as in PETeR...
-*/
 
 // ---- Experimental
 
@@ -142,7 +92,7 @@ int rrand(Logfile& l, Config& c ) {
 
   // read data as a block:
   //
-  for ( int i = 0; i < 10; i++ ) {
+  for ( int i = 0; i < 1; i++ ) {
     file_in.read( buffer, length );
     l.log( to_str( (int)file_in.gcount() ));
     file_out.write( buffer, length );
