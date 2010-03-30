@@ -1024,49 +1024,47 @@ int server3(Logfile& l, Config& c) {
 		std::string target = words.at( words.size()-1 );
 		
 		tv = My_Experiment->Classify( classify_line, vd, distance );
-		result = tv->Name();
-		
-		//l.log( result );
+		result = tv->Name();		
+		size_t res_freq = tv->ValFreq();
 
-		// Grok the distribution returned by Timbl.
-		//
-		std::map<std::string, double> res;
-
-		Timbl::ValueDistribution::dist_iterator it = vd->begin();
-		int cnt = vd->size();
-		int distr_count = vd->totalSize();
 		double res_p = 0.001;
 		bool target_in_dist = false;
 		int target_freq = 0;
-
-		while ( it != vd->end() ) {
-		  
-		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight(); // absolute frequency.
-	
-		  if ( tvs == target ) { // The correct answer was in the distribution!
-		    target_freq = wght;
-		    target_in_dist = true;
-		  }
-
-		  // Entropy of whole distr. 
+		int cnt = vd->size();
+		int distr_count = vd->totalSize();
+		
+		if ( result == target ) {
+		  res_p = res_freq / distr_count;
+		} else {
 		  //
-		  //prob     = (double)wght / (double)distr_count;
-		  //entropy -= ( prob * log2(prob) );
-
-		  ++it;
-		} // end loop distribution
-
-		double target_distprob = (double)target_freq / (double)distr_count;
-		if ( target_freq == 0 ) {
-		  target_distprob = 0.001; // kludge
+		  // Grok the distribution returned by Timbl.
+		  //
+		  std::map<std::string, double> res;
+		  Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+		  while ( it != vd->end() ) {
+		    
+		    std::string tvs  = it->second->Value()->Name();
+		    double      wght = it->second->Weight(); // absolute frequency.
+		    
+		    if ( tvs == target ) { // The correct answer was in the distribution!
+		      target_freq = wght;
+		      target_in_dist = true;
+		    }
+		    
+		    ++it;
+		  } // end loop distribution
+		  
+		  if ( target_freq > 0 ) {
+		    res_p = (double)target_freq / (double)distr_count;
+		  }
+		  
 		}
 
-		double res_pl10 = log10( target_distprob );
+		double res_pl10 = log10( res_p );
 		char res_str[7];
 		sprintf( res_str, "%f2.3", res_pl10 );
 		res_str[6] = 0;
-
+		
 		//std::cerr << "(" << res_str << ")" << std::endl;
 		//std::string res_str = "123456"; // moses want exactly six characters.
 
