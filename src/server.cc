@@ -1013,7 +1013,7 @@ int server3(Logfile& l, Config& c) {
 		connection_open = false;
 		break;
 	      }
-	      l.log( "|" + tmp_buf + "|" );
+	      //l.log( "|" + tmp_buf + "|" );
 	      
 	      std::string classify_line = tmp_buf;
 	      
@@ -1059,7 +1059,7 @@ int server3(Logfile& l, Config& c) {
 		sprintf( res_str, "%f2.3", res_pl10 );
 		res_str[6] = 0;
 
-		std::cerr << "(" << res_str << ")" << std::endl;
+		//std::cerr << "(" << res_str << ")" << std::endl;
 		//std::string res_str = "123456"; // moses want exactly six characters.
 
 		if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
