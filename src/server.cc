@@ -1026,7 +1026,7 @@ int server3(Logfile& l, Config& c) {
 		tv = My_Experiment->Classify( classify_line, vd, distance );
 		result = tv->Name();
 		
-		l.log( result );
+		//l.log( result );
 
 		// Grok the distribution returned by Timbl.
 		//
@@ -1036,25 +1036,33 @@ int server3(Logfile& l, Config& c) {
 		int cnt = vd->size();
 		int distr_count = vd->totalSize();
 		double res_p = 0.001;
+		bool target_in_dist = false;
+		int target_freq = 0;
 
 		while ( it != vd->end() ) {
 		  
 		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight();
-		  
-		  // Prob. of this item in distribution.
-		  //
-		  double prob = (double)wght / (double)distr_count;
-		  res[tvs] = prob;
-
-		  if ( tvs == target ) {
-		    res_p = prob;
+		  double      wght = it->second->Weight(); // absolute frequency.
+	
+		  if ( tvs == target ) { // The correct answer was in the distribution!
+		    target_freq = wght;
+		    target_in_dist = true;
 		  }
 
+		  // Entropy of whole distr. 
+		  //
+		  //prob     = (double)wght / (double)distr_count;
+		  //entropy -= ( prob * log2(prob) );
+
 		  ++it;
+		} // end loop distribution
+
+		double target_distprob = (double)target_freq / (double)distr_count;
+		if ( target_freq == 0 ) {
+		  target_distprob = 0.001; // kludge
 		}
 
-		double res_pl10 = log10(res_p);
+		double res_pl10 = log10( target_distprob );
 		char res_str[7];
 		sprintf( res_str, "%f2.3", res_pl10 );
 		res_str[6] = 0;
