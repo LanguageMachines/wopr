@@ -1027,7 +1027,7 @@ int server3(Logfile& l, Config& c) {
 		result = tv->Name();		
 		size_t res_freq = tv->ValFreq();
 
-		double res_p = 0.001;
+		double res_p = -1;
 		bool target_in_dist = false;
 		int target_freq = 0;
 		int cnt = vd->size();
@@ -1059,8 +1059,11 @@ int server3(Logfile& l, Config& c) {
 		  }
 		  
 		}
-
-		double res_pl10 = log10( res_p );
+		
+		double res_pl10 = -99;
+		if ( res_p > 0 ) {
+		  res_pl10 = log10( res_p );
+		}
 		char res_str[7];
 		sprintf( res_str, "%f2.3", res_pl10 );
 		res_str[6] = 0;
