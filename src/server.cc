@@ -915,6 +915,8 @@ int server3(Logfile& l, Config& c) {
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const int port                = stoi( c.get_value( "port", "1984" ));
 
+  const int mode = 0; // or 1
+
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+to_str(port) );
@@ -1016,7 +1018,16 @@ int server3(Logfile& l, Config& c) {
 	      //l.log( "|" + tmp_buf + "|" );
 	      
 	      std::string classify_line = tmp_buf;
-	      
+
+	      if ( mode == 1 ) {
+		std::vector<std::string> results;
+		window( classify_line, classify_line,
+			2, 0, false, results );
+		for ( ri = results.begin(); ri != results.end(); ri++ ) {
+		  l.log( *ri );
+		}
+	      }
+
 	      if ( classify_line != "" ) {
 
 		std::vector<std::string> words;
@@ -1035,29 +1046,27 @@ int server3(Logfile& l, Config& c) {
 		
 		if ( result == target ) {
 		  res_p = res_freq / distr_count;
-		} else {
-		  //
-		  // Grok the distribution returned by Timbl.
-		  //
-		  std::map<std::string, double> res;
-		  Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
-		  while ( it != vd->end() ) {
-		    
-		    std::string tvs  = it->second->Value()->Name();
-		    double      wght = it->second->Weight(); // absolute frequency.
-		    
-		    if ( tvs == target ) { // The correct answer was in the distribution!
-		      target_freq = wght;
-		      target_in_dist = true;
-		    }
-		    
-		    ++it;
-		  } // end loop distribution
+		} 
+		//
+		// Grok the distribution returned by Timbl.
+		//
+		std::map<std::string, double> res;
+		Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+		while ( it != vd->end() ) {
 		  
-		  if ( target_freq > 0 ) {
-		    res_p = (double)target_freq / (double)distr_count;
+		  std::string tvs  = it->second->Value()->Name();
+		  double      wght = it->second->Weight(); // absolute frequency.
+		  
+		  if ( tvs == target ) { // The correct answer was in the distribution!
+		    target_freq = wght;
+		    target_in_dist = true;
 		  }
 		  
+		  ++it;
+		} // end loop distribution
+		
+		if ( target_freq > 0 ) {
+		  res_p = (double)target_freq / (double)distr_count;
 		}
 		
 		double res_pl10 = -99;
