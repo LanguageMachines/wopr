@@ -1023,9 +1023,6 @@ int server3(Logfile& l, Config& c) {
 		std::vector<std::string> results;
 		window( classify_line, classify_line,
 			2, 0, false, results );
-		for ( ri = results.begin(); ri != results.end(); ri++ ) {
-		  l.log( *ri );
-		}
 	      }
 
 	      if ( classify_line != "" ) {
