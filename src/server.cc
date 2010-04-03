@@ -1048,7 +1048,7 @@ int server3(Logfile& l, Config& c) {
 	    for ( int i = 0; i < cls.size(); i++ ) {
 	      
 	      classify_line = cls.at(i);
-	      if ( verbose > 0 ) {
+	      if ( verbose > 1 ) {
 		l.log( "timbl("+classify_line+")" );
 	      }
 	      
@@ -1104,7 +1104,7 @@ int server3(Logfile& l, Config& c) {
 	    double ave_pl10 = 0.0;
 	    for ( int p = 0; p < probs.size(); p++ ) {
 	      double prob = probs.at(p);
-	      if ( verbose > 0 ) {
+	      if ( verbose > 1 ) {
 		l.log( "lprob10("+to_str(p)+")="+to_str(prob) );
 	      }
 	      ave_pl10 += prob;
