@@ -914,12 +914,20 @@ int server3(Logfile& l, Config& c) {
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const int port                = stoi( c.get_value( "port", "1984" ));
-
-  const int mode = 0; // or 1
+  const int mode                = stoi( c.get_value( "mode", "0" ));
+  const int verbose             = stoi( c.get_value( "verbose", "0" ));
+  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int lc                  = stoi( c.get_value( "lc", "2" ));
+  const int rc                  = stoi( c.get_value( "rc", "0" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+to_str(port) );
+  l.log( "mode:      "+to_str(mode) );
+  l.log( "keep:      "+to_str(keep) );
+  l.log( "lc:        "+to_str(lc) );
+  l.log( "rc:        "+to_str(rc) );
+  l.log( "verbose:   "+to_str(verbose) );
   l.log( "timbl:     "+timbl );
   l.dec_prefix();
 
@@ -999,94 +1007,126 @@ int server3(Logfile& l, Config& c) {
 	close(sockfd); // child doesn't need the listener.	
 	
 	bool connection_open = true;
+	std::vector<std::string> cls; // classify lines
+	std::vector<double> probs;
 	while ( connection_open ) {
 	  
-	    if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
-	      perror("recv");
-	      exit(1);
+	  if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
+	    perror("recv");
+	    exit(1);
+	  }
+	  buf[numbytes] = '\0';
+	  
+	  if ( numbytes > 0 ) {
+	    std::string tmp_buf = buf;//str_clean( buf );
+	    tmp_buf = trim( tmp_buf, " \n\r" );
+	    
+	    if ( tmp_buf == "_CLOSE_" ) {
+	      connection_open = false;
+	      break;
 	    }
-	    buf[numbytes] = '\0';
+	    if ( verbose > 0 ) {
+	      l.log( "|" + tmp_buf + "|" );
+	    }
 
-	    if ( numbytes > 0 ) {
-	      std::string tmp_buf = buf;//str_clean( buf );
-	      tmp_buf = trim( tmp_buf, " \n\r" );
+	    cls.clear();
+	    
+	    std::string classify_line = tmp_buf;
+	    
+	    // Sentence based, window here, classify all, etc.
+	    //
+	    if ( mode == 1 ) {
+	      window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	    } else {
+	      cls.push_back( classify_line );
+	    }
+	    
+	    // Loop over all lines.
+	    //
+	    std::vector<std::string> words;
+    	    probs.clear();
+	    for ( int i = 0; i < cls.size(); i++ ) {
 	      
-	      if ( tmp_buf == "_CLOSE_" ) {
-		connection_open = false;
-		break;
+	      classify_line = cls.at(i);
+	      if ( verbose > 0 ) {
+		l.log( "timbl("+classify_line+")" );
 	      }
-	      //l.log( "|" + tmp_buf + "|" );
 	      
-	      std::string classify_line = tmp_buf;
+	      words.clear();
+	      Tokenize( classify_line, words, ' ' );
+	      std::string target = words.at( words.size()-1 );
 
-	      if ( mode == 1 ) {
-		std::vector<std::string> results;
-		window( classify_line, classify_line,
-			2, 0, false, results );
+	      tv = My_Experiment->Classify( classify_line, vd, distance );
+	      result = tv->Name();		
+	      size_t res_freq = tv->ValFreq();
+	      
+	      double res_p = -1;
+	      bool target_in_dist = false;
+	      int target_freq = 0;
+	      int cnt = vd->size();
+	      int distr_count = vd->totalSize();
+	      
+	      if ( result == target ) {
+		res_p = res_freq / distr_count;
+	      } 
+	      //
+	      // Grok the distribution returned by Timbl.
+	      //
+	      std::map<std::string, double> res;
+	      Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+	      while ( it != vd->end() ) {
+		
+		std::string tvs  = it->second->Value()->Name();
+		double      wght = it->second->Weight(); // absolute frequency.
+		
+		if ( tvs == target ) { // The correct answer was in the distribution!
+		  target_freq = wght;
+		  target_in_dist = true;
+		}
+		
+		++it;
+	      } // end loop distribution
+	      
+	      if ( target_freq > 0 ) {
+		res_p = (double)target_freq / (double)distr_count;
 	      }
-
-	      if ( classify_line != "" ) {
-
-		std::vector<std::string> words;
-		Tokenize( classify_line, words, ' ' );
-		std::string target = words.at( words.size()-1 );
-		
-		tv = My_Experiment->Classify( classify_line, vd, distance );
-		result = tv->Name();		
-		size_t res_freq = tv->ValFreq();
-
-		double res_p = -1;
-		bool target_in_dist = false;
-		int target_freq = 0;
-		int cnt = vd->size();
-		int distr_count = vd->totalSize();
-		
-		if ( result == target ) {
-		  res_p = res_freq / distr_count;
-		} 
-		//
-		// Grok the distribution returned by Timbl.
-		//
-		std::map<std::string, double> res;
-		Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
-		while ( it != vd->end() ) {
-		  
-		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight(); // absolute frequency.
-		  
-		  if ( tvs == target ) { // The correct answer was in the distribution!
-		    target_freq = wght;
-		    target_in_dist = true;
-		  }
-		  
-		  ++it;
-		} // end loop distribution
-		
-		if ( target_freq > 0 ) {
-		  res_p = (double)target_freq / (double)distr_count;
-		}
-		
-		double res_pl10 = -99;
-		if ( res_p > 0 ) {
-		  res_pl10 = log10( res_p );
-		}
-		char res_str[7];
-		sprintf( res_str, "%f2.3", res_pl10 );
-		res_str[6] = 0;
-
-		std::cerr << "(" << res_str << ")" << std::endl;
-		//std::string res_str = "123456"; // moses want exactly six characters.
-
-		if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
-		  perror("send");
-		}
-
+	      
+	      double res_pl10 = -99;
+	      if ( res_p > 0 ) {
+		res_pl10 = log10( res_pl10 );
 	      }
-	      //connection_open = false;
-	    } // numbytes > 0
+	      probs.push_back( res_p ); // store for later.
+
+	    } // i loop
+
+	    //l.log( "Probs: "+ to_str(probs.size() ));
+
+	    if ( mode == 0 ) { // single trigram result.
+	      char res_str[7];
+	      double res_pl10 = probs[0];
+
+	      snprintf( res_str, 7, "%f2.3", res_pl10 );
+	    
+	      //std::cerr << "(" << res_str << ")" << std::endl;
+	      
+	      if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
+		perror("send");
+	      }
+	    } else {
+	      for ( int p = 0; p < probs.size(); p++ ) {
+		double prob = probs.at(p);
+		l.log( "prob="+to_str(prob) );
+	      }
+	    }
+
+	    connection_open = (keep == 1);
+	    //connection_open = false;
+	  } // numbytes > 0
 	  
 	} // connection_open
+        l.log( "connection closed." );
 	exit(0);
+
       } // fork
       close( new_fd );  
     }

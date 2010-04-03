@@ -1238,6 +1238,8 @@ int window( std::string a_line, std::string target_str,
 	    int lc, int rc, bool var,
 	    std::vector<std::string>& res ) {
 
+  std::cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
 
@@ -1258,7 +1260,6 @@ int window( std::string a_line, std::string target_str,
   if ( words[0] == "<s>" ) {
     offset = 1;
   }
-
 
   //
   // ...and insert the words at the position after the left context.
