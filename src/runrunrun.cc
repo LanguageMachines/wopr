@@ -440,8 +440,6 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &read_a3;
   } else if ( a_fname == "tag" ) {
     return &tag;
-  } else if ( a_fname == "rrand" ) {
-    return &rrand;
   } else if ( a_fname == "pplx" ) {
     return &pplx;
   } else if ( a_fname == "pplxs" ) {
