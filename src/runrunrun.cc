@@ -69,42 +69,6 @@
 
 // ---------------------------------------------------------------------------
 
-// ---- Experimental
-
-int rrand(Logfile& l, Config& c ) {
-  std::string filename = "/dev/video0";
-
-  std::ifstream file_in( filename.c_str() );
-  if ( ! file_in ) {
-    l.log( "ERROR: cannot open file." );
-    return -1;
-  }
-  std::ofstream file_out( "out.bin", std::ios::out );
-  if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
-    return -1;
-  }
-  std::string a_line;
-
-  char* buffer;
-  int length = 1024 * 8;
-  buffer = new char[length];
-
-  // read data as a block:
-  //
-  for ( int i = 0; i < 1; i++ ) {
-    file_in.read( buffer, length );
-    l.log( to_str( (int)file_in.gcount() ));
-    file_out.write( buffer, length );
-  }
-
-  file_out.close();
-  file_in.close();
-  return 0;
-}
-
-// ---- End Experimental
-
 #ifdef TIMBL
 int timbl( Logfile& l, Config& c ) {
   l.log( "timbl");
@@ -1237,8 +1201,6 @@ int window_line( Logfile& l, Config& c ) {
 int window( std::string a_line, std::string target_str, 
 	    int lc, int rc, bool var,
 	    std::vector<std::string>& res ) {
-
-  std::cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
