@@ -1093,30 +1093,36 @@ int server3(Logfile& l, Config& c) {
 	      
 	      double res_pl10 = -99;
 	      if ( res_p > 0 ) {
-		res_pl10 = log10( res_pl10 );
+		res_pl10 = log10( res_p );
 	      }
-	      probs.push_back( res_p ); // store for later.
+	      probs.push_back( res_pl10 ); // store for later.
 
 	    } // i loop
 
 	    //l.log( "Probs: "+ to_str(probs.size() ));
 
-	    if ( mode == 0 ) { // single trigram result.
-	      char res_str[7];
-	      double res_pl10 = probs[0];
-
-	      snprintf( res_str, 7, "%f2.3", res_pl10 );
+	    double ave_pl10 = 0.0;
+	    for ( int p = 0; p < probs.size(); p++ ) {
+	      double prob = probs.at(p);
+	      if ( verbose > 0 ) {
+		l.log( "lprob10("+to_str(p)+")="+to_str(prob) );
+	      }
+	      ave_pl10 += prob;
+	    }
+	    ave_pl10 /= probs.size();
 	    
-	      //std::cerr << "(" << res_str << ")" << std::endl;
-	      
-	      if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
-		perror("send");
-	      }
-	    } else {
-	      for ( int p = 0; p < probs.size(); p++ ) {
-		double prob = probs.at(p);
-		l.log( "prob="+to_str(prob) );
-	      }
+	    if ( verbose > 0 ) {
+	      l.log( "ave_pl10="+to_str(ave_pl10) );
+	    }
+
+	    char res_str[7];
+	    
+	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
+	    
+	    //std::cerr << "(" << res_str << ")" << std::endl;
+	    
+	    if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
+	      perror("send");
 	    }
 
 	    connection_open = (keep == 1);
