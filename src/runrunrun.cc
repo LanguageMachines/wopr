@@ -2510,7 +2510,7 @@ l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_st
     }
   }
 
-  // St�mmer inte - we need the *first and *second!
+  // Stämmer inte - we need the *first and *second!
   //
   for ( int i = k; i <= maxcounts; i++ ) { // niet numcounts, te weinig!
     int Nc = (int)ffreqs[i];
@@ -2710,9 +2710,14 @@ int smooth(Logfile& l, Config& c)  {
 int read_a3(Logfile& l, Config& c) {
   l.log( "read_a3" );
   const std::string& filename = c.get_value( "filename" );
+  const std::string& ssym = c.get_value( "ssym", "" );
+  const std::string& esym = c.get_value( "esym", "" );
   std::string output_filename = filename + ".xa3"; // ex a3 format.
+
   l.inc_prefix();
   l.log( "filename: "+filename );
+  l.log( "ssym:     "+ssym );
+  l.log( "esym:     "+esym );
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
@@ -2734,8 +2739,8 @@ int read_a3(Logfile& l, Config& c) {
   //          ^posb      |
   //                     ^pose
   std::string a_line;
-  std::string ssym = "<s>";
-  std::string esym = "</s>";
+  //std::string ssym = "<s>";
+  //std::string esym = "</s>";
   while( getline( file_in, a_line) ) {
     if ( a_line.substr(0,4) == "NULL" ) {
       //l.log( a_line );
@@ -3748,3 +3753,9 @@ bool contains_id( const std::string& str, const std::string& id  ) {
   }
   return false;
 }
+
+/*
+“The competent programmer is fully aware of the limited size of his
+own skull. He therefore approaches his task with full humility, and
+avoids clever tricks like the plague.” --Dijkstra
+*/
