@@ -2710,9 +2710,13 @@ int smooth(Logfile& l, Config& c)  {
 int read_a3(Logfile& l, Config& c) {
   l.log( "read_a3" );
   const std::string& filename = c.get_value( "filename" );
-  const std::string& ssym = c.get_value( "ssym", "" );
-  const std::string& esym = c.get_value( "esym", "" );
+  std::string ssym = c.get_value( "ssym", "" );
+  std::string esym = c.get_value( "esym", "" );
   std::string output_filename = filename + ".xa3"; // ex a3 format.
+
+  if ( (ssym != "") && (ssym.substr(-1) != " ") ) {
+    ssym += " ";
+  }
 
   l.inc_prefix();
   l.log( "filename: "+filename );
@@ -2754,7 +2758,7 @@ int read_a3(Logfile& l, Config& c) {
 
       posb = a_line.find( delb, pose );
       pose = a_line.find( dele, posb );
-      file_out << ssym << " ";
+      file_out << ssym;
       while ( (posb != std::string::npos) && (pose != std::string::npos) ) {
 	std::string word = a_line.substr(posb+3, pose-posb-4);
 	file_out << word << " "; // " " was std::endl;
