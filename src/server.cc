@@ -915,6 +915,7 @@ int server3(Logfile& l, Config& c) {
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const int port                = stoi( c.get_value( "port", "1984" ));
   const int mode                = stoi( c.get_value( "mode", "0" ));
+  const int resm                = stoi( c.get_value( "resm", "0" ));
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
   const int keep                = stoi( c.get_value( "keep", "0" ));
   const int lc                  = stoi( c.get_value( "lc", "2" ));
@@ -924,6 +925,7 @@ int server3(Logfile& l, Config& c) {
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+to_str(port) );
   l.log( "mode:      "+to_str(mode) );
+  l.log( "resm:      "+to_str(resm) );//result mode.
   l.log( "keep:      "+to_str(keep) );
   l.log( "lc:        "+to_str(lc) );
   l.log( "rc:        "+to_str(rc) );
@@ -1109,8 +1111,11 @@ int server3(Logfile& l, Config& c) {
 	      }
 	      ave_pl10 += prob;
 	    }
-	    ave_pl10 /= probs.size();
-	    
+	    if ( resm == 0 ) { // normally, we return the average
+	      ave_pl10 /= probs.size();
+	    }
+	    // else resm != 0, we return the sum.
+
 	    if ( verbose > 0 ) {
 	      l.log( "ave_pl10="+to_str(ave_pl10) );
 	    }
