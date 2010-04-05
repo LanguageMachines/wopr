@@ -2714,7 +2714,7 @@ int read_a3(Logfile& l, Config& c) {
   std::string esym = c.get_value( "esym", "" );
   std::string output_filename = filename + ".xa3"; // ex a3 format.
 
-  if ( (ssym != "") && (ssym.substr(-1) != " ") ) {
+  if ( (ssym != "") && (ssym.substr(ssym.length()-1, ssym.length()-2) != " ") ) {
     ssym += " ";
   }
 
