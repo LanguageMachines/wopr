@@ -48,5 +48,6 @@ int parse_distribution2( const Timbl::ValueDistribution*, std::map<std::string,
 #endif
 
 int server3( Logfile&, Config& );
+int server4( Logfile&, Config& );
 
 #endif
