@@ -1454,10 +1454,9 @@ int window_lr( Logfile& l, Config& c ) {
 
 // Hapax one line only.
 // Everything that is NOT in wfreqs is replaced by HAPAX.
-// Only called from server2, maybe move it there.
-// Unlike the hapax() function, the actual frequency is checked directly.
+// Only called from server2 and server4, maybe move it there.
 //
-// This is called from server2 - do not use otherwise.
+// This is called from server2 and server4 - do not use otherwise.
 //
 int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
 		int hpx, int hpx_t, std::string& res ) {

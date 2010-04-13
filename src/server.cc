@@ -1356,9 +1356,14 @@ int server3_old( Logfile& l, Config& c ) {
 #ifdef TIMBL
 /*
   This one is for moses/pbmbmt, with hapaxing.
+  Macbook:
+    durian:test_pplxs pberck$ ../wopr -r server4 -p ibasefile:austen.50e3.l2r0_-a1+D.ibase,timbl:"-a1 +D",lexicon:austen.50e3.lex,hpx:1,mode:1,verbose:1
+  then:
+    lw0196:wopr pberck$ echo "the man is area" | nc localhost 1984
+
 */
 int server4(Logfile& l, Config& c) {
-  l.log( "server4" );
+  l.log( "server4. Returns a log10prob over sequence." );
   
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
@@ -1371,6 +1376,7 @@ int server4(Logfile& l, Config& c) {
   const int rc                  = stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const int hapax               = stoi( c.get_value( "hpx", "0" ));
+  const bool skip_sm            = stoi( c.get_value( "skm", "0" )) == 1;
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -1384,6 +1390,8 @@ int server4(Logfile& l, Config& c) {
   l.log( "timbl:     "+timbl );
   l.log( "lexicon    "+lexicon_filename );
   l.log( "hapax:     "+to_str(hapax) );
+  l.log( "skip_sm:   "+to_str(skip_sm) );
+
   l.dec_prefix();
 
   // Load lexicon. 
@@ -1511,6 +1519,20 @@ int server4(Logfile& l, Config& c) {
 	      l.log( "|" + tmp_buf + "|" );
 	    }
 
+	    if ( skip_sm == true ) {
+	      if ( tmp_buf.substr(0, 4) == "<s> " ) {
+		tmp_buf = tmp_buf.substr(4);
+	      }
+	      size_t bl =  tmp_buf.length();
+	      if ( tmp_buf.substr(bl-5, 5) == " </s>" ) {
+		tmp_buf = tmp_buf.substr(0, bl-5);
+	      }
+	      if ( verbose > 1 ) {
+		l.log( "|" + tmp_buf + "| skm" );
+	      }	      
+	      
+	    }
+
 	    cls.clear();
 	    
 	    std::string classify_line = tmp_buf;
@@ -1522,7 +1544,7 @@ int server4(Logfile& l, Config& c) {
 	    }
 
 	    if ( verbose > 1 ) {
-	      l.log( "|" + tmp_buf + "|" );
+	      l.log( "|" + classify_line + "| hpx" );
 	    }
 
 	    // Sentence based, window here, classify all, etc.
@@ -1602,6 +1624,10 @@ int server4(Logfile& l, Config& c) {
 		}
 	      }
 
+	      if ( verbose > 1 ) {
+		l.log( "lprob10("+target+")="+to_str(res_pl10) );
+	      }
+
 	      probs.push_back( res_pl10 ); // store for later.
 
 	    } // i loop
@@ -1611,9 +1637,6 @@ int server4(Logfile& l, Config& c) {
 	    double ave_pl10 = 0.0;
 	    for ( int p = 0; p < probs.size(); p++ ) {
 	      double prob = probs.at(p);
-	      if ( verbose > 1 ) {
-		l.log( "lprob10("+to_str(p)+")="+to_str(prob) );
-	      }
 	      ave_pl10 += prob;
 	    }
 	    if ( resm == 0 ) { // normally, we return the average
@@ -1622,7 +1645,7 @@ int server4(Logfile& l, Config& c) {
 	    // else resm != 0, we return the sum.
 
 	    if ( verbose > 0 ) {
-	      l.log( "ave_pl10="+to_str(ave_pl10) );
+	      l.log( "result="+to_str(ave_pl10) );
 	    }
 
 	    char res_str[7];
