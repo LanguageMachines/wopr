@@ -1406,15 +1406,17 @@ int server4(Logfile& l, Config& c) {
   l.log( "Reading lexicon." );
   std::string a_word;
   int wfreq;
-  unsigned long total_count = 0;
-  unsigned long lex_entries = 0;
-  unsigned long hpx_entries = 0;
+  unsigned long total_count     = 0;
+  unsigned long total_hpx_count = 0;
+  unsigned long lex_entries     = 0;
+  unsigned long hpx_entries     = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   while( file_lexicon >> a_word >> wfreq ) {
-      ++lex_entries;
+    ++lex_entries;
+    total_count += wfreq;
     if ( wfreq > hapax ) {
       wfreqs[a_word] = wfreq;
-      total_count += wfreq;
+      total_hpx_count += wfreq;
       ++hpx_entries;
     }
   }
