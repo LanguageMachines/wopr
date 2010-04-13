@@ -1476,8 +1476,12 @@ int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
 
   res.clear();
   std::string wrd;
-  for ( int i = 0; i < words.size(); i++ ) {
+  for ( int i = 0; i < words.size()-1; i++ ) {
     wrd = words.at( i );
+    if ( wrd == "_" ) { // skip
+       res = res + wrd + " ";
+       continue;
+    }
     wfi = wfreqs.find( wrd );
 
     if ( wfi == wfreqs.end() ) { // not found in lexicon
@@ -1492,9 +1496,10 @@ int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
     }
   } 
 
+  res = res + words.at(words.size()-1);
   // remove last " "
   //
-  res.resize(res.size()-1);
+  //res.resize(res.size()-1);
 
   return 0;
 }

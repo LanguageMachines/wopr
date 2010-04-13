@@ -1537,16 +1537,6 @@ int server4(Logfile& l, Config& c) {
 	    
 	    std::string classify_line = tmp_buf;
 
-	    if ( hapax > 0 ) {
-	      hapax_line( tmp_buf, wfreqs, hapax, 0, classify_line );
-	    } else {
-	      classify_line = tmp_buf;
-	    }
-
-	    if ( verbose > 1 ) {
-	      l.log( "|" + classify_line + "| hpx" );
-	    }
-
 	    // Sentence based, window here, classify all, etc.
 	    //
 	    if ( mode == 1 ) {
@@ -1561,7 +1551,16 @@ int server4(Logfile& l, Config& c) {
     	    probs.clear();
 	    for ( int i = 0; i < cls.size(); i++ ) {
 	      
-	      classify_line = cls.at(i);
+	      tmp_buf = cls.at(i);
+
+	      if ( hapax > 0 ) {
+		hapax_line( tmp_buf, wfreqs, hapax, 0, classify_line );
+	      } else {
+		classify_line = tmp_buf;
+	      }
+	      if ( verbose > 1 ) {
+		l.log( "|" + classify_line + "| hpx" );
+	      }
 	      
 	      words.clear();
 	      Tokenize( classify_line, words, ' ' );
