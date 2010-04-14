@@ -1407,16 +1407,16 @@ int server4(Logfile& l, Config& c) {
   std::string a_word;
   int wfreq;
   unsigned long total_count     = 0;
-  unsigned long total_hpx_count = 0;
   unsigned long lex_entries     = 0;
   unsigned long hpx_entries     = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
+  std::map<std::string,int> hpxfreqs; // hapaxed list
   while( file_lexicon >> a_word >> wfreq ) {
     ++lex_entries;
     total_count += wfreq;
+    wfreqs[a_word] = wfreq;
     if ( wfreq > hapax ) {
-      wfreqs[a_word] = wfreq;
-      total_hpx_count += wfreq;
+      hpxfreqs[a_word] = wfreq;
       ++hpx_entries;
     }
   }
@@ -1553,19 +1553,24 @@ int server4(Logfile& l, Config& c) {
     	    probs.clear();
 	    for ( int i = 0; i < cls.size(); i++ ) {
 	      
-	      tmp_buf = cls.at(i);
-
-	      if ( hapax > 0 ) {
-		hapax_line( tmp_buf, wfreqs, hapax, 0, classify_line );
-	      } else {
-		classify_line = tmp_buf;
-	      }
-	      if ( verbose > 1 ) {
-		l.log( "|" + classify_line + "| hpx" );
-	      }
+	      classify_line = cls.at(i);
 	      
 	      words.clear();
 	      Tokenize( classify_line, words, ' ' );
+
+	      if ( hapax > 0 ) {
+		int c = hapax_vector( words, hpxfreqs, hapax );
+	      }
+	      if ( verbose > 1 ) {
+		std::string t;
+		vector_to_string(words, t);
+		l.log( "|" + t + "| hpx" );
+	      }
+
+	      // if we take target from a pre-non-hapaxed vector, we
+	      // can hapax the whole sentence in the beginning and use
+	      // that for the instances-without-target
+	      //
 	      std::string target = words.at( words.size()-1 );
 
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
@@ -1614,7 +1619,7 @@ int server4(Logfile& l, Config& c) {
 	      if ( res_p > 0 ) {
 		res_pl10 = log10( res_p );
 	      } else {
-		// fall back to lex freq. of correct answer. Cheating?
+		// fall back to lex freq. of correct answer.
 		std::map<std::string,int>::iterator wfi = wfreqs.find(target);
 		if  (wfi != wfreqs.end()) {
 		  res_p = (int)(*wfi).second / (double)total_count ;
@@ -1684,3 +1689,42 @@ int server4( Logfile& l, Config& c ) {
   return -1;
 }
 #endif 
+
+// In place hapaxing. For server4. uses full lexicon and hpx freq.
+//
+int hapax_vector( std::vector<std::string>& words, std::map<std::string,int> wfreqs, int hpx ) {
+
+  std::vector<std::string>::iterator wi;
+  std::map<std::string, int>::iterator wfi;
+  std::string hpx_sym = "<unk>"; //c.get_value("hpx_sym", "<unk>");
+  int changes = 0;
+
+  std::string wrd;
+  for ( int i = 0; i < words.size()-1; i++ ) {
+    wrd = words.at( i );
+    if ( wrd == "_" ) { // skip
+       continue;
+    }
+    wfi = wfreqs.find( wrd );
+
+    if ( wfi == wfreqs.end() ) { // not found in lexicon
+      words.at(i) = hpx_sym;
+      ++changes;
+    } // else leave it as it is
+  } 
+  return changes;
+}
+
+int vector_to_string( std::vector<std::string>& words, std::string& res ) {
+
+  std::vector<std::string>::iterator wi;
+
+  res.clear();
+  std::string wrd;
+  for ( int i = 0; i < words.size(); i++ ) {
+    wrd = words.at( i );
+    res = res + wrd + " ";
+  }
+
+  return 0;
+}
