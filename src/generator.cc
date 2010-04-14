@@ -1,4 +1,26 @@
-// Include STL string type
+// ---------------------------------------------------------------------------
+// $Id$
+// ---------------------------------------------------------------------------
+
+/*****************************************************************************
+ * Copyright 2007 - 2010 Peter Berck                                         *
+ *                                                                           *
+ * This file is part of wopr.                                                *
+ *                                                                           *
+ * wopr is free software; you can redistribute it and/or modify it           *
+ * under the terms of the GNU General Public License as published by the     *
+ * Free Software Foundation; either version 2 of the License, or (at your    *
+ * option) any later version.                                                *
+ *                                                                           *
+ * wopr is distributed in the hope that it will be useful, but WITHOUT       *
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or     *
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License      *
+ * for more details.                                                         *
+ *                                                                           *
+ * You should have received a copy of the GNU General Public License         *
+ * along with wpred; if not, write to the Free Software Foundation,          *
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               *
+ *****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -64,6 +86,7 @@ int generate( Logfile& l, Config& c ) {
   const std::string& timbl            = c.get_value( "timbl" );
   const std::string& end              = c.get_value( "end", " " );
   int                ws               = stoi( c.get_value( "ws", "3" ));
+  int                mode             = stoi( c.get_value( "mode", "1" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
   bool               show_counts      = stoi( c.get_value( "sc", "0" )) == 1;
   std::string        output_filename  = filename + ".gen";
@@ -79,6 +102,7 @@ int generate( Logfile& l, Config& c ) {
   l.log( "ibasefile:  "+ibasefile );
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
+  l.log( "mode:       "+to_str(mode) );
   l.log( "end:        "+end ); // end marker of sentences
   l.log( "n:          "+to_str(n) ); // number of sentences
   l.log( "len:        "+to_str(len) ); // max length of sentences
@@ -164,16 +188,31 @@ int generate( Logfile& l, Config& c ) {
       }
       total_choices += cnt;
 
-      int rnd_idx = mtrand.randInt( cnt-1 ); // % 3; // Extra "% max" ?
+      int rnd_idx;
+      if ( mode == 0 ) {
+	rnd_idx = mtrand.randInt( cnt-1 ); // % 3; // Extra "% max" ?
+      } else {
+	rnd_idx = mtrand.randInt( distr_count-1 ); //NEW
+      }
       //l.log( to_str(rnd_idx)+"/"+to_str(cnt) );
-      
+      unsigned long sum = 0;
+
       // Take (top) answer, or choose something from the
       // distribution.
       //
       it = vd->begin();
-      for ( int i = 0; i < rnd_idx; i++ ) {
-	std::string tvs  = it->second->Value()->Name();
-	++it;
+      if ( mode == 0 ) {
+	for ( int i = 0; i < rnd_idx; i++ ) {
+	  ++it;
+	}
+      } else {
+	for ( int i = 0; i < rnd_idx; i++ ) {
+	  sum += it->second->Weight();
+	  if ( sum > rnd_idx ) {
+	    break;
+	  }
+	  ++it;
+	}
       }
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
@@ -195,11 +234,13 @@ int generate( Logfile& l, Config& c ) {
 	a_line = a_line + words[i] + " ";
       }
 
-      // Stop when "."
+      // Stop when "end" character.
       //
-      if ( tvs == end ) {
+      std::string::size_type pos = end.find( tvs, 0 );
+      if ( pos != std::string::npos ) {
 	s_len = 0;
       }
+
     }
     
     //l.log( result );
@@ -304,6 +345,8 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
   std::string result = "<sentence id=\""+id+"\">";
   int idx = 0;
 
+  int mode = 1; // 0 is old
+
   while ( --len >= 0 ) {
     a_line = a_line + " _";
     tv = My_Experiment->Classify( a_line, vd );
@@ -311,15 +354,31 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     cnt = vd->size();
     int distr_count = vd->totalSize();
 
-    int rnd_idx = mtrand.randInt( cnt-1 ); //  % 3;
-    
+    int rnd_idx;
+    if ( mode == 0 ) {
+      rnd_idx = mtrand.randInt( cnt-1 ); //  % 3;
+    } else {
+      rnd_idx = mtrand.randInt( distr_count-1 );
+    }
+    unsigned long sum = 0;
+
     // Take (top) answer, or choose something from the
     // distribution.
     //
     it = vd->begin();
-    for ( int i = 0; i < rnd_idx; i++ ) {
-      std::string tvs  = it->second->Value()->Name();
-      ++it;
+    if ( mode == 0 ) {
+      for ( int i = 0; i < rnd_idx; i++ ) {
+	std::string tvs  = it->second->Value()->Name();
+	++it;
+      }
+    } else {
+      for ( int i = 0; i < rnd_idx; i++ ) {
+        sum += it->second->Weight();
+        if ( sum > rnd_idx ) {
+          break;
+        }
+        ++it;
+      }
     }
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
