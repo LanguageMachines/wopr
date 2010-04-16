@@ -48,16 +48,16 @@ AS_IF([test "x$with_timbl" != xno],
 
 # Checks for timblserve library.
 
-AC_ARG_WITH([timblserver],
-	[AS_HELP_STRING([--with-timblserver=DIR],
-              [use timblserver installed in <DIR>])],
-       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"]
-       AC_DEFINE_UNQUOTED(TIMBLSERVER,"$prefix",[ Have TimblServer ]))
+AC_ARG_WITH(timblserver,
+       [  --with-timblserver=DIR       use timblserver installed in <DIR>; 
+               note that you can install Timbl in a non-default directory with
+               ./configure --prefix=<DIR> in the Timbl installation directory],
+       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"
+        AC_DEFINE_UNQUOTED(TIMBLSERVER,"$prefix",[ Have TimblServer ])
 #  AC_MSG_NOTICE( [pkg-config search path: $PKG_CONFIG_PATH] )
 PKG_CHECK_MODULES([timblserver], [timblserver >= 1.0.0] )
 CXXFLAGS="$CXXFLAGS $timblserver_CFLAGS"
-LIBS="$LIBS $timblserver_LIBS"
-
+LIBS="$LIBS $timblserver_LIBS"])
 
 
 AC_CHECK_HEADER([pthread.h],
