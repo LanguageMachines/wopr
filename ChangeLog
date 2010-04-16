@@ -1,3 +1,5 @@
+1.23.0	Introducing ngram_server with TimblServerAPI. Still work in progress.
+	
 1.22.6	Changes in generate and generate_server. Likelihood of choice now
 	according to frequency.
 	

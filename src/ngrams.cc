@@ -47,6 +47,7 @@
 #include "util.h"
 #include "runrunrun.h"
 #include "ngrams.h"
+#include "ngram_elements.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -55,10 +56,6 @@
 // Sentence/line based ngram function. ngl creates a list of n-grams
 // from an input text file.
 //
-struct ngl_elem {
-  long freq;
-  int  n;
-};
 int ngram_list( Logfile& l, Config& c ) {
   l.log( "ngl" );
   const std::string& filename        = c.get_value( "filename" );
@@ -215,11 +212,6 @@ void split( std::string& str, std::string& nmin1gram, std::string& lw ) {
     }
 }
 
-struct ngram_elem {
-  double p;
-  int    n;
-  std::string ngram;
-};
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
   const std::string& filename        = c.get_value( "testfile" );//filename?
@@ -356,7 +348,7 @@ int ngram_test( Logfile& l, Config& c ) {
   long   total_oovs  = 0;
   double total_H     = 0.0;
 
-  while( std::getline( file_in, a_line )) {
+  while ( std::getline( file_in, a_line )) {
 
     a_line = trim( a_line, "\n\r " );
 
@@ -777,5 +769,77 @@ int foobar( std::string nmin1gram, std::vector<ngram_elem>& res ) {
   a b c, where c is unknown
   calculate prob. of unknown word after a b, not just "any unknown word".
 */
+
+
+
+/*
+  For use in the ngram server.
+*/
+
+int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngrams, std::vector<ngram_elem>& best_ngrams, 
+		    std::vector<std::string>& results, Logfile& l ) {
+
+  std::vector<std::string>::iterator ri;
+  std::map<std::string,std::string>::iterator mi;
+  std::vector<ngram_elem>::iterator ni;
+  std::map<std::string,double>::iterator gi;
+
+  best_ngrams.clear();
+  
+  for ( int i = 1; i <= n; i++ ) { // loop over ngram sizes
+    //l.log( "n="+to_str(i) );
+    results.clear();
+    
+    if ( ngram_line( a_line, i, results ) == 0 ) { // input to ngrams size i
+      
+      int word_idx = i-1;
+      for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	std::string cl = *ri;
+	//l.log( "Looking for; "+cl );
+	gi = ngrams.find( cl );
+	if ( gi != ngrams.end() ) {
+	  //l.log( "Checking: " + (*gi).first + "/" + to_str((*gi).second) );
+	  std::string matchgram = (*gi).first;
+	  std::string lw;
+	  last_word( matchgram, lw );
+	  //
+	  // Store in the best_ngrams vector.
+	  //
+	  if ( i == 1 ) { // start with unigrams, no element present.
+	    ngram_elem ne;
+	    ne.p = (*gi).second;
+	    ne.n = i;
+	    ne.ngram = matchgram;
+	    //l.log( matchgram+"/"+to_str(ne.p));
+	    best_ngrams.push_back(ne);
+	  } else {
+	    ngram_elem& ne = best_ngrams.at(word_idx);
+	    // If equal probs, take smallest or largest ngram?
+	    // This takes the smallest:
+	    //
+	    //if ( (*gi).second > ne.p ) { // Higher prob than stored.
+	    if ( i > ne.n ) { // Longer length than stored, ignore prob
+	      //l.log( "Replace "+ne.ngram+" with: "+matchgram+"/"+to_str(ne.p));
+	      ne.p = (*gi).second;
+	      ne.n = i;
+	      ne.ngram = matchgram;
+	    }
+	  }
+	  
+	} else { // cl not found in ngrams
+	  //l.log( "unknown" );
+	  if ( i == 1 ) { // start with unigrams
+	    ngram_elem ne;
+	    ne.p = 0;
+	    ne.n = 0;
+	    best_ngrams.push_back(ne);
+	  }
+	  
+	}
+	++word_idx;
+      } // for
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------

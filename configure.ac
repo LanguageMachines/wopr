@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(wopr, 1.22.6)
+AC_INIT(wopr, 1.23.0)
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
@@ -29,7 +29,7 @@ AC_ARG_WITH([timbl],
 
 AS_IF([test "x$with_timbl" != xno],
 	    [
-	    AC_MSG_NOTICE([Checkign for Timbl])
+	    AC_MSG_NOTICE([Checking for Timbl])
 	    AC_ARG_WITH(timbl,
        [  --with-timbl=DIR        use timbl installed in <DIR>],
        [
@@ -46,7 +46,19 @@ AS_IF([test "x$with_timbl" != xno],
             ]
 	    )
 
-# Checks for timbl library.
+# Checks for timblserve library.
+
+AC_ARG_WITH([timblserver],
+	[AS_HELP_STRING([--with-timblserver=DIR],
+              [use timblserver installed in <DIR>])],
+       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"]
+       AC_DEFINE_UNQUOTED(TIMBLSERVER,"$prefix",[ Have TimblServer ]))
+#  AC_MSG_NOTICE( [pkg-config search path: $PKG_CONFIG_PATH] )
+PKG_CHECK_MODULES([timblserver], [timblserver >= 1.0.0] )
+CXXFLAGS="$CXXFLAGS $timblserver_CFLAGS"
+LIBS="$LIBS $timblserver_LIBS"
+
+
 
 AC_CHECK_HEADER([pthread.h],
        [AC_DEFINE([PTHREADS], [1], [pthreads]) LIBS="-lpthread $LIBS"])

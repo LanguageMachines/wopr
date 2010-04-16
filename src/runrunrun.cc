@@ -61,6 +61,7 @@
 #include "tr.h"
 #include "general_test.h"
 #include "ngrams.h"
+#include "ngram_server.h"
 #include "wex.h"
 
 #ifdef TIMBL
@@ -402,6 +403,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &ngram_list; // from ngrams.cc
   } else if ( a_fname == "ngt" ) {
     return &ngram_test; // from ngrams.cc
+  } else if ( a_fname == "ngs" ) {
+    return &ngram_server; // from ngram-server.cc
   } else if ( a_fname == "prepare" ) {
     return &prepare;
   } else if ( a_fname == "arpa" ) {

@@ -37,8 +37,11 @@ wopr_SOURCES = \
 	src/tr.cc \
 	src/general_test.h \
 	src/general_test.cc \
+	src/ngram_elements.h \
 	src/ngrams.h \
 	src/ngrams.cc \
+	src/ngram_server.h \
+	src/ngram_server.cc \
 	src/wex.h \
 	src/wex.cc \
 	src/MersenneTwister.h
