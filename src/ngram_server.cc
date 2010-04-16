@@ -154,7 +154,8 @@ int ngram_server(Logfile& l, Config& c) {
 
     //newSock->write( "Greetings, earthling.\n" );
     std::string buf;
-    newSock->read( buf );
+
+    while ( newSock->read( buf ) ) {
     if ( verbose > 0 ) {
       l.log( "[" + buf + "]" );
     }
@@ -187,6 +188,9 @@ int ngram_server(Logfile& l, Config& c) {
       l.log( to_str(sum_l10probs));
     }
     newSock->write( to_str(sum_l10probs));
+
+    buf.clear();
+    }//while
     delete newSock;
     
   }
