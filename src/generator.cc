@@ -425,21 +425,23 @@ int generate_server( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
   const std::string& end              = c.get_value( "end", "" );
-  int                ws               = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  int                lc               = stoi( c.get_value( "lc", "2" ));
+  int                rc               = stoi( c.get_value( "rc", "0" ));
   int                len              = stoi( c.get_value( "len", "50" ) );
   int                n                = stoi( c.get_value( "n", "10" ) );
   Timbl::TimblAPI   *My_Experiment;
+
+  int ws = lc+rc;
 
   l.inc_prefix();
   l.log( "port:       "+to_str(port) );
   l.log( "ibasefile:  "+ibasefile );
   l.log( "timbl:      "+timbl );
-  l.log( "ws:         "+to_str(ws) );
+  l.log( "lc:         "+to_str(lc) );
+  l.log( "rc:         "+to_str(rc) );
   l.log( "end:        "+end ); // end marker of sentences
   l.log( "n:          "+to_str(n) ); // number of sentences
   l.log( "len:        "+to_str(len) ); // max length of sentences
-  l.log( "lowercase:  "+to_str(to_lower) );
   l.dec_prefix();
 
   try {

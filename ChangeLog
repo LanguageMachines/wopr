@@ -1,5 +1,8 @@
+1.22.6	Changes in generate and generate_server. Likelihood of choice now
+	according to frequency.
+	
 1.22.5	Server4 added, still work in progress. Functionality might change
-	again. 
+	again.
 	
 1.22.4	Removed default encapsulation of read_a3 output in <s></s>.
 	Made ssym and esym parameters.
