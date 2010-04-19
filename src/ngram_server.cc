@@ -60,6 +60,12 @@
 // ---------------------------------------------------------------------------
 
 #ifdef TIMBLSERVER
+/*
+  On margretetorp:
+  terminal1: pberck@margretetorp ~/work/prog/sources/wopr $ 
+             ./wopr -r ngs -p port:1984,ngl:test/austen.txt.ngl3f0,resm:1,verbose:1
+  terminal2: echo "Admiral hates trouble"  | nc localhost 1984 
+*/
 int ngram_server(Logfile& l, Config& c) {
   l.log( "ngs" );
 
@@ -72,6 +78,7 @@ int ngram_server(Logfile& l, Config& c) {
   const int resm                     = stoi( c.get_value( "resm", "0" ));
   const int verbose                  = stoi( c.get_value( "verbose", "0" ));
   const int keep                     = stoi( c.get_value( "keep", "0" ));
+  const int sos                      = stoi( c.get_value( "sos", "0" )); // for <s>
 
   l.inc_prefix();
 
@@ -83,6 +90,7 @@ int ngram_server(Logfile& l, Config& c) {
   l.log( "counts:    "+counts_filename );
   l.log( "n:         "+to_str(n) );
   l.log( "verbose:   "+to_str(verbose) );
+  l.log( "sos:       "+to_str(sos) );
   l.dec_prefix();
 
   std::ifstream file_ngl( ngl_filename.c_str() );
@@ -121,9 +129,6 @@ int ngram_server(Logfile& l, Config& c) {
     ngrams[ngram] = prob;
   }
   file_ngl.close();
-
-
-
   
   Sockets::ServerSocket server;
 
@@ -156,6 +161,10 @@ int ngram_server(Logfile& l, Config& c) {
     std::string buf;
 
     while ( newSock->read( buf ) ) {
+    buf = trim( buf, " \n\r" );
+    if ( sos > 0 ) {
+      buf = "<s> " + buf;
+    }
     if ( verbose > 0 ) {
       l.log( "[" + buf + "]" );
     }
@@ -168,7 +177,7 @@ int ngram_server(Logfile& l, Config& c) {
     double sum_l10probs = 0.0;
     int wc = 0;
     std::vector<ngram_elem>::iterator ni;
-    for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
+    for( ni = best_ngrams.begin()+sos; ni != best_ngrams.end(); ++ni ) {
       double p = (*ni).p;
       ++wc;
       std::string ngram = (*ni).ngram;

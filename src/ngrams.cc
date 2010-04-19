@@ -795,7 +795,7 @@ int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngr
       int word_idx = i-1;
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	std::string cl = *ri;
-	//l.log( "Looking for; "+cl );
+	//l.log( "Processing; "+cl );
 	gi = ngrams.find( cl );
 	if ( gi != ngrams.end() ) {
 	  //l.log( "Checking: " + (*gi).first + "/" + to_str((*gi).second) );
