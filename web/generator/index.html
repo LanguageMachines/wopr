@@ -21,6 +21,10 @@
 <script type="text/javascript">
 window.addEvent('domready', function() {
  generate_one();
+
+ $('button').addEvent( 'click', function() {
+                generate_one();
+             });
 });
 </script>
 <!-- -->
@@ -28,6 +32,7 @@ window.addEvent('domready', function() {
 <body>
 <div id="page">
 <h1 id="title">Word Salad</h1>
+<input id="start" value="_ _"><span id="button">Go</span>
 <div id="container1">
 
 <div id="output">Loading...
