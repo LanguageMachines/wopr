@@ -339,6 +339,24 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 
   MTRand mtrand;
 
+  a_line = trim( a_line, " \n\r" );
+  words.clear();
+  Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
+
+  // Check size of initial a_line, adjust if necessary (to ws).
+  //
+  int wcount = words.size();
+  if ( wcount < ws ) {
+    std::string sos = "_ _ _ _ _ _ _ _";
+    a_line = sos.substr(0, (ws-wcount)*2) + a_line;
+  } else {
+    a_line = "";
+    for ( int i = wcount-ws; i < wcount; i++ ) {
+      a_line = a_line + words.at(i) + " ";
+    }
+  }
+  //std::cerr << "(" << a_line << ")" << std::endl;
+
   words.clear();
   Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
 
@@ -350,7 +368,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
   std::string tmp_res = "";
 
   while ( --len >= 0 ) {
-    a_line = a_line + " _";
+    a_line = a_line + " ?";
 
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = "";// tv->Name();
@@ -386,7 +404,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
     answer = tvs;
-    
+
     tmp_res = tmp_res + answer + "/" + to_str(cnt)+"/"+to_str(distr_count)+" ";
 
     result = result + "<word id=\""+to_str(idx)+"\" cnt=\""+to_str(cnt)+"\""

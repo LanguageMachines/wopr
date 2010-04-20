@@ -424,6 +424,10 @@ void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
               const char delimiter) {
   int pos = 0, pos_ant = 0;
   
+  if ( buffer == "" ) {
+    return;
+  }
+
   pos = buffer.find(delimiter, pos_ant);
   while ( pos != std::string::npos ) {
     std::string token = buffer.substr(pos_ant, pos-pos_ant);
