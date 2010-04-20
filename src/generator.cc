@@ -347,8 +347,11 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 
   int mode = 1; // 0 is old
 
+  std::string tmp_res = "";
+
   while ( --len >= 0 ) {
     a_line = a_line + " _";
+
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = "";// tv->Name();
     cnt = vd->size();
@@ -384,6 +387,8 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     double      wght = it->second->Weight();
     answer = tvs;
     
+    tmp_res = tmp_res + answer + "/" + to_str(cnt)+"/"+to_str(distr_count)+" ";
+
     result = result + "<word id=\""+to_str(idx)+"\" cnt=\""+to_str(cnt)+"\""
       + " freq=\""+to_str(wght)+"\" sumfreq=\""+to_str(distr_count)+"\">";
     result = result + "<![CDATA[" + answer + "]]>";
@@ -405,8 +410,11 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     if ( pos != std::string::npos ) {
       len = 0;
     }
-    
+
   }
+
+  std::cout << tmp_res << std::endl;
+  tmp_res = "";
 
   result = result + "</sentence>";
 
@@ -421,7 +429,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 int generate_server( Logfile& l, Config& c ) {
   l.log( "generate_server" );
   const int port = stoi( c.get_value( "port", "1988" ));
-  const std::string& start            = c.get_value( "start", "" );
+  std::string start            = c.get_value( "start", "" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
   const std::string& end              = c.get_value( "end", "" );
@@ -548,7 +556,10 @@ int generate_server( Logfile& l, Config& c ) {
 	  connection_open = false;// no use, we are in child...
 	  continue;
 	}
-	
+
+	start = tmp_buf;
+	l.log( "start="+start );
+
 	while ( --n >= 0 ) {
 	  a_line = start;
 	  if ( start == "" ) { // or less words than ws!

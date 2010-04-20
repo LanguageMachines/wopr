@@ -5,6 +5,7 @@
 function generate_one() {
   var generator_url = "./generator.php";
   var output_el     = $('output');
+  var start         = $('start').get('value');
 
   var req = new Request( {url:generator_url,
 	onSuccess:function(responseText, responseXML) {
@@ -37,11 +38,11 @@ function generate_one() {
 	output_el.set('html', new_html);
       },
 	onFailure:function(responseText, responseXML) {
-	output_el.set('html', "Error, cannot get a result from server...");
+	alert("Error.");
       }
     });
   
-  req.send('h=localhost&p=1984');
+  req.send('h=localhost&p=1984&s='+start);
 }
 //
 //]]>
