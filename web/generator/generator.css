@@ -41,6 +41,10 @@ input {
     color: #A999A8; /*#6b7b95; /*#a87aad;*/ /*#78ba91;good*/ /*#c17878;*/
 }
 
+.start {
+    color: #f69028;
+}
+
 a {
   text-decoration: none;
   color: #f69028;

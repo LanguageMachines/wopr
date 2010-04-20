@@ -29,6 +29,9 @@ function generate_one() {
 	    if ( cnt == 1 ) {
 	      klass = "nochoice";
 	    }
+	    if ( cnt == 0 ) {
+	      klass = "start";
+	    }
 	    new_html = new_html + "<span class=\""+klass+"\">";
 	    new_html = new_html + word;
 	    new_html = new_html + "</span> ";

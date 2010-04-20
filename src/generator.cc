@@ -358,10 +358,20 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
   //std::cerr << "(" << a_line << ")" << std::endl;
 
   words.clear();
-  Tokenize( a_line, words, ' ' ); // if less than ws, add to a_line
+  Tokenize( a_line, words, ' ' ); 
 
   std::string result = "<sentence id=\""+id+"\">";
   int idx = 0;
+
+  for ( int i = 0; i < ws; i++ ) {
+    if ( words.at(i) != "_" ) {
+      result = result + "<word id=\""+to_str(idx)+"\" cnt=\"0\""
+	+ " freq=\"0\" sumfreq=\"0\">";
+      result = result + "<![CDATA[" + words.at(i) + "]]>";
+      result = result + "</word>\n";
+      ++idx;
+    }
+  }
 
   int mode = 1; // 0 is old
 
