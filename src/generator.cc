@@ -452,7 +452,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 
 
 #ifdef TIMBL
-// This one listens on a socket, and uses generate_one
+// This one listens on a socket, and uses generate_xml
 //
 int generate_server( Logfile& l, Config& c ) {
   l.log( "generate_server" );
@@ -588,37 +588,23 @@ int generate_server( Logfile& l, Config& c ) {
 	start = tmp_buf;
 	l.log( "start="+start );
 
+	// INfo about wopr
+	std::string info = "<info>";
+	info += "ibasefile:"+ibasefile+",lc:"+to_str(lc)+",rc:"+to_str(rc);
+	info += "</info>";
+	if ( send( new_fd, info.c_str(), info.length(), 0 ) == -1 ) {
+	  perror("send");
+	}
+
 	while ( --n >= 0 ) {
 	  a_line = start;
-	  if ( start == "" ) { // or less words than ws!
-	    for ( int i = 0; i < ws; i++ ) {
-	      a_line = a_line + "_ "; // could pick a random something?
-	    }
-	  }
-	  
+
 	  std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n), My_Experiment );
-	  // We should add foo to start if we want to use start...
-	  if ( start != "" ) {
-	    foo = start + " " + foo; // Must be in XML format!
-	  }
+
 	  //foo = "<data><![CDATA[" + foo + "]]></data>";
-	  if ( send( new_fd, foo.c_str(), foo.length(), 0 ) == -1 ) {
+ 	  if ( send( new_fd, foo.c_str(), foo.length(), 0 ) == -1 ) {
 	    perror("send");
 	  }
-	  
-	  /*
-	    better to tokenize foo, and make this:
-	    <sentence id=".."><word cnt="" txt="word" idx=".." /></sentence>
-	    So we can have stats &c.
-	  */
-	  /*
-	  std::vector<std::string> words;
-	  Tokenize( foo, words, " " );
-	  std::string output = "<sentence>";
-	  for ( int i = 0; i < words.length(); i++ ) {
-	    output = output + "<word ";
-	  }
-	  */
 	  
 	} // --n
 	l.log( "ready." );

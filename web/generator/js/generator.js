@@ -5,6 +5,7 @@
 function generate_one() {
   var generator_url = "./generator.php";
   var output_el     = $('output');
+  var info_el       = $('info');
   var start         = $('start').get('value');
 
   var req = new Request( {url:generator_url,
@@ -16,6 +17,10 @@ function generate_one() {
 	  return;
 	}
 	
+	var info = ans.documentElement.getElementsByTagName("info");
+	var info_txt = info[0].childNodes[0].nodeValue;
+	info_el.set('html', info_txt );
+
 	var new_html = "";
 	var sentences = ans.documentElement.getElementsByTagName("sentence");
 	for (var s = 0; s < sentences.length; s++) {
