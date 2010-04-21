@@ -78,7 +78,7 @@ int ngram_server(Logfile& l, Config& c) {
   const int resm                     = stoi( c.get_value( "resm", "0" ));
   const int verbose                  = stoi( c.get_value( "verbose", "0" ));
   const int keep                     = stoi( c.get_value( "keep", "0" ));
-  const int sos                      = stoi( c.get_value( "sos", "0" )); // for <s>
+  const int sos                      = stoi( c.get_value( "sos", "0" ));
 
   l.inc_prefix();
 

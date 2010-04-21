@@ -63,6 +63,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+// ----
+
 #define BACKLOG 5     // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once 
 
@@ -72,6 +74,10 @@ void sigchld_handler_gen( int s ) {
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
+#endif
+
+#ifdef TIMBLSERVER
+#include "timblserver/TimblServerAPI.h"
 #endif
 
 /*
@@ -362,6 +368,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 
   std::string result = "<sentence id=\""+id+"\">";
   int idx = 0;
+  std::string tmp_res = "";
 
   for ( int i = 0; i < ws; i++ ) {
     if ( words.at(i) != "_" ) {
@@ -369,16 +376,18 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 	+ " freq=\"0\" sumfreq=\"0\">";
       result = result + "<![CDATA[" + words.at(i) + "]]>";
       result = result + "</word>\n";
+
+      tmp_res = tmp_res + words.at(i) + " ";
       ++idx;
     }
   }
 
   int mode = 1; // 0 is old
 
-  std::string tmp_res = "";
-
   while ( --len >= 0 ) {
     a_line = a_line + " ?";
+
+    //std::cout << "Timbl(" << a_line << ")" << std::endl;
 
     tv = My_Experiment->Classify( a_line, vd );
     std::string answer = "";// tv->Name();
@@ -454,7 +463,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 #ifdef TIMBL
 // This one listens on a socket, and uses generate_xml
 //
-int generate_server( Logfile& l, Config& c ) {
+int generate_serverOLD( Logfile& l, Config& c ) {
   l.log( "generate_server" );
   const int port = stoi( c.get_value( "port", "1988" ));
   std::string start            = c.get_value( "start", "" );
@@ -468,6 +477,7 @@ int generate_server( Logfile& l, Config& c ) {
   Timbl::TimblAPI   *My_Experiment;
 
   int ws = lc+rc;
+  MTRand mtrand;
 
   l.inc_prefix();
   l.log( "port:       "+to_str(port) );
@@ -599,7 +609,10 @@ int generate_server( Logfile& l, Config& c ) {
 	while ( --n >= 0 ) {
 	  a_line = start;
 
-	  std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n), My_Experiment );
+	  //int len1 = mtrand.randInt( len )+1;
+
+	  std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n),
+					  My_Experiment );
 
 	  //foo = "<data><![CDATA[" + foo + "]]></data>";
  	  if ( send( new_fd, foo.c_str(), foo.length(), 0 ) == -1 ) {
@@ -619,8 +632,137 @@ int generate_server( Logfile& l, Config& c ) {
   return 0;
 }  
 #else
-int generate_server( Logfile& l, Config& c ) {
+int generate_serverOLD( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
+  return -1;
+}  
+#endif
+
+// Needs both TIMBL and TIMBLSERVER
+
+#ifdef TIMBLSERVER
+int generate_server( Logfile& l, Config& c ) {
+  l.log( "new_generate_server" );
+  const std::string& port            = c.get_value( "port", "1988" );
+  std::string        start            = c.get_value( "start", "" );
+  const std::string& ibasefile        = c.get_value( "ibasefile" );
+  const std::string& timbl            = c.get_value( "timbl" );
+  const std::string& end              = c.get_value( "end", "" );
+  int                lc               = stoi( c.get_value( "lc", "2" ));
+  int                rc               = stoi( c.get_value( "rc", "0" ));
+  int                len              = stoi( c.get_value( "len", "50" ) );
+  const int          verbose          = stoi( c.get_value( "verbose", "0" ));
+  int                n                = stoi( c.get_value( "n", "10" ) );
+  Timbl::TimblAPI   *My_Experiment;
+
+  int ws = lc+rc;
+  MTRand mtrand;
+
+  l.inc_prefix();
+  l.log( "port:       "+port );
+  l.log( "ibasefile:  "+ibasefile );
+  l.log( "timbl:      "+timbl );
+  l.log( "lc:         "+to_str(lc) );
+  l.log( "rc:         "+to_str(rc) );
+  l.log( "end:        "+end ); // end marker of sentences
+  l.log( "n:          "+to_str(n) ); // number of sentences
+  l.log( "len:        "+to_str(len) ); // max length of sentences
+  l.dec_prefix();
+
+  try {
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;      
+    }
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;
+    }
+  } catch (...) {
+    l.log( "Cannot create Timbl Experiment..." );
+    return 1;
+  }
+  l.log( "Instance base loaded." );
+
+  // ----
+
+  Sockets::ServerSocket server;
+
+  if ( ! server.connect( port )) {
+    l.log( "ERROR: cannot start server: "+server.getMessage() );
+    return 1;
+  }
+  if ( ! server.listen(  ) < 0 ) {
+    l.log( "ERROR: cannot listen. ");
+    return 1;
+  };
+
+  l.log( "Starting server..." );
+
+  // ----
+
+  std::string a_line;
+  std::string result;
+  std::string buf;
+
+  while ( true ) { 
+
+    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+    if ( !server.accept( *newSock ) ) {
+      if( errno == EINTR ) {
+	continue;
+      } else {
+	l.log( "ERROR: " + server.getMessage() );
+	return 1;
+      }
+    }
+    if ( verbose > 0 ) {
+      l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	     + std::string(newSock->getClientName()) );
+    }
+
+    //newSock->write( "Greetings, earthling.\n" );
+
+    newSock->read( buf );
+    buf = trim( buf, " \n\r" );
+    std::string tmp_buf = str_clean( buf );
+    tmp_buf = trim( tmp_buf, " \n\r" );
+    
+    start = tmp_buf;
+    l.log( "start="+start );
+    
+    // INfo about wopr
+    std::string info = "<info>";
+    info += "ibasefile:"+ibasefile+",lc:"+to_str(lc)+",rc:"+to_str(rc);
+    info += "</info>";
+    newSock->write( info );
+    
+    int n1 = n;
+    while ( --n1 >= 0 ) {
+      a_line = start;
+      
+      //int len1 = mtrand.randInt( len )+1;
+      
+      std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n1),
+				      My_Experiment );
+      
+      //foo = "<data><![CDATA[" + foo + "]]></data>";
+      newSock->write( foo );
+    } // --n
+    
+    l.log( "ready." );
+
+    delete newSock;
+
+  } // while true
+
+  return 0;
+}
+#else
+int generate_server( Logfile& l, Config& c ) {
+  l.log( "No TIMBL/SERVER support." );
   return -1;
 }  
 #endif
