@@ -82,7 +82,6 @@
 #include "SocketBasics.h"
 #endif
 
-
 #define BACKLOG 5     // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once 
 
@@ -98,12 +97,12 @@ test$ ../wopr -r server2 -p ibasefile:reuters.martin.tok.1000.ws3.ibase,lexicon:
 */
 #ifdef TIMBL
 int server2(Logfile& l, Config& c) {
-  l.log( "server2" );
+  l.log( "server2. Deprecated." );
   
   const std::string& timbl  = c.get_value( "timbl" );
-  const int port = stoi( c.get_value( "port", "1984" ));
+  const std::string port    = c.get_value( "port", "1984" );
   const int precision = stoi( c.get_value( "precision", "10" )); // c++ output
-                                                                // precision
+                                                                 // precision
   const int output = stoi( c.get_value( "output", "1" ));
   const int hpx_t  = stoi( c.get_value( "hpx_t", "0" )); // Hapax target
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -114,17 +113,17 @@ int server2(Logfile& l, Config& c) {
   const int sentence = stoi( c.get_value( "sentence", "1" ));
 
   l.inc_prefix();
-  l.log( "ibasefile: " + c.get_value("ibasefile") );
-  l.log( "port:      "+to_str(port) );
+  l.log( "ibasefile: "+c.get_value("ibasefile") );
+  l.log( "port:      "+port );
   l.log( "timbl:     "+timbl );
   l.log( "ws:        "+to_str(ws) );
   l.log( "hpx:       "+to_str(hapax) );
   l.log( "hpx_t:     "+to_str(hpx_t) );
   l.log( "precision: "+to_str(precision) );
   l.log( "output:    "+to_str(output) );
-  l.log( "lexicon:   " + lexicon_filename );
-  l.log( "unknown p: " + to_str(unk_prob) );
-  l.log( "sentence:  " + to_str(sentence) );
+  l.log( "lexicon:   "+lexicon_filename );
+  l.log( "unknown p: "+to_str(unk_prob) );
+  l.log( "sentence:  "+to_str(sentence) );
   l.dec_prefix();
 
   create_watcher( c );
@@ -179,95 +178,60 @@ int server2(Logfile& l, Config& c) {
     //My_Experiment->StartServer( 8888, 1 );
     // here we start socket server and wait/process.
 
-    int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
-    struct sockaddr_in my_addr;    // my address information
-    struct sockaddr_in their_addr; // connector's address information
-    socklen_t sin_size;
-    struct sigaction sa;
-    int yes=1;
-    int numbytes;  
-    char buf[MAXDATASIZE];
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-      perror("socket");
-      exit(1);
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-      perror("setsockopt");
-      exit(1);
-    }
-
-    int ka = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &ka, sizeof(int)) == -1 ) {
-      perror("setsockopt");
-      exit(1);
-    }
-      
-    my_addr.sin_family = AF_INET;         // host byte order
-    my_addr.sin_port = htons(port);       // short, network byte order
-    my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
-    memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
+    Sockets::ServerSocket server;
     
-    if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof my_addr) == -1) {
-      perror("bind");
-      exit(1);
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
     }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
     
-    if (listen(sockfd, BACKLOG) == -1) {
-      perror("listen");
-      exit(1);
-    }
-    
-    sa.sa_handler = sigchld_handler; // reap all dead processes
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if ( sigaction( SIGCHLD, &sa, NULL ) == -1 ) {
-      perror( "sigaction" );
-      exit( 1 );
-    }
+    l.log( "Starting server..." );
 
     // loop
     int  verbose = 0;
     struct wopr_msgbuf wmb = {2, verbose, 8}; // children get copy.
 
     while ( c.get_status() != 0 ) {  // main accept() loop
-      sin_size = sizeof their_addr;
 
-      if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
-			   &sin_size)) == -1) {
-	perror("accept");
-	continue;
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
       }
-      l.log( "Connection from: " +std::string(inet_ntoa(their_addr.sin_addr)));
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+
+      //newSock->write( "Greetings, earthling.\n" );
+      std::string buf;
 
       // Measure processing time.
       //
       long f1 = l.clock_mu_secs();
 
-      // socket_file before fork?
-
       if ( c.get_status() && ( ! fork() )) { // this is the child process
-	close(sockfd); // child doesn't need the listener.	
 
 	bool connection_open = true;
 	while ( connection_open ) {
 
 	long f000 = l.clock_mu_secs();
 	
-	if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
-	  perror("recv");
-	  exit(1);
-	}
-	buf[numbytes] = '\0';
-	//printf("Received: %s",buf);
+	std::string tmp_buf;
+	newSock->read( tmp_buf );
+	tmp_buf = trim( tmp_buf, " \n\r" );
 
 	long f001 = l.clock_mu_secs();
 	long diff001 = f001 - f000;
 	l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
-
-	std::string tmp_buf = str_clean( buf );
-	tmp_buf = trim( tmp_buf, " \n\r" );
 
 	if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
 	  connection_open = false;
@@ -289,9 +253,7 @@ int server2(Logfile& l, Config& c) {
 	    l.log( "Filename: " + rhs );
 	    socket_file( l, c, My_Experiment, rhs, wfreqs, total_count);
 	    std::string p = "ready.";
-	    if ( send( new_fd, p.c_str(), p.length(), 0 ) == -1 ) {
-	      perror("send");
-	    }
+	    newSock->write( p );
 	  } else {
 	    l.log( "ERROR: cannot parse filename." );
 	  }
@@ -536,16 +498,12 @@ int server2(Logfile& l, Config& c) {
 	  
 	  // Should send extra info from c?
 
-	  if ( send( new_fd, json.c_str(), json.length(), 0 ) == -1 ) {
-	    perror("send");
-	  }
+	  newSock->write( json );
 	}
 	
 	if ( output == 0 ) { // 0 is perplexity only
 	  std::string p = to_str(total_prplx) + "\n";
-	  if ( send( new_fd, p.c_str(), p.length(), 0 ) == -1 ) {
-	    perror("send");
-	  }
+	  newSock->write( p );
 	}
 	
 	//close(new_fd);
@@ -556,7 +514,7 @@ int server2(Logfile& l, Config& c) {
 	} // connection_open
 	exit(0);
       } // fork
-      close( new_fd );  
+      delete newSock;
     }
   }
   catch ( const std::exception& e ) {
@@ -914,7 +872,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
   This one is for moses
 */
 int server3(Logfile& l, Config& c) {
-  l.log( "server3" );
+  l.log( "server3. Deprecated." );
   
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
