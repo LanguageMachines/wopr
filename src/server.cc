@@ -996,17 +996,15 @@ int server4(Logfile& l, Config& c) {
 	       + std::string(newSock->getClientName()) );
       }
 
-      //newSock->write( "Greetings, earthling.\n" );
       std::string buf;
-
       
       if ( c.get_status() && ( ! fork() )) { // this is the child process
 	
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
+
 	while ( connection_open ) {
-	  
 
 	    std::string tmp_buf;
 	    newSock->read( tmp_buf );

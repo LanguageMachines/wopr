@@ -73,12 +73,13 @@ int ngram_server(Logfile& l, Config& c) {
   const std::string& counts_filename = c.get_value( "counts" );
   int                n               = stoi( c.get_value( "n", "3" ));
   std::string        id              = c.get_value( "id", "" );
-  const std::string& port            = c.get_value( "port", "1984" );
+  const std::string  port            = c.get_value( "port", "1984" );
   const int mode                     = stoi( c.get_value( "mode", "0" ));
   const int resm                     = stoi( c.get_value( "resm", "0" ));
   const int verbose                  = stoi( c.get_value( "verbose", "0" ));
   const int keep                     = stoi( c.get_value( "keep", "0" ));
   const int sos                      = stoi( c.get_value( "sos", "0" ));
+  const int eos                      = stoi( c.get_value( "eos", "0" ));
 
   l.inc_prefix();
 
@@ -91,6 +92,7 @@ int ngram_server(Logfile& l, Config& c) {
   l.log( "n:         "+to_str(n) );
   l.log( "verbose:   "+to_str(verbose) );
   l.log( "sos:       "+to_str(sos) );
+  l.log( "eos:       "+to_str(eos) );
   l.dec_prefix();
 
   std::ifstream file_ngl( ngl_filename.c_str() );
@@ -142,6 +144,7 @@ int ngram_server(Logfile& l, Config& c) {
   };
 
   l.log( "Starting server..." );
+  std::string buf;
   while ( true ) { 
     Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
     if ( !server.accept( *newSock ) ) {
@@ -157,49 +160,54 @@ int ngram_server(Logfile& l, Config& c) {
 	     + std::string(newSock->getClientName()) );
     }
 
-    std::string buf;
-
     while ( newSock->read( buf ) ) {
-    buf = trim( buf, " \n\r" );
-    if ( sos > 0 ) {
-      buf = "<s> " + buf;
-    }
-    if ( verbose > 0 ) {
-      l.log( "[" + buf + "]" );
-    }
-    // process one line...
-
-    std::vector<ngram_elem> best_ngrams;
-    std::vector<std::string> results;
-    int foo = ngram_one_line( buf, n, ngrams, best_ngrams, results, l );
-
-    double sum_l10probs = 0.0;
-    int wc = 0;
-    std::vector<ngram_elem>::iterator ni;
-    for( ni = best_ngrams.begin()+sos; ni != best_ngrams.end(); ++ni ) {
-      double p = (*ni).p;
-      ++wc;
-      std::string ngram = (*ni).ngram;
-      if ( verbose > 1 ) {
-	l.log( ngram+"/"+to_str(p) ) ;
+      buf = trim( buf, " \n\r" );
+      if ( sos > 0 ) {
+	buf = "<s> " + buf;
       }
-      if ( p > 0 ) {
-	sum_l10probs += log10( p );
-      } else {
-	sum_l10probs += -99;
+      if ( eos > 0 ) {
+	buf = buf + " </s>";
       }
-    }
-    if ( resm == 0 ) {
-      sum_l10probs /= wc;
-    }
-    if ( verbose > 0 ) {
-      l.log( to_str(sum_l10probs));
-    }
-    newSock->write( to_str(sum_l10probs));
+      if ( verbose > 0 ) {
+	l.log( "[" + buf + "]" );
+      }
+      // process one line...
+      
+      std::vector<ngram_elem> best_ngrams;
+      std::vector<std::string> results;
+      int foo = ngram_one_line( buf, n, ngrams, best_ngrams, results, l );
+      
+      double sum_l10probs = 0.0;
+      int wc = 0;
+      std::vector<ngram_elem>::iterator ni;
+      for( ni = best_ngrams.begin()+sos; ni != best_ngrams.end(); ++ni ) {
+	double p = (*ni).p;
+	++wc;
+	std::string ngram = (*ni).ngram;
+	if ( verbose > 1 ) {
+	  if ( ngram == "" ) {
+	    ngram = "<unk>";
+	  }
+	  l.log( ngram+"/"+to_str(p) ) ;
+	}
+	if ( p > 0 ) {
+	  sum_l10probs += log10( p );
+	} else {
+	  sum_l10probs += -99;
+	}
+      }
+      if ( resm == 0 ) {
+	sum_l10probs /= wc;
+      }
+      if ( verbose > 0 ) {
+	l.log( to_str(sum_l10probs));
+      }
+      newSock->write( to_str(sum_l10probs));
 
-    buf.clear();
-    }//while
-    delete newSock;
+      delete newSock;
+
+      buf.clear();
+    }
     
   }
 
