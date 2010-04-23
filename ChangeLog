@@ -1,3 +1,5 @@
+1.23.2	Deprecated server3. Use server4 in stead.
+	
 1.23.1	Moving away from heavy TimblServer dependency. Took the necessary
 	SocketBasics files from TimblServer and incorporated them into
 	Wopr. 
