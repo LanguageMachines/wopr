@@ -1,3 +1,7 @@
+1.23.1	Moving away from heavy TimblServer dependency. Took the necessary
+	SocketBasics files from TimblServer and incorporated them into
+	Wopr. 
+	
 1.23.0	Introducing ngram_server with TimblServerAPI. Still work in progress.
 	
 1.22.6	Changes in generate and generate_server. Likelihood of choice now

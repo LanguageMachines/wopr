@@ -78,6 +78,11 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#ifdef TIMBLSERVER
+//#include "timblserver/TimblServerAPI.h"
+#endif
+#include "SocketBasics.h"
+
 #define BACKLOG 5     // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once 
 
@@ -1156,204 +1161,7 @@ int server3( Logfile& l, Config& c ) {
 }
 #endif 
 
-#ifdef TIMBL
-int server3_old(Logfile& l, Config& c) {
-  l.log( "server3" );
-  
-  const std::string& timbl      = c.get_value( "timbl" );
-  const std::string& ibasefile  = c.get_value( "ibasefile" );
-  const int port                = stoi( c.get_value( "port", "1984" ));
-
-  l.inc_prefix();
-  l.log( "ibasefile: "+ibasefile );
-  l.log( "port:      "+to_str(port) );
-  l.log( "timbl:     "+timbl );
-  l.dec_prefix();
-
-  std::string distrib;
-  std::vector<std::string> distribution;
-  std::string result;
-  double distance;
-  double total_prplx = 0.0;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
-  
-  try {
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( ibasefile );
-
-    int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
-    struct sockaddr_in my_addr;    // my address information
-    struct sockaddr_in their_addr; // connector's address information
-    socklen_t sin_size;
-    struct sigaction sa;
-    int yes=1;
-    int numbytes;  
-    char buf[MAXDATASIZE];
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-      perror("socket");
-      exit(1);
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-      perror("setsockopt");
-      exit(1);
-    }
-
-    int ka = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &ka, sizeof(int)) == -1 ) {
-      perror("setsockopt");
-      exit(1);
-    }
-      
-    my_addr.sin_family = AF_INET;         // host byte order
-    my_addr.sin_port = htons(port);       // short, network byte order
-    my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
-    memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
-    
-    if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof my_addr) == -1) {
-      perror("bind");
-      exit(1);
-    }
-    
-    if (listen(sockfd, BACKLOG) == -1) {
-      perror("listen");
-      exit(1);
-    }
-    
-    sa.sa_handler = sigchld_handler; // reap all dead processes
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if ( sigaction( SIGCHLD, &sa, NULL ) == -1 ) {
-      perror( "sigaction" );
-      exit( 1 );
-    }
-
-    // loop
-    //
-    while ( c.get_status() != 0 ) {  // main accept() loop
-      sin_size = sizeof their_addr;
-
-      if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
-			   &sin_size)) == -1) {
-	perror("accept");
-	continue;
-      }
-      l.log( "Connection from: " +std::string(inet_ntoa(their_addr.sin_addr)));
-
-      if ( c.get_status() && ( ! fork() )) { // this is the child process
-	close(sockfd); // child doesn't need the listener.	
-	
-	bool connection_open = true;
-	while ( connection_open ) {
-	  
-	  if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
-	    perror("recv");
-	    exit(1);
-	  }
-	  buf[numbytes] = '\0';
-	  
-	  std::string tmp_buf = buf;//str_clean( buf );
-	  tmp_buf = trim( tmp_buf, " \n\r" );
-	  
-	  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
-	    connection_open = false;
-	    break;
-	  }
-
-	  // Check for commands? Some kind of protocol?
-
-	  // Let this also window and tokenize input? Seperate
-	  // "utility" server which does that?
-
-	  // Read an XML input packet with commands and "stuff" ?
-
-	  // Assume first line is n if we want to send n lines.
-	  //
-	  int num = stoi( tmp_buf );//.substr(4, std::string::npos) );
-	  if ( num == 0 ) {
-	    connection_open = false;
-	    break;
-	  }
-	  l.log( "NUM="+to_str(num) );
-
-	  long f1 = l.clock_mu_secs();
-
-	  std::vector<std::string> instances;
-
-	  for ( int i = 0; i < num; i++ ) {
-
-	    if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
-	      perror("recv");
-	      exit(1);
-	    }
-	    buf[numbytes] = '\0';
-
-	    std::string tmp_buf = buf;//str_clean( buf );
-	    tmp_buf = trim( tmp_buf, " \n\r" );
-
-	    instances.push_back( tmp_buf );
-	    l.log( to_str(numbytes)+"|" + tmp_buf + "|" );
-	  }
-
-	  std::vector<std::string> results_output;
-
-	  for ( int i = 0; i < num; i++ ) {
-
-	    std::string classify_line = instances.at(i);
-
-	    std::vector<std::string> results;
-	    std::vector<std::string> targets;
-	    std::vector<std::string>::iterator ri;
-	    
-	    tv = My_Experiment->Classify( classify_line, vd, distance );
-	    result = tv->Name();
-	    
-	    // Grok the distribution returned by Timbl.
-	    //
-	    std::map<std::string, double> res;
-	    parse_distribution2( vd, res ); // was parse_distribution(...)
-	    
-	    std::string json = result;
-	    results_output.push_back( result );
-	    
-	  } // i
-
-	  for ( int i = 0; i < num; i++ ) {
-	    std::string json = results_output.at(i)+"\n";
-	    if ( send( new_fd, json.c_str(), json.length(), 0 ) == -1 ) {
-	      perror("send");
-	    }
-	  }
-
-	  long f2 = l.clock_mu_secs();
-	  long diff_mu_secs = f2 - f1;
-	  
-	  l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
-
-	} // connection_open
-	exit(0);
-      } // fork
-      close( new_fd );  
-    }
-  }
-  catch ( const std::exception& e ) {
-    l.log( "ERROR: exception caught." );
-    return -1;
-  }
-  
-  return 0;
-}
-#else
-int server3_old( Logfile& l, Config& c ) {
-  l.log( "No TIMBL support." );
-  return -1;
-}
-#endif
-
-
-#ifdef TIMBL
+#if defined(TIMBLSERVER) && defined(TIMBL)
 /*
   This one is for moses/pbmbmt, with hapaxing.
   Macbook:
@@ -1361,13 +1169,15 @@ int server3_old( Logfile& l, Config& c ) {
   then:
     lw0196:wopr pberck$ echo "the man is area" | nc localhost 1984
 
+    ../wopr -r server4 -p ibasefile:OpenSub-english.train.txt.l2r0.hpx1_-a1+D.ibase,timbl:"-a1 +D",lexicon:OpenSub-english.train.txt.lex,mode:1,verbose:2,resm:1
+
 */
 int server4(Logfile& l, Config& c) {
   l.log( "server4. Returns a log10prob over sequence." );
   
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
-  const int port                = stoi( c.get_value( "port", "1984" ));
+  const std::string port        = c.get_value( "port", "1984" );
   const int mode                = stoi( c.get_value( "mode", "0" ));
   const int resm                = stoi( c.get_value( "resm", "0" ));
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
@@ -1380,7 +1190,7 @@ int server4(Logfile& l, Config& c) {
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
-  l.log( "port:      "+to_str(port) );
+  l.log( "port:      "+port );
   l.log( "mode:      "+to_str(mode) );
   l.log( "resm:      "+to_str(resm) );//result mode.
   l.log( "keep:      "+to_str(keep) );
@@ -1391,7 +1201,6 @@ int server4(Logfile& l, Config& c) {
   l.log( "lexicon    "+lexicon_filename );
   l.log( "hapax:     "+to_str(hapax) );
   l.log( "skip_sm:   "+to_str(skip_sm) );
-
   l.dec_prefix();
 
   // Load lexicon. 
@@ -1435,82 +1244,51 @@ int server4(Logfile& l, Config& c) {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
-    int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
-    struct sockaddr_in my_addr;    // my address information
-    struct sockaddr_in their_addr; // connector's address information
-    socklen_t sin_size;
-    struct sigaction sa;
-    int yes=1;
-    int numbytes;  
-    char buf[MAXDATASIZE];
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-      perror("socket");
-      exit(1);
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-      perror("setsockopt");
-      exit(1);
-    }
-
-    int ka = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &ka, sizeof(int)) == -1 ) {
-      perror("setsockopt");
-      exit(1);
-    }
-      
-    my_addr.sin_family = AF_INET;         // host byte order
-    my_addr.sin_port = htons(port);       // short, network byte order
-    my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
-    memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
+    Sockets::ServerSocket server;
     
-    if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof my_addr) == -1) {
-      perror("bind");
-      exit(1);
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
     }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
     
-    if (listen(sockfd, BACKLOG) == -1) {
-      perror("listen");
-      exit(1);
-    }
-    
-    sa.sa_handler = sigchld_handler; // reap all dead processes
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if ( sigaction( SIGCHLD, &sa, NULL ) == -1 ) {
-      perror( "sigaction" );
-      exit( 1 );
-    }
+    l.log( "Starting server..." );
 
     // loop
     //
     while ( c.get_status() != 0 ) {  // main accept() loop
-      sin_size = sizeof their_addr;
-      
-      if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
-			   &sin_size)) == -1) {
-	perror("accept");
-	continue;
+
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
       }
-      l.log( "Connection from: " +std::string(inet_ntoa(their_addr.sin_addr)));
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+
+      //newSock->write( "Greetings, earthling.\n" );
+      std::string buf;
+
       
       if ( c.get_status() && ( ! fork() )) { // this is the child process
-	close(sockfd); // child doesn't need the listener.	
 	
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
 	while ( connection_open ) {
 	  
-	  if ((numbytes=recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
-	    perror("recv");
-	    exit(1);
-	  }
-	  buf[numbytes] = '\0';
-	  
-	  if ( numbytes > 0 ) {
-	    std::string tmp_buf = buf;//str_clean( buf );
+
+	    std::string tmp_buf;
+	    newSock->read( tmp_buf );
 	    tmp_buf = trim( tmp_buf, " \n\r" );
 	    
 	    if ( tmp_buf == "_CLOSE_" ) {
@@ -1521,6 +1299,8 @@ int server4(Logfile& l, Config& c) {
 	      l.log( "|" + tmp_buf + "|" );
 	    }
 
+	    // Remove <s> </s> if so requested.
+	    //
 	    if ( skip_sm == true ) {
 	      if ( tmp_buf.substr(0, 4) == "<s> " ) {
 		tmp_buf = tmp_buf.substr(4);
@@ -1659,21 +1439,19 @@ int server4(Logfile& l, Config& c) {
 	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
 	    
 	    //std::cerr << "(" << res_str << ")" << std::endl;
-	    
-	    if ( send( new_fd, res_str, 6, 0 ) == -1 ) {
-	      perror("send");
-	    }
+	    newSock->write( res_str );
 
 	    connection_open = (keep == 1);
 	    //connection_open = false;
-	  } // numbytes > 0
+
 	  
 	} // connection_open
         l.log( "connection closed." );
 	exit(0);
 
       } // fork
-      close( new_fd );  
+      delete newSock;
+
     }
   }
   catch ( const std::exception& e ) {

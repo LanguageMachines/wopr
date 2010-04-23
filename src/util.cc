@@ -118,6 +118,7 @@ std::string secs_to_str( long t, long l ) {
 /*!
   Q&D method to get a string rep. of an integer.
 */
+
 std::string to_str(int i) {
   std::ostringstream ostr;
   ostr << i;

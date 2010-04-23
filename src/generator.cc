@@ -457,7 +457,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int generate_server( Logfile& l, Config& c ) {
   l.log( "new_generate_server" );
-  const std::string& port            = c.get_value( "port", "1988" );
+  const std::string  port             = c.get_value( "port", "1988" );
   std::string        start            = c.get_value( "start", "" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );

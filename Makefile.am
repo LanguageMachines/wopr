@@ -44,6 +44,8 @@ wopr_SOURCES = \
 	src/ngram_server.cc \
 	src/wex.h \
 	src/wex.cc \
+	src/SocketBasics.h \
+	src/SocketBasics.cc \
 	src/MersenneTwister.h
 
 woprsm_SOURCES = \

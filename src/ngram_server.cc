@@ -52,8 +52,9 @@
 #include "ngrams.h"
 
 #ifdef TIMBLSERVER
-#include "timblserver/TimblServerAPI.h"
+//#include "timblserver/TimblServerAPI.h"
 #endif
+#include "SocketBasics.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -157,7 +158,6 @@ int ngram_server(Logfile& l, Config& c) {
 	     + std::string(newSock->getClientName()) );
     }
 
-    //newSock->write( "Greetings, earthling.\n" );
     std::string buf;
 
     while ( newSock->read( buf ) ) {
