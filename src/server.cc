@@ -79,9 +79,9 @@
 #include <signal.h>
 
 #ifdef TIMBLSERVER
-//#include "timblserver/TimblServerAPI.h"
-#endif
 #include "SocketBasics.h"
+#endif
+
 
 #define BACKLOG 5     // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once 

@@ -52,9 +52,8 @@
 #include "ngrams.h"
 
 #ifdef TIMBLSERVER
-//#include "timblserver/TimblServerAPI.h"
-#endif
 #include "SocketBasics.h"
+#endif
 
 // ---------------------------------------------------------------------------
 //  Code.

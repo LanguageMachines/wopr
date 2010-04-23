@@ -66,12 +66,13 @@
 // ----
 
 #ifdef TIMBL
-# include "timbl/TimblAPI.h"
+#include "timbl/TimblAPI.h"
 #endif
 
 #ifdef TIMBLSERVER
-#include "timblserver/TimblServerAPI.h"
+#include "SocketBasics.h"
 #endif
+
 
 /*
 durian:wopr pberck$ ./wopr -r generate -p start:"Mexico has not",ibasefile:test/reuters.martin.tok.1000.ws3.ibase,timbl:"-a1 +D",len:10
