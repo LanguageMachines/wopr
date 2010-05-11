@@ -67,7 +67,7 @@ EXTRA_DIST = \
 	etc/examine_md.pl \
 	etc/examine_mc.pl \
 	etc/pplx_px.pl \
-	bootstrap.sh \
+	bootstrap \
 	web/generator/generator.css \
 	web/generator/generator.php \
 	web/generator/generator.script \
