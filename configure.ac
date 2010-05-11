@@ -59,7 +59,7 @@ AS_IF([test "x$with_timbl" != xno],
 #CXXFLAGS="$CXXFLAGS $timblserver_CFLAGS"
 #LIBS="$LIBS $timblserver_LIBS"
 #])
-AC_DEFINE_UNQUOTED(TIMBLSERVER,"yes§",[ Have TimblServer ])
+AC_DEFINE_UNQUOTED(TIMBLSERVER,"yes",[ Have TimblServer ])
 
 dnl ------ socklen_t
 dnl We check for socklen_t by making prototypes with the

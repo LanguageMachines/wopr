@@ -903,6 +903,7 @@ int server4(Logfile& l, Config& c) {
   const int resm                = stoi( c.get_value( "resm", "0" ));
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
   const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int moses               = stoi( c.get_value( "moses", "0" ));
   const int lc                  = stoi( c.get_value( "lc", "2" ));
   const int rc                  = stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -913,15 +914,17 @@ int server4(Logfile& l, Config& c) {
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+port );
   l.log( "mode:      "+to_str(mode) );
-  l.log( "resm:      "+to_str(resm) );//result mode.
-  l.log( "keep:      "+to_str(keep) );
-  l.log( "lc:        "+to_str(lc) );
-  l.log( "rc:        "+to_str(rc) );
-  l.log( "verbose:   "+to_str(verbose) );
-  l.log( "timbl:     "+timbl );
-  l.log( "lexicon    "+lexicon_filename );
-  l.log( "hapax:     "+to_str(hapax) );
-  l.log( "skip_sm:   "+to_str(skip_sm) );
+  l.log( "resm:      "+to_str(resm) ); // result mode, resm=0=average, resm=1=sum
+  l.log( "keep:      "+to_str(keep) ); // keep connection open after sending result,
+                                       // close by sending _CLOSE_
+  l.log( "moses:     "+to_str(moses) );// Send 6 char moses output
+  l.log( "lc:        "+to_str(lc) ); // left context size for windowing
+  l.log( "rc:        "+to_str(rc) ); // right context size for windowing
+  l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
+  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "lexicon    "+lexicon_filename ); // the lexicon...
+  l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
+  l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
   l.dec_prefix();
 
   // Load lexicon. 
@@ -1110,7 +1113,7 @@ int server4(Logfile& l, Config& c) {
 		++it;
 	      } // end loop distribution
 	      
-	      if ( target_freq > 0 ) {
+	      if ( target_freq > 0 ) { //distr_count allways > 0.
 		res_p = (double)target_freq / (double)distr_count;
 	      }
 	      
@@ -1153,17 +1156,21 @@ int server4(Logfile& l, Config& c) {
 	      l.log( "result="+to_str(ave_pl10) );
 	    }
 
-	    char res_str[7];
-	    
-	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
-	    
-	    //std::cerr << "(" << res_str << ")" << std::endl;
-	    newSock->write( res_str );
+	    if ( moses == 0 ) {
+	      newSock->write( to_str(ave_pl10) );
+	      
+	    } else if ( moses == 1 ) { // 6 char output which moses seems to expect
+	      char res_str[7];
+	      
+	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
+	      
+	      //std::cerr << "(" << res_str << ")" << std::endl;
+	      newSock->write( res_str );
+	    }
 
 	    connection_open = (keep == 1);
 	    //connection_open = false;
-
-	  
+	    
 	} // connection_open
         l.log( "connection closed." );
 	exit(0);

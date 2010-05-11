@@ -203,12 +203,10 @@ int ngram_server(Logfile& l, Config& c) {
 	l.log( to_str(sum_l10probs));
       }
       newSock->write( to_str(sum_l10probs));
-
-      delete newSock;
-
+      
       buf.clear();
     }
-    
+    delete newSock;
   }
 
   return 0;
