@@ -1067,6 +1067,7 @@ int server4(Logfile& l, Config& c) {
 		std::string t;
 		vector_to_string(words, t);
 		l.log( "|" + t + "| hpx" );
+		classify_line = t;
 	      }
 
 	      // if we take target from a pre-non-hapaxed vector, we

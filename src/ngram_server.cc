@@ -74,7 +74,7 @@ int ngram_server(Logfile& l, Config& c) {
   int                n               = stoi( c.get_value( "n", "3" ));
   std::string        id              = c.get_value( "id", "" );
   const std::string  port            = c.get_value( "port", "1984" );
-  const int mode                     = stoi( c.get_value( "mode", "0" ));
+  //const int mode                     = stoi( c.get_value( "mode", "0" ));
   const int resm                     = stoi( c.get_value( "resm", "0" ));
   const int verbose                  = stoi( c.get_value( "verbose", "0" ));
   const int keep                     = stoi( c.get_value( "keep", "0" ));
@@ -84,7 +84,7 @@ int ngram_server(Logfile& l, Config& c) {
   l.inc_prefix();
 
   l.log( "port:      "+port );
-  l.log( "mode:      "+to_str(mode) );
+  //l.log( "mode:      "+to_str(mode) );
   l.log( "resm:      "+to_str(resm) );
   l.log( "keep:      "+to_str(keep) );
   l.log( "ngl file:  "+ngl_filename );
