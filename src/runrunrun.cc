@@ -457,6 +457,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &multi_dist2;
   } else if ( a_fname == "mc" ) { // from wex.cc
     return &multi_dist2;
+  } else if ( a_fname == "mg" ) { // from wex.cc
+    return &multi_gated;
   } else if ( a_fname == "correct" ) {
     return &correct;
   } else if ( a_fname == "generate" ) {

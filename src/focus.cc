@@ -55,6 +55,100 @@ int focus( Logfile& l, Config& c ) {
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
   int                fco             = stoi( c.get_value( "fco", "0" ));
+  std::string        id              = c.get_value( "id", "" );
+  std::string        output_filename = filename + ".fcs"+to_str(fco);
+
+  if ( (id != "") && (contains_id(output_filename, id) == false) ) {
+    output_filename = output_filename + "_" + id;
+  }
+
+  if ( fco < 0 ) {
+    l.log( "ERROR: fco cannot be less than zero." );
+    return 1;
+  }
+
+  l.inc_prefix();
+  l.log( "filename:   "+filename );
+  l.log( "focus:      "+focus_filename );
+  l.log( "fco:        "+to_str(fco) ); // target offset
+  l.log( "id:         "+id );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists( l, c, output_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+
+  std::ifstream file_fcs( focus_filename.c_str() );
+  if ( ! file_fcs ) {
+    l.log( "ERROR: cannot load focus file." );
+    return -1;
+  }
+  l.log( "Reading focus file." );
+  std::string a_word;
+  std::map<std::string, int> focus_words;
+  while( file_fcs >> a_word ) {
+    focus_words[ a_word ] = 1; // PJB maybe we want frequency/.. here to filter on
+  }
+  l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
+  file_fcs.close();
+
+  l.log( "Processing..." );
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+  
+  // We should only look at the last word (target).
+  //
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load data file." );
+    return -1;
+  }
+
+  std::vector<std::string> words;
+  std::string a_line;
+  std::string target;
+  std::string a_str;
+  int         pos;
+  std::map<std::string, int>::iterator ri;
+
+  while( std::getline( file_in, a_line ) ) { 
+
+    words.clear();
+    Tokenize( a_line, words, ' ' );
+   
+    pos = words.size()-1-fco;
+    pos = (pos < 0) ? 0 : pos;
+    target = words[pos];
+    a_str  = words[0];
+
+    ri = focus_words.find( target );
+    if ( ri != focus_words.end() ) {
+      file_out << a_line << std::endl;
+    }
+  }
+
+  file_in.close();
+  file_out.close();
+
+  c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// If we want a "left over" Ibase we do need to do it like this.
+
+int focus_new( Logfile& l, Config& c ) {
+  l.log( "focus" );
+  const std::string& filename        = c.get_value( "filename" ); // dataset
+  const std::string& focus_filename  = c.get_value( "focus" );
+  int                fco             = stoi( c.get_value( "fco", "0" ));
   int                fmode           = stoi( c.get_value( "fcm", "0" )); //focus mode
   std::string        id              = c.get_value( "id", "" );
   std::string        output_filename = filename + ".fcs"+to_str(fco);
@@ -80,6 +174,8 @@ int focus( Logfile& l, Config& c ) {
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
+  // NB when fmode = 1
+  //
   if ( file_exists( l, c, output_filename ) ) {
     l.log( "OUTPUT exists, not overwriting." );
     c.add_kv( "filename", output_filename );
@@ -93,16 +189,17 @@ int focus( Logfile& l, Config& c ) {
     return -1;
   }
   l.log( "Reading focus file." );
+
   std::string a_line;
   std::vector<std::string> words;
   std::map<std::string, int> focus_words;
-  //while( file_fcs >> a_word ) {
+
   while( std::getline( file_fcs, a_line )) {
     words.clear();
     Tokenize( a_line, words, ' ' );
     std::string a_word = words[0]; //assume first is the word, rest may be freqs
     
-    focus_words[ a_word ] = 1; // PJB maybe we want frequency/.. here to filter on
+    focus_words[ a_word ] = 1; // PJB maybe we want freq. here to filter on
   }
   l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
   file_fcs.close();
@@ -111,11 +208,28 @@ int focus( Logfile& l, Config& c ) {
 
   // Can I open n output files here? What is n > many?
   //
-  std::map<std::string, std::ofstream> output_files; // one or many, depending on mode.
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
-  if ( ! file_out ) {
-    l.log( "ERROR: cannot write output file." );
-    return -1;
+  std::map<std::string, std::ofstream*> output_files; // one or many, depending on mode.
+
+  if ( fmode == 0 ) { // one only
+    std::ofstream file_out( output_filename.c_str(), std::ios::out );
+    if ( ! file_out ) {
+      l.log( "ERROR: cannot write output file." );
+      return -1;
+    }
+    output_files[ "a" ] = &file_out;
+  } else if ( fmode == 1 ) {
+    std::map<std::string,int>::iterator ofi;
+    for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
+      std::string fw = (*ofi).first;
+      std::string output_filename_fw = output_filename + "_" + fw;
+      std::ofstream file_out( output_filename_fw.c_str(), std::ios::out );
+      if ( ! file_out ) {
+	l.log( "ERROR: cannot write output file." );
+	return -1;
+      }
+      l.log( "OPEN: " + output_filename_fw );
+      output_files[ fw ] = &file_out;
+    }
   }
   
   // Data file, already windowed.
@@ -143,12 +257,27 @@ int focus( Logfile& l, Config& c ) {
 
     ri = focus_words.find( target );
     if ( ri != focus_words.end() ) {
-      file_out << a_line << std::endl;
+      l.log( "FOUND: "+target );
+      if ( fmode == 0 ) {
+	*(output_files["a"]) << a_line << std::endl;
+      } else if ( fmode == 1 ) {
+	*(output_files[target]) << a_line << std::endl;
+      }
     }
   }
 
   file_in.close();
-  file_out.close();
+
+  if ( fmode == 0 ) {
+    (*(output_files["a"])).close();
+  } else if ( fmode == 1 ) {
+    std::map<std::string,int>::iterator ofi;
+    for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
+      std::string fw = (*ofi).first;
+      (*(output_files[ fw ])).close();
+    }
+  }
+
 
   c.add_kv( "filename", output_filename );
     l.log( "SET filename to "+output_filename );

@@ -51,6 +51,8 @@ class Classifier {
   int         subtype;
   std::string ibasefile;
   int         ws;
+  std::string gatetrigger;
+  int         gatepos;
   std::string timbl;
   std::string testfile;
   std::string distfile;
@@ -133,11 +135,29 @@ class Classifier {
     return subtype;
   }
 
+  void set_gatetrigger( const std::string t ) {
+    gatetrigger = t;
+  }
+  const std::string& get_gatetrigger() {
+    return gatetrigger;
+  }
+
+  void set_gatepos( int p ) {
+    gatepos = p;
+  }
+  int get_gatepos() {
+    return gatepos;
+  }
+
   bool open_file() {
     if ( type == 1 ) {
       file_in.open( testfile.c_str() );
     } else if ( type == 2 ) {
       file_in.open( distfile.c_str() );
+    } else if ( type == 3 ) {
+      file_in.open( testfile.c_str() );
+    } else if ( type == 4 ) {
+      file_in.open( testfile.c_str() );
     }
     return file_in.is_open();
   }
@@ -242,6 +262,50 @@ class Classifier {
     }
   }
 
+  // For the gated classifiers.
+  //
+  bool classify_one( std::string a_line ) {
+    
+    classification.cl = a_line;
+
+    last_word( classification.cl, classification.target );
+    classification.distr.clear();
+
+#ifdef TIMBL    
+    tv = My_Experiment->Classify( classification.cl, vd );
+
+    classification.answer = tv->Name();
+
+    classification.md  = My_Experiment->matchDepth();
+    classification.mal = My_Experiment->matchedAtLeaf();
+    
+    ++classification_count;
+    classification.cnt = vd->size(); // size of distr.
+    classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
+    
+    Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+    while ( it != vd->end() ) {
+      std::string tvs  = it->second->Value()->Name();
+      long        wght = it->second->Weight(); // absolute frequency.
+      double      p    = (double)wght / (double)vd->totalSize();
+      md2_elem md2e;
+      md2e.token = tvs;
+      md2e.freq = wght;
+      md2e.prob = p;
+      classification.distr.push_back( md2e );
+      if ( tvs == classification.answer ) {
+	classification.prob = p; // in the distr.
+      }
+      ++it;
+    }
+    
+    if ( classification.answer == classification.target ) {
+      ++correct;
+    }
+#endif
+    return true; 
+  }
+  
   void close_file() {
     file_in.close();
   }
@@ -258,13 +322,14 @@ class Classifier {
   }
 
   std::string info_str() {
-    return id+"/"+ibasefile+"/"+testfile+"/"+to_str(weight);
+    return id+"/"+ibasefile+"/"+testfile+"/wgt="+to_str(weight)
+      +"/type="+to_str(type);
   }
 
   void init() {
     correct = 0;
 #ifdef TIMBL
-    if ( type == 1 ) {
+    if ( (type == 1) || (type == 3) || (type == 4) ) { //  maybe !=2
       My_Experiment = new Timbl::TimblAPI( timbl );
       (void)My_Experiment->GetInstanceBase( ibasefile );
     }

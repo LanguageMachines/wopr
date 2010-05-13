@@ -196,10 +196,6 @@ int multi( Logfile& l, Config& c ) {
 
   while( std::getline( file_in, a_line )) {
 
-    if ( to_lower ) {
-      std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
-    }
-
     // How long is the sentence? initialise Multi.h in advance,
     // one per word in the sentence?
     // Initialise correct target as well...
@@ -367,6 +363,20 @@ int read_classifiers_from_file( std::ifstream& file,
 	if ( c != NULL) {
 	  c->set_distfile( rhs );
 	  c->set_type( 2 );
+	}
+      } else if ( lhs == "gatetrigger" ) {
+	if ( c != NULL) {
+	  c->set_gatetrigger( rhs );
+	  c->set_type( 3 );
+	}
+      } else if ( lhs == "gatepos" ) {
+	if ( c != NULL) {
+	  c->set_gatepos( stoi(rhs) );
+	  c->set_type( 3 );
+	}
+      } else if ( lhs == "gatedefault" ) {
+	if ( c != NULL) {
+	  c->set_type( 4 );
 	}
       }
     }
@@ -723,18 +733,23 @@ int multi_dist2( Logfile& l, Config& c ) {
       return -1;
     }
     read_classifiers_from_file( file_kvs, cls );
-    l.log( to_str((int)cls.size()) );
     file_kvs.close();
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
-      l.log( (*cli)->id );
       (*cli)->init();
-      if ( ((*cli)->get_type() == 1) && ((*cli)->get_testfile() == "NONE" ) ) {
+      l.log( (*cli)->id + "/" + to_str((*cli)->get_type()) );
+      //
+      // Test file can be global (-p filename:), or set explicitly.
+      //
+      if ( ((*cli)->get_type() == 1) && ((*cli)->get_testfile() == "NONE") ) {
 	(*cli)->set_testfile( filename );
       }
       if ( (*cli)->open_file() == false ) {
 	l.log( "ERROR: cannot open testfile" );
 	return -1;
       }
+      //
+      // Type=2 multiplies with weight specified in kvs.
+      //
       if ( (*cli)->get_type() == 2 ) {
 	if ( fabs((*cli)->get_weight() - 1.0) > 0.0001 ) {
 	  l.log( "Merged will be multiplied." );
@@ -744,6 +759,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  (*cli)->set_subtype(2);
 	}
       }
+
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
@@ -874,6 +890,168 @@ int multi_dist2( Logfile& l, Config& c ) {
 }
 #else
 int multi_dist2( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );  
+  return -1;
+}
+#endif
+
+#ifdef TIMBL
+int multi_gated( Logfile& l, Config& c ) {
+  l.log( "multi_gated" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& kvs_filename     = c.get_value( "kvs" );
+  bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
+  int                topn             = stoi( c.get_value( "topn", "1" ) );
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
+  std::string        output_filename  = kvs_filename + "_" + id + ".mc";
+
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  l.inc_prefix();
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "filename:   "+filename );
+  l.log( "kvs:        "+kvs_filename );
+  l.log( "combined:   "+to_str(do_combined) );
+  l.log( "topn:       "+to_str(topn) );
+  l.log( "id:         "+id );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  }
+
+  // Read kvs
+  //
+  std::vector<Classifier*> cls;
+  std::vector<Classifier*>::iterator cli;
+  std::map<std::string,Classifier*> gated_cls; // reverse list
+  int classifier_count = 0;
+  if ( kvs_filename != "" ) {
+    l.log( "Reading classifiers." );
+    std::ifstream file_kvs( kvs_filename.c_str() );
+    if ( ! file_kvs ) {
+      l.log( "ERROR: cannot load kvs file." );
+      return -1;
+    }
+    read_classifiers_from_file( file_kvs, cls );
+    file_kvs.close();
+
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+      (*cli)->init();
+      l.log( (*cli)->id + "/" + to_str((*cli)->get_type()) );
+      //
+      // Gated classifier, rest is ignored.
+      //
+      if ( (*cli)->get_type() == 3 ) {
+	// doe iets leuks.
+	l.log( "NOTICE: WORK IN PROGRESS." );
+	gated_cls[ (*cli)->get_gatetrigger() ] = (*cli);
+      }
+
+      ++classifier_count;
+      l.log( (*cli)->info_str() );
+    }
+    l.log( "NUM CLASSIFIERS: "+to_str((int)cls.size()) );
+    l.log( "NUM CLASSIFIERS: "+to_str((int)gated_cls.size()) );
+    l.log( "Read classifiers. Starting classification." );
+  }
+
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load inputfile." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string> words;
+  int pos;
+  std::map<std::string, Classifier*>::iterator gci;
+  std::string gate;
+
+  while( std::getline( file_in, a_line )) {
+
+    // What is the focus/gating pos? Loop?
+
+    int fco = 1;
+
+    Tokenize( a_line, words, ' ' ); // instance
+
+    pos  = words.size()-1-fco;
+    pos  = (pos < 0) ? 0 : pos;
+    gate = words[pos];
+
+    //l.log( a_line + "/" + gate );
+
+    // Have we got a classifier with this gate?
+    //
+    gci = gated_cls.find( gate );
+    if ( gci != gated_cls.end() ) {
+      Classifier* c = (*gci).second;
+      l.log( c->id + "/" + to_str(c->get_type()) );
+      c->classify_one( a_line );
+    
+      md2    foo     = c->classification;
+      double classifier_weight = c->get_weight();
+      int    type    = c->get_type();
+      int    subtype = c->get_subtype();
+      
+      l.log( foo.answer + " : " + foo.cl );
+    }
+
+    // default else
+
+  }
+  file_in.close();
+
+  file_out.close();
+  
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
+    Classifier *classifier = *cli;
+    l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
+	   to_str((*cli)->get_cc()) );
+  }
+
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+#else
+int multi_gated( Logfile& l, Config& c ) {
   l.log( "Timbl support not built in." );  
   return -1;
 }
