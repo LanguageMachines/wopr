@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2009 Peter Berck                                         *
+ * Copyright 2007 - 2010 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -55,9 +55,13 @@ int focus( Logfile& l, Config& c ) {
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
   int                fco             = stoi( c.get_value( "fco", "0" ));
+  int                fmode           = stoi( c.get_value( "fcm", "0" )); //focus mode
   std::string        id              = c.get_value( "id", "" );
   std::string        output_filename = filename + ".fcs"+to_str(fco);
 
+  // Note for fmode=seperate, this doesn't work.
+  // Choose depending on modus...
+  //
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
     output_filename = output_filename + "_" + id;
   }
@@ -71,6 +75,7 @@ int focus( Logfile& l, Config& c ) {
   l.log( "filename:   "+filename );
   l.log( "focus:      "+focus_filename );
   l.log( "fco:        "+to_str(fco) ); // target offset
+  l.log( "fcm:        "+to_str(fmode) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
@@ -88,22 +93,32 @@ int focus( Logfile& l, Config& c ) {
     return -1;
   }
   l.log( "Reading focus file." );
-  std::string a_word;
+  std::string a_line;
+  std::vector<std::string> words;
   std::map<std::string, int> focus_words;
-  while( file_fcs >> a_word ) {
+  //while( file_fcs >> a_word ) {
+  while( std::getline( file_fcs, a_line )) {
+    words.clear();
+    Tokenize( a_line, words, ' ' );
+    std::string a_word = words[0]; //assume first is the word, rest may be freqs
+    
     focus_words[ a_word ] = 1; // PJB maybe we want frequency/.. here to filter on
   }
   l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
   file_fcs.close();
 
   l.log( "Processing..." );
+
+  // Can I open n output files here? What is n > many?
+  //
+  std::map<std::string, std::ofstream> output_files; // one or many, depending on mode.
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
   
-  // We should only look at the last word (target).
+  // Data file, already windowed.
   //
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
@@ -111,8 +126,6 @@ int focus( Logfile& l, Config& c ) {
     return -1;
   }
 
-  std::vector<std::string> words;
-  std::string a_line;
   std::string target;
   std::string a_str;
   int         pos;
@@ -125,7 +138,7 @@ int focus( Logfile& l, Config& c ) {
    
     pos = words.size()-1-fco;
     pos = (pos < 0) ? 0 : pos;
-    target = words[pos];
+    target = words[pos]; // target is the focus "target"
     a_str  = words[0];
 
     ri = focus_words.find( target );

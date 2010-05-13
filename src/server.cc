@@ -1108,6 +1108,7 @@ int server4(Logfile& l, Config& c) {
 		  target_in_dist = true;
 		  if ( verbose > 1 ) {
 		    l.log( "Timbl answer in distr." );
+		    l.log( to_str(wght)+"/"+to_str(distr_count) );
 		  }
 		}
 		
