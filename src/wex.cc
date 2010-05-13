@@ -987,8 +987,6 @@ int multi_gated( Logfile& l, Config& c ) {
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
-    l.log( "NUM CLASSIFIERS: "+to_str((int)cls.size()) );
-    l.log( "NUM CLASSIFIERS: "+to_str((int)gated_cls.size()) );
     l.log( "Read classifiers. Starting classification." );
   }
 
@@ -1034,7 +1032,33 @@ int multi_gated( Logfile& l, Config& c ) {
       int    type    = c->get_type();
       int    subtype = c->get_subtype();
       
-      l.log( foo.answer + " : " + foo.cl );
+      l.log( foo.answer + " : " + to_str(foo.prob) );
+
+      std::vector<md2_elem>::iterator dei;
+      dei = foo.distr.begin();
+      while ( dei != foo.distr.end() ) { 
+	std::cout << " " << (*dei).token << " " << (*dei).freq;
+
+	/*
+	if ( type == 1 ) { // merge normal classifier
+	  combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	} else if ( type == 2 ) { // distribution
+	  if ( subtype == 1 ) { // multiply
+	    combined_distr[(*dei).token] *= classifier_weight;
+	  } else if ( subtype == 2 ) { // add
+	    //
+	    // We need some kind of normalisation here.
+	    // Maybe related to best in the real/merged classification?
+	    // Make these "just as important".
+	    //
+	    combined_distr[(*dei).token] += (*dei).prob;
+	  }
+	} // other type, divide by index number etc.
+	*/
+	
+	++dei;
+      }
+    
       ++gates_triggered;
     }
 
@@ -1047,7 +1071,32 @@ int multi_gated( Logfile& l, Config& c ) {
       int    type    = dflt->get_type();
       int    subtype = dflt->get_subtype();
       
-      l.log( foo.answer + " : " + foo.cl );
+      l.log( foo.answer + " : " + to_str(foo.prob) );
+
+      std::vector<md2_elem>::iterator dei;
+      dei = foo.distr.begin();
+      while ( dei != foo.distr.end() ) { 
+	std::cout << " " << (*dei).token << " " << (*dei).prob;
+
+	/*
+	if ( type == 1 ) { // merge normal classifier
+	  combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	} else if ( type == 2 ) { // distribution
+	  if ( subtype == 1 ) { // multiply
+	    combined_distr[(*dei).token] *= classifier_weight;
+	  } else if ( subtype == 2 ) { // add
+	    //
+	    // We need some kind of normalisation here.
+	    // Maybe related to best in the real/merged classification?
+	    // Make these "just as important".
+	    //
+	    combined_distr[(*dei).token] += (*dei).prob;
+	  }
+	} // other type, divide by index number etc.
+	*/
+	
+	++dei;
+      }
 
     }
 
