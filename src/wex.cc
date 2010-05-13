@@ -960,6 +960,7 @@ int multi_gated( Logfile& l, Config& c ) {
   std::vector<Classifier*>::iterator cli;
   std::map<std::string,Classifier*> gated_cls; // reverse list
   int classifier_count = 0;
+  Classifier* dflt;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::ifstream file_kvs( kvs_filename.c_str() );
@@ -977,9 +978,10 @@ int multi_gated( Logfile& l, Config& c ) {
       // Gated classifier, rest is ignored.
       //
       if ( (*cli)->get_type() == 3 ) {
-	// doe iets leuks.
-	l.log( "NOTICE: WORK IN PROGRESS." );
 	gated_cls[ (*cli)->get_gatetrigger() ] = (*cli);
+      }
+      if ( (*cli)->get_type() == 4 ) {
+	dflt = (*cli);
       }
 
       ++classifier_count;
@@ -1002,6 +1004,7 @@ int multi_gated( Logfile& l, Config& c ) {
   int pos;
   std::map<std::string, Classifier*>::iterator gci;
   std::string gate;
+  int gates_triggered;
 
   while( std::getline( file_in, a_line )) {
 
@@ -1020,6 +1023,7 @@ int multi_gated( Logfile& l, Config& c ) {
     // Have we got a classifier with this gate?
     //
     gci = gated_cls.find( gate );
+    gates_triggered = 0;
     if ( gci != gated_cls.end() ) {
       Classifier* c = (*gci).second;
       l.log( c->id + "/" + to_str(c->get_type()) );
@@ -1031,9 +1035,21 @@ int multi_gated( Logfile& l, Config& c ) {
       int    subtype = c->get_subtype();
       
       l.log( foo.answer + " : " + foo.cl );
+      ++gates_triggered;
     }
 
-    // default else
+    if ( gates_triggered == 0 ) {
+      // default 
+      dflt->classify_one( a_line );
+    
+      md2    foo     = dflt->classification;
+      double classifier_weight = dflt->get_weight();
+      int    type    = dflt->get_type();
+      int    subtype = dflt->get_subtype();
+      
+      l.log( foo.answer + " : " + foo.cl );
+
+    }
 
   }
   file_in.close();
