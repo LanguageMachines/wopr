@@ -50,7 +50,7 @@
 //  Code.
 // ---------------------------------------------------------------------------
 
-int focus( Logfile& l, Config& c ) {
+int focus_old( Logfile& l, Config& c ) {
   l.log( "focus" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
@@ -152,7 +152,7 @@ int focus( Logfile& l, Config& c ) {
 // In script, when learning, move small datasets to default data
 // set and skip.
 
-int focus_new( Logfile& l, Config& c ) {
+int focus( Logfile& l, Config& c ) {
   l.log( "focus" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
@@ -182,7 +182,7 @@ int focus_new( Logfile& l, Config& c ) {
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
-  // NB when fmode = 1
+  // NB when fmode = 1, seperate list with words, one for each dataset
   //
   if ( file_exists( l, c, output_filename ) ) {
     l.log( "OUTPUT exists, not overwriting." );
@@ -216,27 +216,23 @@ int focus_new( Logfile& l, Config& c ) {
 
   // Can I open n output files here? What is n > many?
   //
-  std::map<std::string, std::ofstream*> output_files; // one or many, depending on mode.
+  std::map<std::string, std::string> output_files;
+
+  // Create a default/left-over file.
+  // What if this is a word?
+  //
+  std::string output_filename_dflt = output_filename + "_" + "dflt";
+  output_files[ "dflt" ] = output_filename_dflt;
 
   if ( fmode == 0 ) { // one only
-    std::ofstream file_out( output_filename.c_str(), std::ios::out );
-    if ( ! file_out ) {
-      l.log( "ERROR: cannot write output file." );
-      return -1;
-    }
-    output_files[ "a" ] = &file_out;
+    output_files[ "a" ] = output_filename;
   } else if ( fmode == 1 ) {
     std::map<std::string,int>::iterator ofi;
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
       std::string fw = (*ofi).first;
       std::string output_filename_fw = output_filename + "_" + fw;
-      std::ofstream file_out( output_filename_fw.c_str(), std::ios::out );
-      if ( ! file_out ) {
-	l.log( "ERROR: cannot write output file." );
-	return -1;
-      }
       l.log( "OPEN: " + output_filename_fw );
-      output_files[ fw ] = &file_out;
+      output_files[ fw ] = output_filename_fw;
     }
   }
   
@@ -252,6 +248,7 @@ int focus_new( Logfile& l, Config& c ) {
   std::string a_str;
   int         pos;
   std::map<std::string, int>::iterator ri;
+  int is_dflt;
 
   while( std::getline( file_in, a_line ) ) { 
 
@@ -262,30 +259,44 @@ int focus_new( Logfile& l, Config& c ) {
     pos = (pos < 0) ? 0 : pos;
     target = words[pos]; // target is the focus "target"
     a_str  = words[0];
+    is_dflt = 0;
 
     ri = focus_words.find( target );
     if ( ri != focus_words.end() ) {
-      l.log( "FOUND: "+target );
+      //l.log( "FOUND: "+target+" in "+a_line );
+      is_dflt = 1;
       if ( fmode == 0 ) {
-	*(output_files["a"]) << a_line << std::endl;
+	std::ofstream file_out( output_files["a"].c_str(), std::ios::app );
+	if ( ! file_out ) {
+	  l.log( "ERROR: cannot write output file." );
+	  return -1;
+	}
+	file_out << a_line << std::endl;
+	file_out.close(); // must be inefficient...
       } else if ( fmode == 1 ) {
-	*(output_files[target]) << a_line << std::endl;
+	std::ofstream file_out( output_files[target].c_str(), std::ios::app );
+	if ( ! file_out ) {
+	  l.log( "ERROR: cannot write output file." );
+	  return -1;
+	}
+	file_out << a_line << std::endl;
+	file_out.close(); // must be inefficient...
       }
     }
+
+    if ( is_dflt == 0 ) {
+      std::ofstream file_out( output_files["dflt"].c_str(), std::ios::app );
+      if ( ! file_out ) {
+	l.log( "ERROR: cannot write output file." );
+	return -1;
+      }
+      file_out << a_line << std::endl;
+      file_out.close(); // must be inefficient...
+    }
+    
   }
 
   file_in.close();
-
-  if ( fmode == 0 ) {
-    (*(output_files["a"])).close();
-  } else if ( fmode == 1 ) {
-    std::map<std::string,int>::iterator ofi;
-    for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
-      std::string fw = (*ofi).first;
-      (*(output_files[ fw ])).close();
-    }
-  }
-
 
   c.add_kv( "filename", output_filename );
     l.log( "SET filename to "+output_filename );
