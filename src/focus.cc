@@ -46,6 +46,10 @@
 #include "focus.h"
 #include "runrunrun.h"
 
+#ifdef TIMBL
+# include "timbl/TimblAPI.h"
+#endif
+
 // ---------------------------------------------------------------------------
 //  Code.
 // ---------------------------------------------------------------------------
@@ -160,6 +164,7 @@ int focus( Logfile& l, Config& c ) {
   int                fmode           = stoi( c.get_value( "fcm", "0" )); //focus mode
   std::string        id              = c.get_value( "id", "" );
   std::string        output_filename = filename + ".fcs"+to_str(fco);
+  const std::string& timbl           = c.get_value( "timbl" ); 
 
   // Note for fmode=seperate, this doesn't work.
   // Choose depending on modus...
@@ -179,6 +184,7 @@ int focus( Logfile& l, Config& c ) {
   l.log( "fco:        "+to_str(fco) ); // target offset
   l.log( "fcm:        "+to_str(fmode) );
   l.log( "id:         "+id );
+  l.log( "timbl:      "+timbl );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -297,6 +303,43 @@ int focus( Logfile& l, Config& c ) {
   }
 
   file_in.close();
+
+  // Now train them all, or create a script to train...? or train,
+  // and create kvs script (best).
+  //
+#ifdef TIMBL
+  Timbl::TimblAPI       *My_Experiment;
+
+  std::map<std::string,std::string>::iterator ofi;
+  for( ofi = output_files.begin(); ofi != output_files.end(); ofi++ ) {
+    std::string focus_word      = (*ofi).first;
+    std::string output_filename = (*ofi).second;
+
+    std::string t_ext = timbl;
+    std::string ibase_filename = output_filename;
+    t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '), t_ext.end());
+    if ( t_ext != "" ) {
+      ibase_filename = ibase_filename+"_"+t_ext;
+    }
+    ibase_filename = ibase_filename+".ibase";
+    
+    l.log( output_filename+"/"+ibase_filename );
+
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->Learn( output_filename );
+    My_Experiment->WriteInstanceBase( ibase_filename );
+    delete My_Experiment;
+
+    if ( fmode == 1 ) {
+      l.log( "classifier:"+focus_word );
+      l.log( "ibasefile:"+ibase_filename );
+      l.log( "timbl:"+timbl );
+      l.log( "gatetrigger:"+focus_word );
+      l.log( "gatepos:"+to_str(fco) );
+    }
+  }
+#endif
+  
 
   c.add_kv( "filename", output_filename );
     l.log( "SET filename to "+output_filename );
