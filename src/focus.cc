@@ -87,11 +87,18 @@ int focus( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load focus file." );
     return -1;
   }
+
   l.log( "Reading focus file." );
   std::string a_word;
+  std::string a_line;
+  std::vector<std::string> words;
   std::map<std::string, int> focus_words;
-  while( file_fcs >> a_word ) {
-    focus_words[ a_word ] = 1; // PJB maybe we want frequency/.. here to filter on
+  while( std::getline( file_fcs, a_line )) {
+    words.clear();
+    Tokenize( a_line, words, ' ' );
+    std::string a_word = words[0]; //assume first is the word, rest may be freqs
+    
+    focus_words[ a_word ] = 1; // PJB maybe we want freq. here to filter on
   }
   l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
   file_fcs.close();
@@ -111,8 +118,6 @@ int focus( Logfile& l, Config& c ) {
     return -1;
   }
 
-  std::vector<std::string> words;
-  std::string a_line;
   std::string target;
   std::string a_str;
   int         pos;
@@ -143,6 +148,9 @@ int focus( Logfile& l, Config& c ) {
 }
 
 // If we want a "left over" Ibase we do need to do it like this.
+
+// In script, when learning, move small datasets to default data
+// set and skip.
 
 int focus_new( Logfile& l, Config& c ) {
   l.log( "focus" );
