@@ -1037,7 +1037,7 @@ int multi_gated( Logfile& l, Config& c ) {
       std::vector<md2_elem>::iterator dei;
       dei = foo.distr.begin();
       while ( dei != foo.distr.end() ) { 
-	std::cout << " " << (*dei).token << " " << (*dei).freq;
+	//std::cout << " " << (*dei).token << " " << (*dei).freq;
 
 	/*
 	if ( type == 1 ) { // merge normal classifier
@@ -1076,7 +1076,7 @@ int multi_gated( Logfile& l, Config& c ) {
       std::vector<md2_elem>::iterator dei;
       dei = foo.distr.begin();
       while ( dei != foo.distr.end() ) { 
-	std::cout << " " << (*dei).token << " " << (*dei).prob;
+	//std::cout << " " << (*dei).token << " " << (*dei).prob;
 
 	/*
 	if ( type == 1 ) { // merge normal classifier

@@ -163,8 +163,10 @@ int focus( Logfile& l, Config& c ) {
   int                fco             = stoi( c.get_value( "fco", "0" ));
   int                fmode           = stoi( c.get_value( "fcm", "0" )); //focus mode
   std::string        id              = c.get_value( "id", "" );
-  std::string        output_filename = filename + ".fcs"+to_str(fco);
   const std::string& timbl           = c.get_value( "timbl" ); 
+
+  std::string        output_filename = filename + ".fcs"+to_str(fco);
+  std::string        kvs_filename    = filename + ".kvs";
 
   // Note for fmode=seperate, this doesn't work.
   // Choose depending on modus...
@@ -308,8 +310,14 @@ int focus( Logfile& l, Config& c ) {
   // and create kvs script (best).
   //
 #ifdef TIMBL
-  Timbl::TimblAPI       *My_Experiment;
 
+  std::ofstream kvs_out( kvs_filename.c_str(), std::ios::out );
+  if ( ! kvs_out ) {
+    l.log( "ERROR: cannot write kvs output file." );
+    return -1;
+  }
+
+  Timbl::TimblAPI       *My_Experiment;
   std::map<std::string,std::string>::iterator ofi;
   for( ofi = output_files.begin(); ofi != output_files.end(); ofi++ ) {
     std::string focus_word      = (*ofi).first;
@@ -331,13 +339,20 @@ int focus( Logfile& l, Config& c ) {
     delete My_Experiment;
 
     if ( fmode == 1 ) {
-      l.log( "classifier:"+focus_word );
-      l.log( "ibasefile:"+ibase_filename );
-      l.log( "timbl:"+timbl );
-      l.log( "gatetrigger:"+focus_word );
-      l.log( "gatepos:"+to_str(fco) );
+      kvs_out << "classifier:" << focus_word << std::endl;
+      kvs_out << "ibasefile:" << ibase_filename << std::endl;
+      kvs_out << "timbl:" << timbl << std::endl;
+      if ( focus_word == "dflt" ) {
+	kvs_out << "gatedefault:1" << std::endl;
+      } else {
+	kvs_out << "gatetrigger:" << focus_word << std::endl;
+	kvs_out << "gatepos:" << fco << std::endl;
+      }
+      kvs_out << std::endl;
     }
   }
+  
+  kvs_out.close();
 #endif
   
 
