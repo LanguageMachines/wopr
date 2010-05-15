@@ -338,21 +338,22 @@ int focus( Logfile& l, Config& c ) {
     My_Experiment->WriteInstanceBase( ibase_filename );
     delete My_Experiment;
 
+    kvs_out << "classifier:" << focus_word << std::endl;
+    kvs_out << "ibasefile:" << ibase_filename << std::endl;
+    kvs_out << "timbl:" << timbl << std::endl;
     if ( fmode == 1 ) {
-      kvs_out << "classifier:" << focus_word << std::endl;
-      kvs_out << "ibasefile:" << ibase_filename << std::endl;
-      kvs_out << "timbl:" << timbl << std::endl;
-      if ( focus_word == "dflt" ) {
+      if ( focus_word == dflt ) {
 	kvs_out << "gatedefault:1" << std::endl;
       } else {
 	kvs_out << "gatetrigger:" << focus_word << std::endl;
 	kvs_out << "gatepos:" << fco << std::endl;
       }
-      kvs_out << std::endl;
     }
+    kvs_out << std::endl;
   }
-  
+
   kvs_out.close();
+
 #endif
   
 
