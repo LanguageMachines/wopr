@@ -163,9 +163,10 @@ int focus( Logfile& l, Config& c ) {
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
   const std::string& timbl           = c.get_value( "timbl" ); 
-  // this is the basename really
-  std::string        output_filename = filename + ".fcs"+to_str(fco);
-  std::string        kvs_filename    = filename + ".kvs";
+
+  std::string        output_basename = filename;
+  std::string        output_filename = output_basename + ".fcs"+to_str(fco);
+  std::string        kvs_filename    = output_basename + ".kvs";
   std::string        combined_class  = c.get_value( "PID", "0000" );
 
   // Note for fmode=seperate, this doesn't work.
@@ -282,7 +283,7 @@ int focus( Logfile& l, Config& c ) {
       if ( fmode == 0 ) { 
 	std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
 	if ( ! file_out ) {
-	  l.log( "ERROR: cannot write output file." );
+	  l.log( "ERROR: cannot write output file ["+output_files[combined_class]+"]." );
 	  return -1;
 	}
 	file_out << a_line << std::endl;
@@ -299,7 +300,7 @@ int focus( Logfile& l, Config& c ) {
     }
 
     if ( is_dflt == 0 ) {
-      std::ofstream file_out( output_files["dflt"].c_str(), std::ios::app );
+      std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
       if ( ! file_out ) {
 	l.log( "ERROR: cannot write output file." );
 	return -1;
