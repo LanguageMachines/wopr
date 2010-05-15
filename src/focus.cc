@@ -164,19 +164,12 @@ int focus( Logfile& l, Config& c ) {
   std::string        dflt            = c.get_value( "default", "dflt" );
   const std::string& timbl           = c.get_value( "timbl" ); 
 
-  std::string        output_basename = filename;
-  std::string        output_filename = output_basename + ".fcs"+to_str(fco);
-  std::string        kvs_filename    = output_basename + ".kvs";
-  std::string        combined_class  = c.get_value( "PID", "0000" );
-
-  // Note for fmode=seperate, this doesn't work.
-  // Choose depending on modus...
-  //
-  if ( fmode == 0 ) {
-    if ( (id != "") && (contains_id(output_filename, id) == false) ) {
-      output_filename = output_filename + "_" + id;
-    }
+  std::string        output_filename = filename + ".fcs"+to_str(fco);
+  if ( (id != "") && (contains_id(output_filename, id) == false) ) {
+    output_filename = output_filename + "_" + id;
   }
+  std::string        kvs_filename    = output_filename + ".kvs";
+  std::string        combined_class  = c.get_value( "PID", "0000" );
 
   if ( fco < 0 ) {
     l.log( "ERROR: fco cannot be less than zero." );
@@ -246,7 +239,7 @@ int focus( Logfile& l, Config& c ) {
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
       std::string fw = (*ofi).first;
       std::string output_filename_fw = output_filename + "_" + fw;
-      l.log( "OPEN: " + output_filename_fw );
+      //l.log( "OPEN: " + output_filename_fw );
       output_files[ fw ] = output_filename_fw;
     }
   }
