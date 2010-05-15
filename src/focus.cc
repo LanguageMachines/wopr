@@ -151,28 +151,30 @@ int focus_old( Logfile& l, Config& c ) {
   return 0;
 }
 
-// If we want a "left over" Ibase we do need to do it like this.
-
-// In script, when learning, move small datasets to default data
-// set and skip.
-
+// New focus function.
+//
 int focus( Logfile& l, Config& c ) {
   l.log( "focus" );
+
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
   int                fco             = stoi( c.get_value( "fco", "0" ));
-  int                fmode           = stoi( c.get_value( "fcm", "0" )); //focus mode
+  int                fmode           = stoi( c.get_value( "fcm", "0" ));
   std::string        id              = c.get_value( "id", "" );
+  std::string        dflt            = c.get_value( "default", "dflt" );
   const std::string& timbl           = c.get_value( "timbl" ); 
-
+  // this is the basename really
   std::string        output_filename = filename + ".fcs"+to_str(fco);
   std::string        kvs_filename    = filename + ".kvs";
+  std::string        combined_class  = c.get_value( "PID", "0000" );
 
   // Note for fmode=seperate, this doesn't work.
   // Choose depending on modus...
   //
-  if ( (id != "") && (contains_id(output_filename, id) == false) ) {
-    output_filename = output_filename + "_" + id;
+  if ( fmode == 0 ) {
+    if ( (id != "") && (contains_id(output_filename, id) == false) ) {
+      output_filename = output_filename + "_" + id;
+    }
   }
 
   if ( fco < 0 ) {
@@ -186,19 +188,24 @@ int focus( Logfile& l, Config& c ) {
   l.log( "fco:        "+to_str(fco) ); // target offset
   l.log( "fcm:        "+to_str(fmode) );
   l.log( "id:         "+id );
+  l.log( "default:    "+dflt );
   l.log( "timbl:      "+timbl );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
   // NB when fmode = 1, seperate list with words, one for each dataset
   //
-  if ( file_exists( l, c, output_filename ) ) {
-    l.log( "OUTPUT exists, not overwriting." );
-    c.add_kv( "filename", output_filename );
-    l.log( "SET filename to "+output_filename );
-    return 0;
+  if ( fmode == 0 ) {
+    if ( file_exists( l, c, output_filename ) ) {
+      l.log( "OUTPUT exists, not overwriting." );
+      c.add_kv( "filename", output_filename );
+      l.log( "SET filename to "+output_filename );
+      return 0;
+    }
   }
 
+  // List to focus on.
+  //
   std::ifstream file_fcs( focus_filename.c_str() );
   if ( ! file_fcs ) {
     l.log( "ERROR: cannot load focus file." );
@@ -214,7 +221,6 @@ int focus( Logfile& l, Config& c ) {
     words.clear();
     Tokenize( a_line, words, ' ' );
     std::string a_word = words[0]; //assume first is the word, rest may be freqs
-    
     focus_words[ a_word ] = 1; // PJB maybe we want freq. here to filter on
   }
   l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
@@ -222,18 +228,18 @@ int focus( Logfile& l, Config& c ) {
 
   l.log( "Processing..." );
 
-  // Can I open n output files here? What is n > many?
+  // Contains all the filenames of the datafiles we will create.
   //
   std::map<std::string, std::string> output_files;
 
   // Create a default/left-over file.
-  // What if this is a word?
+  // What if this is a word? Should be configurable?
   //
-  std::string output_filename_dflt = output_filename + "_" + "dflt";
-  output_files[ "dflt" ] = output_filename_dflt;
+  std::string output_filename_dflt = output_filename + "_" + dflt;
+  output_files[ dflt ] = output_filename_dflt;
 
   if ( fmode == 0 ) { // one only
-    output_files[ "a" ] = output_filename;
+    output_files[ combined_class ] = output_filename;
   } else if ( fmode == 1 ) {
     std::map<std::string,int>::iterator ofi;
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
@@ -269,12 +275,12 @@ int focus( Logfile& l, Config& c ) {
     a_str  = words[0];
     is_dflt = 0;
 
-    ri = focus_words.find( target );
+    ri = focus_words.find( target ); // Is it in the focus list?
     if ( ri != focus_words.end() ) {
       //l.log( "FOUND: "+target+" in "+a_line );
       is_dflt = 1;
-      if ( fmode == 0 ) {
-	std::ofstream file_out( output_files["a"].c_str(), std::ios::app );
+      if ( fmode == 0 ) { 
+	std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
 	if ( ! file_out ) {
 	  l.log( "ERROR: cannot write output file." );
 	  return -1;
