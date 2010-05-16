@@ -1008,8 +1008,15 @@ int multi_gated( Logfile& l, Config& c ) {
   int pos;
   std::map<std::string, Classifier*>::iterator gci;
   std::string gate;
-  int gates_triggered;
+  int gates_triggered = 0;
 
+  md2    foo;
+  double classifier_weight;
+  int    type;
+  int    subtype;
+  std::vector<md2_elem>::iterator dei;
+  Classifier* cl = NULL; // classifier used.
+      
   while( std::getline( file_in, a_line )) {
 
     // What is the focus/gating pos? Loop?
@@ -1024,10 +1031,6 @@ int multi_gated( Logfile& l, Config& c ) {
 
     l.log( a_line + " / " + gate );
 
-    // Print the instance to the output file.
-    //
-    file_out << a_line << " ";
-
     // Store the rsults per instance in ... ?
     // we have md2 (multi_dist2) for a Timbl distribution
     // from which we get our classification.
@@ -1035,94 +1038,44 @@ int multi_gated( Logfile& l, Config& c ) {
     // Have we got a classifier with this gate?
     //
     gci = gated_cls.find( gate );
-    l.log("5");
-    gates_triggered = 0;
     if ( gci != gated_cls.end() ) {
-    l.log("6");
-      Classifier* cl = (*gci).second;
-    l.log("7");
-      l.log( cl->id + "/" + to_str(cl->get_type()) );
-    l.log("8");
-      cl->classify_one( a_line );
-        l.log("9");
-
-      md2    foo     = cl->classification;
-      double classifier_weight = cl->get_weight();
-      int    type    = cl->get_type();
-      int    subtype = cl->get_subtype();
-      
-      l.log( foo.answer + " : " + to_str(foo.prob) );
-
-      // Print name of classifier and answer to output file.
-      //
-      file_out << cl->id << " " << foo.answer << " ";
-
-      std::vector<md2_elem>::iterator dei;
-      dei = foo.distr.begin();
-      while ( dei != foo.distr.end() ) { 
-	//std::cout << " " << (*dei).token << " " << (*dei).freq;
-
-	/*
-	if ( type == 1 ) { // merge normal classifier
-	  combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
-	} else if ( type == 2 ) { // distribution
-	  if ( subtype == 1 ) { // multiply
-	    combined_distr[(*dei).token] *= classifier_weight;
-	  } else if ( subtype == 2 ) { // add
-	    //
-	    // We need some kind of normalisation here.
-	    // Maybe related to best in the real/merged classification?
-	    // Make these "just as important".
-	    //
-	    combined_distr[(*dei).token] += (*dei).prob;
-	  }
-	} // other type, divide by index number etc.
-	*/
-	
-	++dei;
-      }
-    
+      cl = (*gci).second;
       ++gates_triggered;
+    } else { // the default classifier.
+      cl = dflt;
     }
-    if ( (dflt != NULL) && (gates_triggered == 0) ) {
-      // default 
-      dflt->classify_one( a_line );
 
-      md2    foo     = dflt->classification;
-      double classifier_weight = dflt->get_weight();
-      int    type    = dflt->get_type();
-      int    subtype = dflt->get_subtype();
-      
-      l.log( foo.answer + " : " + to_str(foo.prob) );
+    // Do the classification.
+    //
+    l.log( cl->id + "/" + to_str(cl->get_type()) );
+    cl->classify_one( a_line );
+    
+    foo     = cl->classification;
+    type    = cl->get_type();
+    subtype = cl->get_subtype();
+    
+    //l.log( foo.answer + " : " + to_str(foo.prob) );
 
-      // Print name of classifier and answer to output file.
-      //
-      file_out << dflt->id << " " << foo.answer << " ";
+    // Print the instance to the output file.
+    //
+    file_out << a_line << " ";
 
-      std::vector<md2_elem>::iterator dei;
-      dei = foo.distr.begin();
-      while ( dei != foo.distr.end() ) { 
-	//std::cout << " " << (*dei).token << " " << (*dei).prob;
+    // Print name of classifier and answer to output file.
+    //
+    file_out << cl->id << " " << foo.answer << " ";
 
-	/*
-	if ( type == 1 ) { // merge normal classifier
-	  combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
-	} else if ( type == 2 ) { // distribution
-	  if ( subtype == 1 ) { // multiply
-	    combined_distr[(*dei).token] *= classifier_weight;
-	  } else if ( subtype == 2 ) { // add
-	    //
-	    // We need some kind of normalisation here.
-	    // Maybe related to best in the real/merged classification?
-	    // Make these "just as important".
-	    //
-	    combined_distr[(*dei).token] += (*dei).prob;
-	  }
-	} // other type, divide by index number etc.
-	*/
-	
-	++dei;
+    sort( foo.distr.begin(), foo.distr.end() );
+
+    // Loop over sorted vector, take top-n.
+    //
+    int cntr = 5;
+    dei = foo.distr.begin();
+    while ( dei != foo.distr.end() ) { 
+      if ( --cntr >= 0 ) {
+	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
+	file_out << " " << (*dei).token << " " << (*dei).freq;
       }
+      dei++;
     }
 
     file_out << std::endl;
@@ -1139,6 +1092,8 @@ int multi_gated( Logfile& l, Config& c ) {
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
 	   to_str((*cli)->get_cc()) );
   }
+
+  l.log( "Gated classifications: "+to_str(gates_triggered) );
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
