@@ -1,3 +1,5 @@
+1.24.1	Working focus and multi_gated.
+	
 1.24.0	Redid focus code and added new word expert multi classifier.
 	
 1.23.3	Changes in ngram_server

@@ -904,12 +904,15 @@ int multi_gated( Logfile& l, Config& c ) {
   bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  std::string        output_filename  = kvs_filename + "_" + id + ".mc";
+  std::string        output_filename  = kvs_filename + "_" + id + ".mg";
+  std::string        stat_filename    = kvs_filename + "_" + id + ".stat";
 
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
   double             distance;
+
+  // specify default to be able to choose default classifier?
 
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
@@ -1089,11 +1092,16 @@ int multi_gated( Logfile& l, Config& c ) {
 
   // Info per classifier, maybe in a separate output file.
   //
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
-    Classifier *classifier = *cli;
-    l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
-	   to_str((*cli)->get_cc()) );
+  std::ofstream stat_out( stat_filename.c_str(), std::ios::out );
+  if ( ! stat_out ) {
+    l.log( "ERROR: cannot write stat output file." );
+    return -1;
   }
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
+    stat_out <<  (*cli)->id << " " << (*cli)->get_correct() << " " 
+	     <<  (*cli)->get_cc() << std::endl;
+  }
+  stat_out.close();
 
   l.log( "Gated classifications: "+to_str(gates_triggered) );
 
