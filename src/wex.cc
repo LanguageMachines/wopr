@@ -391,7 +391,7 @@ int read_classifiers_from_file( std::ifstream& file,
 // After discussion with Antal 09/12/09, mixing of distributions.
 // 
 struct distr_probs {
-  std::string name;
+  std::string name; // PJB call this token
   long        freq;
   double      prob;
   bool operator<(const distr_probs& rhs) const {
@@ -960,7 +960,7 @@ int multi_gated( Logfile& l, Config& c ) {
   std::vector<Classifier*>::iterator cli;
   std::map<std::string,Classifier*> gated_cls; // reverse list
   int classifier_count = 0;
-  Classifier* dflt;
+  Classifier* dflt = NULL;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::ifstream file_kvs( kvs_filename.c_str() );
@@ -987,13 +987,19 @@ int multi_gated( Logfile& l, Config& c ) {
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
+    
+    if ( dflt == NULL ) {
+      l.log( "ERROR: no default classifier" );
+      file_out.close();
+      return -1;
+    }
     l.log( "Read classifiers. Starting classification." );
   }
-
 
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load inputfile." );
+    file_out.close();
     return -1;
   }
 
@@ -1007,7 +1013,7 @@ int multi_gated( Logfile& l, Config& c ) {
   while( std::getline( file_in, a_line )) {
 
     // What is the focus/gating pos? Loop?
-
+    //
     int fco = 1;
 
     Tokenize( a_line, words, ' ' ); // instance
@@ -1016,23 +1022,40 @@ int multi_gated( Logfile& l, Config& c ) {
     pos  = (pos < 0) ? 0 : pos;
     gate = words[pos];
 
-    //l.log( a_line + "/" + gate );
+    l.log( a_line + " / " + gate );
+
+    // Print the instance to the output file.
+    //
+    file_out << a_line << " ";
+
+    // Store the rsults per instance in ... ?
+    // we have md2 (multi_dist2) for a Timbl distribution
+    // from which we get our classification.
 
     // Have we got a classifier with this gate?
     //
     gci = gated_cls.find( gate );
+    l.log("5");
     gates_triggered = 0;
     if ( gci != gated_cls.end() ) {
-      Classifier* c = (*gci).second;
-      l.log( c->id + "/" + to_str(c->get_type()) );
-      c->classify_one( a_line );
-    
-      md2    foo     = c->classification;
-      double classifier_weight = c->get_weight();
-      int    type    = c->get_type();
-      int    subtype = c->get_subtype();
+    l.log("6");
+      Classifier* cl = (*gci).second;
+    l.log("7");
+      l.log( cl->id + "/" + to_str(cl->get_type()) );
+    l.log("8");
+      cl->classify_one( a_line );
+        l.log("9");
+
+      md2    foo     = cl->classification;
+      double classifier_weight = cl->get_weight();
+      int    type    = cl->get_type();
+      int    subtype = cl->get_subtype();
       
       l.log( foo.answer + " : " + to_str(foo.prob) );
+
+      // Print name of classifier and answer to output file.
+      //
+      file_out << cl->id << " " << foo.answer << " ";
 
       std::vector<md2_elem>::iterator dei;
       dei = foo.distr.begin();
@@ -1061,17 +1084,20 @@ int multi_gated( Logfile& l, Config& c ) {
     
       ++gates_triggered;
     }
-
-    if ( gates_triggered == 0 ) {
+    if ( (dflt != NULL) && (gates_triggered == 0) ) {
       // default 
       dflt->classify_one( a_line );
-    
+
       md2    foo     = dflt->classification;
       double classifier_weight = dflt->get_weight();
       int    type    = dflt->get_type();
       int    subtype = dflt->get_subtype();
       
       l.log( foo.answer + " : " + to_str(foo.prob) );
+
+      // Print name of classifier and answer to output file.
+      //
+      file_out << dflt->id << " " << foo.answer << " ";
 
       std::vector<md2_elem>::iterator dei;
       dei = foo.distr.begin();
@@ -1097,14 +1123,17 @@ int multi_gated( Logfile& l, Config& c ) {
 	
 	++dei;
       }
-
     }
+
+    file_out << std::endl;
 
   }
   file_in.close();
 
   file_out.close();
-  
+
+  // Info per classifier, maybe in a separate output file.
+  //
   for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
     Classifier *classifier = *cli;
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
