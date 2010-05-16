@@ -1029,7 +1029,7 @@ int multi_gated( Logfile& l, Config& c ) {
     pos  = (pos < 0) ? 0 : pos;
     gate = words[pos];
 
-    l.log( a_line + " / " + gate );
+    //l.log( a_line + " / " + gate );
 
     // Store the rsults per instance in ... ?
     // we have md2 (multi_dist2) for a Timbl distribution
@@ -1047,7 +1047,7 @@ int multi_gated( Logfile& l, Config& c ) {
 
     // Do the classification.
     //
-    l.log( cl->id + "/" + to_str(cl->get_type()) );
+    //l.log( cl->id + "/" + to_str(cl->get_type()) );
     cl->classify_one( a_line );
     
     foo     = cl->classification;
@@ -1058,7 +1058,7 @@ int multi_gated( Logfile& l, Config& c ) {
 
     // Print the instance to the output file.
     //
-    file_out << a_line << " ";
+    file_out << "[ " << a_line << " ] ";
 
     // Print name of classifier and answer to output file.
     //
@@ -1068,8 +1068,9 @@ int multi_gated( Logfile& l, Config& c ) {
 
     // Loop over sorted vector, take top-n.
     //
-    int cntr = 5;
+    int cntr = topn;
     dei = foo.distr.begin();
+    file_out << "{";
     while ( dei != foo.distr.end() ) { 
       if ( --cntr >= 0 ) {
 	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
@@ -1077,6 +1078,7 @@ int multi_gated( Logfile& l, Config& c ) {
       }
       dei++;
     }
+    file_out << " }";
 
     file_out << std::endl;
 
