@@ -903,6 +903,7 @@ int multi_gated( Logfile& l, Config& c ) {
   const std::string& kvs_filename     = c.get_value( "kvs" );
   bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
   int                topn             = stoi( c.get_value( "topn", "1" ) );
+  int                fco              = stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   std::string        output_filename  = kvs_filename + "_" + id + ".mg";
   std::string        stat_filename    = kvs_filename + "_" + id + ".stat";
@@ -918,6 +919,7 @@ int multi_gated( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "filename:   "+filename );
   l.log( "kvs:        "+kvs_filename );
+  l.log( "fco:        "+to_str(fco) ); 
   l.log( "combined:   "+to_str(do_combined) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
@@ -982,8 +984,7 @@ int multi_gated( Logfile& l, Config& c ) {
       //
       if ( (*cli)->get_type() == 3 ) {
 	gated_cls[ (*cli)->get_gatetrigger() ] = (*cli);
-      }
-      if ( (*cli)->get_type() == 4 ) {
+      } else if ( (*cli)->get_type() == 4 ) { //Well, not the default one
 	dflt = (*cli);
       }
 
@@ -1013,7 +1014,7 @@ int multi_gated( Logfile& l, Config& c ) {
   std::string gate;
   int gates_triggered = 0;
 
-  md2    foo;
+  md2    multidist;
   double classifier_weight;
   int    type;
   int    subtype;
@@ -1022,11 +1023,15 @@ int multi_gated( Logfile& l, Config& c ) {
       
   while( std::getline( file_in, a_line )) {
 
-    // What is the focus/gating pos? Loop?
-    //
-    int fco = 1;
-
     Tokenize( a_line, words, ' ' ); // instance
+
+    // We could loop over the focus positions, to see if
+    // we match. But we can't use a default one for each
+    // position, or? Maybe fco should be a parameter. But
+    // that defeats the purpose of having it saved in the
+    // classifier. It also allows more than one classifier
+    // to  be used for an instance, on different fco
+    // positions... (hm, a multi-dist-gated version?)
 
     pos  = words.size()-1-fco;
     pos  = (pos < 0) ? 0 : pos;
@@ -1053,11 +1058,11 @@ int multi_gated( Logfile& l, Config& c ) {
     //l.log( cl->id + "/" + to_str(cl->get_type()) );
     cl->classify_one( a_line );
     
-    foo     = cl->classification;
-    type    = cl->get_type();
-    subtype = cl->get_subtype();
+    multidist = cl->classification;
+    type      = cl->get_type();
+    subtype   = cl->get_subtype();
     
-    //l.log( foo.answer + " : " + to_str(foo.prob) );
+    //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
     // Print the instance to the output file.
     //
@@ -1065,16 +1070,15 @@ int multi_gated( Logfile& l, Config& c ) {
 
     // Print name of classifier and answer to output file.
     //
-    file_out << cl->id << " " << foo.answer << " ";
-
-    sort( foo.distr.begin(), foo.distr.end() );
+    file_out << cl->id << " " << multidist.answer << " ";
 
     // Loop over sorted vector, take top-n.
     //
+    sort( multidist.distr.begin(), multidist.distr.end() );
     int cntr = topn;
-    dei = foo.distr.begin();
+    dei = multidist.distr.begin();
     file_out << "{";
-    while ( dei != foo.distr.end() ) { 
+    while ( dei != multidist.distr.end() ) { 
       if ( --cntr >= 0 ) {
 	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
 	file_out << " " << (*dei).token << " " << (*dei).freq;
@@ -1090,7 +1094,8 @@ int multi_gated( Logfile& l, Config& c ) {
 
   file_out.close();
 
-  // Info per classifier, maybe in a separate output file.
+  // Info per classifier, in a separate output file. Note
+  // the the dflt one is saved in the file as well.
   //
   std::ofstream stat_out( stat_filename.c_str(), std::ios::out );
   if ( ! stat_out ) {

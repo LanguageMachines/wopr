@@ -356,9 +356,10 @@ int focus( Logfile& l, Config& c ) {
 
 #endif
   
-
   c.add_kv( "filename", output_filename );
-    l.log( "SET filename to "+output_filename );
+  l.log( "SET filename to "+output_filename );
+  c.add_kv( "kvs_filename", kvs_filename );
+  l.log( "SET kvs_filename to "+kvs_filename );
   return 0;
 }
 

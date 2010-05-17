@@ -37,8 +37,14 @@ struct md2 {
   long        distr_count;
   size_t      md;
   bool        mal;
+  int         info; // 0:no info, 1:in distr, 2:correct
   std::vector<md2_elem> distr;
 };
+
+const unsigned int INFO_NOINFO   = 0;
+const unsigned int INFO_INDISTR  = 1;
+const unsigned int INFO_UNKNOWN  = 2;
+const unsigned int INFO_CORRECT  = 4;
 
 class Classifier {
 
@@ -295,12 +301,14 @@ class Classifier {
       classification.distr.push_back( md2e );
       if ( tvs == classification.answer ) {
 	classification.prob = p; // in the distr.
+	classification.info = INFO_INDISTR;
       }
       ++it;
     }
     
     if ( classification.answer == classification.target ) {
       ++correct;
+      classification.info |= INFO_CORRECT;
     }
 #endif
     return true; 
@@ -313,11 +321,11 @@ class Classifier {
   void inc_correct() {
     ++correct;
   }
-  long get_correct(){
+  long get_correct() {
     return correct;
   }
 
-  long get_cc(){
+  long get_cc() {
     return classification_count;
   }
 
