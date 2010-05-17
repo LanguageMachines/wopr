@@ -1,7 +1,7 @@
 Info
 ====
 
-Run 'sh bootstrap.sh' first if starting with a fresh checkout.
+Run 'sh bootstrap' first if starting with a fresh checkout.
 
 
 General
@@ -10,11 +10,18 @@ General
 ./configure
 make
 
-With Timbl support, local install:
+With a local Timbl installation:
 
 ./configure --prefix=/home/pberck/local --with-timbl=/home/pberck/local
 make
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
+
+If Timbl has been installed system-wide, the configure script should be
+able to find it without the --with-timbl invocation.
+
+Timbl support can be explicitly disabled by specifying --without-timbl. You 
+will be left with a Wopr which can create data sets and run an n-gram
+language mode.
 
 OS X
 ====
@@ -25,16 +32,4 @@ Debian
 ======
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
-
-
-Example:
---------
-
-Perplexiteitsberekeningen:
-
-wopr -r pplxs -p filename:testset.ws3,ibasefile:reuters.martin.tok.1000.ws3.ibase,timbl:"-a1 +D"
-
-wopr -r pplxs -p filename:reuters.martin.tok.10000.test.ng4,lexicon:reuters.martin.tok.10000.train.lex,ibasefile:reuters.martin.tok.10000.train.ng4.ibase,timbl:"-a1 +D",counts:reuters.martin.tok.10000.train.cnt 
-
-wopr -r pplxs -p filename:testset.ws3,lexicon:reuters.martin.tok.1000.lex,ibasefile:reuters.martin.tok.1000.ws3.ibase,timbl:"-a1 +D"
 
