@@ -63,9 +63,10 @@ int focus( Logfile& l, Config& c ) {
   const std::string& focus_filename  = c.get_value( "focus" );
   int                fco             = stoi( c.get_value( "fco", "0" ));
   int                fmode           = stoi( c.get_value( "fcm", "0" ));
+  int                numeric_files   = stoi( c.get_value( "nf", "-1" ));
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
-  const std::string& timbl           = c.get_value( "timbl" ); 
+  std::string        timbl           = c.get_value( "timbl", "no" ); 
 
   std::string        output_filename = filename + ".fcs"+to_str(fco);
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
@@ -84,9 +85,14 @@ int focus( Logfile& l, Config& c ) {
   l.log( "focus:      "+focus_filename );
   l.log( "fco:        "+to_str(fco) ); // target offset
   l.log( "fcm:        "+to_str(fmode) );
+  if ( numeric_files >= 0 ) {
+    l.log( "nf:         "+to_str(numeric_files) );
+  }
   l.log( "id:         "+id );
   l.log( "default:    "+dflt );
-  l.log( "timbl:      "+timbl );
+  if ( timbl != "no" ) {
+    l.log( "timbl:      "+timbl );
+  }
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -129,6 +135,8 @@ int focus( Logfile& l, Config& c ) {
   //
   std::map<std::string, std::string> output_files;
 
+  int numdigits = int(log10(focus_words.size()))+1;
+
   // Create a default/left-over file.
   // What if this is a word? Should be configurable?
   //
@@ -140,10 +148,20 @@ int focus( Logfile& l, Config& c ) {
   } else if ( fmode == 1 ) {
     std::map<std::string,int>::iterator ofi;
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
-      std::string fw = (*ofi).first;
-      std::string output_filename_fw = output_filename + "_" + fw;
-      //l.log( "OPEN: " + output_filename_fw );
-      output_files[ fw ] = output_filename_fw;
+      if ( numeric_files < 0 ) {
+	std::string fw = (*ofi).first;
+	std::string output_filename_fw = output_filename + "_" + fw;
+	//l.log( "OPEN: " + output_filename_fw );
+	output_files[ fw ] = output_filename_fw;
+      } else {
+	// use numeric_files to create a filename
+	std::string num = to_str( numeric_files, numdigits );
+	std::string fw  = (*ofi).first;
+	std::string output_filename_num = output_filename + "_" + num;
+	//l.log( "OPEN: " + output_filename_fw );
+	output_files[ fw ] = output_filename_num;
+	++numeric_files;
+      }
     }
   }
   
@@ -209,60 +227,66 @@ int focus( Logfile& l, Config& c ) {
 
   file_in.close();
 
+  l.log( "Created "+to_str(output_files.size())+" data files." );
+
+
   // Now train them all, or create a script to train...? or train,
   // and create kvs script (best).
   //
 #ifdef TIMBL
 
-  std::ofstream kvs_out( kvs_filename.c_str(), std::ios::out );
-  if ( ! kvs_out ) {
-    l.log( "ERROR: cannot write kvs output file." );
-    return -1;
-  }
-
-  Timbl::TimblAPI       *My_Experiment;
-  std::map<std::string,std::string>::iterator ofi;
-  for( ofi = output_files.begin(); ofi != output_files.end(); ofi++ ) {
-    std::string focus_word      = (*ofi).first;
-    std::string output_filename = (*ofi).second;
-
-    std::string t_ext = timbl;
-    std::string ibase_filename = output_filename;
-    t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '), t_ext.end());
-    if ( t_ext != "" ) {
-      ibase_filename = ibase_filename+"_"+t_ext;
+  if ( timbl != "no" ) { // We skip kvs and ibase creation is so desired
+    std::ofstream kvs_out( kvs_filename.c_str(), std::ios::out );
+    if ( ! kvs_out ) {
+      l.log( "ERROR: cannot write kvs output file." );
+      return -1;
     }
-    ibase_filename = ibase_filename+".ibase";
     
-    l.log( output_filename+"/"+ibase_filename );
-
-    My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->Learn( output_filename );
-    My_Experiment->WriteInstanceBase( ibase_filename );
-    delete My_Experiment;
-
-    kvs_out << "classifier:" << focus_word << std::endl;
-    kvs_out << "ibasefile:" << ibase_filename << std::endl;
-    kvs_out << "timbl:" << timbl << std::endl;
-    if ( fmode == 1 ) {
-      if ( focus_word == dflt ) {
-	kvs_out << "gatedefault:1" << std::endl;
-      } else {
-	kvs_out << "gatetrigger:" << focus_word << std::endl;
-	kvs_out << "gatepos:" << fco << std::endl;
+    Timbl::TimblAPI       *My_Experiment;
+    std::map<std::string,std::string>::iterator ofi;
+    for( ofi = output_files.begin(); ofi != output_files.end(); ofi++ ) {
+      std::string focus_word      = (*ofi).first;
+      std::string output_filename = (*ofi).second;
+      
+      std::string t_ext = timbl;
+      std::string ibase_filename = output_filename;
+      t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '), t_ext.end());
+      if ( t_ext != "" ) {
+	ibase_filename = ibase_filename+"_"+t_ext;
       }
+      ibase_filename = ibase_filename+".ibase";
+      
+      l.log( output_filename+"/"+ibase_filename );
+      
+      My_Experiment = new Timbl::TimblAPI( timbl );
+      (void)My_Experiment->Learn( output_filename );
+      My_Experiment->WriteInstanceBase( ibase_filename );
+      delete My_Experiment;
+      
+      kvs_out << "classifier:" << focus_word << std::endl;
+      kvs_out << "ibasefile:" << ibase_filename << std::endl;
+      kvs_out << "timbl:" << timbl << std::endl;
+      if ( fmode == 1 ) {
+	if ( focus_word == dflt ) {
+	  kvs_out << "gatedefault:1" << std::endl;
+	} else {
+	  kvs_out << "gatetrigger:" << focus_word << std::endl;
+	  kvs_out << "gatepos:" << fco << std::endl;
+	}
+      }
+      kvs_out << std::endl;
     }
-    kvs_out << std::endl;
+    
+    kvs_out.close();
+
+    c.add_kv( "kvs_filename", kvs_filename );
+    l.log( "SET kvs_filename to "+kvs_filename );
+
   }
-
-  kvs_out.close();
-
 #endif
   
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
-  c.add_kv( "kvs_filename", kvs_filename );
-  l.log( "SET kvs_filename to "+kvs_filename );
   return 0;
 }
 
