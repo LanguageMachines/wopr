@@ -1104,6 +1104,7 @@ int multi_gated( Logfile& l, Config& c ) {
     }
     file_out << "] ";
 
+    file_out << multidist.md << " " << multidist.mal << " ";
     file_out << multidist.cnt << " " << multidist.distr_count << " ";
 
     // Loop over sorted vector, take top-n.
