@@ -274,8 +274,8 @@ class Classifier {
   bool classify_one( std::string a_line ) {
     
     classification.cl = a_line;
-
     last_word( classification.cl, classification.target );
+
     classification.distr.clear();
     classification.prob = 0;
 
@@ -303,7 +303,7 @@ class Classifier {
       md2e.freq = wght;
       md2e.prob = p;
       classification.distr.push_back( md2e );
-      if ( tvs == classification.answer ) {
+      if ( tvs == classification.target ) {
 	classification.prob = p; // in the distr.
 	classification.info = INFO_INDISTR;
       }
