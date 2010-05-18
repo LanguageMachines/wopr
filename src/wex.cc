@@ -1102,9 +1102,11 @@ int multi_gated( Logfile& l, Config& c ) {
     } else { // INFO_INDISTR is left
       file_out << "cd ";
     }
-    file_out << "] ";
 
     file_out << multidist.md << " " << multidist.mal << " ";
+
+    file_out << "] ";
+
     file_out << multidist.cnt << " " << multidist.distr_count << " ";
 
     // Loop over sorted vector, take top-n.

@@ -134,6 +134,7 @@ int focus( Logfile& l, Config& c ) {
   // Contains all the filenames of the datafiles we will create.
   //
   std::map<std::string, std::string> output_files;
+  std::map<std::string, long> ic; // instance counter?
 
   int numdigits = int(log10(focus_words.size()))+1;
 
@@ -153,6 +154,7 @@ int focus( Logfile& l, Config& c ) {
 	std::string output_filename_fw = output_filename + "_" + fw;
 	//l.log( "OPEN: " + output_filename_fw );
 	output_files[ fw ] = output_filename_fw;
+	ic[ fw ] = 0;
       } else {
 	// use numeric_files to create a filename
 	std::string num = to_str( numeric_files, numdigits );
@@ -160,6 +162,7 @@ int focus( Logfile& l, Config& c ) {
 	std::string output_filename_num = output_filename + "_" + num;
 	//l.log( "OPEN: " + output_filename_fw );
 	output_files[ fw ] = output_filename_num;
+	ic[ fw ] = 0;
 	++numeric_files;
       }
     }
@@ -177,7 +180,7 @@ int focus( Logfile& l, Config& c ) {
   std::string a_str;
   int         pos;
   std::map<std::string, int>::iterator ri;
-  int is_dflt;
+  int is_gated;
 
   while( std::getline( file_in, a_line ) ) { 
 
@@ -188,12 +191,12 @@ int focus( Logfile& l, Config& c ) {
     pos = (pos < 0) ? 0 : pos;
     target = words[pos]; // target is the focus "target"
     a_str  = words[0];
-    is_dflt = 0;
+    is_gated = 0;
 
     ri = focus_words.find( target ); // Is it in the focus list?
     if ( ri != focus_words.end() ) {
       //l.log( "FOUND: "+target+" in "+a_line );
-      is_dflt = 1;
+      is_gated = 1;
       if ( fmode == 0 ) { 
 	std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
 	if ( ! file_out ) {
@@ -210,10 +213,11 @@ int focus( Logfile& l, Config& c ) {
 	}
 	file_out << a_line << std::endl;
 	file_out.close(); // must be inefficient...
+	++ic[target];
       }
     }
 
-    if ( is_dflt == 0 ) {
+    if ( is_gated == 0 ) {
       std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
       if ( ! file_out ) {
 	l.log( "ERROR: cannot write output file." );
@@ -221,6 +225,7 @@ int focus( Logfile& l, Config& c ) {
       }
       file_out << a_line << std::endl;
       file_out.close(); // must be inefficient...
+      ++ic[dflt];
     }
     
   }
@@ -228,7 +233,6 @@ int focus( Logfile& l, Config& c ) {
   file_in.close();
 
   l.log( "Created "+to_str(output_files.size())+" data files." );
-
 
   // Now train them all, or create a script to train...? or train,
   // and create kvs script (best).
@@ -273,6 +277,7 @@ int focus( Logfile& l, Config& c ) {
 	  kvs_out << "gatetrigger:" << focus_word << std::endl;
 	  kvs_out << "gatepos:" << fco << std::endl;
 	}
+	kvs_out << "#lines: " <<  ic[focus_word] << std::endl;
       }
       kvs_out << std::endl;
     }
