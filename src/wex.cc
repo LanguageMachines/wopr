@@ -1074,6 +1074,8 @@ int multi_gated( Logfile& l, Config& c ) {
     // Print name of classifier, fco and answer to output file.
     //
     file_out << cl->id << " " << fco << " " << multidist.answer << " ";
+
+    file_out << multidist.prob << " ";
     
     // Indicator if it was correct or not.
     // We have gated:correct/indist/wrong, and idem for default.

@@ -277,6 +277,7 @@ class Classifier {
 
     last_word( classification.cl, classification.target );
     classification.distr.clear();
+    classification.prob = 0;
 
 #ifdef TIMBL    
     tv = My_Experiment->Classify( classification.cl, vd );
