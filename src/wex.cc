@@ -924,6 +924,7 @@ int multi_gated( Logfile& l, Config& c ) {
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );
+  l.log( "OUTPUT:     "+stat_filename );
   l.dec_prefix();
 
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
