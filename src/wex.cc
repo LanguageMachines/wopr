@@ -1069,10 +1069,11 @@ int multi_gated( Logfile& l, Config& c ) {
 
     // Print the instance to the output file. Or just the target?
     //
-    file_out << "[ " << /*target*/ a_line << " ] ";
+    file_out << target /*a_line*/ << " ";
 
     // Print name of classifier, fco and answer to output file.
     //
+    file_out << "[ ";
     file_out << cl->id << " " << fco << " " << multidist.answer << " ";
 
     file_out << multidist.prob << " ";
@@ -1092,6 +1093,7 @@ int multi_gated( Logfile& l, Config& c ) {
     } else {
       file_out << "cd ";
     }
+    file_out << "] ";
 
     file_out << multidist.cnt << " " << multidist.distr_count << " ";
 
