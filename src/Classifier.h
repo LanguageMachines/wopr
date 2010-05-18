@@ -340,6 +340,7 @@ class Classifier {
 
   void init() {
     correct = 0;
+    classification_count = 0;
 #ifdef TIMBL
     if ( (type == 1) || (type == 3) || (type == 4) ) { //  maybe !=2
       My_Experiment = new Timbl::TimblAPI( timbl );

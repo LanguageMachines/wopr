@@ -1022,7 +1022,8 @@ int multi_gated( Logfile& l, Config& c ) {
   int    subtype;
   std::vector<md2_elem>::iterator dei;
   Classifier* cl = NULL; // classifier used.
-      
+  std::map<std::string,int>::iterator wfi;
+
   while( std::getline( file_in, a_line )) {
 
     Tokenize( a_line, words, ' ' ); // instance
@@ -1076,6 +1077,14 @@ int multi_gated( Logfile& l, Config& c ) {
     file_out << "[ ";
     file_out << cl->id << " " << fco << " " << multidist.answer << " ";
 
+    // If the prob == 0, we could do a backoff to lexical probs if
+    // we supplied a lexicon.
+    // We could also calculate logs and pplxs....
+    //
+    wfi = wfreqs.find(target);
+    if ( wfi != wfreqs.end() ) {
+      multidist.prob = (int)(*wfi).second / (double)total_count ;
+    }
     file_out << multidist.prob << " ";
     
     // Indicator if it was correct or not.
@@ -1090,7 +1099,7 @@ int multi_gated( Logfile& l, Config& c ) {
       file_out << "ic ";
     } else if ( multidist.info == INFO_CORRECT ) {
       file_out << "cg ";
-    } else {
+    } else { // INFO_INDISTR is left
       file_out << "cd ";
     }
     file_out << "] ";
