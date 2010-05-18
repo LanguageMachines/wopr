@@ -1013,6 +1013,7 @@ int multi_gated( Logfile& l, Config& c ) {
   int pos;
   std::map<std::string, Classifier*>::iterator gci;
   std::string gate;
+  std::string target;
   int gates_triggered = 0;
 
   md2    multidist;
@@ -1034,9 +1035,10 @@ int multi_gated( Logfile& l, Config& c ) {
     // to  be used for an instance, on different fco
     // positions... (hm, a multi-dist-gated version?)
 
-    pos  = words.size()-1-fco;
-    pos  = (pos < 0) ? 0 : pos;
-    gate = words[pos];
+    pos    = words.size()-1-fco;
+    pos    = (pos < 0) ? 0 : pos;
+    gate   = words[pos];
+    target = words[words.size()-1];
 
     //l.log( a_line + " / " + gate );
 
@@ -1065,13 +1067,31 @@ int multi_gated( Logfile& l, Config& c ) {
     
     //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
-    // Print the instance to the output file.
+    // Print the instance to the output file. Or just the target?
     //
-    file_out << "[ " << a_line << " ] ";
+    file_out << "[ " << /*target*/ a_line << " ] ";
 
-    // Print name of classifier and answer to output file.
+    // Print name of classifier, fco and answer to output file.
     //
-    file_out << cl->id << " " << multidist.answer << " ";
+    file_out << cl->id << " " << fco << " " << multidist.answer << " ";
+    
+    // Indicator if it was correct or not.
+    // We have gated:correct/indist/wrong, and idem for default.
+    //
+    if ( cl->get_type() == 4 ) {
+      file_out << "D ";
+    } else {
+      file_out << "G ";
+    }
+    if ( multidist.info == INFO_WRONG ) {
+      file_out << "ic ";
+    } else if ( multidist.info == INFO_CORRECT ) {
+      file_out << "cg ";
+    } else {
+      file_out << "cd ";
+    }
+
+    file_out << multidist.cnt << " " << multidist.distr_count << " ";
 
     // Loop over sorted vector, take top-n.
     //

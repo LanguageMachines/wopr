@@ -45,6 +45,7 @@ const unsigned int INFO_NOINFO   = 0;
 const unsigned int INFO_INDISTR  = 1;
 const unsigned int INFO_UNKNOWN  = 2;
 const unsigned int INFO_CORRECT  = 4;
+const unsigned int INFO_WRONG    = 8;
 
 class Classifier {
 
@@ -280,6 +281,8 @@ class Classifier {
 #ifdef TIMBL    
     tv = My_Experiment->Classify( classification.cl, vd );
 
+    classification.info = INFO_WRONG; // unless proven wrong :)
+
     classification.answer = tv->Name();
 
     classification.md  = My_Experiment->matchDepth();
@@ -308,7 +311,7 @@ class Classifier {
     
     if ( classification.answer == classification.target ) {
       ++correct;
-      classification.info |= INFO_CORRECT;
+      classification.info = INFO_CORRECT;
     }
 #endif
     return true; 
