@@ -267,10 +267,16 @@ int focus( Logfile& l, Config& c ) {
       l.log( output_filename+"/"+ibase_filename );
       
       if ( ! file_exists( l, c, ibase_filename ) ) {
-	My_Experiment = new Timbl::TimblAPI( timbl );
-	(void)My_Experiment->Learn( output_filename );
-	My_Experiment->WriteInstanceBase( ibase_filename );
-	delete My_Experiment;
+	if ( file_exists( l, c, output_filename ) ) {
+	  My_Experiment = new Timbl::TimblAPI( timbl );
+	  (void)My_Experiment->Learn( output_filename );
+	  My_Experiment->WriteInstanceBase( ibase_filename );
+	  delete My_Experiment;
+	} else {
+	  l.log( "ERROR: could not read data file." );
+	  kvs_out.close();
+	  return -1;
+	}
       } else {
 	l.log( "Instance base exists, not overwriting." );
       }
