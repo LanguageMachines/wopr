@@ -67,6 +67,7 @@ int focus( Logfile& l, Config& c ) {
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
   std::string        timbl           = c.get_value( "timbl", "no" ); 
+  bool               skip_create     = stoi( c.get_value( "sc", "0" )) == 1;
 
   std::string        output_filename = filename + ".fcs"+to_str(fco);
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
@@ -93,6 +94,7 @@ int focus( Logfile& l, Config& c ) {
   if ( timbl != "no" ) {
     l.log( "timbl:      "+timbl );
   }
+  l.log( "sc:         "+to_str(skip_create) ); // skip creation of data sets
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -168,72 +170,74 @@ int focus( Logfile& l, Config& c ) {
     }
   }
   
-  // Data file, already windowed.
-  //
-  std::ifstream file_in( filename.c_str() );
-  if ( ! file_in ) {
-    l.log( "ERROR: cannot load data file." );
-    return -1;
-  }
-
-  std::string target;
-  std::string a_str;
-  int         pos;
-  std::map<std::string, int>::iterator ri;
-  int is_gated;
-
-  while( std::getline( file_in, a_line ) ) { 
-
-    words.clear();
-    Tokenize( a_line, words, ' ' );
-   
-    pos = words.size()-1-fco;
-    pos = (pos < 0) ? 0 : pos;
-    target = words[pos]; // target is the focus "target"
-    a_str  = words[0];
-    is_gated = 0;
-
-    ri = focus_words.find( target ); // Is it in the focus list?
-    if ( ri != focus_words.end() ) {
-      //l.log( "FOUND: "+target+" in "+a_line );
-      is_gated = 1;
-      if ( fmode == 0 ) { 
-	std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
-	if ( ! file_out ) {
-	  l.log( "ERROR: cannot write output file ["+output_files[combined_class]+"]." );
-	  return -1;
+  if ( skip_create == false ) {
+    // Data file, already windowed.
+    //
+    std::ifstream file_in( filename.c_str() );
+    if ( ! file_in ) {
+      l.log( "ERROR: cannot load data file." );
+      return -1;
+    }
+    
+    std::string target;
+    std::string a_str;
+    int         pos;
+    std::map<std::string, int>::iterator ri;
+    int is_gated;
+    
+    while( std::getline( file_in, a_line ) ) { 
+      
+      words.clear();
+      Tokenize( a_line, words, ' ' );
+      
+      pos = words.size()-1-fco;
+      pos = (pos < 0) ? 0 : pos;
+      target = words[pos]; // target is the focus "target"
+      a_str  = words[0];
+      is_gated = 0;
+      
+      ri = focus_words.find( target ); // Is it in the focus list?
+      if ( ri != focus_words.end() ) {
+	//l.log( "FOUND: "+target+" in "+a_line );
+	is_gated = 1;
+	if ( fmode == 0 ) { 
+	  std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
+	  if ( ! file_out ) {
+	    l.log( "ERROR: cannot write output file ["+output_files[combined_class]+"]." );
+	    return -1;
+	  }
+	  file_out << a_line << std::endl;
+	  file_out.close(); // must be inefficient...
+	} else if ( fmode == 1 ) {
+	  std::ofstream file_out( output_files[target].c_str(), std::ios::app );
+	  if ( ! file_out ) {
+	    l.log( "ERROR: cannot write output file." );
+	    return -1;
+	  }
+	  file_out << a_line << std::endl;
+	  file_out.close(); // must be inefficient...
+	  ++ic[target];
 	}
-	file_out << a_line << std::endl;
-	file_out.close(); // must be inefficient...
-      } else if ( fmode == 1 ) {
-	std::ofstream file_out( output_files[target].c_str(), std::ios::app );
+      }
+      
+      if ( is_gated == 0 ) {
+	std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
 	if ( ! file_out ) {
 	  l.log( "ERROR: cannot write output file." );
 	  return -1;
 	}
 	file_out << a_line << std::endl;
 	file_out.close(); // must be inefficient...
-	++ic[target];
+	++ic[dflt];
       }
-    }
-
-    if ( is_gated == 0 ) {
-      std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
-      if ( ! file_out ) {
-	l.log( "ERROR: cannot write output file." );
-	return -1;
-      }
-      file_out << a_line << std::endl;
-      file_out.close(); // must be inefficient...
-      ++ic[dflt];
+      
     }
     
+    file_in.close();
+    
+    l.log( "Created "+to_str(output_files.size())+" data files." );
   }
-
-  file_in.close();
-
-  l.log( "Created "+to_str(output_files.size())+" data files." );
-
+  
   // Now train them all, or create a script to train...? or train,
   // and create kvs script (best).
   //
@@ -262,11 +266,15 @@ int focus( Logfile& l, Config& c ) {
       
       l.log( output_filename+"/"+ibase_filename );
       
-      My_Experiment = new Timbl::TimblAPI( timbl );
-      (void)My_Experiment->Learn( output_filename );
-      My_Experiment->WriteInstanceBase( ibase_filename );
-      delete My_Experiment;
-      
+      if ( ! file_exists( l, c, ibase_filename ) ) {
+	My_Experiment = new Timbl::TimblAPI( timbl );
+	(void)My_Experiment->Learn( output_filename );
+	My_Experiment->WriteInstanceBase( ibase_filename );
+	delete My_Experiment;
+      } else {
+	l.log( "Instance base exists, not overwriting." );
+      }
+
       kvs_out << "classifier:" << focus_word << std::endl;
       kvs_out << "ibasefile:" << ibase_filename << std::endl;
       kvs_out << "timbl:" << timbl << std::endl;
