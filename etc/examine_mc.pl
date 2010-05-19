@@ -44,6 +44,8 @@ while ( my $line = <FH> ) {
   my $binary = "";
   my (@i_parts, @c_parts, @b_parts);
 
+  # question [ way 0.0606061 2 true ] { way 0.0606061 }
+  #
   if ( $line =~ /(.*) \[ (.*) \] \{ (.*) \}/ ) {
 
     $target = $1;
