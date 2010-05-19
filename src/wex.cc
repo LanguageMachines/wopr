@@ -1140,8 +1140,11 @@ int multi_gated( Logfile& l, Config& c ) {
     return -1;
   }
   for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
-    stat_out <<  (*cli)->id << " " << (*cli)->get_correct() << " " 
-	     <<  (*cli)->get_cc() << std::endl;
+    stat_out << (*cli)->id << " " 
+	     << (*cli)->get_cc() << " "
+	     << (*cli)->get_cg() << " " 
+	     << (*cli)->get_cd() << " " 
+	     << (*cli)->get_ic() << std::endl;
   }
   stat_out.close();
 

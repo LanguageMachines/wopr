@@ -66,7 +66,9 @@ class Classifier {
   double      weight;
   double      distprob;
   long        correct; 
-  long        correct_distr;
+  long        score_cg;
+  long        score_cd;
+  long        score_ic;
   long        classification_count; 
   md2         classification;
   std::vector<std::string> words;
@@ -313,6 +315,12 @@ class Classifier {
     if ( classification.answer == classification.target ) {
       ++correct;
       classification.info = INFO_CORRECT;
+      ++score_cg;
+    }
+    if ( classification.info == INFO_INDISTR ) {
+      ++score_cd;
+    } else if ( classification.info == INFO_WRONG ) {
+      ++score_ic;
     }
 #endif
     return true; 
@@ -333,6 +341,16 @@ class Classifier {
     return classification_count;
   }
 
+  long get_cg() {
+    return score_cg;
+  }
+  long get_cd() {
+    return score_cd;
+  }
+  long get_ic() {
+    return score_ic;
+  }
+
   std::string info_str() {
     return id+"/"+ibasefile+"/"+testfile+"/wgt="+to_str(weight)
       +"/type="+to_str(type);
@@ -340,7 +358,9 @@ class Classifier {
 
   void init() {
     correct = 0;
-    correct_distr = 0;
+    score_cg = 0;
+    score_cd = 0;
+    score_ic = 0;
     classification_count = 0;
 #ifdef TIMBL
     if ( (type == 1) || (type == 3) || (type == 4) ) { //  maybe !=2

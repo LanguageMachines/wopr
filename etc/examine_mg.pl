@@ -65,21 +65,22 @@ while ( my $line = <FH> ) {
     my $c_mal   = $c_parts[7];
 
     ++$classifiers_count{$c_name};
-    ++$classifiers_score{$c_info}{$c_name};
+    ++$classifiers_score{$c_name}{$c_info};
   }
 }
 
-#http://docstore.mik.ua/orelly/perl3/prog/ch09_04.htm
-foreach my $infokey (keys(%classifiers_score)) {
-  print "$infokey:\n";
-  foreach my $key (sort (keys( %{$classifiers_score{$infokey}} ))) {
-    print "$key: ";
-    if ( defined $classifiers_score{$infokey}{$key} ) {
-      print $classifiers_score{$infokey}{$key};
+my @infos = ('cg', 'cd', 'ic');
+foreach my $c_name (keys(%classifiers_score)) {
+  print "$c_name: $classifiers_count{$c_name} ";
+  foreach my $c_info ( @infos ) {
+  #foreach my $c_info (sort (keys( %{$classifiers_score{$c_name}} ))) {
+    print "$c_info:";
+    if ( defined $classifiers_score{$c_name}{$c_info} ) {
+      print $classifiers_score{$c_name}{$c_info};
     } else {
       print "0";
     }
-    print "/$classifiers_count{$key}";
-    print "\n";
+    print " ";
   }
+  print "\n";
 }
