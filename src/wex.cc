@@ -901,7 +901,6 @@ int multi_gated( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
-  bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   int                fco              = stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
@@ -920,7 +919,6 @@ int multi_gated( Logfile& l, Config& c ) {
   l.log( "filename:   "+filename );
   l.log( "kvs:        "+kvs_filename );
   l.log( "fco:        "+to_str(fco) ); 
-  l.log( "combined:   "+to_str(do_combined) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.log( "OUTPUT:     "+output_filename );

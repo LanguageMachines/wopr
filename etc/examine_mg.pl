@@ -25,6 +25,7 @@ my $file = $opt_f || 0;
 
 my %classifiers_count;
 my %classifiers_score;
+my %totals_score;
 
 open(FH, $file) || die "Can't open file.";
 
@@ -66,6 +67,7 @@ while ( my $line = <FH> ) {
 
     ++$classifiers_count{$c_name};
     ++$classifiers_score{$c_name}{$c_info};
+    ++$totals_score{$c_info};
   }
 }
 
@@ -84,3 +86,15 @@ foreach my $c_name (keys(%classifiers_score)) {
   }
   print "\n";
 }
+
+print "\nTotals:\n";
+foreach my $c_info ( @infos ) {
+  print "$c_info:";
+  if ( defined $totals_score{$c_info} ) {
+    print $totals_score{$c_info};
+  } else {
+    print "0";
+  }
+  print "\n";
+}
+
