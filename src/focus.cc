@@ -138,7 +138,10 @@ int focus( Logfile& l, Config& c ) {
   std::map<std::string, std::string> output_files;
   std::map<std::string, long> ic; // instance counter?
 
-  int numdigits = int(log10(focus_words.size()))+1;
+  int numdigits = 4;
+  if ( focus_words.size()+numeric_files > 0 ) {
+    numdigits = int(log10(focus_words.size()+numeric_files))+1;
+  }
 
   // Create a default/left-over file.
   // What if this is a word? Should be configurable?
@@ -298,8 +301,8 @@ int focus( Logfile& l, Config& c ) {
     
     kvs_out.close();
 
-    c.add_kv( "kvs_filename", kvs_filename );
-    l.log( "SET kvs_filename to "+kvs_filename );
+    c.add_kv( "kvs", kvs_filename );
+    l.log( "SET kvs to "+kvs_filename );
 
   }
 #endif
