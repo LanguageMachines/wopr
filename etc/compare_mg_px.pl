@@ -29,9 +29,15 @@ my $rc      = $opt_r || 0;
 
 # In the px file:
 #
-my $log2prob_pos = $lc + $rc + 2;
-my $target_pos   = $lc + $rc + 0;
-my $unknown_pos  = $lc + $rc + 5;
+my $px_target_pos = $lc + $rc + 0;
+
+# In the mg file:
+#
+my $mg_target_pos = $lc + $rc + 0;
+my $mg_c_name_pos = $mg_target_pos + 2;
+my $mg_c_type_pos = $mg_target_pos + 6;
+
+# ----
 
 open(FHM, $mg_file) || die "Can't open mg file.";
 open(FHP, $px_file) || die "Can't open px file.";

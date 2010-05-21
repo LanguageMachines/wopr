@@ -904,8 +904,19 @@ int multi_gated( Logfile& l, Config& c ) {
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   int                fco              = stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  std::string        output_filename  = kvs_filename + "_" + id + ".mg";
-  std::string        stat_filename    = kvs_filename + "_" + id + ".stat";
+
+  std::string output_filename;
+  if ( (id != "") && ( ! contains_id( filename, id)) ) { //was kvs_filename
+    output_filename  = filename + "_" + id + ".mg";
+  } else {
+    output_filename  = filename + ".mg";
+  }
+  std::string stat_filename;
+  if ( (id != "") && ( ! contains_id( filename, id)) ) {
+    stat_filename  = filename + "_" + id + ".mg";
+  } else {
+    stat_filename  = filename + ".stat";
+  }
 
   std::string        distrib;
   std::vector<std::string> distribution;
