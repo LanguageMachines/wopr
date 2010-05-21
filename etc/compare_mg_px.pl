@@ -68,9 +68,9 @@ while ( my $mline = <FHM> ) {
 	  if ( $mg_icu eq $px_icu ) {
 	      #print "EQUAL\n";
 	  }
-	  print "\n";
-	  ++$scores{'mg'}{$c_name}{$mg_icu};
-	  ++$scores{'px'}{$c_name}{$px_icu};
+	  #print "\n";
+	  ++$scores{$c_name}{'mg'}{$mg_icu};
+	  ++$scores{$c_name}{'px'}{$px_icu};
       #}
 
   }
@@ -82,13 +82,15 @@ close(FHM);
 my @infos = ('cg', 'cd', 'ic');
 my @files = ( 'px', 'mg' );
 
-foreach my $file ( @files ) {
-    print "$file:\n";
-    foreach my $c_name (sort (keys( %{$scores{$file}} ))) {
-	print "$c_name: ";
+foreach my $c_name (sort (keys( %scores ))) {
+    print "$c_name:\n";
+
+    foreach my $file ( @files ) {
+	print "$file: ";
+
 	foreach my $info ( @infos ) {
-	    if ( defined $scores{$file}{$c_name}{$info} ) {
-		print $info.":".$scores{$file}{$c_name}{$info};
+	    if ( defined $scores{$c_name}{$file}{$info} ) {
+		print $info.":".$scores{$c_name}{$file}{$info};
 	    } else {
 		print "$info:0";
 	    }
