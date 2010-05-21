@@ -30,14 +30,18 @@ my $rc      = $opt_r || 0;
 # In the px file:
 #
 my $px_target_pos = $lc + $rc + 0;
+my $px_icu_pos    = $lc + $rc + 5;
 
 # In the mg file:
 #
 my $mg_target_pos = $lc + $rc + 0;
 my $mg_c_name_pos = $mg_target_pos + 2;
 my $mg_c_type_pos = $mg_target_pos + 6;
+my $mg_icu_pos    = $lc + $rc + 7;
 
 # ----
+
+my %scores;
 
 open(FHM, $mg_file) || die "Can't open mg file.";
 open(FHP, $px_file) || die "Can't open px file.";
@@ -46,23 +50,51 @@ while ( my $mline = <FHM> ) {
 
   chomp $mline;
 
-  while ( my $pline = get_next(*FHP) ) {
+  if ( my $pline = get_next(*FHP) ) {
 
-    my @parts  = split (/ /, $mline);
-    my $c_type = $parts[ $mg_c_type_pos ];
-    my $c_name = $parts[ $mg_c_name_pos ];
-    print "$c_name\n";
-    if ( $c_name eq $fword ) {
-	print "$mline\n";
-	print "$pline\n";
-    }
+      my @px_parts = split (/ /, $pline);
+      my $pxtarget = $px_parts[ $px_target_pos ];
+      my $px_icu   = $px_parts[ $px_icu_pos ];
 
+      my @mg_parts  = split (/ /, $mline);
+      my $target = $mg_parts[ $mg_target_pos ];
+      my $c_type = $mg_parts[ $mg_c_type_pos ];
+      my $c_name = $mg_parts[ $mg_c_name_pos ];
+      my $mg_icu = $mg_parts[ $mg_icu_pos ];
+      #print "$target\n";
+      if ( $c_name eq $fword ) {
+	  print "mg: $mline\n";
+	  print "px: $pline\n";
+	  if ( $mg_icu eq $px_icu ) {
+	      #print "EQUAL\n";
+	  }
+	  print "\n";
+	  ++$scores{'mg'}{$mg_icu};
+	  ++$scores{'px'}{$px_icu};
+      }
   }
-
 }
 
 close(FHP);
 close(FHM);
+
+my @infos = ('cg', 'cd', 'ic');
+my @files = ( 'px', 'mg' );
+
+foreach my $file ( @files ) {
+    print "$file: ";
+    foreach my $info ( @infos ) {
+	if ( defined $scores{$file}{$info} ) {
+	    print $info.":".$scores{$file}{$info};
+	} else {
+	    print "$info:0";
+	}
+	print " ";
+    }
+    print "\n";
+}
+
+# ----
 
 sub get_next {
  my $h = shift;
