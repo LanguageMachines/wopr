@@ -6,7 +6,7 @@
 #
 # wopr -s this.script -p filename:nyt.1e5,
 #                        focus:nyt.1e5.lex.r10n100,
-#                        testfile:nyt.tail1000.l3r0
+#                        testfile:nyt.tail1000
 #
 #params:filename:GIVEN
 #params:focus:GIVEN
@@ -16,9 +16,20 @@ params: topn:5
 params: rc:0
 params: lc:3
 #
+# Prepare testset first
+#
+set:saved_filename:$filename
+set: filename:$testfile
+run:window_lr
+set:testfile:$filename
+#
+# Set filename again, prepare data/sets
+#
+set:filename:$saved_filename
+#msg: filename = $filename and save_filename= $saved_filename
 run:lexicon
 run:window_lr
-#this dataset we need later on.
+#this filename/dataset we need later on.
 set:saved_filename:$filename
 #
 # Experiment 1, IGT, pplx

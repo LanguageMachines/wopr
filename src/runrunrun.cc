@@ -308,7 +308,7 @@ int script(Logfile& l, Config& c)  {
 	}
 	status = pclose(fp);
       }
-      // SET: optiones:
+      // SET: options:
       // set: filename:output01
       // set: oldname:$filename
       //              ^ take value of parameter instead of string.
