@@ -82,12 +82,20 @@ close(FHM);
 my @infos = ('cg', 'cd', 'ic');
 my @files = ( 'px', 'mg' );
 
+my $hoera = 0;
 foreach my $c_name (sort (keys( %scores ))) {
+
+    if (( defined $scores{$c_name}{'mg'}{'ic'} ) && ( defined  $scores{$c_name}{'px'}{'ic'} )) {
+	if ( $scores{$c_name}{'mg'}{'ic'} <  $scores{$c_name}{'px'}{'ic'} ) {
+	    print "** ";
+	    ++$hoera;
+	}
+    }
+
     print "$c_name:\n";
-
-    foreach my $file ( @files ) {
+    
+    foreach my $file ( @files ) {	
 	print "$file: ";
-
 	foreach my $info ( @infos ) {
 	    if ( defined $scores{$c_name}{$file}{$info} ) {
 		print $info.":".$scores{$c_name}{$file}{$info};
@@ -96,14 +104,11 @@ foreach my $c_name (sort (keys( %scores ))) {
 	    }
 	    print " ";
 	}
-	if (( defined $scores{$c_name}{'mg'}{'ic'} ) && ( defined  $scores{$c_name}{'px'}{'ic'} )) {
-	    if ( $scores{$c_name}{'mg'}{'ic'} <  $scores{$c_name}{'px'}{'ic'} ) {
-		print " **";
-	    }
-	}
 	print "\n";
     }
 }
+
+print "hoera: $hoera\n";
 
 # ----
 
