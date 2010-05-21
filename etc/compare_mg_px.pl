@@ -21,7 +21,7 @@ getopts('f:m:p:l:r:');
 
 my $mg_file = $opt_m || 0;
 my $px_file = $opt_p || 0;
-my $fword   = $opt_f || 0;
+my $fword   = $opt_f || 0; # file
 my $lc      = $opt_l || 0;
 my $rc      = $opt_r || 0;
 
@@ -62,16 +62,17 @@ while ( my $mline = <FHM> ) {
       my $c_name = $mg_parts[ $mg_c_name_pos ];
       my $mg_icu = $mg_parts[ $mg_icu_pos ];
       #print "$target\n";
-      if ( $c_name eq $fword ) {
-	  print "mg: $mline\n";
-	  print "px: $pline\n";
+      #if ( $c_type eq "G" ) { # gated!
+	  #print "mg: $mline\n";
+	  #print "px: $pline\n";
 	  if ( $mg_icu eq $px_icu ) {
 	      #print "EQUAL\n";
 	  }
 	  print "\n";
-	  ++$scores{'mg'}{$mg_icu};
-	  ++$scores{'px'}{$px_icu};
-      }
+	  ++$scores{'mg'}{$c_name}{$mg_icu};
+	  ++$scores{'px'}{$c_name}{$px_icu};
+      #}
+
   }
 }
 
@@ -82,16 +83,19 @@ my @infos = ('cg', 'cd', 'ic');
 my @files = ( 'px', 'mg' );
 
 foreach my $file ( @files ) {
-    print "$file: ";
-    foreach my $info ( @infos ) {
-	if ( defined $scores{$file}{$info} ) {
-	    print $info.":".$scores{$file}{$info};
-	} else {
-	    print "$info:0";
+    print "$file:\n";
+    foreach my $c_name (sort (keys( %{$scores{$file}} ))) {
+	print "$c_name: ";
+	foreach my $info ( @infos ) {
+	    if ( defined $scores{$file}{$c_name}{$info} ) {
+		print $info.":".$scores{$file}{$c_name}{$info};
+	    } else {
+		print "$info:0";
+	    }
+	    print " ";
 	}
-	print " ";
+	print "\n";
     }
-    print "\n";
 }
 
 # ----
