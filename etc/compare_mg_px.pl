@@ -86,8 +86,16 @@ my $hoera = 0;
 foreach my $c_name (sort (keys( %scores ))) {
 
     if (( defined $scores{$c_name}{'mg'}{'ic'} ) && ( defined  $scores{$c_name}{'px'}{'ic'} )) {
-	if ( $scores{$c_name}{'mg'}{'ic'} <  $scores{$c_name}{'px'}{'ic'} ) {
-	    print "** ";
+	if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
+	    print "[mg] ";
+	    ++$hoera;
+	}
+	if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
+	    print "[px] ";
+	    ++$hoera;
+	}
+	if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
+	    print "[mx] ";
 	    ++$hoera;
 	}
     }
