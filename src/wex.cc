@@ -913,7 +913,7 @@ int multi_gated( Logfile& l, Config& c ) {
   }
   std::string stat_filename;
   if ( (id != "") && ( ! contains_id( filename, id)) ) {
-    stat_filename  = filename + "_" + id + ".mg";
+    stat_filename  = filename + "_" + id + ".stat";
   } else {
     stat_filename  = filename + ".stat";
   }

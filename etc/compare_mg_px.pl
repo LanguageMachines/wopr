@@ -47,8 +47,16 @@ while ( my $mline = <FHM> ) {
   chomp $mline;
 
   while ( my $pline = get_next(*FHP) ) {
-    my @parts  = split (/ /, $pline);
-    my $target        = $parts[ $target_pos ];
+
+    my @parts  = split (/ /, $mline);
+    my $c_type = $parts[ $mg_c_type_pos ];
+    my $c_name = $parts[ $mg_c_name_pos ];
+    print "$c_name\n";
+    if ( $c_name eq $fword ) {
+	print "$mline\n";
+	print "$pline\n";
+    }
+
   }
 
 }
