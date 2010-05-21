@@ -1,0 +1,43 @@
+# Two experiments:
+#
+# One "normal" IGTree experiment.
+# One word expert experiment (IB1, IGT, etc).
+# Compare the two output files.
+#
+# wopr -s this.script -p filename:nyt.1e5,
+#                        focus:nyt.1e5.lex.r10n100,
+#                        testfile:nyt.tail1000.l3r0
+#
+#params:filename:GIVEN
+#params:focus:GIVEN
+#params:testfile:GIVEN
+#
+params: topn:5
+params: rc:0
+params: lc:3
+#
+run:lexicon
+run:window_lr
+#this dataset we need later on.
+set:saved_filename:$filename
+#
+# Experiment 1, IGT, pplx
+#
+params: timbl:-a1 +D
+run: make_ibase
+# restore testfile
+set:filename:$testfile
+run:pplxs
+#
+# Experiment 2, WEP
+#
+#restore filename
+set:filename:$saved_filename
+params: timbl:-a0 +D
+params: fco:1
+params: fcm:1
+params: nf:0
+run:focus
+# restore testfile
+set:filename:$testfile
+run:mg
