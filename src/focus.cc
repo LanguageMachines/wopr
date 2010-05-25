@@ -99,6 +99,8 @@ int focus( Logfile& l, Config& c ) {
   l.dec_prefix();
 
   // NB when fmode = 1, seperate list with words, one for each dataset
+  // When fmode = 2, we do like 1, but skip the default training.
+  // When fmaode = 3, we make a default that contains everything?
   //
   if ( fmode == 0 ) {
     if ( file_exists( l, c, output_filename ) ) {
@@ -151,7 +153,7 @@ int focus( Logfile& l, Config& c ) {
 
   if ( fmode == 0 ) { // one only
     output_files[ combined_class ] = output_filename;
-  } else if ( fmode == 1 ) {
+  } else  { 
     std::map<std::string,int>::iterator ofi;
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
       if ( numeric_files < 0 ) {
@@ -211,7 +213,7 @@ int focus( Logfile& l, Config& c ) {
 	  }
 	  file_out << a_line << std::endl;
 	  file_out.close(); // must be inefficient...
-	} else if ( fmode == 1 ) {
+	} else {
 	  std::ofstream file_out( output_files[target].c_str(), std::ios::app );
 	  if ( ! file_out ) {
 	    l.log( "ERROR: cannot write output file." );
@@ -273,10 +275,14 @@ int focus( Logfile& l, Config& c ) {
       
       if ( ! file_exists( l, c, ibase_filename ) ) {
 	if ( file_exists( l, c, output_filename ) ) {
-	  My_Experiment = new Timbl::TimblAPI( timbl );
-	  (void)My_Experiment->Learn( output_filename );
-	  My_Experiment->WriteInstanceBase( ibase_filename );
-	  delete My_Experiment;
+	  if ( ! ((focus_word == dflt) && (fmode == 2)) ) {
+	    My_Experiment = new Timbl::TimblAPI( timbl );
+	    (void)My_Experiment->Learn( output_filename );
+	    My_Experiment->WriteInstanceBase( ibase_filename );
+	    delete My_Experiment;
+	  } else {
+	    l.log( "Skipping training of "+dflt );
+	  }
 	} else {
 	  l.log( "ERROR: could not read data file." );
 	  // We should continue, it could be just one empty data set.
@@ -288,10 +294,11 @@ int focus( Logfile& l, Config& c ) {
       }
 
       if ( dataset_ok == true ) {
+	// if ((focus_word == dflt) && (fmode == 2)) ?
 	kvs_out << "classifier:" << focus_word << std::endl;
 	kvs_out << "ibasefile:" << ibase_filename << std::endl;
 	kvs_out << "timbl:" << timbl << std::endl;
-	if ( fmode == 1 ) {
+	if ( fmode != 0 ) {
 	  if ( focus_word == dflt ) {
 	    kvs_out << "gatedefault:1" << std::endl;
 	  } else {
