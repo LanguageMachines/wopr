@@ -108,12 +108,13 @@ foreach my $c_name (sort (keys( %scores ))) {
 	}
 	#print "\n";
     }
+    print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
     print "\n";
 }
 
 #print "hoera: $hoera\n";
 
-print "\ntotal: ";
+print "\nTOTALS: ";
 foreach my $file ( @files ) {	
   print "$file: ";
   foreach my $info ( @infos ) {
