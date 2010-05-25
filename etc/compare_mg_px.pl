@@ -42,6 +42,7 @@ my $mg_icu_pos    = $lc + $rc + 7;
 # ----
 
 my %scores;
+my %totals;
 
 open(FHM, $mg_file) || die "Can't open mg file.";
 open(FHP, $px_file) || die "Can't open px file.";
@@ -61,18 +62,12 @@ while ( my $mline = <FHM> ) {
       my $c_type = $mg_parts[ $mg_c_type_pos ];
       my $c_name = $mg_parts[ $mg_c_name_pos ];
       my $mg_icu = $mg_parts[ $mg_icu_pos ];
-      #print "$target\n";
-      #if ( $c_type eq "G" ) { # gated!
-	  #print "mg: $mline\n";
-	  #print "px: $pline\n";
-	  if ( $mg_icu eq $px_icu ) {
-	      #print "EQUAL\n";
-	  }
-	  #print "\n";
-	  ++$scores{$c_name}{'mg'}{$mg_icu};
-	  ++$scores{$c_name}{'px'}{$px_icu};
-      #}
 
+      ++$scores{$c_name}{'mg'}{$mg_icu};
+      ++$scores{$c_name}{'px'}{$px_icu};
+
+      ++$totals{'mg'}{$mg_icu};
+      ++$totals{'px'}{$px_icu};
   }
 }
 
@@ -116,7 +111,22 @@ foreach my $c_name (sort (keys( %scores ))) {
     print "\n";
 }
 
-print "hoera: $hoera\n";
+#print "hoera: $hoera\n";
+
+print "\ntotal: ";
+foreach my $file ( @files ) {	
+  print "$file: ";
+  foreach my $info ( @infos ) {
+    if ( defined $totals{$file}{$info} ) {
+      print $info.":".$totals{$file}{$info};
+    } else {
+      print "$info:0";
+    }
+    print " ";
+  }
+  #print "\n";
+}
+print "\n";
 
 # ----
 
