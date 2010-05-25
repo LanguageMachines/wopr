@@ -92,15 +92,14 @@ foreach my $c_name (sort (keys( %scores ))) {
 	}
 	if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
 	    print "[px] ";
-	    ++$hoera;
 	}
 	if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
 	    print "[mx] ";
-	    ++$hoera;
+	    #++$hoera;
 	}
     }
 
-    print "$c_name:\n";
+    print "$c_name: ";
     
     foreach my $file ( @files ) {	
 	print "$file: ";
@@ -112,8 +111,9 @@ foreach my $c_name (sort (keys( %scores ))) {
 	    }
 	    print " ";
 	}
-	print "\n";
+	#print "\n";
     }
+    print "\n";
 }
 
 print "hoera: $hoera\n";
