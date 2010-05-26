@@ -80,18 +80,22 @@ my @files = ( 'px', 'mg' );
 my $hoera = 0;
 foreach my $c_name (sort (keys( %scores ))) {
 
-    if (( defined $scores{$c_name}{'mg'}{'ic'} ) && ( defined  $scores{$c_name}{'px'}{'ic'} )) {
-	if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
-	    print "[mg] ";
-	    ++$hoera;
-	}
-	if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
-	    print "[px] ";
-	}
-	if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
-	    print "[mx] ";
-	    #++$hoera;
-	}
+    if ( ! (defined $scores{$c_name}{'mg'}{'ic'}) ) {
+	$scores{$c_name}{'mg'}{'ic'} = 0;
+    }
+    if ( ! (defined $scores{$c_name}{'px'}{'ic'}) ) {
+	$scores{$c_name}{'px'}{'ic'} = 0;
+    }
+    if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
+	print "[mg] ";
+	++$hoera;
+    }
+    if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
+	print "[px] ";
+    }
+    if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
+	print "[mx] ";
+	#++$hoera;
     }
 
     print "$c_name: ";
