@@ -46,7 +46,10 @@ run:pplxs
 set:filename:$saved_filename
 params: timbl:-a0 +D
 params: fco:1
-params: fcm:1
+# NB: we take fcm 2 now, so we can re-use our full
+# default classifier without training all the unused
+# left over databases.
+params: fcm:2
 params: nf:0
 run:focus
 # restore testfile

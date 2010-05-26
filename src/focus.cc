@@ -100,7 +100,7 @@ int focus( Logfile& l, Config& c ) {
 
   // NB when fmode = 1, seperate list with words, one for each dataset
   // When fmode = 2, we do like 1, but skip the default training.
-  // When fmaode = 3, we make a default that contains everything?
+  // When fmode = 3, we make a default that contains everything?
   //
   if ( fmode == 0 ) {
     if ( file_exists( l, c, output_filename ) ) {
