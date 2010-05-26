@@ -99,20 +99,15 @@ foreach my $c_name (sort (keys( %scores ))) {
     foreach my $file ( @files ) {	
 	print "$file: ";
 	foreach my $info ( @infos ) {
-	    if ( defined $scores{$c_name}{$file}{$info} ) {
-		print $info.":".$scores{$c_name}{$file}{$info};
-	    } else {
-		print "$info:0";
+	    if ( ! (defined $scores{$c_name}{$file}{$info}) ) {
+		$scores{$c_name}{$file}{$info} = 0;
 	    }
+	    print $info.":".$scores{$c_name}{$file}{$info};
 	    print " ";
 	}
 	#print "\n";
     }
-    if ( (defined $scores{$c_name}{'mg'}{'ic'}) && (defined  $scores{$c_name}{'px'}{'ic'}) ) {
-	print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
-    } else {
-	print "d_ic:--";
-    }
+    print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
     print "\n";
 }
 
