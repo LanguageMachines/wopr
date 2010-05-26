@@ -108,7 +108,11 @@ foreach my $c_name (sort (keys( %scores ))) {
 	}
 	#print "\n";
     }
-    print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
+    if ( (defined $scores{$c_name}{'mg'}{'ic'}) && (defined  $scores{$c_name}{'px'}{'ic'}) ) {
+	print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
+    } else {
+	print "d_ic:--";
+    }
     print "\n";
 }
 
