@@ -264,6 +264,11 @@ int focus( Logfile& l, Config& c ) {
       std::string t_ext = timbl;
       std::string ibase_filename = output_filename;
       bool dataset_ok = true;
+      
+      bool skip_dflt = false;
+      if ((focus_word == dflt) && (fmode == 2)) {
+	skip_dflt = true;
+      }
 
       t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '), t_ext.end());
       if ( t_ext != "" ) {
@@ -275,7 +280,7 @@ int focus( Logfile& l, Config& c ) {
       
       if ( ! file_exists( l, c, ibase_filename ) ) {
 	if ( file_exists( l, c, output_filename ) ) {
-	  if ( ! ((focus_word == dflt) && (fmode == 2)) ) {
+	  if ( ! skip_dflt ) {
 	    My_Experiment = new Timbl::TimblAPI( timbl );
 	    (void)My_Experiment->Learn( output_filename );
 	    My_Experiment->WriteInstanceBase( ibase_filename );
@@ -294,20 +299,25 @@ int focus( Logfile& l, Config& c ) {
       }
 
       if ( dataset_ok == true ) {
-	// if ((focus_word == dflt) && (fmode == 2)) ?
-	kvs_out << "classifier:" << focus_word << std::endl;
-	kvs_out << "ibasefile:" << ibase_filename << std::endl;
-	kvs_out << "timbl:" << timbl << std::endl;
-	if ( fmode != 0 ) {
-	  if ( focus_word == dflt ) {
-	    kvs_out << "gatedefault:1" << std::endl;
-	  } else {
-	    kvs_out << "gatetrigger:" << focus_word << std::endl;
-	    kvs_out << "gatepos:" << fco << std::endl;
+
+	if ( ! skip_dflt ) {
+	  
+	  kvs_out << "classifier:" << focus_word << std::endl;
+	  kvs_out << "ibasefile:" << ibase_filename << std::endl;
+	  kvs_out << "timbl:" << timbl << std::endl;
+	  if ( fmode != 0 ) {
+	    if ( focus_word == dflt ) {
+	      kvs_out << "gatedefault:1" << std::endl;
+	    } else {
+	      kvs_out << "gatetrigger:" << focus_word << std::endl;
+	      kvs_out << "gatepos:" << fco << std::endl;
+	    }
+	    kvs_out << "#lines: " <<  ic[focus_word] << std::endl;
 	  }
-	  kvs_out << "#lines: " <<  ic[focus_word] << std::endl;
+	  kvs_out << std::endl;
+	} else {
+	  l.log( "Skipping "+dflt+" in kvs file." );
 	}
-	kvs_out << std::endl;
       }
     }
     

@@ -16,7 +16,8 @@ params: topn:5
 params: rc:0
 params: lc:3
 #
-# Prepare testset first
+# Prepare testset first. Window it, save
+# the filename for later.
 #
 set:saved_filename:$filename
 set: filename:$testfile
@@ -29,20 +30,23 @@ set:filename:$saved_filename
 #msg: filename = $filename and save_filename= $saved_filename
 run:lexicon
 run:window_lr
-#this filename/dataset we need later on.
+# This filename/dataset we need later on
 set:saved_filename:$filename
 #
 # Experiment 1, IGT, pplx
 #
 params: timbl:-a1 +D
 run: make_ibase
-# restore testfile
+# Save the ibasefile/timbl settings for later
+set:igt_ibasefile:$ibasefile
+set:igt_timbl:$timbl
+# Restore testfile, run pplxs
 set:filename:$testfile
 run:pplxs
 #
 # Experiment 2, WEP
 #
-#restore filename
+# restore filename:
 set:filename:$saved_filename
 params: timbl:-a0 +D
 params: fco:1
@@ -52,6 +56,17 @@ params: fco:1
 params: fcm:2
 params: nf:0
 run:focus
-# restore testfile
+# Restore testfile
 set:filename:$testfile
+# This was the IGTree ibase+settings:
+msg: igt_ibasefile: $igt_ibasefile
+msg: igt_timbl: $igt_timbl
+# Because the use fcm:2, we need to add a default classifier
+# to the kvs file.
+extern: echo "# Added by script." >> $kvs
+extern: echo "classifier:dflt" >> $kvs
+extern: echo "ibasefile: $igt_ibasefile " >> $kvs
+extern: echo "timbl: $igt_timbl " >> $kvs
+extern: echo "gatedefault:1" >> $kvs
+#
 run:mg
