@@ -71,5 +71,5 @@ extern: echo "gatedefault:1" >> $kvs
 #
 run:mg
 #
-#extern: perl /exp/pberck/wopr/etc/examine_px.pl -f $px_file -l $lc -r $rc | tail -n 5
-extern: perl /home/pberck/work/prog/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+extern: perl /exp/pberck/wopr/etc/examine_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+#extern: perl /home/pberck/work/prog/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
