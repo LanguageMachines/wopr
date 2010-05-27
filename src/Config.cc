@@ -127,9 +127,14 @@ void Config::dump_kv() {
 
 std::string Config::kvs_str() {
   std::string res;
+  std::string val;
   std::map<std::string, std::string>::iterator mi;
   for( mi = kv.begin(); mi != kv.end(); mi++ ) {
-    res = res + mi->first + ":" + mi->second + ",";
+    val = mi->second;
+    if ( val.find( ' ', 0 ) != std::string::npos ) { // contains space
+      val = "'" + val + "'";
+    }
+    res = res + mi->first + ":" + val + ",";
   }
   res = res.substr(0, res.length()-1);
   return res;
