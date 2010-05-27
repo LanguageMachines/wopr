@@ -222,6 +222,7 @@ int script(Logfile& l, Config& c)  {
 
       if ( lhs == "run" ) {
 	//l.log(rhs);
+	//l.log( c.kvs_str() );
 	int(*pt2Func2)(Logfile&, Config&) = get_function( rhs );
 	int res = pt2Func2(l, c);
 	//l.log( "Result = "+to_str(res) );// should abort if != 0

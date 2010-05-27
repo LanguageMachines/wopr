@@ -72,6 +72,7 @@ public:
   void read_file( const std::string& );
   void process_line( const std::string&, bool );
   void dump_kv();
+  std::string kvs_str();
   void clear_kv();
   void add_kv( const std::string&, const std::string& );
   void del_kv( const std::string& );

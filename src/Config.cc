@@ -125,6 +125,16 @@ void Config::dump_kv() {
   }
 }
 
+std::string Config::kvs_str() {
+  std::string res;
+  std::map<std::string, std::string>::iterator mi;
+  for( mi = kv.begin(); mi != kv.end(); mi++ ) {
+    res = res + mi->first + ":" + mi->second + ",";
+  }
+  res = res.substr(0, res.length()-1);
+  return res;
+}
+
 void Config::clear_kv() {
   kv.clear();
 }
