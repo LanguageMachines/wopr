@@ -10,20 +10,22 @@ use Getopt::Std;
 # Compare the word expert output from mg to the normal
 # output from pplxs.
 # Reads an mg output file and a px output file.
+# Extra option to create a list with the good gated classifiers.
 #
 # this.pl -m mg-file -p px-file -f focusword/classifiername
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_m $opt_p $opt_f $opt_l $opt_r/;
+use vars qw/ $opt_b $opt_m $opt_p $opt_f $opt_l $opt_r/;
 
-getopts('f:m:p:l:r:');
+getopts('bf:m:p:l:r:');
 
-my $mg_file = $opt_m || 0;
-my $px_file = $opt_p || 0;
-my $fword   = $opt_f || 0; # file
-my $lc      = $opt_l || 0;
-my $rc      = $opt_r || 0;
+my $mg_file  = $opt_m || 0;
+my $px_file  = $opt_p || 0;
+my $fword    = $opt_f || 0; # file
+my $lc       = $opt_l || 0;
+my $rc       = $opt_r || 0;
+my $bestlist = $opt_b || 0;
 
 #------------------------------------------------------------------------------
 
@@ -86,51 +88,59 @@ foreach my $c_name (sort (keys( %scores ))) {
     if ( ! (defined $scores{$c_name}{'px'}{'ic'}) ) {
 	$scores{$c_name}{'px'}{'ic'} = 0;
     }
-    if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
+    if ( ! $bestlist ) {
+      if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
 	print "[mg] ";
 	++$hoera;
-    }
-    if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
+      }
+      if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
 	print "[px] ";
-    }
-    if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
+      }
+      if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
 	print "[mx] ";
 	#++$hoera;
+      }
+    } else {
+      if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
+	print "$c_name\n"; 
+      }
     }
 
-    print "$c_name: ";
-    
-    foreach my $file ( @files ) {	
+    if ( ! $bestlist ) {
+      print "$c_name: ";
+
+      foreach my $file ( @files ) {	
 	print "$file: ";
 	foreach my $info ( @infos ) {
-	    if ( ! (defined $scores{$c_name}{$file}{$info}) ) {
-		$scores{$c_name}{$file}{$info} = 0;
-	    }
-	    print $info.":".$scores{$c_name}{$file}{$info};
-	    print " ";
+	  if ( ! (defined $scores{$c_name}{$file}{$info}) ) {
+	    $scores{$c_name}{$file}{$info} = 0;
+	  }
+	  print $info.":".$scores{$c_name}{$file}{$info};
+	  print " ";
 	}
 	#print "\n";
+      }
+      print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
+      print "\n";
     }
-    print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
-    print "\n";
-}
-
-#print "hoera: $hoera\n";
-
-print "\nTOTALS: ";
-foreach my $file ( @files ) {	
-  print "$file: ";
-  foreach my $info ( @infos ) {
-    if ( defined $totals{$file}{$info} ) {
-      print $info.":".$totals{$file}{$info};
-    } else {
-      print "$info:0";
-    }
-    print " ";
   }
-  #print "\n";
+
+if ( ! $bestlist ) {
+  print "\nTOTALS: ";
+  foreach my $file ( @files ) {	
+    print "$file: ";
+    foreach my $info ( @infos ) {
+      if ( defined $totals{$file}{$info} ) {
+	print $info.":".$totals{$file}{$info};
+      } else {
+	print "$info:0";
+      }
+      print " ";
+    }
+    #print "\n";
+  }
+  print "\n";
 }
-print "\n";
 
 # ----
 
