@@ -22,6 +22,7 @@ params: lc:3
 # the filename for later. Idem for development set.
 #
 set:saved_filename:$filename
+#
 set: filename:$testfile
 run:window_lr
 set:testfile:$filename
@@ -77,8 +78,9 @@ extern: echo "gatedefault:1" >> $kvs
 #
 run:mg
 #
-extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+#extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
 #extern: perl /Users/pberck/prog/trunk/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+extern: perl /home/pberck/work/prog/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
 #
 # The first testset was a development set, now we need to run again.
 #
@@ -86,14 +88,14 @@ add:focus:a
 # must upate id because ibase_2 can be another word
 # in the new list.
 add:id:a
-extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
-#extern: perl /Users/pberck/prog/trunk/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
+#
+#extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
+extern: perl /home/pberck/work/prog/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
 set:filename:$saved_filename
 params: timbl:-a0 +D
 params: fco:1
 params: fcm:2
 params: nf:0
-# We want only to create a kvs file...not train again.
 run:focus
 #
 # And test on the real testset.
@@ -106,6 +108,14 @@ extern: echo "timbl: $igt_timbl " >> $kvs
 extern: echo "gatedefault:1" >> $kvs
 #
 run:mg
+set: mg_filename:$filename
 #
-extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
-#extern: perl /Users/pberck/prog/trunk/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+# Finally, we run pplx again on the test data
+#
+set: ibasefile:$igt_ibasefile
+set: timbl:$igt_timbl
+set:filename:$testfile
+run:pplxs
+#
+#extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+extern: perl /home/pberck/work/prog/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $mg_filename -l $lc -r $rc | tail -n 1
