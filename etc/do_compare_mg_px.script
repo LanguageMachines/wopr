@@ -114,5 +114,5 @@ set: timbl:$igt_timbl
 set:filename:$testfile
 run:pplxs
 #
-extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $mg_filename -l $lc -r $rc | tail -n 1
 
