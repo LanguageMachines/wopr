@@ -134,10 +134,10 @@ int focus( Logfile& l, Config& c ) {
       if ( freq > ffc ) {
 	std::string a_word = words[0]; //assume first is the word, then freq
 	focus_words[ a_word ] = freq;
-      } else if ( words.size() == 1 ) {
-	std::string a_word = words[0];
-	focus_words[ a_word ] = 1;
-      }
+      } 
+    } else if ( words.size() == 1 ) {
+      std::string a_word = words[0];
+      focus_words[ a_word ] = 1;
     }
   }
   l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
