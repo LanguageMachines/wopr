@@ -63,6 +63,7 @@ int focus( Logfile& l, Config& c ) {
   const std::string& focus_filename  = c.get_value( "focus" );
   int                fco             = stoi( c.get_value( "fco", "0" ));
   int                fmode           = stoi( c.get_value( "fcm", "0" ));
+  int                ffc             = stoi( c.get_value( "ffc", "0" ));
   int                numeric_files   = stoi( c.get_value( "nf", "-1" ));
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
@@ -86,6 +87,7 @@ int focus( Logfile& l, Config& c ) {
   l.log( "focus:      "+focus_filename );
   l.log( "fco:        "+to_str(fco) ); // target offset
   l.log( "fcm:        "+to_str(fmode) );
+  l.log( "ffc:        "+to_str(ffc) );
   if ( numeric_files >= 0 ) {
     l.log( "nf:         "+to_str(numeric_files) );
   }
@@ -127,8 +129,16 @@ int focus( Logfile& l, Config& c ) {
   while( std::getline( file_fcs, a_line )) {
     words.clear();
     Tokenize( a_line, words, ' ' );
-    std::string a_word = words[0]; //assume first is the word, rest may be freqs
-    focus_words[ a_word ] = 1; // PJB maybe we want freq. here to filter on
+    if ( words.size() > 1 ) {
+      int freq = stoi(words[1]);
+      if ( freq > ffc ) {
+	std::string a_word = words[0]; //assume first is the word, then freq
+	focus_words[ a_word ] = freq;
+      } else if ( words.size() == 1 ) {
+	std::string a_word = words[0];
+	focus_words[ a_word ] = 1;
+      }
+    }
   }
   l.log( "Loaded focus file, "+to_str(focus_words.size())+" items." );
   file_fcs.close();
