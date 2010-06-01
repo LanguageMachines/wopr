@@ -45,6 +45,7 @@ set:saved_filename:$filename
 params: timbl:-a1 +D
 run: make_ibase
 # Save the ibasefile/timbl settings for later
+# We add this ibase to the kvs file as default classifier.
 set:igt_ibasefile:$ibasefile
 set:igt_timbl:$timbl
 # Restore devfile, run pplxs
@@ -59,7 +60,8 @@ params: timbl:-a0 +D
 params: fco:1
 # NB: we take fcm 2 now, so we can re-use our full
 # default classifier without training all the unused
-# left over databases.
+# left over databases. fcm:2 does not create a dflt ibase,
+# we use the previously saved one.
 params: fcm:2
 params: nf:0
 run:focus
@@ -69,7 +71,8 @@ set:filename:$devfile
 msg: igt_ibasefile: $igt_ibasefile
 msg: igt_timbl: $igt_timbl
 # Because the use fcm:2, we need to add a default classifier
-# to the kvs file.
+# to the kvs file. We do this "by hand" here. $variables need
+# spaces around them.
 extern: echo "# Added by script." >> $kvs
 extern: echo "classifier:dflt" >> $kvs
 extern: echo "ibasefile: $igt_ibasefile " >> $kvs
@@ -81,11 +84,19 @@ run:mg
 extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
 #
 # The first testset was a development set, now we need to run again.
-#
+# We add an 'a' to the focus file and id: parameter because datasets
+# are not the same as those created in previous steps.
 add:focus:a
-# must upate id because ibase_2 can be another word
-# in the new list.
 add:id:a
+#
+# Create the list of better scoring experts. Then run the focus function
+# again to create new data sets. Needs to be re-run because the numbers
+# they get (nf:0 option) will give them different numbers.
+#
+# TODO: go through the original kvs file and switch the badly performing
+# classifiers off. That we we don't need to create new data/train new
+# instance bases. With a global default classifier we can reuse what we
+# already have!
 #
 extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
 set:filename:$saved_filename
@@ -95,7 +106,8 @@ params: fcm:2
 params: nf:0
 run:focus
 #
-# And test on the real testset.
+# And test on the real testset, after adding the default classifier
+# to the new kvs file.
 #
 set:filename:$testfile
 extern: echo "# Added by script." >> $kvs
@@ -113,6 +125,8 @@ set: ibasefile:$igt_ibasefile
 set: timbl:$igt_timbl
 set:filename:$testfile
 run:pplxs
+#
+# Show the new score.
 #
 extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $mg_filename -l $lc -r $rc | tail -n 1
 
