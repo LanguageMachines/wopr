@@ -101,6 +101,7 @@ extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $
 extern: perl /exp/pberck/wopr/etc/filter_kvs.pl -k $kvs -l $focus -d > $newkvs
 #
 set:filename:$testfile
+set:kvs:$newkvs
 run:mg
 set: mg_filename:$filename
 #
