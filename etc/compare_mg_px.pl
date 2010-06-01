@@ -18,7 +18,7 @@ use Getopt::Std;
 
 use vars qw/ $opt_b $opt_m $opt_p $opt_f $opt_l $opt_r /;
 
-getopts('bf:m:p:l:r:k:');
+getopts('bf:m:p:l:r:');
 
 my $mg_file  = $opt_m || 0;
 my $px_file  = $opt_p || 0;

@@ -1,3 +1,5 @@
+# -*- shell-script -*-
+#
 # Two experiments:
 #
 # One "normal" IGTree experiment.
@@ -89,33 +91,16 @@ extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $
 add:focus:a
 add:id:a
 #
-# Create the list of better scoring experts. Then run the focus function
-# again to create new data sets. Needs to be re-run because the numbers
-# they get (nf:0 option) will give them different numbers.
+# Create the list of better scoring experts.
+# Then go through the original kvs file and remove the badly performing
+# classifiers.
 #
-# TODO: go through the original kvs file and switch the badly performing
-# classifiers off. That we we don't need to create new data/train new
-# instance bases. With a global default classifier we can reuse what we
-# already have!
-#
+set:newkvs:$kvs
+add:newkvs:a
 extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
-set:filename:$saved_filename
-params: timbl:-a0 +D
-params: fco:1
-params: fcm:2
-params: nf:0
-run:focus
-#
-# And test on the real testset, after adding the default classifier
-# to the new kvs file.
+extern: perl /exp/pberck/wopr/etc/filter_kvs.pl -k $kvs -l $focus -d > $newkvs
 #
 set:filename:$testfile
-extern: echo "# Added by script." >> $kvs
-extern: echo "classifier:dflt" >> $kvs
-extern: echo "ibasefile: $igt_ibasefile " >> $kvs
-extern: echo "timbl: $igt_timbl " >> $kvs
-extern: echo "gatedefault:1" >> $kvs
-#
 run:mg
 set: mg_filename:$filename
 #
