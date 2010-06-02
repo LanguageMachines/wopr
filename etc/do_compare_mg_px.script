@@ -97,7 +97,7 @@ add:id:a
 #
 set:newkvs:$kvs
 add:newkvs:a
-extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b > $focus
+extern: perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b ic > $focus
 extern: perl /exp/pberck/wopr/etc/filter_kvs.pl -k $kvs -l $focus -d > $newkvs
 #
 set:filename:$testfile

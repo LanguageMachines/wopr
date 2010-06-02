@@ -18,7 +18,7 @@ use Getopt::Std;
 
 use vars qw/ $opt_b $opt_m $opt_p $opt_f $opt_l $opt_r /;
 
-getopts('bf:m:p:l:r:');
+getopts('b:f:m:p:l:r:');
 
 my $mg_file  = $opt_m || 0;
 my $px_file  = $opt_p || 0;
@@ -100,12 +100,21 @@ foreach my $c_name (sort (keys( %scores ))) {
 	print "[mx] ";
 	#++$hoera;
       }
-    } else {
-      if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
-	print "$c_name\n"; 
+    } else { # print this when bestlist is true
+      if ( $bestlist eq "ic" ) {
+	if ( $scores{$c_name}{'mg'}{$bestlist} < $scores{$c_name}{'px'}{$bestlist} ) {
+	  print "$c_name\n"; 
+	}
+      } else {
+	if ( (defined $scores{$c_name}{'mg'}{$bestlist}) &&
+	     (defined $scores{$c_name}{'px'}{$bestlist})) {
+	  if ( $scores{$c_name}{'mg'}{$bestlist} > $scores{$c_name}{'px'}{$bestlist} ) {
+	    print "$c_name\n"; 
+	  }
+	}
       }
     }
-
+    
     if ( ! $bestlist ) {
       print "$c_name: ";
 
