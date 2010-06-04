@@ -10,7 +10,8 @@ use Getopt::Std;
 # Compare the word expert output from mg to the normal
 # output from pplxs.
 # Reads an mg output file and a px output file.
-# Extra option to create a list with the good gated classifiers.
+# Extra option -b to create a list with the good gated classifiers.
+# With -b one needs to specify "ic", "cg" or "cd".
 #
 # this.pl -m mg-file -p px-file -f focusword/classifiername
 #

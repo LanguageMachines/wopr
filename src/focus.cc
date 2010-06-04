@@ -63,7 +63,10 @@ int focus( Logfile& l, Config& c ) {
   const std::string& focus_filename  = c.get_value( "focus" );
   int                fco             = stoi( c.get_value( "fco", "0" ));
   int                fmode           = stoi( c.get_value( "fcm", "0" ));
+  // Freqs below ffc are skipped.
   int                ffc             = stoi( c.get_value( "ffc", "0" ));
+  // Freqs above ffm are skipped
+  int                ffm             = stoi( c.get_value( "ffm", "0" ));
   int                numeric_files   = stoi( c.get_value( "nf", "-1" ));
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
@@ -88,6 +91,7 @@ int focus( Logfile& l, Config& c ) {
   l.log( "fco:        "+to_str(fco) ); // target offset
   l.log( "fcm:        "+to_str(fmode) );
   l.log( "ffc:        "+to_str(ffc) );
+  l.log( "ffm:        "+to_str(ffm) );
   if ( numeric_files >= 0 ) {
     l.log( "nf:         "+to_str(numeric_files) );
   }
@@ -132,8 +136,10 @@ int focus( Logfile& l, Config& c ) {
     if ( words.size() > 1 ) {
       int freq = stoi(words[1]);
       if ( freq > ffc ) {
-	std::string a_word = words[0]; //assume first is the word, then freq
-	focus_words[ a_word ] = freq;
+	if ( (ffm > 0) && (freq < ffm) ) {
+	  std::string a_word = words[0]; //assume first is the word, then freq
+	  focus_words[ a_word ] = freq;
+	}
       } 
     } else if ( words.size() == 1 ) {
       std::string a_word = words[0];
