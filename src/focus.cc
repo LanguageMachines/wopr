@@ -135,7 +135,7 @@ int focus( Logfile& l, Config& c ) {
     Tokenize( a_line, words, ' ' );
     if ( words.size() > 1 ) {
       int freq = stoi(words[1]);
-      if ( freq > ffc ) {
+      if ( freq >= ffc ) {
 	if ( (ffm == 0) || ((ffm > 0) && (freq < ffm)) ) {
 	  std::string a_word = words[0]; //assume first is the word, then freq
 	  focus_words[ a_word ] = freq;
