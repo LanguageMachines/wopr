@@ -1,0 +1,42 @@
+msg: 
+msg: Script to generate data
+msg: -----------------------
+#
+# ----
+#
+params: timbl:-a1 +D -w1
+params: ws:2
+params: topn:5
+params: cth:100
+params: gcs:3
+params: gcd:10
+#
+# Create the range file.
+#
+# wopr -l -r rfl -p lexicon:DUTCH-TWENTE-ILK.tok.1e6.lex
+#
+params:lexicon:DUTCH-TWENTE-ILK.tok.1e6.lex
+params:m:100
+params:n:1000
+run:rfl
+#
+# generate the file with long context
+#
+#wopr -l -r lcontext -p filename:DUTCH-TWENTE-ILK.tok.1e3.ws2,
+#                       range:DUTCH-TWENTE-ILK.tok.1e6.lex.rng
+#
+params:filename:DUTCH-TWENTE-ILK.tok.1e6.ws2
+run:lcontext
+#
+params: id:r100m1000
+run:make_ibase
+#
+# Prepare test file
+#
+params:filename:DUTCH-TWENTE-ILK.tok.l10000.ws2
+run:lcontext
+#
+# Run pplx
+#
+params: id:ws2_1e6_w1
+run:pplxs
