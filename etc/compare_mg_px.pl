@@ -34,6 +34,7 @@ my $bestlist = $opt_b || 0;
 #
 my $px_target_pos = $lc + $rc + 0;
 my $px_icu_pos    = $lc + $rc + 5;
+my $px_prob_pos   = $lc + $rc + 2;
 
 # In the mg file:
 #
@@ -41,6 +42,7 @@ my $mg_target_pos = $lc + $rc + 0;
 my $mg_c_name_pos = $mg_target_pos + 2;
 my $mg_c_type_pos = $mg_target_pos + 6;
 my $mg_icu_pos    = $lc + $rc + 7;
+my $mg_prob_pos   = $lc + $rc + 5;
 
 # ----
 
@@ -50,27 +52,49 @@ my %totals;
 open(FHM, $mg_file) || die "Can't open mg file.";
 open(FHP, $px_file) || die "Can't open px file.";
 
+my $mg_sumlog2 = 0;
+my $px_sumlog2 = 0;
+my $wordcount = 0;
+
 while ( my $mline = <FHM> ) {
 
   chomp $mline;
 
   if ( my $pline = get_next(*FHP) ) {
 
-      my @px_parts = split (/ /, $pline);
-      my $pxtarget = $px_parts[ $px_target_pos ];
-      my $px_icu   = $px_parts[ $px_icu_pos ];
+      my @px_parts    = split (/ /, $pline);
+      my $pxtarget    = $px_parts[ $px_target_pos ];
+      my $px_icu      = $px_parts[ $px_icu_pos ];
+      my $px_log2prob = $px_parts[ $px_prob_pos ];
 
       my @mg_parts  = split (/ /, $mline);
-      my $target = $mg_parts[ $mg_target_pos ];
-      my $c_type = $mg_parts[ $mg_c_type_pos ];
-      my $c_name = $mg_parts[ $mg_c_name_pos ];
-      my $mg_icu = $mg_parts[ $mg_icu_pos ];
+      my $target  = $mg_parts[ $mg_target_pos ];
+      my $c_type  = $mg_parts[ $mg_c_type_pos ];
+      my $c_name  = $mg_parts[ $mg_c_name_pos ];
+      my $mg_icu  = $mg_parts[ $mg_icu_pos ];
+      my $mg_prob = $mg_parts[ $mg_prob_pos ];
+
+      print "$px_log2prob $mg_prob\n";
+
+      my $mg_log2prob  = log2( $mg_prob );
+      my $mg_log10prob = log10( $mg_prob );
+
+
+      if ( $px_log2prob != 0 ) {
+	$px_sumlog2 += $px_log2prob;
+      }
+
+      if ( $mg_prob != 0 ) {
+	$mg_sumlog2 += $mg_log2prob;
+      }
 
       ++$scores{$c_name}{'mg'}{$mg_icu};
       ++$scores{$c_name}{'px'}{$px_icu};
 
       ++$totals{'mg'}{$mg_icu};
       ++$totals{'px'}{$px_icu};
+
+      ++$wordcount;
   }
 }
 
@@ -152,6 +176,8 @@ if ( ! $bestlist ) {
   print "\n";
 }
 
+printf( "mg ppl:  %8.2f \n", 2 ** (-$mg_sumlog2/($wordcount)));
+printf( "px ppl:  %8.2f \n", 2 ** (-$px_sumlog2/($wordcount)));
 # ----
 
 sub get_next {
@@ -164,6 +190,24 @@ sub get_next {
    return $line;
  }
  return 0;
+}
+
+sub log2 {
+  my $l    = shift;
+
+  if ( $l == 0 ) {
+    return 0;
+  }
+  return log($l)/log(2);
+}
+
+sub log10 {
+  my $l    = shift;
+
+  if ( $l == 0 ) {
+    return 0;
+  }
+  return log($l)/log(10);
 }
 
 __END__
