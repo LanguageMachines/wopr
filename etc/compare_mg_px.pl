@@ -186,8 +186,11 @@ if ( ! $bestlist ) {
   print "\n";
 }
 
-printf( "mg ppl:  %8.2f (%i)\n", 2 ** (-$mg_sumlog2/($wordcount)), $mg_0count);
-printf( "px ppl:  %8.2f (%i)\n", 2 ** (-$px_sumlog2/($wordcount)), $px_0count);
+if ( ! $bestlist ) {
+  printf("mg ppl:  %8.2f (%i)\n", 2 ** (-$mg_sumlog2/($wordcount)), $mg_0count);
+  printf("px ppl:  %8.2f (%i)\n", 2 ** (-$px_sumlog2/($wordcount)), $px_0count);
+}
+
 # ----
 
 sub get_next {
