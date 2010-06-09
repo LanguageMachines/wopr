@@ -164,7 +164,12 @@ foreach my $c_name (sort (keys( %scores ))) {
 	}
 	#print "\n";
       }
-      print "d_ic:",abs($scores{$c_name}{'mg'}{'ic'} - $scores{$c_name}{'px'}{'ic'});
+
+      print "d: ";
+      foreach my $info ( @infos ) {
+	print "$info:",$scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
+	print " ";
+      }
       print "\n";
     }
   }
