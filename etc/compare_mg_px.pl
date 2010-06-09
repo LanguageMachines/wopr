@@ -17,9 +17,9 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_m $opt_p $opt_f $opt_l $opt_r /;
+use vars qw/ $opt_b $opt_d $opt_m $opt_p $opt_f $opt_l $opt_r /;
 
-getopts('b:f:m:p:l:r:');
+getopts('b:df:m:p:l:r:');
 
 my $mg_file  = $opt_m || 0;
 my $px_file  = $opt_p || 0;
@@ -27,6 +27,7 @@ my $fword    = $opt_f || 0; # file
 my $lc       = $opt_l || 0;
 my $rc       = $opt_r || 0;
 my $bestlist = $opt_b || 0;
+my $deltas   = $opt_d || 0;
 
 #------------------------------------------------------------------------------
 
@@ -123,7 +124,7 @@ foreach my $c_name (sort (keys( %scores ))) {
     if ( ! (defined $scores{$c_name}{'px'}{'ic'}) ) {
 	$scores{$c_name}{'px'}{'ic'} = 0;
     }
-    if ( ! $bestlist ) {
+    if ( ! $bestlist ) { # "Best" is defined as least incorrect
       if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
 	print "[mg] ";
 	++$hoera;
@@ -136,11 +137,11 @@ foreach my $c_name (sort (keys( %scores ))) {
 	#++$hoera;
       }
     } else { # print this when bestlist is true
-      if ( $bestlist eq "ic" ) {
+      if ( $bestlist eq "ic" ) { #incorrect we want less
 	if ( $scores{$c_name}{'mg'}{$bestlist} < $scores{$c_name}{'px'}{$bestlist} ) {
 	  print "$c_name\n"; 
 	}
-      } else {
+      } else { #for the others we want more
 	if ( (defined $scores{$c_name}{'mg'}{$bestlist}) &&
 	     (defined $scores{$c_name}{'px'}{$bestlist})) {
 	  if ( $scores{$c_name}{'mg'}{$bestlist} > $scores{$c_name}{'px'}{$bestlist} ) {
@@ -165,11 +166,14 @@ foreach my $c_name (sort (keys( %scores ))) {
 	#print "\n";
       }
 
-      print "d: ";
-      foreach my $info ( @infos ) {
-	print "$info:",$scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
-	print " ";
+      if ( $deltas != 0 ) {
+	print "d: ";
+	foreach my $info ( @infos ) {
+	  print "$info:",$scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
+	  print " ";
+	}
       }
+
       print "\n";
     }
   }
