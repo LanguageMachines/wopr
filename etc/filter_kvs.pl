@@ -41,7 +41,7 @@ while ( my $line = <FH> ) {
 
   if ( ( $line ne "" ) && ($line =~ /^classifier:/ )) {
 
-    my @parts = split(/:/, $line);
+    my @parts = split(/:/, $line, 2); # problem with "classifier::"
     my $cl_name = $parts[1];
 
     if ( defined $list{$cl_name} ) {
