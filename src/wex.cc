@@ -1090,9 +1090,11 @@ int multi_gated( Logfile& l, Config& c ) {
     // we supplied a lexicon.
     // We could also calculate logs and pplxs....
     //
-    wfi = wfreqs.find(target);
-    if ( wfi != wfreqs.end() ) {
-      multidist.prob = (int)(*wfi).second / (double)total_count ;
+    if ( multidist.prob == 0 ) {
+      wfi = wfreqs.find(target);
+      if ( wfi != wfreqs.end() ) {
+	multidist.prob = (int)(*wfi).second / (double)total_count ;
+      }
     }
     file_out << multidist.prob << " ";
     
