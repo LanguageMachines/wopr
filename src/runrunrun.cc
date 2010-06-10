@@ -3587,7 +3587,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
       std::vector<distr_elem>::iterator fi;
       fi = distr_vec.begin();
-      file_out << cnt << " [ ";
+      file_out << cnt << " " << distr_count << " [ ";
       while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
 	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
 	if ( cache_level == 1 ) {

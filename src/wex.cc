@@ -1077,6 +1077,8 @@ int multi_gated( Logfile& l, Config& c ) {
     
     //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
+    // BEGIN output
+    if ( false) {
     // Print the instance to the output file. Or just the target?
     //
     file_out << a_line /*target*/ << " ";
@@ -1136,6 +1138,84 @@ int multi_gated( Logfile& l, Config& c ) {
     file_out << " }";
 
     file_out << std::endl;
+
+    // END output
+    }
+
+
+
+
+    // Print the instance plus classification
+    //
+    file_out << a_line << " " << multidist.answer << " ";
+
+    // If the prob == 0, we could do a backoff to lexical probs if
+    // we supplied a lexicon.
+    // We could also calculate logs and pplxs....
+    //
+    std::string known = "k"; // unknown.
+    if ( multidist.prob == 0 ) {
+      known = "u";
+      wfi = wfreqs.find(target);
+      if ( wfi != wfreqs.end() ) {
+	multidist.prob = (int)(*wfi).second / (double)total_count;
+	known = "k";
+      }
+    }
+    if ( multidist.prob == 0 ) {
+      file_out << "0 ";
+    } else {
+      file_out << log2( multidist.prob ) << " ";
+    }
+
+    //file_out << "entropy" << " " << "word_lp" << " ";
+    
+    // Indicator if it was correct or not.
+    // We have gated:correct/indist/wrong, and idem for default.
+    //
+    if ( cl->get_type() == 4 ) {
+      file_out << "D ";
+    } else {
+      file_out << "G ";
+    }
+    file_out << cl->id << " ";
+
+    if ( multidist.info == INFO_WRONG ) {
+      file_out << "ic ";
+    } else if ( multidist.info == INFO_CORRECT ) {
+      file_out << "cg ";
+    } else { // INFO_INDISTR is left
+      file_out << "cd ";
+    }
+
+    file_out << known << " ";
+
+    file_out << multidist.md << " " << multidist.mal << " ";
+
+    file_out << multidist.cnt << " " << multidist.distr_count << " ";
+
+    // Loop over sorted vector, take top-n.
+    //
+    sort( multidist.distr.begin(), multidist.distr.end() );
+    int cntr = topn;
+    dei = multidist.distr.begin();
+    file_out << "[";
+    while ( dei != multidist.distr.end() ) { 
+      if ( --cntr >= 0 ) {
+	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
+	file_out << " " << (*dei).token << " " << (*dei).freq;
+      }
+      dei++;
+    }
+    file_out << " ]";
+
+    file_out << std::endl;
+
+
+
+
+
+
 
   }
   file_in.close();

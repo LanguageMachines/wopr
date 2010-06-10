@@ -41,10 +41,10 @@ my $px_prob_pos   = $lc + $rc + 2;
 # In the mg file:
 #
 my $mg_target_pos = $lc + $rc + 0;
-my $mg_c_name_pos = $mg_target_pos + 2;
-my $mg_c_type_pos = $mg_target_pos + 6;
-my $mg_icu_pos    = $lc + $rc + 7;
-my $mg_prob_pos   = $lc + $rc + 5;
+my $mg_c_name_pos = $mg_target_pos + 3;
+my $mg_c_type_pos = $mg_target_pos + 2;
+my $mg_icu_pos    = $lc + $rc + 5;
+my $mg_prob_pos   = $lc + $rc + 2;
 
 # ----
 
@@ -73,17 +73,13 @@ while ( my $mline = <FHM> ) {
       my $px_log2prob = $px_parts[ $px_prob_pos ];
 
       my @mg_parts  = split (/ /, $mline);
-      my $target  = $mg_parts[ $mg_target_pos ];
-      my $c_type  = $mg_parts[ $mg_c_type_pos ];
-      my $c_name  = $mg_parts[ $mg_c_name_pos ];
-      my $mg_icu  = $mg_parts[ $mg_icu_pos ];
-      my $mg_prob = $mg_parts[ $mg_prob_pos ];
+      my $target      = $mg_parts[ $mg_target_pos ];
+      my $c_type      = $mg_parts[ $mg_c_type_pos ];
+      my $c_name      = $mg_parts[ $mg_c_name_pos ];
+      my $mg_icu      = $mg_parts[ $mg_icu_pos ];
+      my $mg_log2prob = $mg_parts[ $mg_prob_pos ];
 
       #print "$px_log2prob $mg_prob\n";
-
-      my $mg_log2prob  = log2( $mg_prob );
-      my $mg_log10prob = log10( $mg_prob );
-
 
       #if ( $px_log2prob != 0 ) {
       if ( $px_ku ne "u" ) {
@@ -241,6 +237,5 @@ _ _ The `` -3.34807 8.24174 10.1829 cd 1 0 9103 [ `` 14787 The 10598 But 4149 In
 _ The Plastics Derby -21.1142 10.5035 2.26994e+06 icu 2 1 3236 [ Derby 152 New 111 company 96 first 81 two 74 ]
 
 mg output:
-
-eat nothing more [ dflt 0 to 0.0531758 D cd 1 0 ] 155 2031 { to 306 }
-nothing more Mrs [ dflt 0 to 0 D ic 2 1 ] 15 96 { to 36 }
+_ _ _ THE and -15.1839 D dflt cd k 1 1 3670 37223 [ and 2713 to 1352 of 1346 I 1319 the 889 ]
+_ _ THE END END -1 D dflt cg k 1 0 2 2 [ END 1 AUTHORESS 1 ]
