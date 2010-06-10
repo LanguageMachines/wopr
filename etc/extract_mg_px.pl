@@ -11,15 +11,16 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_d $opt_m $opt_p $opt_f $opt_l $opt_r /;
+use vars qw/ $opt_c $opt_d $opt_m $opt_p $opt_f $opt_l $opt_r /;
 
-getopts('b:df:m:p:l:r:');
+getopts('c:df:m:p:l:r:');
 
 my $mg_file  = $opt_m || 0;
 my $px_file  = $opt_p || 0;
 my $fword    = $opt_f || 0; # focus word
 my $lc       = $opt_l || 0;
 my $rc       = $opt_r || 0;
+my $confine  = $opt_c || "";
 
 #------------------------------------------------------------------------------
 
@@ -68,8 +69,12 @@ while ( my $mline = <FHM> ) {
       my $mg_icu  = $mg_parts[ $mg_icu_pos ];
       my $mg_prob = $mg_parts[ $mg_prob_pos ];
 
+      my $icu_str = $mg_icu.$px_icu;
+      print "$icu_str\n";
       if ( $c_name eq $fword ) {
-	print "$mline\n$pline\n\n";
+	if ( ($confine eq "") || ($confine eq $icu_str) ) {
+	  print "$mline\n$pline\n\n";
+	}
       }
   }
 }
