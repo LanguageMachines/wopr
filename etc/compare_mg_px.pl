@@ -41,8 +41,8 @@ my $px_prob_pos   = $lc + $rc + 2;
 # In the mg file:
 #
 my $mg_target_pos = $lc + $rc + 0;
-my $mg_c_name_pos = $mg_target_pos + 3;
-my $mg_c_type_pos = $mg_target_pos + 2;
+my $mg_c_name_pos = $mg_target_pos + 2;
+my $mg_c_type_pos = $mg_target_pos + 3x;
 my $mg_icu_pos    = $lc + $rc + 5;
 my $mg_prob_pos   = $lc + $rc + 2;
 
