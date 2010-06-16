@@ -83,7 +83,7 @@ extern: echo "gatedefault:1" >> $kvs
 #
 run:mg
 #
-extern: /usr/bin/perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | tail -n 1
+extern: /usr/bin/perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | grep TOTAL
 #
 # The first testset was a development set, now we need to run again.
 # We add an 'a' to the focus file and id: parameter because datasets
@@ -114,5 +114,5 @@ run:pplxs
 #
 # Show the new score.
 #
-extern: /usr/bin/perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $mg_filename -l $lc -r $rc | tail -n 1
+extern: /usr/bin/perl /exp/pberck/wopr/etc/compare_mg_px.pl -p $px_file -m $mg_filename -l $lc -r $rc | grep TOTAL
 
