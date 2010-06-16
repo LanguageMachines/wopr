@@ -17,9 +17,9 @@ do
     then
       SCRIPT="do_compare_mg_px.script_k2"
     fi
-    CYCLE=$(( $CYCLE + 1 ))
     ID=RUN${CYCLE}.k${K}.ffc${FFC}
     echo "${WOPR} -l -s ${SCRIPT} -p filename:${TRAINFILE},testfile:${TESTFILE},devfile:${DEVFILE},focus:${FOCUS},ffc:${FFC},id:${ID}"
     RES=`${WOPR} -l -s ${SCRIPT} -p filename:${TRAINFILE},testfile:${TESTFILE},devfile:${DEVFILE},focus:${FOCUS},ffc:${FFC},id:${ID} > output.${ID}`
+    CYCLE=$(( $CYCLE + 1 ))
   done
 done
