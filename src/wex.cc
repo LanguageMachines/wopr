@@ -1077,74 +1077,6 @@ int multi_gated( Logfile& l, Config& c ) {
     
     //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
-    // BEGIN output
-    if ( false) {
-    // Print the instance to the output file. Or just the target?
-    //
-    file_out << a_line /*target*/ << " ";
-
-    // Print name of classifier, fco and answer to output file.
-    //
-    file_out << "[ ";
-    file_out << cl->id << " " << fco << " " << multidist.answer << " ";
-
-    // If the prob == 0, we could do a backoff to lexical probs if
-    // we supplied a lexicon.
-    // We could also calculate logs and pplxs....
-    //
-    if ( multidist.prob == 0 ) {
-      wfi = wfreqs.find(target);
-      if ( wfi != wfreqs.end() ) {
-	multidist.prob = (int)(*wfi).second / (double)total_count ;
-      }
-    }
-    file_out << multidist.prob << " ";
-    
-    // Indicator if it was correct or not.
-    // We have gated:correct/indist/wrong, and idem for default.
-    //
-    if ( cl->get_type() == 4 ) {
-      file_out << "D ";
-    } else {
-      file_out << "G ";
-    }
-    if ( multidist.info == INFO_WRONG ) {
-      file_out << "ic ";
-    } else if ( multidist.info == INFO_CORRECT ) {
-      file_out << "cg ";
-    } else { // INFO_INDISTR is left
-      file_out << "cd ";
-    }
-
-    file_out << multidist.md << " " << multidist.mal << " ";
-
-    file_out << "] ";
-
-    file_out << multidist.cnt << " " << multidist.distr_count << " ";
-
-    // Loop over sorted vector, take top-n.
-    //
-    sort( multidist.distr.begin(), multidist.distr.end() );
-    int cntr = topn;
-    dei = multidist.distr.begin();
-    file_out << "{";
-    while ( dei != multidist.distr.end() ) { 
-      if ( --cntr >= 0 ) {
-	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
-	file_out << " " << (*dei).token << " " << (*dei).freq;
-      }
-      dei++;
-    }
-    file_out << " }";
-
-    file_out << std::endl;
-
-    // END output
-    }
-
-
-
-
     // Print the instance plus classification
     //
     file_out << a_line << " " << multidist.answer << " ";
@@ -1193,6 +1125,10 @@ int multi_gated( Logfile& l, Config& c ) {
     file_out << multidist.md << " " << multidist.mal << " ";
 
     file_out << multidist.cnt << " " << multidist.distr_count << " ";
+
+    // For MRR, this makes output format different from px output again.
+    //
+    file_out << multidist.idx << " ";
 
     // Loop over sorted vector, take top-n.
     //

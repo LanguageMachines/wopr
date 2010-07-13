@@ -1,3 +1,5 @@
+1.25.0	Implementing MRR; change in mg output format.
+	
 1.24.4	Added distr_count to px output, changed mg output to resemble px
 	output. 
 1.24.3	Fixed output of probabilities bug in mg.

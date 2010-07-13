@@ -38,6 +38,7 @@ struct md2 {
   size_t      md;
   bool        mal;
   int         info; // 0:no info, 1:in distr, 2:correct
+  long        idx; // index in distribution
   std::vector<md2_elem> distr;
 };
 
@@ -46,6 +47,13 @@ const unsigned int INFO_INDISTR  = 1;
 const unsigned int INFO_UNKNOWN  = 2;
 const unsigned int INFO_CORRECT  = 4;
 const unsigned int INFO_WRONG    = 8;
+
+class cmp { 
+ public:
+  bool operator() (const long x, const long y) {
+    return (x-y) > 0;
+  } 
+};
 
 class Classifier {
 
@@ -295,7 +303,19 @@ class Classifier {
     classification.cnt = vd->size(); // size of distr.
     classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
     
-    Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+    // Timbl distr is unsorted...
+    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+    long classification_freq;
+    std::map<long, long, std::greater<long> > dfreqs;
+    /*
+      To get MRR, make hash with freq->count.
+      In the end, we know freq of answer, look up in hash.
+
+      130->1      answer in dist. has freq 100, "3rd place".
+      120->1      sort hash on key. Reversed.
+      100->3
+       80->1
+    */
     while ( it != vd->end() ) {
       std::string tvs  = it->second->Value()->Name();
       long        wght = it->second->Weight(); // absolute frequency.
@@ -304,14 +324,29 @@ class Classifier {
       md2e.token = tvs;
       md2e.freq = wght;
       md2e.prob = p;
+      dfreqs[wght] += 1;
       classification.distr.push_back( md2e );
       if ( tvs == classification.target ) {
 	classification.prob = p; // in the distr.
 	classification.info = INFO_INDISTR;
+	classification_freq = wght;
+	//break
       }
       ++it;
     }
     
+    long idx = 1;
+    classification.idx = 0;
+    std::map<long, long>::iterator dfi = dfreqs.begin();
+    while ( dfi != dfreqs.end() ) {
+      if ( dfi->first == classification_freq ) {
+	classification.idx = idx;
+      }
+      //if ( idx > some_limit ) { break;}
+      ++dfi;
+      ++idx;
+    }
+
     if ( classification.answer == classification.target ) {
       ++correct;
       classification.info = INFO_CORRECT;
@@ -350,6 +385,7 @@ class Classifier {
   long get_ic() {
     return score_ic;
   }
+
 
   std::string info_str() {
     return id+"/"+ibasefile+"/"+testfile+"/wgt="+to_str(weight)
