@@ -1128,7 +1128,7 @@ int multi_gated( Logfile& l, Config& c ) {
 
     // For MRR, this makes output format different from px output again.
     //
-    file_out << multidist.idx << " ";
+    file_out << multidist.mrr << " ";
 
     // Loop over sorted vector, take top-n.
     //

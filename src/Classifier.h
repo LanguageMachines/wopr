@@ -39,6 +39,7 @@ struct md2 {
   bool        mal;
   int         info; // 0:no info, 1:in distr, 2:correct
   long        idx; // index in distribution
+  double      mrr; 
   std::vector<md2_elem> distr;
 };
 
@@ -337,10 +338,13 @@ class Classifier {
     
     long idx = 1;
     classification.idx = 0;
+    classification.mrr = 0.0;
+    long num_ranks = dfreqs.size();
     std::map<long, long>::iterator dfi = dfreqs.begin();
     while ( dfi != dfreqs.end() ) {
       if ( dfi->first == classification_freq ) {
 	classification.idx = idx;
+	classification.mrr = (double)1.0/idx;
       }
       //if ( idx > some_limit ) { break;}
       ++dfi;

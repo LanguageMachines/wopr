@@ -28,15 +28,16 @@ my $rc   = $opt_r || 0;
 my %classifiers_count;
 my %classifiers_score;
 my %totals_score;
+my %rank_sum;
 
 my $mg_target_pos = $lc + $rc + 0;
 my $mg_c_name_pos = $mg_target_pos + 4;
 my $mg_c_type_pos = $mg_target_pos + 3;
 my $mg_icu_pos    = $lc + $rc + 5;
 my $mg_prob_pos   = $lc + $rc + 2;
-my $mg_dsize_pos  = $lc + $rc + 8;
-my $mg_sumf_pos   = $lc + $rc + 9;
-my $mg_rank_pos   = $lc + $rc + 10;
+my $mg_dsize_pos  = $lc + $rc + 9;
+my $mg_sumf_pos   = $lc + $rc + 10;
+my $mg_rank_pos   = $lc + $rc + 11;
 
 open(FH, $file) || die "Can't open file.";
 
@@ -64,10 +65,12 @@ while ( my $line = <FH> ) {
   my $c_type     = $parts[ $mg_c_type_pos ];
   my $c_name     = $parts[ $mg_c_name_pos ];
   my $c_info     = $parts[ $mg_icu_pos ];
-  
+  my $c_rank     = $parts[ $mg_rank_pos ];
+
   ++$classifiers_count{$c_name};
   ++$classifiers_score{$c_name}{$c_info};
   ++$totals_score{$c_info};
+  $rank_sum{$c_info} += $c_rank;
 }
 
 my @infos = ('cg', 'cd', 'ic');
@@ -90,10 +93,11 @@ print "\nTotals:\n";
 foreach my $c_info ( @infos ) {
   print "$c_info:";
   if ( defined $totals_score{$c_info} ) {
-    print $totals_score{$c_info};
+    print $totals_score{$c_info}." ".$rank_sum{$c_info}." ".$rank_sum{$c_info}/$totals_score{$c_info};
   } else {
     print "0";
   }
   print "\n";
 }
+
 
