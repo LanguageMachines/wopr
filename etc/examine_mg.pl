@@ -13,11 +13,13 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f /;
+use vars qw/ $opt_f $opt_l $opt_r /;
 
-getopts('f:');
+getopts('f:l:r:');
 
 my $file = $opt_f || 0;
+my $lc   = $opt_l || 0;
+my $rc   = $opt_r || 0;
 
 #------------------------------------------------------------------------------
 
@@ -26,6 +28,15 @@ my $file = $opt_f || 0;
 my %classifiers_count;
 my %classifiers_score;
 my %totals_score;
+
+my $mg_target_pos = $lc + $rc + 0;
+my $mg_c_name_pos = $mg_target_pos + 4;
+my $mg_c_type_pos = $mg_target_pos + 3;
+my $mg_icu_pos    = $lc + $rc + 5;
+my $mg_prob_pos   = $lc + $rc + 2;
+my $mg_dsize_pos  = $lc + $rc + 8;
+my $mg_sumf_pos   = $lc + $rc + 9;
+my $mg_rank_pos   = $lc + $rc + 10;
 
 open(FH, $file) || die "Can't open file.";
 
@@ -45,30 +56,18 @@ while ( my $line = <FH> ) {
   my $binary = "";
   my (@i_parts, @c_parts, @b_parts);
 
-  # she should eat [ dflt 1 be 0 D ic 1 0 ] 205 3246 { be 762 not 492 }
+  my @parts = split (/ /, $line);
+
+  # _ between themselves or to -5.39232 D dflt cd k 1 0 58 84 4 [ to 6 and 5
+  #                                                          into 3 of 3 for 3 ]
   #
-  if ( $line =~ /(.*) \[ (.*) \] (.*) (.*) \{ (.*)\}/ ) {
-
-    my $instance        = $1;
-    my $classifier_info = $2;
-    my $distr_size      = $3;
-    my $dist_sumfreq    = $4;
-    my $distribution    = $5;
-
-    @c_parts  = split (/ /, $classifier_info);
-    my $c_name  = $c_parts[0];
-    my $c_fco   = $c_parts[1];
-    my $c_class = $c_parts[2];
-    my $c_prob  = $c_parts[3];
-    my $c_type  = $c_parts[4];
-    my $c_info  = $c_parts[5];
-    my $c_md    = $c_parts[6];
-    my $c_mal   = $c_parts[7];
-
-    ++$classifiers_count{$c_name};
-    ++$classifiers_score{$c_name}{$c_info};
-    ++$totals_score{$c_info};
-  }
+  my $c_type     = $parts[ $mg_c_type_pos ];
+  my $c_name     = $parts[ $mg_c_name_pos ];
+  my $c_info     = $parts[ $mg_icu_pos ];
+  
+  ++$classifiers_count{$c_name};
+  ++$classifiers_score{$c_name}{$c_info};
+  ++$totals_score{$c_info};
 }
 
 my @infos = ('cg', 'cd', 'ic');

@@ -97,9 +97,12 @@ while ( my $line = <FH> ) {
   #  6 ws+3  : entropy of distro returned (sum (p * log(p)) )
   #  7 ws+4  : word level entropy (2 ** -logprob) (from _word_ logprob)
   #  8 ws+5  : cg/cd/ic
-  #  9 ws+6  : md
-  # 10 ws+7  : mal
-  # 11 ws+8  : size of distro
+  #  9 ws+6  : k/u
+  # 10 ws+7  : md
+  # 11 ws+8  : mal
+  # 12 ws+9  : size of distro
+  # 13 ws+10 : sumfreq distro
+  # 14 ws+11 : MRR if file is .mg (compatible with .px)
   #
   $distr_entropy += $parts[$ws+3]; # Sum of all distro-entropies
   $word_entropy += $parts[$ws+4];     # Sum of all WL-entropies
@@ -112,9 +115,9 @@ while ( my $line = <FH> ) {
   } elsif ( $var eq "lp" ) {
     $val = $parts[$ws+2];
   } elsif ( $var eq "sz" ) {
-    $val = $parts[$ws+8];
+    $val = $parts[$ws+9];
   } elsif ( $var eq "md" ) {
-    $val = $parts[$ws+6];
+    $val = $parts[$ws+7];
   }
   $var_summed += $val;
 
@@ -135,7 +138,7 @@ while ( my $line = <FH> ) {
   $p0 = $wcnt++;
   $p1 = $parts[$ws];
   $p2 = $parts[$ws+1];
-  $p3 = $parts[$ws+6]; #########################################! was 8
+  $p3 = $parts[$ws+7];
   $p4 = $val;
   write ;
 

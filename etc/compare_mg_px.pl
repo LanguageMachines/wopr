@@ -45,6 +45,7 @@ my $mg_c_name_pos = $mg_target_pos + 4;
 my $mg_c_type_pos = $mg_target_pos + 3;
 my $mg_icu_pos    = $lc + $rc + 5;
 my $mg_prob_pos   = $lc + $rc + 2;
+my $mg_rank_pos   = $lc + $rc + 10;
 
 # ----
 
