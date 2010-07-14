@@ -3380,7 +3380,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     if ( cache_idx == -1 ) { // It should be cached, if not present.
       if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
+	//l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
 	cd->cnt = cnt;
 	cd->sum_freqs  = distr_count;
 	(cd->distr_vec).clear();
