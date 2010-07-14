@@ -37,6 +37,7 @@ my $px_target_pos = $lc + $rc + 0;
 my $px_icu_pos    = $lc + $rc + 5;
 my $px_ku_pos     = $lc + $rc + 6;
 my $px_prob_pos   = $lc + $rc + 2;
+#my $px_mrr_pos   = $lc + $rc + 10; #MRR in px...
 
 # In the mg file:
 #
@@ -45,7 +46,7 @@ my $mg_c_name_pos = $mg_target_pos + 4;
 my $mg_c_type_pos = $mg_target_pos + 3;
 my $mg_icu_pos    = $lc + $rc + 5;
 my $mg_prob_pos   = $lc + $rc + 2;
-my $mg_rank_pos   = $lc + $rc + 10;
+my $mg_mrr_pos    = $lc + $rc + 10;
 
 # ----
 
@@ -79,6 +80,7 @@ while ( my $mline = <FHM> ) {
       my $c_name      = $mg_parts[ $mg_c_name_pos ];
       my $mg_icu      = $mg_parts[ $mg_icu_pos ];
       my $mg_log2prob = $mg_parts[ $mg_prob_pos ];
+      my $mg_mrr      = $mg_parts[ $mg_mrr_pos ];
 
       #print "$px_log2prob $mg_prob\n";
 

@@ -3358,6 +3358,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     double answer_prob     = 0.0;
     double entropy         = 0.0;
     int    rank            = 1;
+    double class_mrr       = 0.0;
     std::vector<distr_elem> distr_vec;// see correct in levenshtein.
     cnt         = vd->size();
     distr_count = vd->totalSize();
@@ -3407,8 +3408,14 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
     }
 
+    cache_level = 0;
+
     // ----
 
+    // Problem. We still need to go trough to calculate the mrr.
+    // This defeats the purpose of the cache...
+    // TODO: fix. Current code allows me to run experiments.
+    //
     if ( cache_level == 3 ) { // Use the cache, Luke.
       std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
       if ( wfi != (cd->freqs).end() ) {
@@ -3417,16 +3424,47 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
       entropy = cd->entropy;
       distr_vec = cd->distr_vec; // the [distr] we print
+
+      long classification_freq = 0;
+      std::map<long, long, std::greater<long> > dfreqs;
+      while ( it != vd->end() ) {
+
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight(); // absolute frequency.
+
+	dfreqs[wght] += 1;
+
+	if ( tvs == target ) { // The correct answer was in the distribution!
+	  classification_freq = wght;
+	}
+	++it;
+      }
+      long   idx       = 1;
+      long   class_idx = 0;
+      std::map<long, long>::iterator dfi = dfreqs.begin();
+      while ( dfi != dfreqs.end() ) {
+	if ( dfi->first == classification_freq ) {
+	  class_idx = idx;
+	  class_mrr = (double)1.0/idx;
+	}
+	//if ( idx > some_limit ) { break;}
+	++dfi;
+	++idx;
+      }
+
     }
     if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
 
-      int rank_counter = 1;
+      long classification_freq = 0;
+      std::map<long, long, std::greater<long> > dfreqs;
       while ( it != vd->end() ) {
 	//const Timbl::TargetValue *tv = it->second->Value();
 
 	std::string tvs  = it->second->Value()->Name();
 	double      wght = it->second->Weight(); // absolute frequency.
-	
+
+	dfreqs[wght] += 1;
+
 	if ( topn > 0 ) { // only save if we want to sort/print them later.
 	  distr_elem  d;
 	  d.name   = tvs;
@@ -3438,7 +3476,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	if ( tvs == target ) { // The correct answer was in the distribution!
 	  target_freq = wght;
 	  target_in_dist = true;
-	  rank = rank_counter;
+	  classification_freq = wght;
 	  //sum_rrank += 1.0 / rank; // Only count mrr when in distro answer! What
 	  // if more-than-one with certain freq. Should be on ranking?
 	  // And we need to sort first....!!
@@ -3461,12 +3499,25 @@ int pplx_simple( Logfile& l, Config& c ) {
 	prob     = (double)wght / (double)distr_count;
 	entropy -= ( prob * log2(prob) );
 	
-	++rank_counter;
 	++it;
       } // end loop distribution
       if ( cache_level == 1 ) {
 	cd->entropy = entropy;
       }
+
+      long   idx       = 1;
+      long   class_idx = 0;
+      std::map<long, long>::iterator dfi = dfreqs.begin();
+      while ( dfi != dfreqs.end() ) {
+	if ( dfi->first == classification_freq ) {
+	  class_idx = idx;
+	  class_mrr = (double)1.0/idx;
+	}
+	//if ( idx > some_limit ) { break;}
+	++dfi;
+	++idx;
+      }
+      
     } // cache_level == 1 or 0
 
 
@@ -3582,12 +3633,15 @@ int pplx_simple( Logfile& l, Config& c ) {
     }
     */
 
+    file_out << cnt << " " << distr_count << " ";
+    file_out << class_mrr;
+
     if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
       int cntr = topn;
       sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
       std::vector<distr_elem>::iterator fi;
       fi = distr_vec.begin();
-      file_out << cnt << " " << distr_count << " [ ";
+      file_out <<  " [ ";
       while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
 	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
 	if ( cache_level == 1 ) {
