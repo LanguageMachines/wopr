@@ -2988,6 +2988,7 @@ struct cached_distr {
   int cnt;
   long sum_freqs;
   double entropy;
+  std::string first;
   std::map<std::string,int> freqs; // word->frequency
   std::vector<distr_elem> distr_vec; // top-n to print
   bool operator<(const cached_distr& rhs) const {
@@ -3228,6 +3229,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	c.cnt       = 0;
 	c.sum_freqs = 0;
 	c.entropy   = 0.0;
+	c.first     = "";
 	distr_cache.push_back( c );
   }
 
@@ -3371,18 +3373,21 @@ int pplx_simple( Logfile& l, Config& c ) {
     for ( int i = 0; i < cache_size; i++ ) {
       if ( distr_cache.at(i).cnt == cnt ) {
 	if ( distr_cache.at(i).sum_freqs == distr_count ) {
-	  cache_idx = i; // it's cached already!
-	  cd = &distr_cache.at(i);
-	  break;
+	  if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
+	    cache_idx = i; // it's cached already!
+	    cd = &distr_cache.at(i);
+	    break;
+	  }
 	}
       }
     }
     if ( cache_idx == -1 ) { // It should be cached, if not present.
       if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	//l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
+	l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
 	cd->cnt = cnt;
 	cd->sum_freqs  = distr_count;
+	cd->first = it->second->Value()->Name();
 	(cd->distr_vec).clear();
       }
     }
@@ -3408,7 +3413,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
     }
 
-    cache_level = 0;
+    //cache_level = 0;
 
     // ----
 
