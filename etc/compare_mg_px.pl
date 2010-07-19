@@ -109,8 +109,8 @@ while ( my $mline = <FHM> ) {
       ++$scores{$c_name}{'mg'}{$mg_icu};
       ++$scores{$c_name}{'px'}{$px_icu};
 
-      $mrrs{$c_name}{'mg'} += $mg_mrr;
-      $mrrs{$c_name}{'px'} += $px_mrr;
+      $mrrs{$c_name}{'mg'}{$mg_icu} += $mg_mrr;
+      $mrrs{$c_name}{'px'}{$px_icu} += $px_mrr;
 
       ++$totals{'mg'}{$mg_icu};
       ++$totals{'px'}{$px_icu};
@@ -172,9 +172,17 @@ foreach my $c_name (sort (keys( %scores ))) {
 	  }
 	  print $info.":".$scores{$c_name}{$file}{$info};
 	  print " ";
+	  if ( ! (defined $mrrs{$c_name}{$file}{$info}) ) {
+	    $mrrs{$c_name}{$file}{$info} = 0;
+	  }
 	}
 	#print "\n";
-	my $mrr = sprintf("%3.1f", $mrrs{$c_name}{$file});
+	my $mrr   = 0;
+	my $numer = $mrrs{$c_name}{$file}{'cd'} + $mrrs{$c_name}{$file}{'cg'};
+	my $denom = $scores{$c_name}{$file}{'cd'}+$scores{$c_name}{$file}{'cg'};
+	if ( $denom != 0 ) {
+	  $mrr = sprintf("%3.1f", $numer / $denom);
+	}
 	print "mrr:",$mrr," ";
       }
 
