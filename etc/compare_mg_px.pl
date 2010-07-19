@@ -17,9 +17,9 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_d $opt_m $opt_p $opt_f $opt_l $opt_r /;
+use vars qw/ $opt_b $opt_d $opt_m $opt_p $opt_f $opt_l $opt_r $opt_P /;
 
-getopts('b:df:m:p:l:r:');
+getopts('b:df:m:p:l:r:P');
 
 my $mg_file  = $opt_m || 0;
 my $px_file  = $opt_p || 0;
@@ -28,6 +28,7 @@ my $lc       = $opt_l || 0;
 my $rc       = $opt_r || 0;
 my $bestlist = $opt_b || 0;
 my $deltas   = $opt_d || 0;
+my $percent  = $opt_P || 0;
 
 #------------------------------------------------------------------------------
 
@@ -168,7 +169,16 @@ foreach my $c_name (sort (keys( %scores ))) {
       if ( $deltas != 0 ) {
 	print "d: ";
 	foreach my $info ( @infos ) {
-	  print "$info:",$scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
+	  my $delta = $scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
+	  my $delta_p = 100;
+	  if ( $scores{$c_name}{'px'}{$info} > 0 ) {
+	    $delta_p = $delta / $scores{$c_name}{'px'}{$info} * 100.0;
+	  }
+	  if ( $percent == 1 ) {
+	    print "$info:",$delta_p,"%";
+	  } else {
+	    print "$info:",$delta;
+	  }
 	  print " ";
 	}
       }
