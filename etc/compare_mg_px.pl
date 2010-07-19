@@ -125,15 +125,22 @@ close(FHM);
 my @infos = ('cg', 'cd', 'ic');
 my @files = ( 'px', 'mg' );
 
+foreach my $c_name (sort (keys( %scores ))) {
+  foreach my $file ( @files ) {	
+    foreach my $info ( @infos ) {
+      if ( ! (defined $scores{$c_name}{$file}{$info}) ) {
+	$scores{$c_name}{$file}{$info} = 0;
+      }
+      if ( ! (defined $mrrs{$c_name}{$file}{$info}) ) {
+	$mrrs{$c_name}{$file}{$info} = 0;
+      }
+    }
+  }
+}
+
 my $hoera = 0;
 foreach my $c_name (sort (keys( %scores ))) {
 
-    if ( ! (defined $scores{$c_name}{'mg'}{'ic'}) ) {
-	$scores{$c_name}{'mg'}{'ic'} = 0;
-    }
-    if ( ! (defined $scores{$c_name}{'px'}{'ic'}) ) {
-	$scores{$c_name}{'px'}{'ic'} = 0;
-    }
     if ( ! $bestlist ) { # "Best" is defined as least incorrect
       if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
 	print "[mg] ";
@@ -147,8 +154,26 @@ foreach my $c_name (sort (keys( %scores ))) {
 	#++$hoera;
       }
     } else { # print this when bestlist is true
+
+      my $mrr_mg   = 0;
+      my $numer = $mrrs{$c_name}{'mg'}{'cd'} + $mrrs{$c_name}{'mg'}{'cg'};
+      my $denom = $scores{$c_name}{'mg'}{'cd'}+$scores{$c_name}{'mg'}{'cg'};
+      if ( $denom != 0 ) {
+	$mrr_mg = $numer / $denom;
+      }
+      my $mrr_px   = 0;
+      $numer = $mrrs{$c_name}{'px'}{'cd'} + $mrrs{$c_name}{'px'}{'cg'};
+      $denom = $scores{$c_name}{'px'}{'cd'}+$scores{$c_name}{'px'}{'cg'};
+      if ( $denom != 0 ) {
+	$mrr_px = $numer / $denom;
+      }
+
       if ( $bestlist eq "ic" ) { #incorrect we want less
 	if ( $scores{$c_name}{'mg'}{$bestlist} < $scores{$c_name}{'px'}{$bestlist} ) {
+	  print "$c_name\n"; 
+	}
+      } elsif ( $bestlist eq "mrr" ) {
+	if ( $mrr_mg > $mrr_px ) {
 	  print "$c_name\n"; 
 	}
       } else { #for the others we want more
@@ -167,14 +192,8 @@ foreach my $c_name (sort (keys( %scores ))) {
       foreach my $file ( @files ) {	
 	print "$file: ";
 	foreach my $info ( @infos ) {
-	  if ( ! (defined $scores{$c_name}{$file}{$info}) ) {
-	    $scores{$c_name}{$file}{$info} = 0;
-	  }
 	  print $info.":".$scores{$c_name}{$file}{$info};
 	  print " ";
-	  if ( ! (defined $mrrs{$c_name}{$file}{$info}) ) {
-	    $mrrs{$c_name}{$file}{$info} = 0;
-	  }
 	}
 	#print "\n";
 	my $mrr   = 0;
