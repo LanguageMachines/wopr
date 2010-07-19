@@ -38,7 +38,7 @@ my $px_target_pos = $lc + $rc + 0;
 my $px_icu_pos    = $lc + $rc + 5;
 my $px_ku_pos     = $lc + $rc + 6;
 my $px_prob_pos   = $lc + $rc + 2;
-#my $px_mrr_pos   = $lc + $rc + 10; #MRR in px...
+my $px_mrr_pos    = $lc + $rc + 11; #MRR in px...
 
 # In the mg file:
 #
@@ -47,12 +47,13 @@ my $mg_c_name_pos = $mg_target_pos + 4;
 my $mg_c_type_pos = $mg_target_pos + 3;
 my $mg_icu_pos    = $lc + $rc + 5;
 my $mg_prob_pos   = $lc + $rc + 2;
-my $mg_mrr_pos    = $lc + $rc + 10;
+my $mg_mrr_pos    = $lc + $rc + 11;
 
 # ----
 
 my %scores;
 my %totals;
+my %mrrs;
 
 open(FHM, $mg_file) || die "Can't open mg file.";
 open(FHP, $px_file) || die "Can't open px file.";
@@ -74,6 +75,11 @@ while ( my $mline = <FHM> ) {
       my $px_icu      = $px_parts[ $px_icu_pos ];
       my $px_ku       = $px_parts[ $px_ku_pos ];
       my $px_log2prob = $px_parts[ $px_prob_pos ];
+      my $px_mrr      = $px_parts[ $px_mrr_pos ];
+
+      if ( $px_mrr  eq "[" ) {
+	$px_mrr = 0;
+      }
 
       my @mg_parts  = split (/ /, $mline);
       my $target      = $mg_parts[ $mg_target_pos ];
@@ -98,9 +104,13 @@ while ( my $mline = <FHM> ) {
       } else {
 	++$mg_0count;
       }
-
+      
+      #      ++{"on"}{'mg'}{'cd'}
       ++$scores{$c_name}{'mg'}{$mg_icu};
       ++$scores{$c_name}{'px'}{$px_icu};
+
+      $mrrs{$c_name}{'mg'} += $mg_mrr;
+      $mrrs{$c_name}{'px'} += $px_mrr;
 
       ++$totals{'mg'}{$mg_icu};
       ++$totals{'px'}{$px_icu};
@@ -164,17 +174,20 @@ foreach my $c_name (sort (keys( %scores ))) {
 	  print " ";
 	}
 	#print "\n";
+	my $mrr = sprintf("%3.1f", $mrrs{$c_name}{$file});
+	print "mrr:",$mrr," ";
       }
 
       if ( $deltas != 0 ) {
 	print "d: ";
 	foreach my $info ( @infos ) {
 	  my $delta = $scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
-	  my $delta_p = 100;
-	  if ( $scores{$c_name}{'px'}{$info} > 0 ) {
+	  my $delta_p = 0;
+	  if ( $scores{$c_name}{'px'}{$info} != 0 ) {
 	    $delta_p = $delta / $scores{$c_name}{'px'}{$info} * 100.0;
 	  }
 	  if ( $percent == 1 ) {
+	    $delta_p = sprintf("%03.1f", $delta_p);
 	    print "$info:",$delta_p,"%";
 	  } else {
 	    print "$info:",$delta;
