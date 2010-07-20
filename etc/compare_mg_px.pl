@@ -11,7 +11,7 @@ use Getopt::Std;
 # output from pplxs.
 # Reads an mg output file and a px output file.
 # Extra option -b to create a list with the good gated classifiers.
-# With -b one needs to specify "ic", "cg" or "cd".
+# With -b one needs to specify "ic", "cg", "cd" or "mrr".
 #
 # this.pl -m mg-file -p px-file -f focusword/classifiername
 #
@@ -141,99 +141,110 @@ foreach my $c_name (sort (keys( %scores ))) {
 my $hoera = 0;
 foreach my $c_name (sort (keys( %scores ))) {
 
-    if ( ! $bestlist ) { # "Best" is defined as least incorrect
-      if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
-	print "[mg] ";
-	++$hoera;
+  # the [..] only takes ic into account.
+  #
+  if ( ! $bestlist ) { # "Best" is defined as least incorrect
+    if ( $scores{$c_name}{'mg'}{'ic'} < $scores{$c_name}{'px'}{'ic'} ) {
+      print "[mg] ";
+      ++$hoera;
+    }
+    if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
+      print "[px] ";
+    }
+    if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
+      print "[mx] ";
+      #++$hoera;
+    }
+  } else { # print this when bestlist is true
+    
+    my $mrr_mg   = 0;
+    my $numer = $mrrs{$c_name}{'mg'}{'cd'} + $mrrs{$c_name}{'mg'}{'cg'};
+    my $denom = $scores{$c_name}{'mg'}{'cd'}+$scores{$c_name}{'mg'}{'cg'};
+    if ( $denom != 0 ) {
+      $mrr_mg = $numer / $denom;
+    }
+    my $mrr_px   = 0;
+    $numer = $mrrs{$c_name}{'px'}{'cd'} + $mrrs{$c_name}{'px'}{'cg'};
+    $denom = $scores{$c_name}{'px'}{'cd'}+$scores{$c_name}{'px'}{'cg'};
+    if ( $denom != 0 ) {
+      $mrr_px = $numer / $denom;
+    }
+    
+    if ( $bestlist eq "ic" ) { #incorrect we want less
+      if ( $scores{$c_name}{'mg'}{$bestlist} < $scores{$c_name}{'px'}{$bestlist} ) {
+	print "$c_name\n"; 
       }
-      if ( $scores{$c_name}{'mg'}{'ic'} > $scores{$c_name}{'px'}{'ic'} ) {
-	print "[px] ";
+    } elsif ( $bestlist eq "mrr" ) {
+      if ( $mrr_mg > $mrr_px ) {
+	print "$c_name\n"; 
       }
-      if ( $scores{$c_name}{'mg'}{'ic'} == $scores{$c_name}{'px'}{'ic'} ) {
-	print "[mx] ";
-	#++$hoera;
-      }
-    } else { # print this when bestlist is true
-
-      my $mrr_mg   = 0;
-      my $numer = $mrrs{$c_name}{'mg'}{'cd'} + $mrrs{$c_name}{'mg'}{'cg'};
-      my $denom = $scores{$c_name}{'mg'}{'cd'}+$scores{$c_name}{'mg'}{'cg'};
-      if ( $denom != 0 ) {
-	$mrr_mg = $numer / $denom;
-      }
-      my $mrr_px   = 0;
-      $numer = $mrrs{$c_name}{'px'}{'cd'} + $mrrs{$c_name}{'px'}{'cg'};
-      $denom = $scores{$c_name}{'px'}{'cd'}+$scores{$c_name}{'px'}{'cg'};
-      if ( $denom != 0 ) {
-	$mrr_px = $numer / $denom;
-      }
-
-      if ( $bestlist eq "ic" ) { #incorrect we want less
-	if ( $scores{$c_name}{'mg'}{$bestlist} < $scores{$c_name}{'px'}{$bestlist} ) {
+    } else { #for the others we want more
+      if ( (defined $scores{$c_name}{'mg'}{$bestlist}) &&
+	   (defined $scores{$c_name}{'px'}{$bestlist})) {
+	if ( $scores{$c_name}{'mg'}{$bestlist} > $scores{$c_name}{'px'}{$bestlist} ) {
 	  print "$c_name\n"; 
 	}
-      } elsif ( $bestlist eq "mrr" ) {
-	if ( $mrr_mg > $mrr_px ) {
-	  print "$c_name\n"; 
+      }
+    }
+  }
+  
+  if ( ! $bestlist ) {
+    print "$c_name: ";
+    
+    foreach my $file ( @files ) {	
+      print "$file: ";
+      foreach my $info ( @infos ) {
+	print $info.":".$scores{$c_name}{$file}{$info};
+	print " ";
+      }
+      #print "\n";
+      my $mrr   = 0;
+      #
+      # MRR is calculated on both cd (always 1) and cg.
+      #
+      my $numer = $mrrs{$c_name}{$file}{'cd'} + $mrrs{$c_name}{$file}{'cg'};
+      my $denom = $scores{$c_name}{$file}{'cd'}+$scores{$c_name}{$file}{'cg'};
+      if ( $denom != 0 ) {
+	$mrr = sprintf("%3.2f", $numer / $denom);
+      }
+      print "mrr:",$mrr," ";
+      $totals{$file}{"mrr"} += $mrr;
+    }
+    
+    if ( $deltas != 0 ) {
+      print "d: ";
+      foreach my $info ( @infos ) {
+	my $delta = $scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
+	my $delta_p = 0;
+	if ( $scores{$c_name}{'px'}{$info} != 0 ) {
+	  $delta_p = $delta / $scores{$c_name}{'px'}{$info} * 100.0;
 	}
-      } else { #for the others we want more
-	if ( (defined $scores{$c_name}{'mg'}{$bestlist}) &&
-	     (defined $scores{$c_name}{'px'}{$bestlist})) {
-	  if ( $scores{$c_name}{'mg'}{$bestlist} > $scores{$c_name}{'px'}{$bestlist} ) {
-	    print "$c_name\n"; 
-	  }
+	if ( $percent == 1 ) {
+	  $delta_p = sprintf("%03.1f", $delta_p);
+	  print "$info:",$delta_p,"%";
+	} else {
+	  print "$info:",$delta;
 	}
+	print " ";
       }
     }
     
-    if ( ! $bestlist ) {
-      print "$c_name: ";
-
-      foreach my $file ( @files ) {	
-	print "$file: ";
-	foreach my $info ( @infos ) {
-	  print $info.":".$scores{$c_name}{$file}{$info};
-	  print " ";
-	}
-	#print "\n";
-	my $mrr   = 0;
-	my $numer = $mrrs{$c_name}{$file}{'cd'} + $mrrs{$c_name}{$file}{'cg'};
-	my $denom = $scores{$c_name}{$file}{'cd'}+$scores{$c_name}{$file}{'cg'};
-	if ( $denom != 0 ) {
-	  $mrr = sprintf("%3.1f", $numer / $denom);
-	}
-	print "mrr:",$mrr," ";
-      }
-
-      if ( $deltas != 0 ) {
-	print "d: ";
-	foreach my $info ( @infos ) {
-	  my $delta = $scores{$c_name}{'mg'}{$info} - $scores{$c_name}{'px'}{$info};
-	  my $delta_p = 0;
-	  if ( $scores{$c_name}{'px'}{$info} != 0 ) {
-	    $delta_p = $delta / $scores{$c_name}{'px'}{$info} * 100.0;
-	  }
-	  if ( $percent == 1 ) {
-	    $delta_p = sprintf("%03.1f", $delta_p);
-	    print "$info:",$delta_p,"%";
-	  } else {
-	    print "$info:",$delta;
-	  }
-	  print " ";
-	}
-      }
-
-      print "\n";
-    }
+    print "\n";
   }
+}
 
 if ( ! $bestlist ) {
   print "\nTOTALS: ";
+  my @infos = ('cg', 'cd', 'ic', 'mrr');
   foreach my $file ( @files ) {	
     print "$file: ";
     foreach my $info ( @infos ) {
       if ( defined $totals{$file}{$info} ) {
-	print $info.":".$totals{$file}{$info};
+	if ( $info eq "mrr" ) {
+	  print $info.":".sprintf("%3.2f", $totals{$file}{$info} / keys(%mrrs));
+	} else {
+	  print $info.":".$totals{$file}{$info};
+	}
       } else {
 	print "$info:0";
       }
