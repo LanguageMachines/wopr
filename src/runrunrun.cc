@@ -3076,7 +3076,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .px output file." ); // for px
     return -1;
   }
-  file_out << "# instance+target classification logprob entropy word_lp guess (dist.cnt [topn])" << std::endl;
+  file_out << "# instance+target classification logprob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])" << std::endl;
 
   std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
   if ( ! file_out1 ) {
