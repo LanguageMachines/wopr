@@ -29,12 +29,15 @@ my $classtype_pos = $lc + $rc + 5;
 my $unknown_pos   = $lc + $rc + 6;
 my $md_pos        = $lc + $rc + 7; #match depth
 my $ml_pos        = $lc + $rc + 8; #matched at leaf
+my $rr_pos        = $lc + $rc + 11; #matched at leaf
 
 my $wopr_sumlog10  = 0.0;
 my $srilm_sumlog10 = 0.0;
 my $wordcount = 0;
 my $sentencecount = 0;
 my $oovcount = 0;
+my %rr_sum;
+my %rr_count;
 
 my $f = "%05b"; # Number of binary indicators
 
@@ -58,6 +61,7 @@ while ( my $line = <FHW> ) {
     my $ml;
     my $extra = 0;
     my $indicators = 0;
+    my $rr;
     
     @parts  = split (/ /, $line);
     $target         = $parts[ $target_pos ];
@@ -68,6 +72,7 @@ while ( my $line = <FHW> ) {
     $md             = $parts[$md_pos];
     $ml             = $parts[$ml_pos];
     $classtype      = $parts[$classtype_pos];
+    $rr             = $parts[$rr_pos];
 
     if ( $ignore_oov ) {
       $icu = "k";
@@ -96,7 +101,12 @@ while ( my $line = <FHW> ) {
       $indicators += 16;
       $vsum[4]++;
     }
-
+    if ( ! ($classtype eq "ic") ) {    
+	$rr_sum{$classtype} += $rr;
+	++$rr_count{$classtype};
+	$rr_sum{"gd"} += $rr;
+	++$rr_count{"gd"};	
+    }
 
     if ( ($icu eq "k") && ($wopr_log10prob != 0) ) {
       $wopr_sumlog10 += $wopr_log10prob;
@@ -141,6 +151,10 @@ if ( ! $ignore_oov ) {
   print " (With oov words.)\n";
 }
 
+print "\n";
+foreach my $key (sort (keys(%rr_sum))) {
+    printf( "RR(%s): %8.2f, MRR: %8.2f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$rr_count{$key});
+}
 close(FHW);
 
 # NB, perl log is base e.
