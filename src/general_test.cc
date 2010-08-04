@@ -64,6 +64,7 @@ struct cached_distr {
   int cnt;
   long sum_freqs;
   double entropy;
+  std::string first;
   std::map<std::string,int> freqs; // word->frequency
   std::vector<distr_elem> distr_vec; // top-n to print
   bool operator<(const cached_distr& rhs) const {
@@ -191,7 +192,6 @@ int gen_test( Logfile& l, Config& c ) {
 	c.entropy   = 0.0;
 	distr_cache.push_back( c );
   }
-
   long timbl_time = 0;
 
   while( std::getline( file_in, a_line )) { ///// GETLINE <---------- \\\\\\\
