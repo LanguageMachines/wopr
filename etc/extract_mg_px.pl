@@ -7,8 +7,17 @@ use Getopt::Std;
 #------------------------------------------------------------------------------
 # User options
 #
-# Extract one classifier from both output files
+# Extract similar lines/classifications where both are e.g "cg" from data.
+#   this.pl -p k1.ffc1000a.px -m k1.ffc1000a.mg -l3 -r0 -c "cgcg"
+# Pattern is set with "-c"
 #
+# .... -c "cdcd":
+# the negotiations said that . -2.05889 G said cd k 3 1 13 50 0.5 [...]
+# the negotiations said that . -2.14296 2.5455 4.41667 cd k 2 0 13 53 0.5 [...]
+#
+# Or "cgcd":
+# those trucks each day day 0 G each cg k 3 1 1 2 1 [ day 2 ]
+# those trucks each day other -5.3055 7.1532 39.548 cd k 1 0 1297 8938 0.2 [.]
 #------------------------------------------------------------------------------
 
 use vars qw/ $opt_c $opt_d $opt_m $opt_p $opt_f $opt_l $opt_r /;

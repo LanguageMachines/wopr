@@ -257,6 +257,11 @@ int correct( Logfile& l, Config& c ) {
     return -1;
   }
 
+  if ( ! file_exists(l, c, ibasefile) ) {
+    l.log( "ERROR: cannot read "+ibasefile+"." );
+    return -1;
+  }
+
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
   int wfreq;

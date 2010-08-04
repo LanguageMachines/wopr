@@ -476,6 +476,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &tr;
   } else if ( a_fname == "gt" ) { // from general_test.cc
     return &gen_test;
+  } else if ( a_fname == "wopr" ) {
+    return &test_wopr;
   }
   return &tst;
 }
@@ -3828,6 +3830,12 @@ bool contains_id( const std::string& str, const std::string& id  ) {
   }
   return false;
 }
+
+int test_wopr( Logfile& l, Config& c ) {
+  for ( long i = 0; i < 1000000; i++ ) {
+    levenshtein(l, c);
+  }
+}  
 
 /*
 “The competent programmer is fully aware of the limited size of his

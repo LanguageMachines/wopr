@@ -37,6 +37,7 @@
 #include <dirent.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <stdlib.h>  
 #include <string.h>  
@@ -390,6 +391,23 @@ bool check_dir( const std::string& name ) {
     return true;
   }
   return false;
+}
+
+int get_dir(std::string dir, std::vector<std::string> &files)
+{
+    DIR *dp;
+    struct dirent *dirp;
+    if ((dp = opendir(dir.c_str())) == NULL) {
+      return errno;
+    }
+
+    while ((dirp = readdir(dp)) != NULL) {
+      if ( (dirp->d_name != ".") && (dirp->d_name != "..") ) {
+	files.push_back( std::string(dirp->d_name) );
+      }
+    }
+    closedir(dp);
+    return 0;
 }
 
 /*
