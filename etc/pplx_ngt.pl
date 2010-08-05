@@ -64,13 +64,17 @@ while ( my $line = <FHW> ) {
     my $indicators = 0;
     
     @parts  = split (/ /, $line);
+
     $target         = $parts[ $target_pos ];
     $wopr_prob      = $parts[ $prob_pos ];
     $wopr_log2prob  = log2( $wopr_prob );
     $wopr_log10prob = log10( $wopr_prob );
 
-    $icu = $parts[ $n1_pos ];
-
+    if ( $#parts > 2 ) {
+      $icu = $parts[ $n1_pos ];
+    } else {
+      $icu = "OOV";
+    }
     if ( $target eq "<\/s>" ) {
       ++$sentencecount;
     } else {
