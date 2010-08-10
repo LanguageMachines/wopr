@@ -107,6 +107,7 @@ int focus( Logfile& l, Config& c ) {
   // NB when fmode = 1, seperate list with words, one for each dataset
   // When fmode = 2, we do like 1, but skip the default training.
   // When fmode = 3, we make a default that contains everything?
+  // When fmode = 0, combined class, default is left over.
   //
   if ( fmode == 0 ) {
     if ( file_exists( l, c, output_filename ) ) {
@@ -167,9 +168,10 @@ int focus( Logfile& l, Config& c ) {
   std::string output_filename_dflt = output_filename + "_" + dflt;
   output_files[ dflt ] = output_filename_dflt;
 
-  if ( fmode == 0 ) { // one only
+  if ( (fmode == 0) || (fmode == 4) ) { // one only
     output_files[ combined_class ] = output_filename;
   } else  { 
+    // seperate file for each focus word.
     std::map<std::string,int>::iterator ofi;
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
       if ( numeric_files < 0 ) {
@@ -218,10 +220,10 @@ int focus( Logfile& l, Config& c ) {
       is_gated = 0;
       
       ri = focus_words.find( target ); // Is it in the focus list?
-      if ( ri != focus_words.end() ) {
+      if ( ri != focus_words.end() ) { // yes
 	//l.log( "FOUND: "+target+" in "+a_line );
 	is_gated = 1;
-	if ( fmode == 0 ) { 
+	if ( (fmode == 0) || (fmode == 4) ) { // all in the combined file
 	  std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
 	  if ( ! file_out ) {
 	    l.log( "ERROR: cannot write output file ["+output_files[combined_class]+"]." );
@@ -229,7 +231,7 @@ int focus( Logfile& l, Config& c ) {
 	  }
 	  file_out << a_line << std::endl;
 	  file_out.close(); // must be inefficient...
-	} else {
+	} else { // in its own file
 	  std::ofstream file_out( output_files[target].c_str(), std::ios::app );
 	  if ( ! file_out ) {
 	    l.log( "ERROR: cannot write output file." );
@@ -241,7 +243,8 @@ int focus( Logfile& l, Config& c ) {
 	}
       }
       
-      if ( is_gated == 0 ) {
+      // The left over to the default, or in case of fmode 4, everything.
+      if ( (is_gated == 0) || (fmode == 4) ) {// gated==0 -> not found in list
 	std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
 	if ( ! file_out ) {
 	  l.log( "ERROR: cannot write output file." );
@@ -321,10 +324,10 @@ int focus( Logfile& l, Config& c ) {
 	  kvs_out << "classifier:" << focus_word << std::endl;
 	  kvs_out << "ibasefile:" << ibase_filename << std::endl;
 	  kvs_out << "timbl:" << timbl << std::endl;
-	  if ( fmode != 0 ) {
+	  if ( fmode != 0 ) { // what for 0?
 	    if ( focus_word == dflt ) {
 	      kvs_out << "gatedefault:1" << std::endl;
-	    } else {
+	    } else { // for fmode=0, one entry per word with same ibase?
 	      kvs_out << "gatetrigger:" << focus_word << std::endl;
 	      kvs_out << "gatepos:" << fco << std::endl;
 	    }

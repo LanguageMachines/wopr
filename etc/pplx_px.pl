@@ -45,9 +45,9 @@ open(FHW, $wopr_file)  || die "Can't open file.";
 
 while ( my $line = <FHW> ) {
 
-    if ( substr($line, 0, 1) eq "#" ) {
-      next;
-    }
+  if ( substr($line, 0, 1) eq "#" ) {
+    next;
+  }
     chomp $line;
 
     my @parts = [];
