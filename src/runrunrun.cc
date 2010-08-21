@@ -1835,7 +1835,7 @@ int lexicon(Logfile& l, Config& c) {
     return -1;
   }
   std::map<int,int> ffreqs;
-  long total_count;
+  long total_count = 0;
   for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
     std::string wrd = (*iter).first;
     int wfreq = (*iter).second;
