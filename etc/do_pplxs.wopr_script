@@ -13,8 +13,8 @@ msg: ------------------------------------------------
 # ----
 #
 params: timbl:-a1 +D
-params: lc:0
-params: rc:2
+params: lc:2
+params: rc:0
 params: topn:5
 #
 # Parameter from cmd line.

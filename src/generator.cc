@@ -81,10 +81,10 @@ durian:wopr pberck$ ./wopr -r generate -p start:"Mexico has not",ibasefile:test/
 int generate( Logfile& l, Config& c ) {
   l.log( "generate" );
   const std::string& start            = c.get_value( "start", "" );
-  const std::string& filename         = c.get_value( "filename" );
+  const std::string  filename         = c.get_value( "filename", to_str(getpid()) );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
-  const std::string& end              = c.get_value( "end", " " );
+  const std::string  end              = c.get_value( "end", "." );
   int                ws               = stoi( c.get_value( "ws", "3" ));
   int                mode             = stoi( c.get_value( "mode", "1" ));
   bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;

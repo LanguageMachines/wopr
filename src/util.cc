@@ -44,6 +44,7 @@
 
 #include <fcntl.h>
 //#include <paths.h>
+#include <config.h>
 
 #include "util.h"
 
@@ -121,6 +122,12 @@ std::string secs_to_str( long t, long l ) {
 */
 
 std::string to_str(int i) {
+  std::ostringstream ostr;
+  ostr << i;
+  return ostr.str();
+}
+
+std::string to_str(unsigned int i) {
   std::ostringstream ostr;
   ostr << i;
   return ostr.str();

@@ -27,6 +27,7 @@
 #define _util_h
 
 #include <stdexcept>
+#include "config.h"
 
 // ----------------------------------------------------------------------------
 
@@ -36,6 +37,7 @@ double stod(const std::string& );
 std::string secs_to_str(long);
 std::string secs_to_str(long, long);
 std::string to_str(int);
+std::string to_str(unsigned int);
 std::string to_str(int, int);
 std::string to_str(int, int, char);
 std::string to_str(long);

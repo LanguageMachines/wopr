@@ -9,6 +9,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <config.h>
+
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
 #endif

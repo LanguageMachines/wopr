@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(wopr, 1.25.2)
+AC_INIT(wopr, 1.25.5)
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
@@ -120,5 +120,15 @@ AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug], [Enable debugging support]
                 AC_DEFINE(DEBUG,1,[ Define to enable debugging. ])
           fi
          ])
+
+# Fix problems 32/64 bits
+AC_TYPE_SIZE_T
+if test "$ac_cv_type_size_t" = "yes"; then
+    size_t_value="size_t"
+else
+    size_t_value="switch_int32_t"
+fi
+AC_DEFINE_UNQUOTED(WOPR_SIZE_T,$size_t_value, "size_t" )
+AC_DEFINE_UNQUOTED(HAVE_SIZE_T,$ac_cv_type_size_t, "have_size_t" )
 
 AC_OUTPUT(Makefile)

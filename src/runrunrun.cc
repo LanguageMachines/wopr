@@ -1213,11 +1213,18 @@ int window( std::string a_line, std::string target_str,
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
 
+  if ( words.size() == 0 ) {
+    return 0;
+  }
+
   std::vector<std::string> targets;
   if ( target_str == "" ) {
     targets = std::vector<std::string>( words.size(), "" ); // or nothing?
   } else {
     Tokenize( target_str, targets );
+  }
+  if ( targets.size() == 0 ) {
+    return 0;
   }
 
   //std::vector<std::string> V; (V -> words)
@@ -1863,6 +1870,10 @@ int lexicon(Logfile& l, Config& c) {
     counts_out << cnt << " " << (*iter).second << " " << cnt << "\n";
   }
   counts_out.close();
+
+  l.log( "Tokens: " + to_str(total_count) );
+  l.log( "Unique: " + to_str(count.size()) );
+  l.log( "Ranks: " + to_str(ffreqs.size()) );
 
   double we = word_entropy( count );
   l.log( "w_ent = " + to_str(we) );

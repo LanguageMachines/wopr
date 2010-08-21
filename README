@@ -31,5 +31,11 @@ OS X
 Debian 
 ======
 
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+seems to be needed when the libraries are installed in the default
+place. If not, the following is needed (with the correct path filled
+in):
+
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/pberck/local/lib
 
