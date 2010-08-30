@@ -35,9 +35,11 @@
 //
 #include <sys/types.h>
 #include <dirent.h>
+#include <sys/dir.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <errno.h>
+#include <regex.h>
 
 #include <stdlib.h>  
 #include <string.h>  
@@ -400,21 +402,59 @@ bool check_dir( const std::string& name ) {
   return false;
 }
 
-int get_dir(std::string dir, std::vector<std::string> &files)
-{
+int get_dir(std::string dir, std::vector<std::string> &files, std::string re) {
     DIR *dp;
     struct dirent *dirp;
+    regex_t regex;
+
     if ((dp = opendir(dir.c_str())) == NULL) {
       return errno;
     }
 
+    int r = regcomp(&regex, re.c_str(), 0);
+    if ( r != 0 ) {
+      return -1;
+    }
+
     while ((dirp = readdir(dp)) != NULL) {
-      if ( (dirp->d_name != ".") && (dirp->d_name != "..") ) {
-	files.push_back( std::string(dirp->d_name) );
+      //printf("(%s)\n", dirp->d_name);
+      if ((strcmp(dirp->d_name, ".") != 0) &&
+	  (strcmp(dirp->d_name, "..") != 0)) {
+	// filter more
+	r = regexec(&regex, dirp->d_name, 0, NULL, 0);
+	if ( r == 0 ) {
+	  files.push_back(dir+'/'+std::string(dirp->d_name) );
+	}
       }
     }
     closedir(dp);
     return 0;
+}
+
+int file_select(struct direct *entry) {
+  if ((strcmp(entry->d_name, ".") == 0) ||
+      (strcmp(entry->d_name, "..") == 0)) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+int get_dir2(std::string dir, std::vector<std::string> &files) {
+  struct dirent **namelist;
+  int n;
+  
+  n = scandir(dir.c_str(), &namelist, file_select, alphasort);
+  if (n < 0) {
+    return -1;
+  } else {
+    while (n--) {
+      files.push_back( dir+'/'+std::string(namelist[n]->d_name) );
+      //printf("%s\n", namelist[n]->d_name);
+      free(namelist[n]);
+    }
+    free(namelist);
+  }
+  return 0;
 }
 
 /*

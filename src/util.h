@@ -77,7 +77,8 @@ std::string askenv(const std::string& key) throw(std::invalid_argument);
 std::string itoa(int i,const char* form);
 
 bool check_dir( const std::string& );
-int get_dir( std::string, std::vector<std::string>& );
+int get_dir( std::string, std::vector<std::string>&, std::string );
+int get_dir2( std::string, std::vector<std::string>& );
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens );
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
               const char delimiter);
