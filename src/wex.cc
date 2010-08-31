@@ -243,6 +243,10 @@ int multi( Logfile& l, Config& c ) {
 	file_out << cl << std::endl;
 
 	tv = timbl->Classify( cl, vd );
+	if ( ! tv ) {
+	  l.log( "ERROR: Timbl returned a classification error, aborting." );
+	  break;
+	}
 	std::string answer = tv->Name();
 
 	int cnt = vd->size();
@@ -564,6 +568,10 @@ int multi_dist( Logfile& l, Config& c ) {
       std::string cl = a_line;
 
       tv = timbl->Classify( cl, vd );
+      if ( ! tv ) {
+	l.log( "ERROR: Timbl returned a classification error, aborting." );
+	break;
+      }
       std::string answer = tv->Name();
 
       size_t md  = timbl->matchDepth();

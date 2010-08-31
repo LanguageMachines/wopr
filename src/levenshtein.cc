@@ -438,10 +438,10 @@ int correct( Logfile& l, Config& c ) {
       // What does Timbl think?
       // Do we change this answer to what is in the distr. (if it is?)
       //
-      try {
-	tv = My_Experiment->Classify( a_line, vd );
-      } catch (...) {
-	l.log( "Ouch" );
+      tv = My_Experiment->Classify( a_line, vd );
+      if ( ! tv ) {
+	l.log( "ERROR: Timbl returned a classification error, aborting." );
+	break;
       }
       std::string answer = tv->Name();
       //l.log( "Answer: '" + answer + "' / '" + target + "'" );

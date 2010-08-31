@@ -179,6 +179,10 @@ int generate( Logfile& l, Config& c ) {
     while ( --s_len >= 0 ) { // Or till we hit a "."
       a_line = a_line + " _";
       tv = My_Experiment->Classify( a_line, vd );
+      if ( ! tv ) {
+	l.log( "ERROR: Timbl returned a classification error, aborting." );
+	break;
+      }
       std::string answer = "";// tv->Name();
       cnt = vd->size();
       distr_count = vd->totalSize();
@@ -284,6 +288,9 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
   while ( --len >= 0 ) {
     a_line = a_line + " _";
     tv = My_Experiment->Classify( a_line, vd );
+    if ( ! tv ) {
+      break;
+    }
     std::string answer = "";// tv->Name();
     cnt = vd->size();
     
@@ -384,6 +391,9 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     //std::cout << "Timbl(" << a_line << ")" << std::endl;
 
     tv = My_Experiment->Classify( a_line, vd );
+    if ( ! tv ) {
+      break;
+    }
     std::string answer = "";// tv->Name();
     cnt = vd->size();
     int distr_count = vd->totalSize();

@@ -192,6 +192,9 @@ class Classifier {
       if ( type == 1 ) { // A "real" classifier
 #ifdef TIMBL    
 	tv = My_Experiment->Classify( classification.cl, vd );
+	if ( ! tv ) {
+	  return false;
+	}
 	classification.answer = tv->Name();
 	
 	classification.md  = My_Experiment->matchDepth();
@@ -294,6 +297,9 @@ class Classifier {
 
 #ifdef TIMBL    
     tv = My_Experiment->Classify( classification.cl, vd );
+    if ( ! tv ) {
+      return false;
+    }
 
     classification.info = INFO_WRONG; // unless proven wrong :)
 

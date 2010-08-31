@@ -236,6 +236,10 @@ int gen_test( Logfile& l, Config& c ) {
       //
       long us0 = clock_u_secs();
       tv = My_Experiment->Classify( a_line, vd );
+      if ( ! tv ) {
+	l.log( "ERROR: Timbl returned a classification error, aborting." );
+	break;
+      }
       long us1 = clock_u_secs();
       timbl_time += (us1-us0);
       

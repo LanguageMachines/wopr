@@ -2944,6 +2944,10 @@ int pplx( Logfile& l, Config& c ) {
 	// --
 	//
 	tv = My_Experiment->Classify( cl, vd );
+	if ( ! tv ) {
+	  l.log( "ERROR: Timbl returned a classification error, aborting." );
+	  break;
+	}
 	wopr_line = wopr_line + tv->Name() + " ";
 	l.log( "Answer: " + tv->Name() );
 
@@ -3342,6 +3346,10 @@ int pplx_simple( Logfile& l, Config& c ) {
     tv = My_Experiment->Classify( a_line, vd );
     long us1 = clock_u_secs();
     timbl_time += (us1-us0);
+    if ( ! tv ) {
+      l.log( "ERROR: Timbl returned a classification error, aborting." );
+      break;
+    }
 
     std::string answer = tv->Name();
     if ( vd == NULL ) {

@@ -354,6 +354,10 @@ int server2(Logfile& l, Config& c) {
 	  if ( lc_unknown == false ) {
 	    //My_Experiment->Classify( cl, result, distrib, distance );
 	    tv = My_Experiment->Classify( cl, vd, distance );
+	    if ( ! tv ) {
+	      l.log("ERROR: Timbl returned a classification error, aborting.");
+	      break;
+	    }
 	    result = tv->Name();
 	  } else {
 	    //
@@ -769,6 +773,10 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       if ( lc_unknown == false ) {
 	//My_Experiment->Classify( cl, result, distrib, distance );
 	tv = My_Experiment->Classify( cl, vd, distance );
+	if ( ! tv ) {
+	  l.log( "ERROR: Timbl returned a classification error, aborting." );
+	  break;
+	}
 	result = tv->Name();
       } else {
 	//
@@ -1077,6 +1085,11 @@ int server4(Logfile& l, Config& c) {
 	      std::string target = words.at( words.size()-1 );
 
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
+	      if ( ! tv ) {
+		l.log( "ERROR: Timbl returned a classification error, aborting." );
+		break;
+	      }
+
 	      result = tv->Name();		
 	      size_t res_freq = tv->ValFreq();
 
