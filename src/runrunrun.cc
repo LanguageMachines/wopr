@@ -3015,6 +3015,8 @@ struct cached_distr {
 int pplx_simple( Logfile& l, Config& c ) {
   l.log( "pplxs" );
   const std::string& filename         = c.get_value( "filename" );
+  std::string        dirname          = c.get_value( "dir", "" );
+  std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
