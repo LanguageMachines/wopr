@@ -146,22 +146,23 @@ int gen_test( Logfile& l, Config& c ) {
     get_dir( dirname, filenames, dirmatch );
   }
 
+  l.log( "Processing "+to_str(filenames.size())+" files." );
+
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
-
     std::string output_filename  = a_file + "_" + id + ".gt";
 
-    l.inc_prefix();
-    l.log( "filename:       "+a_file );
-    l.log( "OUTPUT:         "+output_filename );
-    l.dec_prefix();
+    l.log( "Processing: "+a_file );
+    l.log( "OUTPUT:     "+output_filename );
     
     if ( file_exists(l,c,output_filename) ) {
       l.log( "OUTPUT files exist, not overwriting." );
       c.add_kv( "gt_file", output_filename );
       l.log( "SET gt_file to "+output_filename );
-      return 0;
+      continue;
     }
+
+    l.inc_prefix();
     
     std::ifstream file_in( a_file.c_str() );
     if ( ! file_in ) {
@@ -176,8 +177,6 @@ int gen_test( Logfile& l, Config& c ) {
     file_out << "# target class ci md mal (dist.cnt sumF [topn])" << std::endl;
     
     // Here we created Timbl exp before.
-
-    l.log( "Processing: "+a_file );
 
     std::string a_line;
     std::vector<std::string> results;
@@ -460,6 +459,7 @@ int gen_test( Logfile& l, Config& c ) {
     c.add_kv( "gt_file", output_filename );
     l.log( "SET gt_file to "+output_filename );
    
+    l.dec_prefix();
   } 
   return 0;
 }
