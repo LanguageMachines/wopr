@@ -431,31 +431,6 @@ int get_dir(std::string dir, std::vector<std::string> &files, std::string re) {
     return 0;
 }
 
-int file_select(struct direct *entry) {
-  if ((strcmp(entry->d_name, ".") == 0) ||
-      (strcmp(entry->d_name, "..") == 0)) {
-    return 0;
-  } else {
-    return 1;
-  }
-}
-int get_dir2(std::string dir, std::vector<std::string> &files) {
-  struct dirent **namelist;
-  int n;
-  
-  n = scandir(dir.c_str(), &namelist, file_select, alphasort);
-  if (n < 0) {
-    return -1;
-  } else {
-    while (n--) {
-      files.push_back( dir+'/'+std::string(namelist[n]->d_name) );
-      //printf("%s\n", namelist[n]->d_name);
-      free(namelist[n]);
-    }
-    free(namelist);
-  }
-  return 0;
-}
 
 /*
 std::stringstream s ( "This is a test" );
