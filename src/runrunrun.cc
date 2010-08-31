@@ -3042,8 +3042,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   } else {
     id = "_"+id;
   }
-  std::string        output_filename  = filename + id + ".px";
-  std::string        output_filename1 = filename + id + ".pxs";
+
+  // No slash at end of dirname.
+  //
+  if ( (dirname != "") && (dirname.substr(dirname.length()-1, 1) == "/") ) {
+    dirname = dirname.substr(0, dirname.length()-1);
+  }
 
   // This is better for l0r3 contexts &c.
   // It should really only say the length of the context, i.e the
@@ -3058,7 +3062,11 @@ int pplx_simple( Logfile& l, Config& c ) {
     cache_size = 1;
   }
   l.inc_prefix();
-  l.log( "filename:       "+filename );
+  if ( dirname != "" ) {
+    l.log( "dir:             "+dirname );
+    l.log( "dirmatch:        "+dirmatch );
+  }
+  //  l.log( "filename:       "+filename );
   l.log( "ibasefile:      "+ibasefile );
   l.log( "lexicon:        "+lexicon_filename );
   l.log( "counts:         "+counts_filename );
@@ -3072,37 +3080,29 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "cache threshold:"+to_str(cache_threshold) );
   l.log( "incl. sentence: "+to_str(inc_sen) );
   l.log( "id:             "+id );
-  l.log( "OUTPUT:         "+output_filename );
-  l.log( "OUTPUT:         "+output_filename1 );
+  //l.log( "OUTPUT:         "+output_filename );
+  //l.log( "OUTPUT:         "+output_filename1 );
   l.dec_prefix();
 
-  if ( file_exists(l,c,output_filename) && file_exists(l,c,output_filename1) ) {
-    l.log( "OUTPUT files exist, not overwriting." );
-    c.add_kv( "px_file", output_filename );
-    l.log( "SET px_file to "+output_filename );
-    c.add_kv( "pxs_file", output_filename1 );
-    l.log( "SET pxs_file to "+output_filename1 );
-    return 0;
-  }
+  // check output files first before we load a (large) ibase?
 
-  std::ifstream file_in( filename.c_str() );
-  if ( ! file_in ) {
-    l.log( "ERROR: cannot load inputfile." );
-    return -1;
+  try {
+    My_Experiment = new Timbl::TimblAPI( timbl );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;      
+    }
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+    if ( ! My_Experiment->Valid() ) {
+      l.log( "Timbl Experiment is not valid." );
+      return 1;
+    }
+    // My_Experiment->Classify( cl, result, distrib, distance );
+  } catch (...) {
+    l.log( "Cannot create Timbl Experiment..." );
+    return 1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
-  if ( ! file_out ) {
-    l.log( "ERROR: cannot write .px output file." ); // for px
-    return -1;
-  }
-  file_out << "# instance+target classification logprob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])" << std::endl;
-
-  std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
-  if ( ! file_out1 ) {
-    l.log( "ERROR: cannot write .pxs output file." ); // for pxs
-    return -1;
-  }
-  file_out1 << "# nr. #words sum(log2prob) avg.pplx avg.wordlp #nOOV sum(nOOVl2p) std.dev(wordlp) [wordlp(each word)]" << std::endl;
+  l.log( "Instance base loaded." );
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   // Insert counts for sentence markers?
@@ -3184,567 +3184,602 @@ int pplx_simple( Logfile& l, Config& c ) {
   }
   l.log( "P(0) = " + to_str(p0) );
 
-  try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
-    if ( ! My_Experiment->Valid() ) {
-      l.log( "Timbl Experiment is not valid." );
-      return 1;      
-    }
-    (void)My_Experiment->GetInstanceBase( ibasefile );
-    if ( ! My_Experiment->Valid() ) {
-      l.log( "Timbl Experiment is not valid." );
-      return 1;
-    }
-    // My_Experiment->Classify( cl, result, distrib, distance );
-  } catch (...) {
-    l.log( "Cannot create Timbl Experiment..." );
-    return 1;
-  }
-  l.log( "Instance base loaded." );
+  // Timbl was here
 
-  std::string a_line;
-  std::string sentence;
-  std::vector<std::string> results;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
-  std::vector<std::string> words;
-  std::vector<double> w_pplx;
-  int correct = 0;
-  int wrong   = 0;
-  int correct_unknown = 0;
-  int correct_distr = 0;
+  // One file, as before, or the whole globbed dir.
+  //
+  std::vector<std::string> filenames;
+  std::vector<std::string>::iterator fi;
+  if ( dirname == "" ) {
+    filenames.push_back( filename );
+  } else {
+    get_dir( dirname, filenames, dirmatch );
+  }
+  l.log( "Processing "+to_str(filenames.size())+" files." );
+
+  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
+    std::string a_file = *fi;
     
-  // Recognise <s> or similar, reset pplx calculations.
-  // Output results on </s> or similar.
-  // Or a divisor which is not processed?
-  //
-  double sentence_prob       = 0.0;
-  double sum_logprob         = 0.0;
-  double sum_wlp             = 0.0; // word level pplx
-  int    sentence_wordcount  = 0;
-  int    sentence_count      = 0;
-  double sum_rrank           = 0.0;
-  double sum_noov_logprob    = 0.0; // none OOV words
-  int    sentence_noov_count = 0; // number of none OOV words
+    std::string output_filename  = a_file + id + ".px";
+    std::string output_filename1 = a_file + id + ".pxs";
 
-  // Cache a map(string:freq) of the top-n distributions returned
-  // by Timbl.
-  // We get the size first, if it is bigger than the ones we have cached,
-  // we can save the map when we cycle through the distribution. Next
-  // time we can use the map to check if the target is in there.
-  // What do we need?
-  //   map with word->freq
-  //   sum(freqs)
-  //   number of entries
-  //
-  // Distribution cache
-  //
-  int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
-  std::vector<cached_distr> distr_cache;
-  for ( int i = 0; i < cache_size; i++ ) {
-	cached_distr c;
-	c.cnt       = 0;
-	c.sum_freqs = 0;
-	c.entropy   = 0.0;
-	c.first     = "";
-	distr_cache.push_back( c );
-  }
+    l.log( "Processing: "+a_file );
+    l.log( "OUTPUT:     "+output_filename );
+    l.log( "OUTPUT:     "+output_filename1 );
+    
+    if (file_exists(l,c,output_filename) && file_exists(l,c,output_filename1)) {
+      l.log( "OUTPUT files exist, not overwriting." );
+      c.add_kv( "px_file", output_filename );
+      l.log( "SET px_file to "+output_filename );
+      c.add_kv( "pxs_file", output_filename1 );
+      l.log( "SET pxs_file to "+output_filename1 );
+      continue;
+    }
 
-  long timbl_time = 0;
+    std::ifstream file_in( a_file.c_str() );
+    if ( ! file_in ) {
+      l.log( "ERROR: cannot load inputfile." );
+      return -1;
+    }
+    std::ofstream file_out( output_filename.c_str(), std::ios::out );
+    if ( ! file_out ) {
+      l.log( "ERROR: cannot write .px output file." ); // for px
+      return -1;
+    }
+    file_out << "# instance+target classification logprob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])" << std::endl;
+    
+    std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
+    if ( ! file_out1 ) {
+      l.log( "ERROR: cannot write .pxs output file." ); // for pxs
+      return -1;
+    }
+    file_out1 << "# nr. #words sum(log2prob) avg.pplx avg.wordlp #nOOV sum(nOOVl2p) std.dev(wordlp) [wordlp(each word)]" << std::endl;
+    
+    l.inc_prefix();
 
-  while( std::getline( file_in, a_line )) { ///// GETLINE <---------- /////
+    std::string a_line;
+    std::string sentence;
+    std::vector<std::string> results;
+    std::vector<std::string> targets;
+    std::vector<std::string>::iterator ri;
+    const Timbl::ValueDistribution *vd;
+    const Timbl::TargetValue *tv;
+    std::vector<std::string> words;
+    std::vector<double> w_pplx;
+    int correct = 0;
+    int wrong   = 0;
+    int correct_unknown = 0;
+    int correct_distr = 0;
+    
+    // Recognise <s> or similar, reset pplx calculations.
+    // Output results on </s> or similar.
+    // Or a divisor which is not processed?
+    //
+    double sentence_prob       = 0.0;
+    double sum_logprob         = 0.0;
+    double sum_wlp             = 0.0; // word level pplx
+    int    sentence_wordcount  = 0;
+    int    sentence_count      = 0;
+    double sum_rrank           = 0.0;
+    double sum_noov_logprob    = 0.0; // none OOV words
+    int    sentence_noov_count = 0; // number of none OOV words
 
-    words.clear();
-    a_line = trim( a_line );
-    Tokenize( a_line, words, ' ' );
+    // Cache a map(string:freq) of the top-n distributions returned
+    // by Timbl.
+    // We get the size first, if it is bigger than the ones we have cached,
+    // we can save the map when we cycle through the distribution. Next
+    // time we can use the map to check if the target is in there.
+    // What do we need?
+    //   map with word->freq
+    //   sum(freqs)
+    //   number of entries
+    //
+    // Distribution cache
+    //
+    int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
+    std::vector<cached_distr> distr_cache;
+    for ( int i = 0; i < cache_size; i++ ) {
+      cached_distr c;
+      c.cnt       = 0;
+      c.sum_freqs = 0;
+      c.entropy   = 0.0;
+      c.first     = "";
+      distr_cache.push_back( c );
+    }
 
-    if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
+    long timbl_time = 0;
+
+    while( std::getline( file_in, a_line )) { ///// GETLINE <---------- /////
+
       words.clear();
-      Tokenize( a_line, words, '\t' );
-    }
-    std::string target = words.at( words.size()-1 );
+      a_line = trim( a_line );
+      Tokenize( a_line, words, ' ' );
 
-    // Check if "bos" here. If so, we need to calculate some
-    // averages, and reset the sum/counting variables.
-    //
-    // We also need this at the end of the loop!
-    //
-    if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount > 0) ) {
-      double avg_ent  = sum_logprob / (double)sentence_wordcount;
-      double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
-      double avg_pplx = pow( 2, -avg_ent ); 
-      file_out1 << sentence_count << " "
-		<< sentence_wordcount << " "
-		<< sum_logprob << " "
-		<< avg_pplx << " "
-		<< avg_wlp << " "
-		<< sentence_noov_count << " "
-		<< sum_noov_logprob << " ";
-
-      double sum_avg_diff = 0;
-      std::string tmp_output;
-      std::vector<double>::iterator vi;
-      vi = w_pplx.begin();
-      //file_out1 << "[ ";
-      tmp_output = " [ ";
-      while ( vi != w_pplx.end() ) {
-	//file_out1 << *vi << ' ';
-	tmp_output = tmp_output + to_str(*vi) + " ";
-	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
-	vi++;
+      if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
+	words.clear();
+	Tokenize( a_line, words, '\t' );
       }
-      tmp_output += "]";
-      //file_out1 << "] ";
+      std::string target = words.at( words.size()-1 );
 
-      double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
-      //file_out1 << std_dev;
-      file_out1 << std_dev << tmp_output;
-      if ( inc_sen == true ) {
-	file_out1 << sentence;
+      // Check if "bos" here. If so, we need to calculate some
+      // averages, and reset the sum/counting variables.
+      //
+      // We also need this at the end of the loop!
+      //
+      if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount > 0) ) {
+	double avg_ent  = sum_logprob / (double)sentence_wordcount;
+	double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
+	double avg_pplx = pow( 2, -avg_ent ); 
+	file_out1 << sentence_count << " "
+		  << sentence_wordcount << " "
+		  << sum_logprob << " "
+		  << avg_pplx << " "
+		  << avg_wlp << " "
+		  << sentence_noov_count << " "
+		  << sum_noov_logprob << " ";
+
+	double sum_avg_diff = 0;
+	std::string tmp_output;
+	std::vector<double>::iterator vi;
+	vi = w_pplx.begin();
+	//file_out1 << "[ ";
+	tmp_output = " [ ";
+	while ( vi != w_pplx.end() ) {
+	  //file_out1 << *vi << ' ';
+	  tmp_output = tmp_output + to_str(*vi) + " ";
+	  sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
+	  vi++;
+	}
+	tmp_output += "]";
+	//file_out1 << "] ";
+
+	double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
+	//file_out1 << std_dev;
+	file_out1 << std_dev << tmp_output;
+	if ( inc_sen == true ) {
+	  file_out1 << sentence;
+	}
+	file_out1 << std::endl;
+	sentence.clear();
+	sum_logprob         = 0.0;
+	sentence_wordcount  = 0;
+	sum_noov_logprob    = 0.0;
+	sentence_noov_count = 0;
+	++sentence_count;
+	w_pplx.clear();
+      } // end bos
+
+      ++sentence_wordcount;
+      sentence += " " + target;
+
+      // Is the target in the lexicon? We could calculate a smoothed
+      // value here if we load the .cnt file too...
+      //
+      std::map<std::string,int>::iterator wfi = wfreqs.find( target );
+      bool   target_unknown = false;
+      bool   target_in_dist = false;
+      double target_lexfreq = 0.0;// should be double because smoothing
+      double target_lexprob = 0.0;
+      if ( wfi == wfreqs.end() ) {
+	target_unknown = true;
+      } else {
+	target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
+	std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
+	if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
+	  target_lexfreq = (double)(*cfi).second;
+	  //l.log( "Changed lexfreq to: " + to_str(target_lexfreq));
+	}
+	target_lexprob = (double)target_lexfreq / (double)total_count;
       }
-      file_out1 << std::endl;
-      sentence.clear();
-      sum_logprob         = 0.0;
-      sentence_wordcount  = 0;
-      sum_noov_logprob    = 0.0;
-      sentence_noov_count = 0;
-      ++sentence_count;
-      w_pplx.clear();
-    } // end bos
 
-    ++sentence_wordcount;
-    sentence += " " + target;
-
-    // Is the target in the lexicon? We could calculate a smoothed
-    // value here if we load the .cnt file too...
-    //
-    std::map<std::string,int>::iterator wfi = wfreqs.find( target );
-    bool   target_unknown = false;
-    bool   target_in_dist = false;
-    double target_lexfreq = 0.0;// should be double because smoothing
-    double target_lexprob = 0.0;
-    if ( wfi == wfreqs.end() ) {
-      target_unknown = true;
-    } else {
-      target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
-      std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
-      if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
-	target_lexfreq = (double)(*cfi).second;
-	//l.log( "Changed lexfreq to: " + to_str(target_lexfreq));
+      // What does Timbl think?
+      //
+      // We can also cache this to avoid calling Timbl for 
+      // "_ _ xx" patterns, to avoid calling Timbl in the beginning
+      // of every sentence and taking a lot of time.
+      //
+      //
+      long us0 = clock_u_secs();
+      tv = My_Experiment->Classify( a_line, vd );
+      long us1 = clock_u_secs();
+      timbl_time += (us1-us0);
+      if ( ! tv ) {
+	l.log( "ERROR: Timbl returned a classification error, aborting." );
+	break;
       }
-      target_lexprob = (double)target_lexfreq / (double)total_count;
-    }
 
-    // What does Timbl think?
-    //
-    // We can also cache this to avoid calling Timbl for 
-    // "_ _ xx" patterns, to avoid calling Timbl in the beginning
-    // of every sentence and taking a lot of time.
-    //
-    //
-    long us0 = clock_u_secs();
-    tv = My_Experiment->Classify( a_line, vd );
-    long us1 = clock_u_secs();
-    timbl_time += (us1-us0);
-    if ( ! tv ) {
-      l.log( "ERROR: Timbl returned a classification error, aborting." );
-      break;
-    }
+      std::string answer = tv->Name();
+      if ( vd == NULL ) {
+	l.log( "Classify( a_line, vd ) was null, skipping current line." );
+	file_out << a_line << ' ' << answer << " ERROR" << std::endl;
+	//continue;
+	file_out1.close();
+	file_out.close();
+	file_in.close();
+	return 1; // Abort
+      } 
 
-    std::string answer = tv->Name();
-    if ( vd == NULL ) {
-      l.log( "Classify( a_line, vd ) was null, skipping current line." );
-      file_out << a_line << ' ' << answer << " ERROR" << std::endl;
-      //continue;
-      file_out1.close();
-      file_out.close();
-      file_in.close();
-      return 1; // Abort
-    } 
+      size_t md  = My_Experiment->matchDepth();
+      bool   mal = My_Experiment->matchedAtLeaf();
+      //l.log( "md="+to_str(md)+", mal="+to_str(mal) );
 
-    size_t md  = My_Experiment->matchDepth();
-    bool   mal = My_Experiment->matchedAtLeaf();
-    //l.log( "md="+to_str(md)+", mal="+to_str(mal) );
+      // Loop over distribution returned by Timbl.
+      //
+      // entropy over distribution: sum( p log(p) ). 
+      //
+      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+      int cnt = 0;
+      int distr_count = 0;
+      double smoothed_distr_count = 0.0;
+      int target_freq = 0;
+      int answer_freq = 0;
+      double prob            = 0.0;
+      double target_distprob = 0.0;
+      double answer_prob     = 0.0;
+      double entropy         = 0.0;
+      int    rank            = 1;
+      double class_mrr       = 0.0;
+      std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+      cnt         = vd->size();
+      distr_count = vd->totalSize();
 
-    // Loop over distribution returned by Timbl.
-    //
-    // entropy over distribution: sum( p log(p) ). 
-    //
-    Timbl::ValueDistribution::dist_iterator it = vd->begin();
-    int cnt = 0;
-    int distr_count = 0;
-    double smoothed_distr_count = 0.0;
-    int target_freq = 0;
-    int answer_freq = 0;
-    double prob            = 0.0;
-    double target_distprob = 0.0;
-    double answer_prob     = 0.0;
-    double entropy         = 0.0;
-    int    rank            = 1;
-    double class_mrr       = 0.0;
-    std::vector<distr_elem> distr_vec;// see correct in levenshtein.
-    cnt         = vd->size();
-    distr_count = vd->totalSize();
-
-    // Check cache/size/presence. Note it assumes that each size
-    // only occurs once...
-    //
-    int cache_idx = -1;
-    cached_distr* cd = NULL;
-    for ( int i = 0; i < cache_size; i++ ) {
-      if ( distr_cache.at(i).cnt == cnt ) {
-	if ( distr_cache.at(i).sum_freqs == distr_count ) {
-	  if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
-	    cache_idx = i; // it's cached already!
-	    cd = &distr_cache.at(i);
-	    break;
+      // Check cache/size/presence. Note it assumes that each size
+      // only occurs once...
+      //
+      int cache_idx = -1;
+      cached_distr* cd = NULL;
+      for ( int i = 0; i < cache_size; i++ ) {
+	if ( distr_cache.at(i).cnt == cnt ) {
+	  if ( distr_cache.at(i).sum_freqs == distr_count ) {
+	    if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
+	      cache_idx = i; // it's cached already!
+	      cd = &distr_cache.at(i);
+	      break;
+	    }
 	  }
 	}
       }
-    }
-    if ( cache_idx == -1 ) { // It should be cached, if not present.
-      if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
-	cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
-	cd->cnt = cnt;
-	cd->sum_freqs  = distr_count;
-	cd->first = it->second->Value()->Name();
-	(cd->distr_vec).clear();
-      }
-    }
-    // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
-    // cache_idx == -1 && cd != null: not cached, want to cache it.
-    // cache_idx  > -1 && cd == null: impossible
-    // cache_idx  > -1 && cd != null: cached, cd points to cache.
-    // 0, 1, 2, 3
-    //
-    int cache_level = -1; // see above.
-
-    if (cache_idx == -1) {
-      if ( cd == NULL ) {
-	cache_level = 0;
-      } else {
-	cache_level = 1; // want to cache
-      }
-    } else if (cache_idx != -1) {
-      if ( cd != NULL ) {
-	cache_level = 3;
-      } else {
-	cache_level = 2;// play mission impossible theme
-      }
-    }
-
-    //cache_level = 0;
-
-    // ----
-
-    // Problem. We still need to go trough to calculate the mrr.
-    // This defeats the purpose of the cache...
-    // TODO: fix. Current code allows me to run experiments.
-    //
-    if ( cache_level == 3 ) { // Use the cache, Luke.
-      std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
-      if ( wfi != (cd->freqs).end() ) {
-	target_freq = (long)(*wfi).second;
-	target_in_dist = true;
-      }
-      entropy = cd->entropy;
-      distr_vec = cd->distr_vec; // the [distr] we print
-
-      long classification_freq = 0;
-      std::map<long, long, std::greater<long> > dfreqs;
-      while ( it != vd->end() ) {
-
-	std::string tvs  = it->second->Value()->Name();
-	double      wght = it->second->Weight(); // absolute frequency.
-
-	dfreqs[wght] += 1;
-
-	if ( tvs == target ) { // The correct answer was in the distribution!
-	  classification_freq = wght;
+      if ( cache_idx == -1 ) { // It should be cached, if not present.
+	if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
+	  cd = &distr_cache.at( cache_size-1 ); // the lowest.
+	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
+	  cd->cnt = cnt;
+	  cd->sum_freqs  = distr_count;
+	  cd->first = it->second->Value()->Name();
+	  (cd->distr_vec).clear();
 	}
-	++it;
       }
-      long   idx       = 1;
-      long   class_idx = 0;
-      std::map<long, long>::iterator dfi = dfreqs.begin();
-      while ( dfi != dfreqs.end() ) {
-	if ( dfi->first == classification_freq ) {
-	  class_idx = idx;
-	  class_mrr = (double)1.0/idx;
+      // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
+      // cache_idx == -1 && cd != null: not cached, want to cache it.
+      // cache_idx  > -1 && cd == null: impossible
+      // cache_idx  > -1 && cd != null: cached, cd points to cache.
+      // 0, 1, 2, 3
+      //
+      int cache_level = -1; // see above.
+
+      if (cache_idx == -1) {
+	if ( cd == NULL ) {
+	  cache_level = 0;
+	} else {
+	  cache_level = 1; // want to cache
 	}
-	//if ( idx > some_limit ) { break;}
-	++dfi;
-	++idx;
+      } else if (cache_idx != -1) {
+	if ( cd != NULL ) {
+	  cache_level = 3;
+	} else {
+	  cache_level = 2;// play mission impossible theme
+	}
       }
 
-    }
-    if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
+      //cache_level = 0;
 
-      long classification_freq = 0;
-      std::map<long, long, std::greater<long> > dfreqs;
-      while ( it != vd->end() ) {
-	//const Timbl::TargetValue *tv = it->second->Value();
+      // ----
 
-	std::string tvs  = it->second->Value()->Name();
-	double      wght = it->second->Weight(); // absolute frequency.
-
-	dfreqs[wght] += 1;
-
-	if ( topn > 0 ) { // only save if we want to sort/print them later.
-	  distr_elem  d;
-	  d.name   = tvs;
-	  d.freq   = wght;
-	  d.s_freq = wght;
-	  distr_vec.push_back( d );
-	}
-	
-	if ( tvs == target ) { // The correct answer was in the distribution!
-	  target_freq = wght;
+      // Problem. We still need to go trough to calculate the mrr.
+      // This defeats the purpose of the cache...
+      // TODO: fix. Current code allows me to run experiments.
+      //
+      if ( cache_level == 3 ) { // Use the cache, Luke.
+	std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
+	if ( wfi != (cd->freqs).end() ) {
+	  target_freq = (long)(*wfi).second;
 	  target_in_dist = true;
-	  classification_freq = wght;
-	  //sum_rrank += 1.0 / rank; // Only count mrr when in distro answer! What
-	  // if more-than-one with certain freq. Should be on ranking?
-	  // And we need to sort first....!!
-	  /*
-	  l.log( "Rank:" + to_str(rank) );
-	  if ( rank == 0 ) {
-	    l.log( "    :answer=" + answer + "/tvs=" + tvs+"/targt="+target );
+	}
+	entropy = cd->entropy;
+	distr_vec = cd->distr_vec; // the [distr] we print
+
+	long classification_freq = 0;
+	std::map<long, long, std::greater<long> > dfreqs;
+	while ( it != vd->end() ) {
+
+	  std::string tvs  = it->second->Value()->Name();
+	  double      wght = it->second->Weight(); // absolute frequency.
+
+	  dfreqs[wght] += 1;
+
+	  if ( tvs == target ) { // The correct answer was in the distribution!
+	    classification_freq = wght;
 	  }
-	  */
+	  ++it;
+	}
+	long   idx       = 1;
+	long   class_idx = 0;
+	std::map<long, long>::iterator dfi = dfreqs.begin();
+	while ( dfi != dfreqs.end() ) {
+	  if ( dfi->first == classification_freq ) {
+	    class_idx = idx;
+	    class_mrr = (double)1.0/idx;
+	  }
+	  //if ( idx > some_limit ) { break;}
+	  ++dfi;
+	  ++idx;
 	}
 
-	// Save it in the cache?
-	//
-	if ( cache_level == 1 ) {
-	  cd->freqs[tvs] = wght;
-	}
+      }
+      if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
 
-	// Entropy of whole distr. Cache.
-	//
-	prob     = (double)wght / (double)distr_count;
-	entropy -= ( prob * log2(prob) );
+	long classification_freq = 0;
+	std::map<long, long, std::greater<long> > dfreqs;
+	while ( it != vd->end() ) {
+	  //const Timbl::TargetValue *tv = it->second->Value();
+
+	  std::string tvs  = it->second->Value()->Name();
+	  double      wght = it->second->Weight(); // absolute frequency.
+
+	  dfreqs[wght] += 1;
+
+	  if ( topn > 0 ) { // only save if we want to sort/print them later.
+	    distr_elem  d;
+	    d.name   = tvs;
+	    d.freq   = wght;
+	    d.s_freq = wght;
+	    distr_vec.push_back( d );
+	  }
 	
-	++it;
-      } // end loop distribution
-      if ( cache_level == 1 ) {
-	cd->entropy = entropy;
-      }
+	  if ( tvs == target ) { // The correct answer was in the distribution!
+	    target_freq = wght;
+	    target_in_dist = true;
+	    classification_freq = wght;
+	    //sum_rrank += 1.0 / rank; // Only count mrr when in distro answer! What
+	    // if more-than-one with certain freq. Should be on ranking?
+	    // And we need to sort first....!!
+	    /*
+	      l.log( "Rank:" + to_str(rank) );
+	      if ( rank == 0 ) {
+	      l.log( "    :answer=" + answer + "/tvs=" + tvs+"/targt="+target );
+	      }
+	    */
+	  }
 
-      long   idx       = 1;
-      long   class_idx = 0;
-      std::map<long, long>::iterator dfi = dfreqs.begin();
-      while ( dfi != dfreqs.end() ) {
-	if ( dfi->first == classification_freq ) {
-	  class_idx = idx;
-	  class_mrr = (double)1.0/idx;
-	}
-	//if ( idx > some_limit ) { break;}
-	++dfi;
-	++idx;
-      }
-      
-    } // cache_level == 1 or 0
+	  // Save it in the cache?
+	  //
+	  if ( cache_level == 1 ) {
+	    cd->freqs[tvs] = wght;
+	  }
 
-
-    // Counting correct guesses
-    //
-    if ( answer == target ) {
-      ++correct;
-    } else if ( (answer != target) && (target_in_dist == true) ) {
-      ++correct_distr; 
-      sum_rrank += (1.0 / rank); // THESE are unsorted!
-    } else {
-      ++wrong;
-    }
-
-    target_distprob = (double)target_freq / (double)distr_count;
-
-    // If correct: if target in distr, we take that prob, else
-    // the lexical prob.
-    // Unknown words?
-    //
-    double w_prob  = 0.0;
-    std::string info = "huh?";
-    if ( target_freq > 0 ) { // Right answer was in distr.
-      w_prob = target_distprob;
-      info = "target_distprob";
-    } else {
-      if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-	w_prob = target_lexprob;
-	info = "target_lexprob";
-      } else {
-	//
-	// What to do here? We have an 'unknown' target, i.e. not in the
-	// lexicon.
-	//
-	w_prob = p0;
-	info = "P(new_particular)";
-      }
-    }
-
-    // (ref. Antal's mail 21/11/08)
-    // word level pplx: 2 ^ (-logprob(w)) 
-    //
-    // What we want: average word_lp and standard dev.
-    //
-    double logprob = log2( w_prob );
-    double word_lp = pow( 2, -logprob );
-    sum_logprob += logprob;
-    sum_wlp     += word_lp;
-    w_pplx.push_back( word_lp );
-
-    if ( ! target_unknown ) {
-      sum_noov_logprob += logprob; // sum none-OOV words.
-      ++sentence_noov_count;
-    }
-
-    // What do we want in the output file? Write the pattern and answer,
-    // the logprob, followed by the entropy (of distr.), the size of the
-    // distribution returned, and the top-10 (or less) of the distribution.
-    //
-    // #instance+target classification logprob entropy word_lp (dist.cnt [topn])
-    //
-    file_out << a_line << ' ' << answer << ' '
-	     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
-    file_out << word_lp << ' ';
-
-    if ( answer == target ) {
-      file_out << "cg"; // correct guess
-    } else if ( (answer != target) && (target_in_dist == true) ) {
-      file_out << "cd"; // correct distr.
-    } else {
-      file_out << "ic"; // incorrect
-    }
-    /*if ( (total_count > 0) && (target_unknown == true) ) {
-      file_out << "u";
-      }*/
-    if ( target_unknown ) {
-      file_out << " u ";
-    } else {
-      file_out << " k ";
-    }
-
-    // New in 1.10.0, the matchDepth and matchedAtLeaf
-    //
-    file_out << md << ' ' << mal << ' ';
-
-    // (not)New in 1.10.22, the rank. Should be determined on a SORTED distribution.
-    // This extra number will break the examine_px script.
-    //
-    //file_out << 1.0/rank << ' ';
-
-    /* Sort and print and determine rank in one fell swoop?
-    int cntr = topn;
-    sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-    std::vector<distr_elem>::iterator fi;
-    fi = distr_vec.begin();
-    if ( topn > 0 ) {
-      file_out << cnt << " [ ";
-    }
-    while ( fi != distr_vec.end() ) { 
-      if ( --cntr >= 0 ) {
-	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
-      }
-      if ( cache_level == 1 ) {
-	distr_elem d;
-	d.name = (*fi).name;
-	d.freq = (*fi).freq;
-	(cd->distr_vec).push_back( d );
-      }
-      fi++;
-    }
-    if ( topn > 0 ) {
-      file_out << "]";
-    }
-    */
-
-    file_out << cnt << " " << distr_count << " ";
-    file_out << class_mrr;
-
-    if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
-      int cntr = topn;
-      sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-      std::vector<distr_elem>::iterator fi;
-      fi = distr_vec.begin();
-      file_out <<  " [ ";
-      while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
-	file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	  // Entropy of whole distr. Cache.
+	  //
+	  prob     = (double)wght / (double)distr_count;
+	  entropy -= ( prob * log2(prob) );
+	
+	  ++it;
+	} // end loop distribution
 	if ( cache_level == 1 ) {
-	  distr_elem d;
-	  d.name = (*fi).name;
-	  d.freq = (*fi).freq;
-	  (cd->distr_vec).push_back( d );
+	  cd->entropy = entropy;
 	}
-	fi++;
+
+	long   idx       = 1;
+	long   class_idx = 0;
+	std::map<long, long>::iterator dfi = dfreqs.begin();
+	while ( dfi != dfreqs.end() ) {
+	  if ( dfi->first == classification_freq ) {
+	    class_idx = idx;
+	    class_mrr = (double)1.0/idx;
+	  }
+	  //if ( idx > some_limit ) { break;}
+	  ++dfi;
+	  ++idx;
+	}
+      
+      } // cache_level == 1 or 0
+
+
+      // Counting correct guesses
+      //
+      if ( answer == target ) {
+	++correct;
+      } else if ( (answer != target) && (target_in_dist == true) ) {
+	++correct_distr; 
+	sum_rrank += (1.0 / rank); // THESE are unsorted!
+      } else {
+	++wrong;
       }
-      file_out << "]";
-    }
 
-    file_out << std::endl;
+      target_distprob = (double)target_freq / (double)distr_count;
 
-    // End of sentence (sort of)
-    //
-    if ( (target == "</s>")
-	 //|| (target == ".") || (target == "!") || (target == "?") 
-	 ) {
-      double avg_ent  = sum_logprob / (double)sentence_wordcount;
-      double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
-      double avg_pplx = pow( 2, -avg_ent ); 
-      file_out1 << sentence_count << " "
-		<< sentence_wordcount << " "
-		<< sum_logprob << " "
-		<< avg_pplx << " "
-		<< avg_wlp << " "
-		<< sentence_noov_count << " "
-		<< sum_noov_logprob << " ";
-
-      double sum_avg_diff = 0;
-      std::string tmp_output;
-      std::vector<double>::iterator vi;
-      vi = w_pplx.begin();
-      //file_out1 << "[ ";
-      tmp_output = " [ ";
-      while ( vi != w_pplx.end() ) {
-	//file_out1 << *vi << ' ';
-	tmp_output = tmp_output + to_str(*vi) + " ";
-	sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
-	vi++;
+      // If correct: if target in distr, we take that prob, else
+      // the lexical prob.
+      // Unknown words?
+      //
+      double w_prob  = 0.0;
+      std::string info = "huh?";
+      if ( target_freq > 0 ) { // Right answer was in distr.
+	w_prob = target_distprob;
+	info = "target_distprob";
+      } else {
+	if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+	  w_prob = target_lexprob;
+	  info = "target_lexprob";
+	} else {
+	  //
+	  // What to do here? We have an 'unknown' target, i.e. not in the
+	  // lexicon.
+	  //
+	  w_prob = p0;
+	  info = "P(new_particular)";
+	}
       }
-      tmp_output += "]";
-      //file_out1 << "] ";
 
-      double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
-      //file_out1 << std_dev;
-      file_out1 << std_dev << tmp_output;
-      file_out1 << std::endl;
-      sum_logprob         = 0.0;
-      sentence_wordcount  = 0;
-      sentence_noov_count = 0;
-      sum_noov_logprob    = 0.0;
-      ++sentence_count;
-      w_pplx.clear();
-    }
+      // (ref. Antal's mail 21/11/08)
+      // word level pplx: 2 ^ (-logprob(w)) 
+      //
+      // What we want: average word_lp and standard dev.
+      //
+      double logprob = log2( w_prob );
+      double word_lp = pow( 2, -logprob );
+      sum_logprob += logprob;
+      sum_wlp     += word_lp;
+      w_pplx.push_back( word_lp );
 
-    // Find new lowest here. Overdreven om sort te gebruiken?
-    //
-    if ( cache_level == 1 ) {
-      sort( distr_cache.begin(), distr_cache.end() );
-      lowest_cache = distr_cache.at(cache_size-1).cnt;
-      //}
-    lowest_cache = 1000000; // hmmm.....
-    for ( int i = 0; i < cache_size; i++ ) {
-      if ( (distr_cache.at(i)).cnt < lowest_cache ) {
-	lowest_cache = (distr_cache.at(i)).cnt;
+      if ( ! target_unknown ) {
+	sum_noov_logprob += logprob; // sum none-OOV words.
+	++sentence_noov_count;
       }
-    }
-    }
 
-  } // while getline()
+      // What do we want in the output file? Write the pattern and answer,
+      // the logprob, followed by the entropy (of distr.), the size of the
+      // distribution returned, and the top-10 (or less) of the distribution.
+      //
+      // #instance+target classification logprob entropy word_lp (dist.cnt [topn])
+      //
+      file_out << a_line << ' ' << answer << ' '
+	       << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+      file_out << word_lp << ' ';
 
-  if ( sentence_wordcount > 0 ) { // Left over (or all)
+      if ( answer == target ) {
+	file_out << "cg"; // correct guess
+      } else if ( (answer != target) && (target_in_dist == true) ) {
+	file_out << "cd"; // correct distr.
+      } else {
+	file_out << "ic"; // incorrect
+      }
+      /*if ( (total_count > 0) && (target_unknown == true) ) {
+	file_out << "u";
+	}*/
+      if ( target_unknown ) {
+	file_out << " u ";
+      } else {
+	file_out << " k ";
+      }
+
+      // New in 1.10.0, the matchDepth and matchedAtLeaf
+      //
+      file_out << md << ' ' << mal << ' ';
+
+      // (not)New in 1.10.22, the rank. Should be determined on a SORTED distribution.
+      // This extra number will break the examine_px script.
+      //
+      //file_out << 1.0/rank << ' ';
+
+      /* Sort and print and determine rank in one fell swoop?
+	 int cntr = topn;
+	 sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+	 std::vector<distr_elem>::iterator fi;
+	 fi = distr_vec.begin();
+	 if ( topn > 0 ) {
+	 file_out << cnt << " [ ";
+	 }
+	 while ( fi != distr_vec.end() ) { 
+	 if ( --cntr >= 0 ) {
+	 file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	 }
+	 if ( cache_level == 1 ) {
+	 distr_elem d;
+	 d.name = (*fi).name;
+	 d.freq = (*fi).freq;
+	 (cd->distr_vec).push_back( d );
+	 }
+	 fi++;
+	 }
+	 if ( topn > 0 ) {
+	 file_out << "]";
+	 }
+      */
+
+      file_out << cnt << " " << distr_count << " ";
+      file_out << class_mrr;
+
+      if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
+	int cntr = topn;
+	sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+	std::vector<distr_elem>::iterator fi;
+	fi = distr_vec.begin();
+	file_out <<  " [ ";
+	while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
+	  file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	  if ( cache_level == 1 ) {
+	    distr_elem d;
+	    d.name = (*fi).name;
+	    d.freq = (*fi).freq;
+	    (cd->distr_vec).push_back( d );
+	  }
+	  fi++;
+	}
+	file_out << "]";
+      }
+
+      file_out << std::endl;
+
+      // End of sentence (sort of)
+      //
+      if ( (target == "</s>")
+	   //|| (target == ".") || (target == "!") || (target == "?") 
+	   ) {
+	double avg_ent  = sum_logprob / (double)sentence_wordcount;
+	double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
+	double avg_pplx = pow( 2, -avg_ent ); 
+	file_out1 << sentence_count << " "
+		  << sentence_wordcount << " "
+		  << sum_logprob << " "
+		  << avg_pplx << " "
+		  << avg_wlp << " "
+		  << sentence_noov_count << " "
+		  << sum_noov_logprob << " ";
+
+	double sum_avg_diff = 0;
+	std::string tmp_output;
+	std::vector<double>::iterator vi;
+	vi = w_pplx.begin();
+	//file_out1 << "[ ";
+	tmp_output = " [ ";
+	while ( vi != w_pplx.end() ) {
+	  //file_out1 << *vi << ' ';
+	  tmp_output = tmp_output + to_str(*vi) + " ";
+	  sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
+	  vi++;
+	}
+	tmp_output += "]";
+	//file_out1 << "] ";
+
+	double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
+	//file_out1 << std_dev;
+	file_out1 << std_dev << tmp_output;
+	file_out1 << std::endl;
+	sum_logprob         = 0.0;
+	sentence_wordcount  = 0;
+	sentence_noov_count = 0;
+	sum_noov_logprob    = 0.0;
+	++sentence_count;
+	w_pplx.clear();
+      }
+
+      // Find new lowest here. Overdreven om sort te gebruiken?
+      //
+      if ( cache_level == 1 ) {
+	sort( distr_cache.begin(), distr_cache.end() );
+	lowest_cache = distr_cache.at(cache_size-1).cnt;
+	//}
+	lowest_cache = 1000000; // hmmm.....
+	for ( int i = 0; i < cache_size; i++ ) {
+	  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
+	    lowest_cache = (distr_cache.at(i)).cnt;
+	  }
+	}
+      }
+
+    } // while getline()
+
+    if ( sentence_wordcount > 0 ) { // Left over (or all)
       double avg_ent  = sum_logprob / (double)sentence_wordcount;
       double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
       double avg_pplx = pow( 2, -avg_ent );
@@ -3781,40 +3816,43 @@ int pplx_simple( Logfile& l, Config& c ) {
       sum_noov_logprob    = 0.0;
       ++sentence_count;
       w_pplx.clear();
+    }
+
+    file_out1.close();
+    file_out.close();
+    file_in.close();
+
+    double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
+    l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
+    double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
+    l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
+    int correct_total = correct_distr+correct;
+    double ct_perc = correct_perc+cd_perc;
+    l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
+    l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
+
+    //l.log( "sum_rrank: " + to_str(sum_rrank) );
+    //double mrr = sum_rrank / (double)(correct_distr); 
+    //l.log( "MRR: " + to_str(mrr) );
+
+    if ( sentence_wordcount > 0 ) {
+      l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+    }
+
+    /*for ( int i = 0; i < cache_size; i++ ) {
+      l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).cnt) );
+      }*/
+
+    l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
+
+    c.add_kv( "px_file", output_filename );
+    l.log( "SET px_file to "+output_filename );
+    c.add_kv( "pxs_file", output_filename1 );
+    l.log( "SET pxs_file to "+output_filename1 );
+
+    l.dec_prefix();
   }
-
-  file_out1.close();
-  file_out.close();
-  file_in.close();
-
-  double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
-  l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
-  double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
-  l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
-  int correct_total = correct_distr+correct;
-  double ct_perc = correct_perc+cd_perc;
-  l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
-  l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
-
-  //l.log( "sum_rrank: " + to_str(sum_rrank) );
-  //double mrr = sum_rrank / (double)(correct_distr); 
-  //l.log( "MRR: " + to_str(mrr) );
-
-  if ( sentence_wordcount > 0 ) {
-    l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-    l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
-  }
-
-  /*for ( int i = 0; i < cache_size; i++ ) {
-    l.log( to_str(i)+"/"+to_str((distr_cache.at(i)).cnt) );
-    }*/
-
-  l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
-
-  c.add_kv( "px_file", output_filename );
-  l.log( "SET px_file to "+output_filename );
-  c.add_kv( "pxs_file", output_filename1 );
-  l.log( "SET pxs_file to "+output_filename1 );
 
   return 0;
 }
