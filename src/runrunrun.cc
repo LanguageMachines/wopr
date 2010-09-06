@@ -3037,12 +3037,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   std::string        result;
   double             distance;
 
-  if ( contains_id(filename, id) == true ) {
-    id = "";
-  } else {
-    id = "_"+id;
-  }
-
   // No slash at end of dirname.
   //
   if ( (dirname != "") && (dirname.substr(dirname.length()-1, 1) == "/") ) {
@@ -3098,6 +3092,17 @@ int pplx_simple( Logfile& l, Config& c ) {
   }
   l.log( "Processing "+to_str(filenames.size())+" files." );
   size_t numfiles = filenames.size();
+  if ( numfiles == 0 ) {
+    l.log( "No files found, skipping." );
+    return 0;
+  }
+
+  if ( contains_id(filenames[0], id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
     std::string output_filename  = a_file + id + ".px";
