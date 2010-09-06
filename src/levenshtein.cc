@@ -209,13 +209,7 @@ int correct( Logfile& l, Config& c ) {
   const std::string& timbl            = c.get_value( "timbl" );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
 
-  if ( contains_id(filename, id) == true ) {
-    id = "";
-  } else {
-    id = "_"+id;
-  }
-
-  std::string        output_filename  = filename + id + ".sc";
+  //std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl)
@@ -242,7 +236,11 @@ int correct( Logfile& l, Config& c ) {
   }
 
   l.inc_prefix();
-  l.log( "filename:   "+filename );
+  if ( dirname != "" ) {
+    l.log( "dir:             "+dirname );
+    l.log( "dirmatch:        "+dirmatch );
+  }
+  //l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
@@ -253,7 +251,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "max_ent:    "+to_str(max_ent) );
   l.log( "max_distr:  "+to_str(max_distr) );
   l.log( "min_ratio:  "+to_str(min_ratio) );
-  l.log( "OUTPUT:     "+output_filename );
+  //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
   // Timbl
@@ -274,6 +272,17 @@ int correct( Logfile& l, Config& c ) {
   }
   l.log( "Processing "+to_str(filenames.size())+" files." );
   size_t numfiles = filenames.size();
+  if ( numfiles == 0 ) {
+    l.log( "No files found. Skipping." );
+    return 0;
+  }
+
+  if ( contains_id(filenames[0], id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
     std::string output_filename  = a_file + id + ".sc";
@@ -365,18 +374,6 @@ int correct( Logfile& l, Config& c ) {
   //l.log( "P(new_particular) = " + to_str(p0) );
 
   // Timbl was here
-
-  // One file, as before, or the whole globbed dir.
-  //
-  std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
-  if ( dirname == "" ) {
-    filenames.push_back( filename );
-  } else {
-    get_dir( dirname, filenames, dirmatch );
-  }
-  
-  l.log( "Processing "+to_str(filenames.size())+" files." );
 
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
