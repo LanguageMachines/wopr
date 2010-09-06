@@ -276,10 +276,9 @@ int correct( Logfile& l, Config& c ) {
   size_t numfiles = filenames.size();
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
-    std::string output_filename  = a_file + id + ".px";
-    std::string output_filename1 = a_file + id + ".pxs";
+    std::string output_filename  = a_file + id + ".sc";
 
-    if (file_exists(l,c,output_filename) && file_exists(l,c,output_filename1)) {
+    if (file_exists(l,c,output_filename)) {
       //l.log( "Output for "+a_file+" exists, removing from list." );
       --numfiles;
     }
