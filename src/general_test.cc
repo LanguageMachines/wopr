@@ -185,7 +185,7 @@ int gen_test( Logfile& l, Config& c ) {
     l.log( "OUTPUT:     "+output_filename );
     
     if ( file_exists(l,c,output_filename) ) {
-      l.log( "OUTPUT files exist, not overwriting." );
+      l.log( "OUTPUT file exist, not overwriting." );
       c.add_kv( "gt_file", output_filename );
       l.log( "SET gt_file to "+output_filename );
       continue;
