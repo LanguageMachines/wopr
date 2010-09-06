@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2009 Peter Berck                                         *
+ * Copyright 2007 - 2010 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -119,6 +119,44 @@ int gen_test( Logfile& l, Config& c ) {
   l.log( "id:             "+id );
   l.dec_prefix();
 
+  // One file, as before, or the whole globbed dir.
+  //
+  std::vector<std::string> filenames;
+  std::vector<std::string>::iterator fi;
+  if ( dirname == "" ) {
+    filenames.push_back( filename );
+  } else {
+    get_dir( dirname, filenames, dirmatch );
+  }
+  l.log( "Processing "+to_str(filenames.size())+" files." );
+  size_t numfiles = filenames.size();
+  if ( numfiles == 0 ) {
+    l.log( "No files found. Skipping." );
+    return 0;
+  }
+
+  if ( contains_id(filenames[0], id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+
+  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
+    std::string a_file = *fi;
+    std::string output_filename  = a_file + id + ".gt";
+
+    if (file_exists(l,c,output_filename)) {
+      //l.log( "Output for "+a_file+" exists, removing from list." );
+      --numfiles;
+    }
+  }
+  if ( numfiles == 0 ) {
+    l.log( "All output files already exists, skipping." );
+    return 0;
+  }
+
+  // Load instance base
+  //
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
@@ -136,21 +174,12 @@ int gen_test( Logfile& l, Config& c ) {
   }
   l.log( "Instance base loaded." );
 
-  // One file, as before, or the whole globbed dir.
+
+  // Process input files.
   //
-  std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
-  if ( dirname == "" ) {
-    filenames.push_back( filename );
-  } else {
-    get_dir( dirname, filenames, dirmatch );
-  }
-
-  l.log( "Processing "+to_str(filenames.size())+" files." );
-
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
-    std::string output_filename  = a_file + "_" + id + ".gt";
+    std::string output_filename  = a_file + id + ".gt";
 
     l.log( "Processing: "+a_file );
     l.log( "OUTPUT:     "+output_filename );
