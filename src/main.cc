@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007-2009 Peter Berck                                           *
+ * Copyright 2007-2010 Peter Berck                                           *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -112,7 +112,9 @@ int main( int argc, char* argv[] ) {
                       std::string(VERSION);
 #ifdef TIMBL
   l.log( "Timbl support built in." );
-  l.log( TIMBL );
+  if ( TIMBL != "yes" ) {
+    l.log( TIMBL );
+  }
 #endif
   l.log( blurb );
   l.log( "PID: "+to_str(getpid(),6,' ')+" PPID: "+to_str(getppid(),6,' ') );

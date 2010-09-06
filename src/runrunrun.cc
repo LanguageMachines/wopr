@@ -3086,6 +3086,35 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   // check output files first before we load a (large) ibase?
 
+  // One file, as before, or the whole globbed dir. Check if
+  // they exists.
+  //
+  std::vector<std::string> filenames;
+  std::vector<std::string>::iterator fi;
+  if ( dirname == "" ) {
+    filenames.push_back( filename );
+  } else {
+    get_dir( dirname, filenames, dirmatch );
+  }
+  l.log( "Processing "+to_str(filenames.size())+" files." );
+  size_t numfiles = filenames.size();
+  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
+    std::string a_file = *fi;
+    std::string output_filename  = a_file + id + ".px";
+    std::string output_filename1 = a_file + id + ".pxs";
+
+    if (file_exists(l,c,output_filename) && file_exists(l,c,output_filename1)) {
+      //l.log( "Output for "+a_file+" exists, removing from list." );
+      --numfiles;
+    }
+  }
+  if ( numfiles == 0 ) {
+    l.log( "All output files already exists, skipping." );
+    return 0;
+  }
+
+  // If we had > 0 numfiles left, we continue.
+  //
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
@@ -3185,17 +3214,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "P(0) = " + to_str(p0) );
 
   // Timbl was here
-
-  // One file, as before, or the whole globbed dir.
-  //
-  std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
-  if ( dirname == "" ) {
-    filenames.push_back( filename );
-  } else {
-    get_dir( dirname, filenames, dirmatch );
-  }
-  l.log( "Processing "+to_str(filenames.size())+" files." );
 
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
