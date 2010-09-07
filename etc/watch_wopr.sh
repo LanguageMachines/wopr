@@ -24,8 +24,18 @@ fi
 PID=$1   # The process ID
 LIMIT=$2 # kB
 #
-MEM_FILE=$PID"_mem.txt"
+PRE=`echo $LIMIT | sed s/.$//`
+SUF=`echo $LIMIT | sed -e "s/^.*\(.\)$/\1/"`
+if test $SUF == 'M'
+then
+  LIMIT=`echo "$PRE * 1024" | bc`
+fi
+if test $SUF == 'G'
+then
+  LIMIT=`echo "$PRE * 1024 * 1024" | bc`
+fi
 #
+MEM_FILE=$PID"_mem.txt"
 SLEEP=10
 MEMWRITE_INTERVAL=60
 MEMWRITE_LAST=0;
