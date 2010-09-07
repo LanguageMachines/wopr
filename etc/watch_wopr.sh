@@ -3,13 +3,27 @@
 # $Id$
 #
 # ----
-# Script to check every ten second if process with $PID has an RSS
+# Script to check every n second if process with $PID has an RSS
 # size larger than $LIMIT kB. If so, kill it and send me an email.
+# Gives a warning when 95% of memory limit has been reached.
+# Kills the process when it goes over 100%.
 #
 # Usage:
-# sh ./watch_wopr.sh PID SIZE
+# sh ./watch_wopr.sh PID SIZE{M|G} [SLEEP [MEMWRITE_INTERVAL]]
 #
-# NB: doesn't check for ownership, name of process &c.
+# Output:
+# durian:wopr pberck$ sh etc/watch_wopr.sh 12019 2M
+# Watching pid:12038, warn:2027, limit:2048
+# 12038:   1076/2048 [0]  (52.5 %)  11:20    
+# ^PID     ^MEM ^     ^%DIFF  ^     ^time running
+#               | LIMIT       | % used
+#
+# NB: doesn't check for ownership, name of process &c. Size is in kB
+# unles suffixed by M or G, then it is multiplied by 1024 or 1024^2 
+# respectively. Default SLEEP is 10 seconds, MEMWRITE_INTERVAL is 60.
+#
+# TODO: time of CPU limits.
+#
 # ----
 #
 #
@@ -17,7 +31,7 @@ MAILTO="P.J.Berck@UvT.nl"
 #
 if test $# -lt 2
 then
-  echo "Supply PID and MEMSIZE as arguments."
+  echo "Supply PID and MEMSIZE as arguments, optional SLEEP and WRITEINTERVAL"
   exit
 fi
 #
@@ -35,9 +49,20 @@ then
   LIMIT=`echo "$PRE * 1024 * 1024" | bc`
 fi
 #
-MEM_FILE=$PID"_mem.txt"
 SLEEP=10
 MEMWRITE_INTERVAL=60
+#
+if test $# -eq 3
+then
+  SLEEP=$3
+fi
+if test $# -eq 4
+then
+  SLEEP=$3
+  MEMWRITE_INTERVAL=$4
+fi
+#
+MEM_FILE=$PID"_mem.txt"
 MEMWRITE_LAST=0;
 DATE_CMD="date '+%s'"
 #
@@ -46,7 +71,7 @@ PS_TIME="ps --no-header -p $PID -o etime"
 PS_MEMFILE="ps --no-header -p $PID -o etime,rss,vsize,pcpu"
 ECHO="-e"
 MACH=`uname`
-if test $MACH == "Darwin"
+if test $MACH == "Darwin" # OS X definitions
 then
   PS_MEM="ps -p $PID -o rss=''"
   PS_TIME="ps -p $PID -o etime=''"
