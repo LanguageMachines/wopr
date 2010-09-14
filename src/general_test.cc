@@ -92,9 +92,9 @@ int gen_test( Logfile& l, Config& c ) {
 
   // Sanity check.
   //
-  if ( cache_size <= 0 ) {
-    l.log( "WARNING: cache_size should be > 0, setting to 1." );
-    cache_size = 1;
+  if ( cache_size < 0 ) {
+    l.log( "WARNING: cache_size should be >= 0, setting to 0." );
+    cache_size = 0;
   }
   
   // No slash at end of dirname.
@@ -318,7 +318,7 @@ int gen_test( Logfile& l, Config& c ) {
 	  }
 	}
       }
-      if ( cache_idx == -1 ) { // It should be cached, if not present.
+      if ( (cache_size > 0) && (cache_idx == -1) ) { // It should be cached, if not present.
 	if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	  cd = &distr_cache.at( cache_size-1 ); // the lowest.
 	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
