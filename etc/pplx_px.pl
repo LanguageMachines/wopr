@@ -153,7 +153,7 @@ if ( ! $ignore_oov ) {
 
 print "\n";
 foreach my $key (sort (keys(%rr_sum))) {
-    printf( "RR(%s): %8.2f, MRR: %8.2f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$rr_count{$key});
+    printf( "RR(%s): %8.3f, MRR: %8.3f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$rr_count{$key});
 }
 close(FHW);
 
