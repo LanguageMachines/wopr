@@ -99,7 +99,7 @@ while true;
     echo $ECHO "\nProcess gone."
     if test $MAILTO != ""
     then
-      echo "Process gone." | mail -s "Process gone." $MAILTO
+      echo "Process $PID gone." | mail -s "Process $PID gone." $MAILTO
     fi
     exit
   fi
