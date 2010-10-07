@@ -3537,8 +3537,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	  ++dfi;
 	  ++idx;
 	}
-
-      }
+      } //cache_level == 3
       if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
 
 	long classification_freq = 0;
@@ -3563,15 +3562,6 @@ int pplx_simple( Logfile& l, Config& c ) {
 	    target_freq = wght;
 	    target_in_dist = true;
 	    classification_freq = wght;
-	    //sum_rrank += 1.0 / rank; // Only count mrr when in distro answer! What
-	    // if more-than-one with certain freq. Should be on ranking?
-	    // And we need to sort first....!!
-	    /*
-	      l.log( "Rank:" + to_str(rank) );
-	      if ( rank == 0 ) {
-	      l.log( "    :answer=" + answer + "/tvs=" + tvs+"/targt="+target );
-	      }
-	    */
 	  }
 
 	  // Save it in the cache?

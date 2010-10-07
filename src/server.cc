@@ -912,6 +912,7 @@ int server4(Logfile& l, Config& c) {
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
   const int keep                = stoi( c.get_value( "keep", "0" ));
   const int moses               = stoi( c.get_value( "moses", "0" ));
+  const int lb                  = stoi( c.get_value( "lb", "0" ));
   const int lc                  = stoi( c.get_value( "lc", "2" ));
   const int rc                  = stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
@@ -921,11 +922,12 @@ int server4(Logfile& l, Config& c) {
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+port );
-  l.log( "mode:      "+to_str(mode) );
-  l.log( "resm:      "+to_str(resm) ); // result mode, resm=0=average, resm=1=sum
+  l.log( "mode:      "+to_str(mode) ); // mode:0=input is instance, mode:1=window
+  l.log( "resm:      "+to_str(resm) ); // result mode, resm=0=average, resm=1=sum, resm:2=averge, no OOV words
   l.log( "keep:      "+to_str(keep) ); // keep connection open after sending result,
                                        // close by sending _CLOSE_
   l.log( "moses:     "+to_str(moses) );// Send 6 char moses output
+  l.log( "lb:        "+to_str(lb) );// log base of answer, 0=straight prob, 10=log10
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
   l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
@@ -1120,8 +1122,7 @@ int server4(Logfile& l, Config& c) {
 		  target_freq = wght;
 		  target_in_dist = true;
 		  if ( verbose > 1 ) {
-		    l.log( "Timbl answer in distr." );
-		    l.log( to_str(wght)+"/"+to_str(distr_count) );
+		    l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
 		  }
 		}
 		
@@ -1132,7 +1133,10 @@ int server4(Logfile& l, Config& c) {
 		res_p = (double)target_freq / (double)distr_count;
 	      }
 	      
-	      double res_pl10 = -99;
+	      double res_pl10 = -99; // or zero, like SRILM when pplx-ing
+	      if ( resm == 2 ) {
+		res_pl10 = 0; // average w/o OOV words
+	      }
 	      if ( res_p > 0 ) {
 		res_pl10 = log10( res_p );
 	      } else {
@@ -1162,15 +1166,21 @@ int server4(Logfile& l, Config& c) {
 	      double prob = probs.at(p);
 	      ave_pl10 += prob;
 	    }
-	    if ( resm == 0 ) { // normally, we return the average
+	    if ( verbose > 0 ) {
+	      l.log( "result sum="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	    }
+	    if ( resm != 1 ) { // normally, average, but not for resm:1
 	      ave_pl10 /= probs.size();
 	    }
-	    // else resm != 0, we return the sum.
+	    // else resm == 1, we return the sum.
 
 	    if ( verbose > 0 ) {
-	      l.log( "result="+to_str(ave_pl10) );
+	      l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	    }
 
+	    if ( lb == 0 ) { // lb:0 is no logs
+	      ave_pl10 = pow(10, ave_pl10);
+	    }
 	    if ( moses == 0 ) {
 	      newSock->write( to_str(ave_pl10) );
 	      
