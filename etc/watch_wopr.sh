@@ -66,6 +66,21 @@ MEM_FILE=$PID"_mem.txt"
 MEMWRITE_LAST=0;
 DATE_CMD="date '+%s'"
 #
+# Create plot file
+#
+PLOTFILE=$PID"_mem.plot"
+PLOTOUT=$PID"_mem.svg"
+echo "set terminal svg dynamic fsize 10" > $PLOTFILE
+echo "set output \"$PLOTOUT\"" >> $PLOTFILE
+echo "set xdata time" >> $PLOTFILE
+echo "set timefmt \"%H:%M:%S\"" >> $PLOTFILE
+echo "set format y \"%10.0f\"" >> $PLOTFILE
+echo "plot \"$PLOTFILE\" using 1:3 with lines,\\" >> $PLOTFILE
+echo "\"$PLOTFILE\" using 1:4 with lines,\\" >> $PLOTFILE
+echo "\"$PLOTFILE\" using 1:(($4)-($3))" >> $PLOTFILE
+#
+# --
+#
 PS_MEM="ps --no-header -p $PID -o rss"
 PS_TIME="ps --no-header -p $PID -o etime"
 PS_MEMFILE="ps --no-header -p $PID -o etime,rss,vsize,pcpu"
