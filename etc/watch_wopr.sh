@@ -77,7 +77,7 @@ echo "set timefmt \"%H:%M:%S\"" >> $PLOTFILE
 echo "set format y \"%10.0f\"" >> $PLOTFILE
 echo "plot \"$PLOTFILE\" using 1:3 with lines,\\" >> $PLOTFILE
 echo "\"$PLOTFILE\" using 1:4 with lines,\\" >> $PLOTFILE
-echo "\"$PLOTFILE\" using 1:(($4)-($3))" >> $PLOTFILE
+echo "\"$PLOTFILE\" using 1:((\$4)-(\$3))" >> $PLOTFILE
 #
 # --
 #
