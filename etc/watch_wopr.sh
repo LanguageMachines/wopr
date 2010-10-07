@@ -76,9 +76,9 @@ echo "set xdata time" >> $PLOTFILE
 echo "set xtics font \"Arial, 6\"" >> $PLOTFILE
 echo "set timefmt \"%H:%M:%S\"" >> $PLOTFILE
 echo "set format y \"%10.0f\"" >> $PLOTFILE
-echo "plot \"$PLOTFILE\" using 1:3 with lines,\\" >> $PLOTFILE
-echo "\"$PLOTFILE\" using 1:4 with lines,\\" >> $PLOTFILE
-echo "\"$PLOTFILE\" using 1:(column(4)-column(3)) with lines" >> $PLOTFILE
+echo "plot \"$PLOTFILE\" using 1:2 with lines,\\" >> $PLOTFILE
+echo "\"$PLOTFILE\" using 1:3 with lines,\\" >> $PLOTFILE
+echo "\"$PLOTFILE\" using 1:(column(3)-column(2)) with lines" >> $PLOTFILE
 #
 # --
 #
