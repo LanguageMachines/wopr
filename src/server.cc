@@ -1195,10 +1195,18 @@ int server4(Logfile& l, Config& c) {
 
 	    connection_open = (keep == 1);
 	    //connection_open = false;
+
+	    // If parent is gone, close connexion
+	    //
+	    if ( getppid() == 1 ) {
+	      l.log( "PARENT gone, exiting." );
+	      connection_open = false;
+	    }
 	    
 	} // connection_open
         l.log( "connection closed." );
-	exit(0);
+	c.set_status(0);
+	return 0;
 
       } // fork
       delete newSock;
