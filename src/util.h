@@ -89,5 +89,7 @@ bool is_numeric( std::string );
 long clock_u_secs();
 long clock_m_secs();
 
+size_t fnvhash(const std::string&);
+
 #endif
 

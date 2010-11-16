@@ -545,4 +545,18 @@ long clock_m_secs() {
   return m_secs ;
 }
 
+/* Fowler / Noll / Vo (FNV) Hash */
+
+static const size_t InitialFNV = 2166136261U;
+static const size_t FNVMultiple = 16777619;
+
+size_t fnvhash(const std::string &s) {
+  size_t hash = InitialFNV;
+  for ( size_t i = 0; i < s.length(); i++ ) {
+    hash = hash ^ (s[i]);
+    hash = hash * FNVMultiple;
+  }
+  return hash;
+}
+
 //-----------------------------------------------------------------------------

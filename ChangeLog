@@ -1,4 +1,5 @@
 1.26.4	Better file checking in directory modes. Small fixes.
+	fnvhash added.
 	
 1.26.3	Directory mode in 'pplxs' implemented.
 	
