@@ -1252,6 +1252,348 @@ int hapax_vector( std::vector<std::string>& words, std::map<std::string,int> wfr
   return changes;
 }
 
+#if defined(TIMBLSERVER) && defined(TIMBL)
+int webdemo(Logfile& l, Config& c) {
+  l.log( "webdemo." );  
+
+  // listen or commands: "one", "window", etc, and return
+  // answer in XML.
+
+  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& ibasefile  = c.get_value( "ibasefile" );
+  const std::string port        = c.get_value( "port", "1984" );
+  const std::string lexicon     = c.get_value( "lexicon" );
+  const int lc                  = stoi( c.get_value( "lc", "2" ));
+  const int rc                  = stoi( c.get_value( "rc", "0" ));
+
+  int hapax = 0;
+  int verbose = 1;
+
+  l.inc_prefix();
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "port:      "+port );
+  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "lc:        "+to_str(lc) ); // left context size for windowing
+  l.log( "rc:        "+to_str(rc) ); // right context size for windowing
+  l.log( "lexicon:   "+lexicon );
+
+  l.dec_prefix();
+
+  std::string distrib;
+  std::vector<std::string> distribution;
+  std::string result;
+  double distance;
+  double total_prplx = 0.0;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+
+    Sockets::ServerSocket server;
+    
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
+    }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
+    
+    l.log( "Starting server..." );
+    std::string buf;
+
+    while ( true ) { 
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
+      }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+      
+      std::vector<double> probs;
+      std::string tmp_buf;
+      newSock->read( tmp_buf );
+      tmp_buf = trim( tmp_buf, " \n\r" );
+    
+      if ( verbose > 0 ) {
+	l.log( "|" + tmp_buf + "|" );
+      }
+    
+      std::string cmd = tmp_buf;
+
+      newSock->read( tmp_buf );
+      tmp_buf = trim( tmp_buf, " \n\r" );
+    
+      if ( verbose > 0 ) {
+	l.log( "|" + tmp_buf + "|" );
+      }
+
+      std::string xml; // answer
+
+      if ( cmd == "instance" ) {
+	std::string classify_line = tmp_buf;
+	std::vector<std::string> words;
+	words.clear();
+
+	Tokenize( classify_line, words, ' ' );
+    
+	// if we take target from a pre-non-hapaxed vector, we
+	// can hapax the whole sentence in the beginning and use
+	// that for the instances-without-target
+	//
+	std::string target = words.at( words.size()-1 );
+
+	tv = My_Experiment->Classify( classify_line, vd, distance );
+	if ( tv ) {    
+	  result = tv->Name();		
+	  size_t res_freq = tv->ValFreq(); //??
+      
+	  if ( verbose > 1 ) {
+	    l.log( "timbl("+classify_line+")="+result+" f="+to_str(res_freq) );
+	  }
+      
+	  double res_p = -1;
+	  bool target_in_dist = false;
+	  int target_freq = 0;
+	  int cnt = vd->size();
+	  int distr_count = vd->totalSize();
+      
+	  if ( verbose > 1 ) {
+	    l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "+to_str(distr_count) );
+	  }
+      
+	  dist_to_xml( vd, xml );
+
+	} else {// if tv      
+	  xml = "<error />";
+	}
+      } /*instance*/ else if ( cmd == "window" ) {
+	std::vector<std::string> cls; 
+	std::string classify_line = tmp_buf;
+	xml = "<instances>";
+	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	for ( int i = 0; i < cls.size(); i++ ) {
+	  classify_line = cls.at(i);
+	  //words.clear();
+	  //Tokenize( classify_line, words, ' ' );
+	  xml = xml + "<instance>"+classify_line+"</instance>";
+	}
+	xml = xml + "</instances>";
+      } /*window*/
+      
+      xml = "<xml>" + xml;
+      xml = xml + "<info><ibasefile>"+ibasefile+"</ibasefile></info>";
+      xml = xml + "</xml>";
+      newSock->write( xml );
+      delete newSock;
+      l.log( "ready." );
+    }
+    
+  }
+  catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
+  
+  return 0;
+}
+#else
+int webdemo( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif 
+
+// Iternal
+
+#if defined(TIMBLSERVER) && defined(TIMBL)
+int one(Logfile& l, Config& c) {
+  l.log( "one." );
+  
+  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& ibasefile  = c.get_value( "ibasefile" );
+  const std::string port        = c.get_value( "port", "1984" );
+
+  int hapax = 0;
+  int verbose = 1;
+
+  l.inc_prefix();
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "port:      "+port );
+  l.log( "timbl:     "+timbl ); // timbl settings
+  l.dec_prefix();
+
+  std::string distrib;
+  std::vector<std::string> distribution;
+  std::string result;
+  double distance;
+  double total_prplx = 0.0;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+
+    Sockets::ServerSocket server;
+    
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
+    }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
+    
+    l.log( "Starting server..." );
+    std::string buf;
+
+    while ( true ) { 
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
+      }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+      
+    std::vector<double> probs;
+    std::string tmp_buf;
+    newSock->read( tmp_buf );
+    tmp_buf = trim( tmp_buf, " \n\r" );
+    
+    if ( verbose > 0 ) {
+      l.log( "|" + tmp_buf + "|" );
+    }
+    
+    std::string classify_line = tmp_buf;
+    
+    // Loop over all lines.
+    //
+    std::vector<std::string> words;
+    words.clear();
+    Tokenize( classify_line, words, ' ' );
+        
+    // if we take target from a pre-non-hapaxed vector, we
+    // can hapax the whole sentence in the beginning and use
+    // that for the instances-without-target
+    //
+    std::string target = words.at( words.size()-1 );
+    std::string xml;
+
+    tv = My_Experiment->Classify( classify_line, vd, distance );
+    if ( tv ) {    
+      result = tv->Name();		
+      size_t res_freq = tv->ValFreq(); //??
+      
+      if ( verbose > 1 ) {
+	l.log( "timbl("+classify_line+")="+result+" f="+to_str(res_freq) );
+      }
+      
+      double res_p = -1;
+      bool target_in_dist = false;
+      int target_freq = 0;
+      int cnt = vd->size();
+      int distr_count = vd->totalSize();
+      
+      if ( verbose > 1 ) {
+	l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "+to_str(distr_count) );
+      }
+      
+      dist_to_xml( vd, xml );
+
+    } else {// if tv      
+      xml = "<error />";
+    }
+    xml = "<xml>" + xml;
+    xml = xml + "<info><ibasefile>"+ibasefile+"</ibasefile></info>";
+    xml = xml + "</xml>";
+    newSock->write( xml );
+    delete newSock;
+    l.log( "ready." );
+    }
+    
+  }
+  catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
+  
+  return 0;
+}
+#else
+int one( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif 
+
+#ifdef TIMBL
+// PJB: TODO: real XML processing
+struct distr_elem {
+  std::string name;
+  double      freq;
+  double      s_freq;
+  bool operator<(const distr_elem& rhs) const {
+    return freq > rhs.freq;
+  }
+};
+int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res ) {
+  
+  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  int cnt = vd->size();
+  int distr_count = vd->totalSize();
+  std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+
+  while ( it != vd->end() ) {
+    
+    std::string tvs  = it->second->Value()->Name();
+    double      wght = it->second->Weight();
+    
+    distr_elem  d;
+    d.name   = tvs;
+    d.freq   = wght;
+    distr_vec.push_back( d );
+
+    ++it;
+  }
+
+  res = res + "<dist items='"+to_str(cnt)+"' sum='"+to_str(distr_count)+"'>";
+
+  int cntr = 10;
+  sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+  std::vector<distr_elem>::iterator fi;
+  fi = distr_vec.begin();
+  while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
+    std::string v = (*fi).name;
+    std::string f = to_str((*fi).freq);
+    res = res + "<item><v><![CDATA["+v+"]]></v>";
+    res = res + "<f>"+f+"</f></item>";
+    fi++;
+  }
+  res = res + "</dist>";
+
+  return 0;
+}
+#endif
+
 int vector_to_string( std::vector<std::string>& words, std::string& res ) {
 
   std::vector<std::string>::iterator wi;

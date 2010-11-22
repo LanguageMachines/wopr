@@ -45,10 +45,13 @@ int socket_file( Logfile&, Config&,
 		 std::map<std::string,int>&, unsigned long);
 int parse_distribution2( const Timbl::ValueDistribution*, std::map<std::string,
 			 double>&);
+int dist_to_xml( const Timbl::ValueDistribution*, std::string& );
 #endif
 
 int server3( Logfile&, Config& );
 int server4( Logfile&, Config& );
+int webdemo( Logfile&, Config& );
+int one( Logfile&, Config& );
 int hapax_vector( std::vector<std::string>&, std::map<std::string,int>, int);
 int vector_to_string( std::vector<std::string>& , std::string&  );
 
