@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+<!-- -->
+<!--
+(c) 2010, Peter Berck 
+-->
+<!-- -->
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<!-- -->
+<title>Wopr</title>
+<!-- -->
+<script language="javascript" type="text/javascript" src="js/jquery-1.4.3.min.js"></script>
+<script type="text/javascript" src="js/jquery.qtip-1.0.0-rc3.min.js"></script> 
+<!-- -->
+<link href="css/wopr.css" rel="stylesheet" type="text/css"  />
+<!-- -->
+<script type="text/javascript">
+
+var host = "localhost";
+var port = 1984;
+
+function wopr(i) {
+  $.post("wopr.php",
+    { 'host':host, 'port':port, 'cmd':'window', 'txt':i},
+    handle_xml
+  );
+}
+
+function wopr_predict(id, i) {
+  $.ajax({
+    type: 'POST',
+    url: "wopr.php",
+    data: { 'host':host, 'port':port, 'cmd':'instance', 'txt':i },
+    success: function(res, status, req) {
+        handle_xml2(id, res);
+    },
+    dataType: 'xml'
+    /*async: false*/
+  });
+}
+
+/*
+  First function to window the text. Each target word is given a <div>
+  with a certain id. Then we call wopr_predict() on each of the
+  words/instances. handle_xml2 fills in the result.
+*/
+function handle_xml(res, textStatus, XMLHttpRequest) {
+  //alert(res);
+  //alert(textStatus);
+  $("#res").html("");
+  new_html = "";
+  id = 0;
+  items = $(res).find('instance');
+  if ( items.length == 0 ) {
+    // Server not running...
+    //msg = $(res).find('msg').text();
+    $("#res").html( "Server ("+host+"/"+port+") is not running." );
+    return;
+  }
+  // Info first.
+  info = $(res).find('ibasefile').text();
+  $("#info").html( "Instance base used: "+info );
+  //
+  items.each(function () {
+    the_instance = $(this).find("full").text();
+    the_target = $(this).find("target").text();
+    // ___ was the_target better change class maybe.
+    ans = "<div id=\"i"+id+"\" class=\"instance_ip\" target=\""+the_target+"\" str=\""+the_instance+"\">"+the_target+"</div>" ;
+    new_html += ans;
+    id += 1;
+  });
+  $("#res").html( new_html );
+
+  instances = $(".instance_ip");
+  instances.each( function() {
+    str = $(this).attr('str');
+    id = $(this).attr('id');
+    wopr_predict(id, str);
+  });
+}
+
+function handle_xml2(id, res) {
+  old_html = $("#"+id).html();
+  the_target = $('#'+id).attr('target');
+  ans = "<i>"+the_target+"</i><br/>";
+  items = $(res).find('item');
+  items.each(function () {
+    item_v = $(this).find('v').text();
+    item_f = $(this).find('f').text();
+    ans = ans + " <b>"+item_v+"</b>/"+item_f ;
+  });
+  //alert(ans);
+  ////$("#"+id).html( ans );
+  
+  // http://craigsworks.com/projects/qtip/docs/
+  $('#'+id).qtip({
+    content: ans,
+    show: 'mouseover',
+    hide: 'mouseout',
+    position: {
+      corner: {
+         target: 'topRight',
+         tooltip: 'bottomLeft'
+      },
+      adjust: {
+        screen: true
+      }
+    },
+    style: {
+      color: 'black',
+      tip: 'bottomLeft',
+      border: {
+         width: 3,
+         radius: 5
+      },
+      name: 'blue' // Inherit from preset style
+    }
+  });
+  
+  // Restore the text, so we know we are ready.
+  //
+  $('#'+id).removeClass( "instance_ip" );
+  $('#'+id).addClass( "instance" );
+}
+
+function go() {
+  i = $("#input").val();
+  wopr(i);
+}
+
+// Fill with example sentence.
+//
+$(document).ready(function() {
+  $('#input').html("The gas-lamps grew fewer , and the streets more narrow and gloomy .");
+});
+
+</script>
+<!-- -->
+</head>
+<body>
+
+<h1>Wopr</h1>
+
+<textarea cols="80" rows="5" id="input" name="instance"></textarea>
+<div id="go" onclick="go();">Go</div>
+
+<div id="res">...</div>
+<br/>
+<div id="info"></div>
+
+</body>
+</html>
+
