@@ -1331,7 +1331,9 @@ int webdemo(Logfile& l, Config& c) {
     
       std::string cmd = tmp_buf;
 
-      newSock->read( tmp_buf );
+      if (newSock->read( tmp_buf ) == false ) {
+	l.log( "ERROR: could not read all data." );
+      }
       tmp_buf = trim( tmp_buf, " \n\r" );
     
       if ( verbose > 0 ) {
@@ -1407,8 +1409,16 @@ int webdemo(Logfile& l, Config& c) {
       
       xml = "<xml>" + xml;
       xml = xml + "<info><ibasefile>"+ibasefile+"</ibasefile></info>";
-      xml = xml + "</xml>";
-      newSock->write( xml );
+      xml = xml + "</xml>\n";
+
+      if ( newSock->write( xml ) == false ) {
+	l.log( "ERROR: could not write all data." );
+      }
+      l.log( "Wait for ACK." );
+      if ( newSock->read( tmp_buf ) == false ) {
+	l.log( "ERROR: could not read all data." );
+      }
+      
       delete newSock;
       l.log( "ready." );
     }
@@ -1490,7 +1500,9 @@ int one(Logfile& l, Config& c) {
       
     std::vector<double> probs;
     std::string tmp_buf;
-    newSock->read( tmp_buf );
+    if ( newSock->read( tmp_buf ) == false ) {
+      l.log( "ERROR: could not read all data from socket." );
+    }
     tmp_buf = trim( tmp_buf, " \n\r" );
     
     if ( verbose > 0 ) {
@@ -1538,8 +1550,16 @@ int one(Logfile& l, Config& c) {
     }
     xml = "<xml>" + xml;
     xml = xml + "<info><ibasefile>"+ibasefile+"</ibasefile></info>";
-    xml = xml + "</xml>";
-    newSock->write( xml );
+    xml = xml + "</xml>\n";
+
+    if ( newSock->write( xml ) == false ) {
+      l.log( "ERROR: could not write all data." );
+    }
+    l.log( "Wait for ACK." );
+    if ( newSock->read( tmp_buf ) == false ) {
+      l.log( "ERROR: could not read all data." );
+    }
+
     delete newSock;
     l.log( "ready." );
     }

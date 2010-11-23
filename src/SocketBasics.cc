@@ -48,7 +48,7 @@
 using namespace std;
 
 namespace Sockets {
-  const int TCP_BUFFER_SIZE = 2048;     // length of Internet inputbuffers
+  const int TCP_BUFFER_SIZE = 4096;
 
   Socket::~Socket() { 
     if ( sock >= 0 ) ::close(sock); 
