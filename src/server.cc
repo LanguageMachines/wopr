@@ -1342,16 +1342,21 @@ int webdemo(Logfile& l, Config& c) {
 
       if ( cmd == "instance" ) {
 	std::string classify_line = tmp_buf;
-	std::vector<std::string> words;
-	words.clear();
+	
+	std::string lw;
+	last_word( classify_line, lw );
+	std::string pat;
+	but_last_word( classify_line, pat );
 
-	Tokenize( classify_line, words, ' ' );
-    
+	xml = "<instance>";
+	xml = xml + "<full><![CDATA["+classify_line+"]]></full>";
+	xml = xml + "<target><![CDATA["+lw+"]]></target>";
+	xml = xml + "<pattern><![CDATA["+pat+"]]></pattern>";
+	xml = xml + "</instance>";
+
 	// if we take target from a pre-non-hapaxed vector, we
 	// can hapax the whole sentence in the beginning and use
 	// that for the instances-without-target
-	//
-	std::string target = words.at( words.size()-1 );
 
 	tv = My_Experiment->Classify( classify_line, vd, distance );
 	if ( tv ) {    
@@ -1369,7 +1374,8 @@ int webdemo(Logfile& l, Config& c) {
 	  int distr_count = vd->totalSize();
       
 	  if ( verbose > 1 ) {
-	    l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "+to_str(distr_count) );
+	    l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "
+		   + to_str(distr_count) );
 	  }
       
 	  dist_to_xml( vd, xml );
@@ -1384,9 +1390,17 @@ int webdemo(Logfile& l, Config& c) {
 	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
 	for ( int i = 0; i < cls.size(); i++ ) {
 	  classify_line = cls.at(i);
-	  //words.clear();
-	  //Tokenize( classify_line, words, ' ' );
-	  xml = xml + "<instance>"+classify_line+"</instance>";
+
+	  std::string lw;
+	  last_word( classify_line, lw );
+	  std::string pat;
+	  but_last_word( classify_line, pat );
+
+	  xml = xml + "<instance>";
+	  xml = xml + "<full><![CDATA["+classify_line+"]]></full>";
+	  xml = xml + "<target><![CDATA["+lw+"]]></target>";
+	  xml = xml + "<pattern><![CDATA["+pat+"]]></pattern>";
+	  xml = xml + "</instance>";
 	}
 	xml = xml + "</instances>";
       } /*window*/
