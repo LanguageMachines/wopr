@@ -1361,6 +1361,11 @@ int webdemo(Logfile& l, Config& c) {
 	// that for the instances-without-target
 
 	tv = My_Experiment->Classify( classify_line, vd, distance );
+	size_t md  = My_Experiment->matchDepth();
+	bool   mal = My_Experiment->matchedAtLeaf();
+
+	xml = xml + "<timbl md=\""+to_str(md)+"\" mal=\""+to_str(md)+"\" />";
+
 	if ( tv ) {    
 	  result = tv->Name();		
 	  size_t res_freq = tv->ValFreq(); //??
@@ -1369,9 +1374,6 @@ int webdemo(Logfile& l, Config& c) {
 	    l.log( "timbl("+classify_line+")="+result+" f="+to_str(res_freq) );
 	  }
       
-	  double res_p = -1;
-	  bool target_in_dist = false;
-	  int target_freq = 0;
 	  int cnt = vd->size();
 	  int distr_count = vd->totalSize();
       
@@ -1380,7 +1382,7 @@ int webdemo(Logfile& l, Config& c) {
 		   + to_str(distr_count) );
 	  }
       
-	  dist_to_xml( vd, xml );
+	  dist_to_xml( vd, xml, lw );
 
 	} else {// if tv      
 	  xml = "<error />";
@@ -1414,7 +1416,6 @@ int webdemo(Logfile& l, Config& c) {
       if ( newSock->write( xml ) == false ) {
 	l.log( "ERROR: could not write all data." );
       }
-      l.log( "Wait for ACK." );
       if ( newSock->read( tmp_buf ) == false ) {
 	l.log( "ERROR: could not read all data." );
       }
@@ -1543,7 +1544,7 @@ int one(Logfile& l, Config& c) {
 	l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "+to_str(distr_count) );
       }
       
-      dist_to_xml( vd, xml );
+      dist_to_xml( vd, xml, target );
 
     } else {// if tv      
       xml = "<error />";
@@ -1555,7 +1556,6 @@ int one(Logfile& l, Config& c) {
     if ( newSock->write( xml ) == false ) {
       l.log( "ERROR: could not write all data." );
     }
-    l.log( "Wait for ACK." );
     if ( newSock->read( tmp_buf ) == false ) {
       l.log( "ERROR: could not read all data." );
     }
@@ -1589,12 +1589,14 @@ struct distr_elem {
     return freq > rhs.freq;
   }
 };
-int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res ) {
+int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
+		 std::string target) {
   
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   int cnt = vd->size();
   int distr_count = vd->totalSize();
   std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+  std::string cg = "ic";
 
   while ( it != vd->end() ) {
     
@@ -1605,16 +1607,21 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res ) {
     d.name   = tvs;
     d.freq   = wght;
     distr_vec.push_back( d );
-
+    if ( tvs == target ) {
+      cg = "cd";
+    }
     ++it;
   }
-
-  res = res + "<dist items='"+to_str(cnt)+"' sum='"+to_str(distr_count)+"'>";
 
   int cntr = 10;
   sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
   std::vector<distr_elem>::iterator fi;
   fi = distr_vec.begin();
+  if ( target ==  (*fi).name ) {
+    cg = "cg";
+  }
+  res = res + "<dist cg=\""+cg+"\" items='"+to_str(cnt)+"' sum='"+
+    to_str(distr_count)+"'>";
   while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
     std::string v = (*fi).name;
     std::string f = to_str((*fi).freq);

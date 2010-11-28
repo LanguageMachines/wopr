@@ -45,7 +45,7 @@ int socket_file( Logfile&, Config&,
 		 std::map<std::string,int>&, unsigned long);
 int parse_distribution2( const Timbl::ValueDistribution*, std::map<std::string,
 			 double>&);
-int dist_to_xml( const Timbl::ValueDistribution*, std::string& );
+int dist_to_xml( const Timbl::ValueDistribution*, std::string&, std::string );
 #endif
 
 int server3( Logfile&, Config& );
