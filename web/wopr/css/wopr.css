@@ -30,6 +30,18 @@
   color: black;
 }
 
+.instance_cg {
+  float:left;
+  margin-right: 4px;
+  color: green;
+}
+
+.instance_cd {
+  float:left;
+  margin-right: 4px;
+  color: blue;
+}
+
 #input {
 }
 
