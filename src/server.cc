@@ -1265,6 +1265,7 @@ int webdemo(Logfile& l, Config& c) {
   const std::string lexicon     = c.get_value( "lexicon" );
   const int lc                  = stoi( c.get_value( "lc", "2" ));
   const int rc                  = stoi( c.get_value( "rc", "0" ));
+  const std::string& filterfile = c.get_value( "filterfile" );
 
   int hapax = 0;
   int verbose = 1;
@@ -1276,8 +1277,27 @@ int webdemo(Logfile& l, Config& c) {
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
   l.log( "lexicon:   "+lexicon );
-
   l.dec_prefix();
+
+  std::map<std::string,int> filter;
+  std::map<std::string, int>::iterator fi;
+  bool do_filter = false;
+  if ( filterfile != "" ) {
+    std::ifstream file_filter( filterfile.c_str() );
+    if ( ! file_filter ) {
+      l.log( "ERROR: cannot load filter file." );
+      return -1;
+    }
+
+    l.log( "Reading filter file." );
+    std::string a_word;
+    while( file_filter >> a_word  ) {
+      filter[a_word] = 1;
+    }
+    file_filter.close();
+    l.log( "Read filter list" );
+    do_filter = true;
+  }
 
   std::string distrib;
   std::vector<std::string> distribution;
@@ -1304,6 +1324,7 @@ int webdemo(Logfile& l, Config& c) {
     
     l.log( "Starting server..." );
     std::string buf;
+    bool skip = false;
 
     while ( true ) { 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
@@ -1346,20 +1367,33 @@ int webdemo(Logfile& l, Config& c) {
 	std::string classify_line = tmp_buf;
 	
 	std::string lw;
-	last_word( classify_line, lw );
 	std::string pat;
-	but_last_word( classify_line, pat );
-
+	split( classify_line, pat, lw );
+	
 	xml = "<instance>";
 	xml = xml + "<full><![CDATA["+classify_line+"]]></full>";
 	xml = xml + "<target><![CDATA["+lw+"]]></target>";
 	xml = xml + "<pattern><![CDATA["+pat+"]]></pattern>";
 	xml = xml + "</instance>";
 
+	// Filter on wanted targets (e.g prepositions)
+	//
+	if ( do_filter == true ) {
+	  fi = filter.find( lw );
+	  
+	  if ( fi == filter.end() ) { // not found in lexicon
+	    xml = xml + "<timbl skip=\"1\" />";
+	    skip = true;
+	  } else {
+	    skip = false;
+	  }
+
+	}
+	
 	// if we take target from a pre-non-hapaxed vector, we
 	// can hapax the whole sentence in the beginning and use
 	// that for the instances-without-target
-
+	if ( skip == false ) {
 	tv = My_Experiment->Classify( classify_line, vd, distance );
 	size_t md  = My_Experiment->matchDepth();
 	bool   mal = My_Experiment->matchedAtLeaf();
@@ -1387,6 +1421,7 @@ int webdemo(Logfile& l, Config& c) {
 	} else {// if tv      
 	  xml = "<error />";
 	}
+	} //skip
       } /*instance*/ else if ( cmd == "window" ) {
 	std::vector<std::string> cls; 
 	std::string classify_line = tmp_buf;
@@ -1396,9 +1431,8 @@ int webdemo(Logfile& l, Config& c) {
 	  classify_line = cls.at(i);
 
 	  std::string lw;
-	  last_word( classify_line, lw );
 	  std::string pat;
-	  but_last_word( classify_line, pat );
+	  split( classify_line, pat, lw );
 
 	  xml = xml + "<instance>";
 	  xml = xml + "<full><![CDATA["+classify_line+"]]></full>";
