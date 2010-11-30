@@ -89,6 +89,10 @@ function handle_xml2(id, res) {
 
   cg = $(res).find("dist").attr("cg");
   md = $(res).find("timbl").attr("md");
+  sk = $(res).find("timbl").attr("skip");
+  if ( sk == "1" ) {
+    cg = "sk"; // skipped
+  }
   
   ans = "<i>"+the_target+"/"+md+"</i><br/>";
   items = $(res).find('item');
@@ -102,6 +106,7 @@ function handle_xml2(id, res) {
   
   // http://craigsworks.com/projects/qtip/docs/
   // Only if prep? Only if cd/cg ?
+  if ( cg != "sk") {
   $('#'+id).qtip({
     content: ans,
     show: 'mouseover',
@@ -125,6 +130,7 @@ function handle_xml2(id, res) {
       name: 'blue' // Inherit from preset style
     }
   });
+    }
   
   // Restore the text, so we know we are ready.
   //
@@ -134,6 +140,9 @@ function handle_xml2(id, res) {
   } else if ( cg == "cd" ) {
     $('#'+id).removeClass( "instance_ip" );
     $('#'+id).addClass( "instance_cd" );
+  } else if ( cg == "sk" ) {
+    //$('#'+id).removeClass( "instance_ip" );
+    //$('#'+id).addClass( "instance_cd" );
   } else {
     $('#'+id).removeClass( "instance_ip" );
     $('#'+id).addClass( "instance" );
