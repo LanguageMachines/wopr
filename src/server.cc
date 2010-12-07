@@ -1343,20 +1343,27 @@ int webdemo(Logfile& l, Config& c) {
       
       std::vector<double> probs;
       std::string tmp_buf;
+
+      // Protocol: first line is the command (instance, window),
+      // and the second line is the string to be classified/windowed.
+      //
       newSock->read( tmp_buf );
       tmp_buf = trim( tmp_buf, " \n\r" );
     
       if ( verbose > 0 ) {
 	l.log( "|" + tmp_buf + "|" );
       }
-    
       std::string cmd = tmp_buf;
 
+      // Line two, string to operate on.
+      //
       if (newSock->read( tmp_buf ) == false ) {
 	l.log( "ERROR: could not read all data." );
       }
       tmp_buf = trim( tmp_buf, " \n\r" );
     
+      //replacein( tmp_buf, "__DBLQ__",  "\"" );
+
       if ( verbose > 0 ) {
 	l.log( "|" + tmp_buf + "|" );
       }
@@ -1365,7 +1372,7 @@ int webdemo(Logfile& l, Config& c) {
 
       if ( cmd == "instance" ) {
 	std::string classify_line = tmp_buf;
-	
+
 	std::string lw;
 	std::string pat;
 	split( classify_line, pat, lw );
@@ -1390,37 +1397,38 @@ int webdemo(Logfile& l, Config& c) {
 
 	}
 	
-	// if we take target from a pre-non-hapaxed vector, we
+	// If we take target from a pre-non-hapaxed vector, we
 	// can hapax the whole sentence in the beginning and use
-	// that for the instances-without-target
+	// that for the instances-without-target.
+	//
 	if ( skip == false ) {
-	tv = My_Experiment->Classify( classify_line, vd, distance );
-	size_t md  = My_Experiment->matchDepth();
-	bool   mal = My_Experiment->matchedAtLeaf();
+	  tv = My_Experiment->Classify( classify_line, vd, distance );
+	  size_t md  = My_Experiment->matchDepth();
+	  bool   mal = My_Experiment->matchedAtLeaf();
 
-	xml = xml + "<timbl md=\""+to_str(md)+"\" mal=\""+to_str(md)+"\" />";
+	  xml = xml + "<timbl md=\""+to_str(md)+"\" mal=\""+to_str(md)+"\" />";
 
-	if ( tv ) {    
-	  result = tv->Name();		
-	  size_t res_freq = tv->ValFreq(); //??
-      
-	  if ( verbose > 1 ) {
-	    l.log( "timbl("+classify_line+")="+result+" f="+to_str(res_freq) );
+	  if ( tv ) {    
+	    result = tv->Name();		
+	    size_t res_freq = tv->ValFreq(); //??
+	    
+	    if ( verbose > 1 ) {
+	      l.log("timbl("+classify_line+")="+result+" f="+to_str(res_freq));
+	    }
+	    
+	    int cnt = vd->size();
+	    int distr_count = vd->totalSize();
+	    
+	    if ( verbose > 1 ) {
+	      l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "
+		     + to_str(distr_count) );
+	    }
+	    
+	    dist_to_xml( vd, xml, lw );
+	    
+	  } /*tv*/ else {
+	    xml = "<error><full>"+classify_line+"</full></error>";
 	  }
-      
-	  int cnt = vd->size();
-	  int distr_count = vd->totalSize();
-      
-	  if ( verbose > 1 ) {
-	    l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "
-		   + to_str(distr_count) );
-	  }
-      
-	  dist_to_xml( vd, xml, lw );
-
-	} else {// if tv      
-	  xml = "<error />";
-	}
 	} //skip
       } /*instance*/ else if ( cmd == "window" ) {
 	std::vector<std::string> cls; 
@@ -1450,10 +1458,15 @@ int webdemo(Logfile& l, Config& c) {
       if ( newSock->write( xml ) == false ) {
 	l.log( "ERROR: could not write all data." );
       }
+
+      // Wait for ACK (?)
+      //
+      /*
       if ( newSock->read( tmp_buf ) == false ) {
 	l.log( "ERROR: could not read all data." );
       }
-      
+      */
+
       delete newSock;
       l.log( "ready." );
     }
