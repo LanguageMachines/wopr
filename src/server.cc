@@ -1267,6 +1267,11 @@ int webdemo(Logfile& l, Config& c) {
   const int rc                  = stoi( c.get_value( "rc", "0" ));
   const std::string& filterfile = c.get_value( "filterfile" );
 
+
+  char hostname[256];
+  gethostname( hostname, 256 );
+  std::string info_str = std::string(hostname)+":"+port;
+
   int hapax = 0;
   int verbose = 1;
 
@@ -1452,7 +1457,7 @@ int webdemo(Logfile& l, Config& c) {
       } /*window*/
       
       xml = "<xml>" + xml;
-      xml = xml + "<info><ibasefile>"+ibasefile+"</ibasefile></info>";
+      xml = xml + "<info><ibasefile>"+ibasefile+"@"+info_str+"</ibasefile></info>";
       xml = xml + "</xml>\n";
 
       if ( newSock->write( xml ) == false ) {
