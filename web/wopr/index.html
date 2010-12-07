@@ -84,7 +84,11 @@ function handle_xml(res, textStatus, XMLHttpRequest) {
 function handle_xml2(id, res) {
   old_html = $("#"+id).html();
   the_target = $('#'+id).attr('target');
-  ans = "<i>"+the_target+"</i><br/>";
+
+  cg = $(res).find("dist").attr("cg");
+  md = $(res).find("timbl").attr("md");
+  
+  ans = "<i>"+the_target+"/"+md+"</i><br/>";
   items = $(res).find('item');
   items.each(function () {
     item_v = $(this).find('v').text();
@@ -121,8 +125,16 @@ function handle_xml2(id, res) {
   
   // Restore the text, so we know we are ready.
   //
-  $('#'+id).removeClass( "instance_ip" );
-  $('#'+id).addClass( "instance" );
+  if ( cg == "cg" ) {
+    $('#'+id).removeClass( "instance_ip" );
+    $('#'+id).addClass( "instance_cg" );
+  } else if ( cg == "cd" ) {
+    $('#'+id).removeClass( "instance_ip" );
+    $('#'+id).addClass( "instance_cd" );
+  } else {
+    $('#'+id).removeClass( "instance_ip" );
+    $('#'+id).addClass( "instance" );
+  }
 }
 
 function go() {

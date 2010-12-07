@@ -67,9 +67,12 @@ function handle_xml(res, textStatus, XMLHttpRequest) {
   //
   items.each(function () {
     the_instance = $(this).find("full").text();
+    the_instance_enc = encodeURI( the_instance );
     the_target = $(this).find("target").text();
+    the_target_enc = encodeURI( the_target );
     // ___ was the_target better change class maybe.
-    ans = "<div id=\"i"+id+"\" class=\"instance_ip\" target=\""+the_target+"\" str=\""+the_instance+"\">"+the_target+"</div>" ;
+    // Quotes...?
+    ans = "<div id=\"i"+id+"\" class=\"instance_ip\" target=\""+the_target_enc+"\" str=\""+the_instance_enc+"\">"+the_target+"</div>" ;
     new_html += ans;
     id += 1;
   });
@@ -78,23 +81,25 @@ function handle_xml(res, textStatus, XMLHttpRequest) {
   instances = $(".instance_ip");
   instances.each( function() {
     str = $(this).attr('str');
+    str = decodeURI( str );
     id = $(this).attr('id');
-    wopr_predict(id, str);
+   wopr_predict(id, str);
   });
 }
 
 function handle_xml2(id, res) {
   old_html = $("#"+id).html();
   the_target = $('#'+id).attr('target');
-
+  the_target_dec = decodeURI( the_target );
+  
   cg = $(res).find("dist").attr("cg");
   md = $(res).find("timbl").attr("md");
   sk = $(res).find("timbl").attr("skip");
   if ( sk == "1" ) {
-    cg = "sk"; // skipped
+    cg = "sk"; // skipped, filtered
   }
   
-  ans = "<i>"+the_target+"/"+md+"</i><br/>";
+  ans = "<i>"+the_target_dec+"/"+md+"</i><br/>";
   items = $(res).find('item');
   items.each(function () {
     item_v = $(this).find('v').text();
@@ -106,32 +111,39 @@ function handle_xml2(id, res) {
   
   // http://craigsworks.com/projects/qtip/docs/
   // Only if prep? Only if cd/cg ?
+  //
   if ( cg != "sk") {
-  $('#'+id).qtip({
-    content: ans,
-    show: 'mouseover',
-    hide: 'mouseout',
-    position: {
-      corner: {
-         target: 'topRight',
-         tooltip: 'bottomLeft'
+    colour = 'blue';
+    if ( cg == "cg" ) {
+      colour = 'green';
+    }
+    if ( cg == "ic" ) {
+      colour = 'red';
+    }
+    $('#'+id).qtip({
+      content: ans,
+      show: 'mouseover',
+      hide: 'mouseout',
+      position: {
+        corner: {
+           target: 'topRight',
+           tooltip: 'bottomLeft'
+        },
+        adjust: {
+          screen: true
+        }
       },
-      adjust: {
-        screen: true
+      style: {
+        color: 'black',
+        tip: 'bottomLeft',
+        border: {
+           width: 3,
+           radius: 5
+        },
+        name: colour // Inherit from preset style
       }
-    },
-    style: {
-      color: 'black',
-      tip: 'bottomLeft',
-      border: {
-         width: 3,
-         radius: 5
-      },
-      name: 'blue' // Inherit from preset style
-    }
-  });
-    }
-  
+    });
+  }
   // Restore the text, so we know we are ready.
   //
   if ( cg == "cg" ) {

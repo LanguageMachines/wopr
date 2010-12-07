@@ -18,25 +18,26 @@
   font-family: "Lucida Grande", Verdana, Arial, sans-serif;
 }
 
-.instance_ip {
+.instance_ip { /* in progress, light gray */
   float:left;
   margin-right: 4px;
   color: gray;
 }
 
-.instance {
+.instance { /* normal text */
   float:left;
   margin-right: 4px;
   color: black;
 }
 
-.instance_cg {
+.instance_cg { /* correct guess */
+  text-decoration: underline;                    
   float:left;
   margin-right: 4px;
   color: green;
 }
 
-.instance_cd {
+.instance_cd { /* correct distribution */                           
   float:left;
   margin-right: 4px;
   color: blue;
