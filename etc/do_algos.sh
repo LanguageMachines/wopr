@@ -38,20 +38,34 @@ do
 		#
 		#reuters.martin.tok.1000.l3r2_ALG023.px
 		PXFILE=${TESTFILE}.l${LC}r${RC}_${ID}.px
+		#http://wiki.bash-hackers.org/commands/builtin/printf
 		#printf -v S "%s %s" ${ID} ${PXFILE}
 		#echo $S
 		mrr_cd=0
 		mrr_cg=0
 		mrr_gd=0
-		STR=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n3`
-		RX='RR\(cd\).* MRR: (.*).*RR\(cg\).* MRR: (.*).*RR\(gd\).* MRR: (.*)'
+		pplx=0
+		pplx1=0
+		BLOB=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n10`
+		#echo ${BLOB}
+		STR=${BLOB#*Wopr ppl}
+		RX=': (.*) Wopr ppl1: (.*) \(.*'
+		if [[ "${STR}" =~ $RX ]]
+		then
+		    pplx=${BASH_REMATCH[1]}
+		    pplx1=${BASH_REMATCH[2]}
+		fi
+		#
+		STR=${BLOB#*RR(cd)}
+		#echo $STR
+		RX='.* MRR: (.*).*RR\(cg\).* MRR: (.*).*RR\(gd\).* MRR: (.*)'
 		if [[ "${STR}" =~ $RX ]]
 		then
 		    mrr_cd=${BASH_REMATCH[1]}
 		    mrr_cg=${BASH_REMATCH[2]}
 		    mrr_gd=${BASH_REMATCH[3]}
 		fi
-		printf -v S "%s %s %s %s %s" ${ID} ${LINES}${mrr_cd} ${mrr_cg} ${mrr_gd}
+		printf -v S "%s %s %s %s %s %s %s" ${ID} ${LINES} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd}
 		echo ${S} >> ${LOG}
 	    done
 	done
