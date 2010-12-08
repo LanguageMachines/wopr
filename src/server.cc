@@ -1266,7 +1266,7 @@ int webdemo(Logfile& l, Config& c) {
   const int lc                  = stoi( c.get_value( "lc", "2" ));
   const int rc                  = stoi( c.get_value( "rc", "0" ));
   const std::string& filterfile = c.get_value( "filterfile" );
-
+  const bool tok                = stoi( c.get_value( "tok", "0" )) == 1;
 
   char hostname[256];
   gethostname( hostname, 256 );
@@ -1282,6 +1282,7 @@ int webdemo(Logfile& l, Config& c) {
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
   l.log( "lexicon:   "+lexicon );
+  l.log( "tok:       "+to_str(tok) );
   l.dec_prefix();
 
   std::map<std::string,int> filter;
@@ -1438,7 +1439,9 @@ int webdemo(Logfile& l, Config& c) {
       } /*instance*/ else if ( cmd == "window" ) {
 	std::vector<std::string> cls; 
 	std::string classify_line = tmp_buf;
-	classify_line = Tokenize_str( classify_line );
+	if ( tok == true ) {
+	  classify_line = Tokenize_str( classify_line );
+	}
 	xml = "<instances>";
 	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
 	for ( int i = 0; i < cls.size(); i++ ) {
