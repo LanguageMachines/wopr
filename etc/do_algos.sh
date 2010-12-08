@@ -6,6 +6,7 @@ WOPR="../../wopr"
 SCRIPT="../../etc/do_algos.wopr_script"
 PXSCRIPT="../../etc/pplx_px.pl"
 LOG="README.ALG.txt"
+PLOT="DATA.ALG.plot"
 #
 CYCLE=1000
 #
@@ -66,7 +67,7 @@ do
 		    mrr_gd=${BASH_REMATCH[3]}
 		fi
 		printf -v S "%s %s %s %s %s %s %s" ${ID} ${LINES} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd}
-		echo ${S} >> ${LOG}
+		echo ${S} >> ${PLOT}
 	    done
 	done
     done
