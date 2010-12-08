@@ -42,13 +42,27 @@ do
 		#http://wiki.bash-hackers.org/commands/builtin/printf
 		#printf -v S "%s %s" ${ID} ${PXFILE}
 		#echo $S
+		cg=0
+		cd=0
+		ic=0
 		mrr_cd=0
 		mrr_cg=0
 		mrr_gd=0
 		pplx=0
 		pplx1=0
-		BLOB=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n10`
+		BLOB=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n15`
+		STR=${BLOB#*Column:  2}
+		RX='.* \((.*)%\).*3.* \((.*)%\).*4.* \((.*)%\).*'
+		if [[ "$STR" =~ $RX ]]
+		then
+		    cg=${BASH_REMATCH[1]}
+		    cd=${BASH_REMATCH[2]}
+		    ic=${BASH_REMATCH[3]}
+		fi
 		#echo ${BLOB}
+		STR=${BLOB#*Wopr ppl}
+		RX=': (.*) Wopr ppl1: (.*) \(.*'
+		#
 		STR=${BLOB#*Wopr ppl}
 		RX=': (.*) Wopr ppl1: (.*) \(.*'
 		if [[ "${STR}" =~ $RX ]]
@@ -66,7 +80,7 @@ do
 		    mrr_cg=${BASH_REMATCH[2]}
 		    mrr_gd=${BASH_REMATCH[3]}
 		fi
-		printf -v S "%s %s %s %s %s %s %s" ${ID} ${LINES} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd}
+		printf -v S "%s %s %s %s %s %s %s %s %s %s" ${ID} ${LINES} ${cg} ${cd} ${ic} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd}
 		echo ${S} >> ${PLOT}
 	    done
 	done
