@@ -79,6 +79,8 @@ std::string itoa(int i,const char* form);
 bool check_dir( const std::string& );
 int get_dir( std::string, std::vector<std::string>&, std::string );
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens );
+void Tokenize_punc(const std::string&, std::vector<std::string>& );
+std::string Tokenize_str(const std::string&  );
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
               const char delimiter);
 std::string status_to_str(int);

@@ -461,6 +461,73 @@ void Tokenize(const std::string& buffer, std::vector<std::string>& tokens ) {
   }
 }
 
+void Tokenize_punc(const std::string& buffer, std::vector<std::string>& tokens ) {
+  std::stringstream foo( buffer ); 
+  std::string a_word;
+  while ( foo >> a_word ) {
+    // split on "',./ only
+    std::string buildup = "";
+
+    for ( int i = 0; i < a_word.length(); i++ ) {
+      std::string c = a_word.substr(i, 1);
+      if ( (c == ".") || (c == "'") || (c == "\"") ) {
+	if ( buildup == "" ) {
+	  tokens.push_back( c );
+	} else {
+	  tokens.push_back( buildup );
+	  tokens.push_back( c ); //maybe continue if "..."
+	  buildup = "";
+	}
+      } else { /* if not ."' */
+	buildup = buildup + c;
+      }
+    } // i
+    if ( buildup != "" ) {
+      tokens.push_back( buildup );
+    }
+  }
+}
+
+std::string Tokenize_str(const std::string& buffer ) {
+  std::stringstream foo( buffer ); 
+  std::string a_word;
+  std::string str;
+
+  while ( foo >> a_word ) {
+    // split on "',./!? only
+    std::string buildup = "";
+    int wlen = a_word.length();
+    int dotcount = 0;
+    for ( int i = 0; i < wlen; i++ ) {
+      std::string c = a_word.substr(i, 1);
+      if ( (c == ".") || (c == "'") || (c == "\"") || (c == ",")
+	   || (c == "?")  || (c == "!") ) {
+	if ( (c == ".") && (i < wlen-1) ) { // not last, ignore .
+	  buildup = buildup + c;
+	  dotcount++;
+	  continue;
+	}
+	if ( buildup == "" ) {
+	  str = str + c + " ";
+	} else {
+	  if ( dotcount == 0 ) { // more dots is abbrev, no space before.
+	    str = str + buildup + " " + c + " ";
+	  } else {
+	    str = str + buildup + c + " ";
+	  }
+	  buildup = "";
+	}
+      } else { /* if not ."' */
+	buildup = buildup + c;
+      }
+    } // i
+    if ( buildup != "" ) {
+      str = str + buildup + " ";
+    }
+  }
+  return str;
+}
+
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
               const char delimiter) {
   int pos = 0, pos_ant = 0;

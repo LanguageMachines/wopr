@@ -1438,6 +1438,7 @@ int webdemo(Logfile& l, Config& c) {
       } /*instance*/ else if ( cmd == "window" ) {
 	std::vector<std::string> cls; 
 	std::string classify_line = tmp_buf;
+	classify_line = Tokenize_str( classify_line );
 	xml = "<instances>";
 	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
 	for ( int i = 0; i < cls.size(); i++ ) {
