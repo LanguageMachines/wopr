@@ -4,6 +4,7 @@ TRAINBASE="reuters.martin.tok"
 TESTFILE="reuters.martin.tok.1000"
 WOPR="../../wopr"
 SCRIPT="../../etc/do_algos.wopr_script"
+PXSCRIPT="../../etc/pplx_px.pl"
 LOG="README.ALG.txt"
 #
 CYCLE=0
@@ -34,6 +35,11 @@ do
 		echo ${WOPR} -s ${SCRIPT} -p trainfile:${TRAINFILE},rc:${RC},lc:${LC},id:${ID},timbl:${TIMBL},testfile:${TESTFILE}
 		${WOPR} -s ${SCRIPT} -p trainset:${TRAINFILE},rc:${RC},lc:${LC},id:${ID},timbl:"${TIMBL}",testset:${TESTFILE}
 		CYCLE=$(( $CYCLE + 1 ))
+		#
+		#reuters.martin.tok.1000.l3r2_ALG023.px
+		PXFILE=${TESTFILE}.l${LC}r${RC}_${ID}.px
+		echo ${PXFILE}
+		perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n3
 	    done
 	done
     done
