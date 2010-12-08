@@ -51,6 +51,7 @@ do
 		pplx=0
 		pplx1=0
 		BLOB=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n15`
+		#http://www.arachnoid.com/linux/shell_programming.html
 		STR=${BLOB#*Column:  2}
 		RX='.* \((.*)%\).*3.* \((.*)%\).*4.* \((.*)%\).*'
 		if [[ "$STR" =~ $RX ]]
@@ -80,7 +81,8 @@ do
 		    mrr_cg=${BASH_REMATCH[2]}
 		    mrr_gd=${BASH_REMATCH[3]}
 		fi
-		printf -v S "%s %s %s %s %s %s %s %s %s %s" ${ID} ${LINES} ${cg} ${cd} ${ic} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd}
+		TSTR=l${LC}r${RC}_"${TIMBL// /}"
+		printf -v S "%s %s %s %s %s %s %s %s %s %s %s" ${ID} ${LINES} ${cg} ${cd} ${ic} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd} ${TSTR}
 		echo ${S} >> ${PLOT}
 	    done
 	done
