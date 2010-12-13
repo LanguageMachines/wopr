@@ -25,22 +25,21 @@ done
 #
 # Two ways to plot:
 #   1) One algorithm, all context sizes, or
-#   2) One context size, over the different algoritms.
+#   2) One context size, over the different algorithms.
 # And then there are the different measures to plot...
 #
 XR="[1000:]"
 YR="[]"
 #${ID} ${LINES} cg cd ic pplx pplx1 mrr_cd mrr_cg mrr_gd 
 #  1     2      3  4  5  6    7     8      9      10
-U="using 2:3"
+#U="using 2:3"
 #
-VAR="pplx"
+VAR="mrr_gd"
 IDX=1
 for TMP in "id" "LINES" "cg" "cd" "ic" "pplx" "pplx1" "mrr_cd" "mrr_cg" "mrr_gd"
 do
     if [[ $VAR == $TMP ]]
     then
-	echo $IDX
 	break
     else
 	IDX=$(( $IDX + 1 ))
@@ -48,7 +47,7 @@ do
 done 
 U="using 2:${IDX}"
 #
-# First one, plot file for each algortihm, to compare
+# First one, plot file for each algorithm, to compare
 # scores for different contexts.
 #
 for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
@@ -94,6 +93,7 @@ do
 	
 	echo "set title \"l${LC}r${RC}\"" >>${GNUPLOT}
 	echo "set xlabel \"instances\""  >>${GNUPLOT}
+	echo "set key bottom"  >>${GNUPLOT}
 	echo "set logscale x" >>${GNUPLOT}
 	echo "set ylabel \"${VAR}\""  >>${GNUPLOT}
 	echo "set grid"  >>${GNUPLOT}
