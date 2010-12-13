@@ -87,5 +87,6 @@ do
 	    done
 	done
     done
+    # Delete ${TRAINFILE} and ${TRAINFILE}.l${LC}r${RC} ?
 done
 

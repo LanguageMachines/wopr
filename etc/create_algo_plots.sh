@@ -35,7 +35,6 @@ done
 # And then there are the different measures to plot...
 #
 XR="[1000:]"
-YR="[0:1]"
 #${ID} ${LINES} cg cd ic pplx pplx1 mrr_cd mrr_cg mrr_gd 
 #  1     2      3  4  5  6    7     8      9      10
 #U="using 2:3"
@@ -46,9 +45,8 @@ do
     if [[ $VAR == $TMP ]]
     then
 	break
-    else
-	IDX=$(( $IDX + 1 ))
     fi
+    IDX=$(( $IDX + 1 ))
 done 
 U="using 2:${IDX}"
 YR="[0:500]"
