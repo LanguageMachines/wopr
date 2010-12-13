@@ -5,6 +5,12 @@
 # Needs the same parameters for TIMBL, LC and RC to work properly.
 #
 PLOT="DATA.ALG.plot"
+VAR="mrr_gd"
+if test $# -eq 1
+then
+    VAR=$1
+fi
+#
 #
 # First, get the data from all the experiments in their
 # own file.
@@ -29,12 +35,11 @@ done
 # And then there are the different measures to plot...
 #
 XR="[1000:]"
-YR="[]"
+YR="[0:1]"
 #${ID} ${LINES} cg cd ic pplx pplx1 mrr_cd mrr_cg mrr_gd 
 #  1     2      3  4  5  6    7     8      9      10
 #U="using 2:3"
 #
-VAR="mrr_gd"
 IDX=1
 for TMP in "id" "LINES" "cg" "cd" "ic" "pplx" "pplx1" "mrr_cd" "mrr_cg" "mrr_gd"
 do
@@ -46,6 +51,19 @@ do
     fi
 done 
 U="using 2:${IDX}"
+YR="[0:500]"
+if [[ ${VAR:0:3} == "mrr" ]]
+then
+    YR="[0:1]"
+fi
+if [[ ${VAR:0:4} == "pplx" ]]
+then
+    YR="[0:500]"
+fi
+if [[ ${IDX} < 6 ]]
+then
+    YR="[0:50]"
+fi
 #
 # First one, plot file for each algorithm, to compare
 # scores for different contexts.
@@ -111,3 +129,9 @@ do
 	echo ${PLOT%\,}  >>${GNUPLOT}
     done
 done
+#
+#set terminal push
+#set terminal postscript eps color lw 2 "Helvetica" 10
+#set out 'l2r0_-a1.ps'
+#replot
+#set term pop
