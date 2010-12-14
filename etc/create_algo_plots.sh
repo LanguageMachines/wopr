@@ -60,10 +60,11 @@ if [[ ${VAR:0:4} == "pplx" ]]
 then
     YR="[0:500]"
 fi
-if [[ ${IDX} < 6 ]]
+if [[ ${IDX} -lt 6 ]]
 then
     YR="[0:50]"
 fi
+echo ${IDX}
 #
 # First one, plot file for each algorithm, to compare
 # scores for different contexts.
@@ -90,8 +91,11 @@ do
 	do
 	    PLOTDATA=exp_l${LC}r${RC}_${TSTR}.data
 	    #echo "${PLOTDATA} using 2:10 w lp"
-	    # The 2:10 here is the MRR
-	    PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"l${LC}r${RC}\","
+	    # Add if it exists.
+	    if [[ -s ${PLOTDATA} ]]
+	    then
+		PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"l${LC}r${RC}\","
+	    fi
 	done
     done
     echo ${PLOT%\,}  >>${GNUPLOT}
@@ -123,8 +127,12 @@ do
 	do
 	    TSTR="${TIMBL// /}"
 	    PLOTDATA=exp_l${LC}r${RC}_${TSTR}.data
-	    # The 2:10 here is the MRR
-	    PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"${TSTR}\","
+	    # Add if it exists
+	    if [[ -s ${PLOTDATA} ]]
+	    then
+		PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"l${LC}r${RC}\","
+	    fi
+	    #PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"${TSTR}\","
 	done
 	echo ${PLOT%\,}  >>${GNUPLOT}
     done
