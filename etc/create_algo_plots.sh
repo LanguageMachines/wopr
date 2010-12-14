@@ -4,12 +4,14 @@
 # by do_algos.sh
 # Needs the same parameters for TIMBL, LC and RC to work properly.
 #
-PLOT="DATA.ALG.plot"
-VAR="mrr_gd"
-if test $# -eq 1
+if test $# -lt 2
 then
-    VAR=$1
+  echo "Supply FILE and VAR"
+  exit
 fi
+#
+PLOT=$1
+VAR=$2
 #
 #
 # First, get the data from all the experiments in their
