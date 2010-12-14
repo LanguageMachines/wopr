@@ -4,27 +4,41 @@
 # by do_algos.sh
 # Needs the same parameters for TIMBL, LC and RC to work properly.
 #
+PREFIX="exp"
 if test $# -lt 2
 then
-  echo "Supply FILE and VAR"
+  echo "Supply FILE, VAR (and PREFIX)"
   exit
 fi
 #
 PLOT=$1
 VAR=$2
+if test $# -eq 3
+then
+    PREFIX=$3
+fi
 #
+# Determine algos used from file.
+# Determine the LC and RC used.
+# Format:
+# ALG1000 1000 9.67 42.99 47.34 188.67 188.67 0.188 1.000 0.337 l1r0_-a1+D
+#
+ALGOS=`cut -d' ' -f 11 ${PLOT}  | cut -c6- | sort -u`
+LCS=`cut -d' ' -f 11 ${PLOT}  | cut -c2 | sort -u`
+RCS=`cut -d' ' -f 11 ${PLOT}  | cut -c4 | sort -u`
 #
 # First, get the data from all the experiments in their
 # own file.
 #
-for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
+#for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
+for TIMBL in ${ALGOS}
 do
-    for LC in 1 2 3
+    for LC in ${LCS}
     do
-	for RC in 0 1 2 3
+	for RC in ${RCS}
 	do
 	    TSTR=l${LC}r${RC}_"${TIMBL// /}"
-	    PLOTDATA=exp_${TSTR}.data
+	    PLOTDATA=${PREFIX}_${TSTR}.data
 	    echo "Generating ${PLOTDATA}"
 	    grep " ${TSTR}\$" ${PLOT} > ${PLOTDATA}
 	done
@@ -64,15 +78,15 @@ if [[ ${IDX} -lt 6 ]]
 then
     YR="[0:50]"
 fi
-echo ${IDX}
 #
 # First one, plot file for each algorithm, to compare
 # scores for different contexts.
 #
-for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
+#for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
+for TIMBL in ${ALGOS}
 do
     TSTR="${TIMBL// /}"
-    GNUPLOT=gp_${TSTR}.plot
+    GNUPLOT=${PREFIX}_${TSTR}.plot
     echo "Generating ${GNUPLOT}"
     echo "# autogen" >${GNUPLOT}
 
@@ -85,11 +99,11 @@ do
     #set xtics (100,1000,10000,20000,100000) 
 
     PLOT="plot ${XR}${YR} "
-    for LC in 1 2 3
+    for LC in ${LCS}
     do
-	for RC in 0 1 2 3
+	for RC in ${RCS}
 	do
-	    PLOTDATA=exp_l${LC}r${RC}_${TSTR}.data
+	    PLOTDATA=${PREFIX}_l${LC}r${RC}_${TSTR}.data
 	    #echo "${PLOTDATA} using 2:10 w lp"
 	    # Add if it exists.
 	    if [[ -s ${PLOTDATA} ]]
@@ -105,11 +119,11 @@ done
 # And option 2, file per context size to compare different
 # algorithms.
 #
-for LC in 1 2 3
+for LC in ${LCS}
 do
-    for RC in 0 1 2 3
+    for RC in ${RCS}
     do
-	GNUPLOT=gp_l${LC}r${RC}.plot
+	GNUPLOT=${PREFIX}_l${LC}r${RC}.plot
 	echo "Generating ${GNUPLOT}"
 	echo "# autogen" >${GNUPLOT}
 	
@@ -123,16 +137,16 @@ do
 	
 	PLOT="plot ${XR}${YR} "
 
-	for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
+	#for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
+	for TIMBL in ${ALGOS}
 	do
 	    TSTR="${TIMBL// /}"
-	    PLOTDATA=exp_l${LC}r${RC}_${TSTR}.data
+	    PLOTDATA=${PREFIX}_l${LC}r${RC}_${TSTR}.data
 	    # Add if it exists
 	    if [[ -s ${PLOTDATA} ]]
 	    then
-		PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"l${LC}r${RC}\","
+		PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"${TSTR}\","
 	    fi
-	    #PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"${TSTR}\","
 	done
 	echo ${PLOT%\,}  >>${GNUPLOT}
     done
