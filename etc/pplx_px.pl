@@ -32,6 +32,8 @@ my $classtype_pos = $lc + $rc + 5;
 my $unknown_pos   = $lc + $rc + 6;
 my $md_pos        = $lc + $rc + 7; #match depth
 my $ml_pos        = $lc + $rc + 8; #matched at leaf
+my $dcnt_pos      = $lc + $rc + 9; #dist count
+my $dsum_pos      = $lc + $rc + 10; #dist sum (of freqs in dist)
 my $rr_pos        = $lc + $rc + 11; #matched at leaf
 
 my $wopr_sumlog10  = 0.0;
@@ -39,6 +41,8 @@ my $srilm_sumlog10 = 0.0;
 my $wordcount = 0;
 my $sentencecount = 0;
 my $oovcount = 0;
+my $dcnt_sum = 0;
+my $dsum_sum = 0;
 my %rr_sum;
 my %rr_count;
 
@@ -60,6 +64,8 @@ while ( my $line = <FHW> ) {
     my $wopr_prob;
     my $classtype;
     my $icu;
+    my $dcnt;
+    my $dsum;
     my $md;
     my $ml;
     my $extra = 0;
@@ -76,6 +82,8 @@ while ( my $line = <FHW> ) {
     $ml             = $parts[$ml_pos];
     $classtype      = $parts[$classtype_pos];
     $rr             = $parts[$rr_pos];
+    $dcnt           = $parts[$dcnt_pos];
+    $dsum           = $parts[$dsum_pos];
 
     if ( $ignore_oov ) {
       $icu = "k";
@@ -111,6 +119,9 @@ while ( my $line = <FHW> ) {
 	++$rr_count{"gd"};	
     }
 
+    $dcnt_sum += $dcnt;
+    $dsum_sum += $dsum;
+
     if ( ($icu eq "k") && ($wopr_log10prob != 0) ) {
       $wopr_sumlog10 += $wopr_log10prob;
     }
@@ -125,11 +136,14 @@ while ( my $line = <FHW> ) {
     ++$summary{$indicators};
   } 
 
-
 my $tot = 0;
 foreach my $key (sort (keys(%summary))) {
   $tot += $summary{$key};
 }
+
+printf ("dist_freq sum: %6i ave: %6.2f\n", $dcnt_sum, $dcnt_sum/$tot);
+printf ("dist_sum sum: %6i ave: %6.2f\n", $dsum_sum, $dsum_sum/$tot);
+
 foreach my $key (sort { $a <=> $b } (keys(%summary))) {
   printf( "$f:%6i (%6.2f%%)\n", $key, $summary{$key},  $summary{$key}*100/$tot );
 }
