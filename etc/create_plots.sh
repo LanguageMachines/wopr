@@ -18,6 +18,22 @@ then
     PREFIX=$3
 fi
 #
+IDX=1
+for TMP in "id" "LINES" "cg" "cd" "ic" "pplx" "pplx1" "mrr_cd" "mrr_cg" "mrr_gd" "adc" "ads"
+do
+    if [[ $VAR == $TMP ]]
+    then
+	break
+    fi
+    IDX=$(( $IDX + 1 ))
+done 
+if test $IDX -eq 13
+then
+    echo "ERROR, unknown variable ${VAR}"
+    exit 1
+fi
+PREFIX=${PREFIX}_${VAR}
+#
 # Determine algos used from file.
 # Determine the LC and RC used.
 # Format:
@@ -30,7 +46,6 @@ RCS=`cut -d' ' -f 13 ${PLOT}  | cut -c4 | sort -u`
 # First, get the data from all the experiments in their
 # own file.
 #
-#for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
 for TIMBL in ${ALGOS}
 do
     for LC in ${LCS}
@@ -51,19 +66,10 @@ done
 # And then there are the different measures to plot...
 #
 XR="[1000:]"
-#${ID} ${LINES} cg cd ic pplx pplx1 mrr_cd mrr_cg mrr_gd 
-#  1     2      3  4  5  6    7     8      9      10
+#${ID} ${LINES} cg cd ic pplx pplx1 mrr_cd mrr_cg mrr_gd adc ads ALG
+#  1     2      3  4  5  6    7     8      9      10     11  12
 #U="using 2:3"
 #
-IDX=1
-for TMP in "id" "LINES" "cg" "cd" "ic" "pplx" "pplx1" "mrr_cd" "mrr_cg" "mrr_gd"
-do
-    if [[ $VAR == $TMP ]]
-    then
-	break
-    fi
-    IDX=$(( $IDX + 1 ))
-done 
 U="using 2:${IDX}"
 YR="[0:500]"
 if [[ ${VAR:0:3} == "mrr" ]]
@@ -77,6 +83,14 @@ fi
 if [[ ${IDX} -lt 6 ]]
 then
     YR="[0:50]"
+fi
+if [[ ${VAR:0:3} == "adc" ]]
+then
+    YR="[]"
+fi
+if [[ ${VAR:0:3} == "ads" ]]
+then
+    YR="[]"
 fi
 #
 # First one, plot file for each algorithm, to compare
