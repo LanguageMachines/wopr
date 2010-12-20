@@ -146,7 +146,7 @@ foreach my $key (sort { $a <=> $b } (keys(%summary))) {
 }
 
 printf ("dist_freq sum: %6i, ave: (%6.2f)\n", $dcnt_sum, $dcnt_sum/$tot);
-printf ("dist_sum sum: %6i, ave: %6.2f\n", $dsum_sum, $dsum_sum/$tot);
+printf ("dist_sum sum: %6i, ave: (%6.2f)\n", $dsum_sum, $dsum_sum/$tot);
 
 for ( my $i = 0; $i < 5; $i++ ) {
   my $frmt = "%".($i+1)."i";
