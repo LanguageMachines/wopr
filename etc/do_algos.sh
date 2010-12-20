@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-TRAINBASE="reuters.martin.tok"
-TESTFILE="austen.l100"
-WOPR="../../wopr"
-SCRIPT="../../etc/do_algos.wopr_script"
-PXSCRIPT="../../etc/pplx_px.pl"
+TRAINBASE="europarl.se.txt"
+TESTFILE="europarl.se.txt.l1000"
+WOPR="/exp/pberck/wopr/wopr"
+SCRIPT="do_algos.wopr_script"
+PXSCRIPT="/exp/pberck/wopr/etc/pplx_px.pl"
 LOG="README.ALG.txt"
 PLOT="DATA.ALG.plot"
 #
@@ -12,7 +12,7 @@ CYCLE=1000
 #
 date "+#%Y-%m-%d %H:%M:%S" >> ${LOG}
 #
-for LINES in 5000
+for LINES in 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000
 do
     #Make the dataset here, clean up afterwards?
     TRAINFILE=${TRAINBASE}.${LINES}
@@ -23,11 +23,11 @@ do
 	echo "Creating data file ${TRAINFILE}."
 	head -n ${LINES} ${TRAINBASE} > ${TRAINFILE}
     fi
-    for TIMBL in "-a1 +D" "-a1 +D -w0" "-a4 +D" "-a4 +D -w0" "-a4 +D -q1"
+    for TIMBL in "-a1 +D" "-a4 +D" "-a4 +D -q1"
     do
-	for LC in 2 3
+	for LC in 1 2 3
 	do
-	    for RC in 0 
+	    for RC in 0 1 2 3
 	    do
 		CYCLESTR=`printf "%04d" ${CYCLE}`
 		ID=ALG${CYCLESTR}
@@ -87,6 +87,5 @@ do
 	    done
 	done
     done
-    # Delete ${TRAINFILE} and ${TRAINFILE}.l${LC}r${RC} ?
 done
 
