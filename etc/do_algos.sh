@@ -42,6 +42,8 @@ do
 		#http://wiki.bash-hackers.org/commands/builtin/printf
 		#printf -v S "%s %s" ${ID} ${PXFILE}
 		#echo $S
+		adc=0
+		ads=0
 		cg=0
 		cd=0
 		ic=0
@@ -50,8 +52,26 @@ do
 		mrr_gd=0
 		pplx=0
 		pplx1=0
-		BLOB=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n15`
+		#
+		BLOB=`perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} | tail -n18`
 		#http://www.arachnoid.com/linux/shell_programming.html
+
+		#dist_freq sum: 25341492, ave: 1174.52
+		#dist_sum sum: 104737184, ave: 4854.34
+		STR=${BLOB#*dist_freq sum}
+		RX=': ([0123456789]*)\, ave: \(([0123456789.]*)\)'
+		if [[ "$STR" =~ $RX ]]
+		then
+		    adc=${BASH_REMATCH[2]}
+		fi
+		#
+		STR=${BLOB#*dist_sum sum}
+		RX=': (.*)\, ave: \(([0123456789.]*)\)'
+		if [[ "$STR" =~ $RX ]]
+		then
+		    ads=${BASH_REMATCH[2]}
+		fi
+		#
 		STR=${BLOB#*Column:  2}
 		RX='.* \((.*)%\).*3.* \((.*)%\).*4.* \((.*)%\).*'
 		if [[ "$STR" =~ $RX ]]
@@ -82,7 +102,7 @@ do
 		    mrr_gd=${BASH_REMATCH[3]}
 		fi
 		TSTR=l${LC}r${RC}_"${TIMBL// /}"
-		printf -v S "%s %s %s %s %s %s %s %s %s %s %s" ${ID} ${LINES} ${cg} ${cd} ${ic} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd} ${TSTR}
+		printf -v S "%s %s %s %s %s %s %s %s %s %s %s %s %s" ${ID} ${LINES} ${cg} ${cd} ${ic} ${pplx} ${pplx1} ${mrr_cd} ${mrr_cg} ${mrr_gd} ${adc} ${ads} ${TSTR}
 		echo ${S} >> ${PLOT}
 	    done
 	done
