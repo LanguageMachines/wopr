@@ -127,6 +127,13 @@ do
 	done
     done
     echo ${PLOT%\,}  >>${GNUPLOT}
+    echo ${PLOT%\,}  >>${GNUPLOT}
+    echo "set terminal push" >>${GNUPLOT}
+    echo "set terminal postscript eps color lw 2 'Helvetica' 10" >>${GNUPLOT}
+    PSPLOT=${PREFIX}_${TSTR}.ps
+    echo "set out '${PSPLOT}'" >>${GNUPLOT}
+    echo "replot" >>${GNUPLOT}
+    echo "set term pop" >>${GNUPLOT}
     #echo ${PLOT:(-1)}
 done
 #
@@ -163,6 +170,12 @@ do
 	    fi
 	done
 	echo ${PLOT%\,}  >>${GNUPLOT}
+	echo "set terminal push" >>${GNUPLOT}
+	echo "set terminal postscript eps color lw 2 'Helvetica' 10" >>${GNUPLOT}
+	PSPLOT=${PREFIX}_l${LC}r${RC}.ps
+	echo "set out '${PSPLOT}'" >>${GNUPLOT}
+	echo "replot" >>${GNUPLOT}
+	echo "set term pop" >>${GNUPLOT}
     done
 done
 #
