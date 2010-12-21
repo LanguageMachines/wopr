@@ -80,9 +80,13 @@ if [[ ${VAR:0:4} == "pplx" ]]
 then
     YR="[0:500]"
 fi
-if [[ ${IDX} -lt 6 ]]
+if [[ ${IDX} -lt 5 ]]
 then
     YR="[0:50]"
+fi
+if [[ ${VAR:0:2} == "ic" ]]
+then
+    YR="[20:100]"
 fi
 if [[ ${VAR:0:3} == "adc" ]]
 then
