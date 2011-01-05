@@ -88,6 +88,10 @@ if [[ ${VAR:0:2} == "ic" ]]
 then
     YR="[20:100]"
 fi
+if [[ ${VAR:0:2} == "cg" ]]
+then
+    YR="[0:50]"
+fi
 if [[ ${VAR:0:3} == "adc" ]]
 then
     YR="[]"
