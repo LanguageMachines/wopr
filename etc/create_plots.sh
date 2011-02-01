@@ -4,6 +4,8 @@
 # by do_algos.sh
 # Needs the same parameters for TIMBL, LC and RC to work properly.
 #
+LSR="noenhanced" #"color"
+#
 PREFIX="exp"
 if test $# -lt 2
 then
@@ -78,7 +80,7 @@ then
 fi
 if [[ ${VAR:0:4} == "pplx" ]]
 then
-    YR="[0:500]"
+    YR="[0:800]"
 fi
 if [[ ${IDX} -lt 5 ]]
 then
@@ -90,11 +92,11 @@ then
 fi
 if [[ ${VAR:0:2} == "cg" ]]
 then
-    YR="[0:50]"
+    YR="[0:40]"
 fi
 if [[ ${VAR:0:3} == "adc" ]]
 then
-    YR="[]"
+    YR="[0:4000]"
 fi
 if [[ ${VAR:0:3} == "ads" ]]
 then
@@ -137,10 +139,11 @@ do
     echo ${PLOT%\,}  >>${GNUPLOT}
     echo ${PLOT%\,}  >>${GNUPLOT}
     echo "set terminal push" >>${GNUPLOT}
-    echo "set terminal postscript eps color lw 2 'Helvetica' 10" >>${GNUPLOT}
+    echo "set terminal postscript eps ${LSR} lw 2 'Helvetica' 10" >>${GNUPLOT}
     PSPLOT=${PREFIX}_${TSTR}.ps
     echo "set out '${PSPLOT}'" >>${GNUPLOT}
     echo "replot" >>${GNUPLOT}
+    echo "!epstopdf '${PSPLOT}'" >> ${GNUPLOT}
     echo "set term pop" >>${GNUPLOT}
     #echo ${PLOT:(-1)}
 done
@@ -179,10 +182,11 @@ do
 	done
 	echo ${PLOT%\,}  >>${GNUPLOT}
 	echo "set terminal push" >>${GNUPLOT}
-	echo "set terminal postscript eps color lw 2 'Helvetica' 10" >>${GNUPLOT}
+	echo "set terminal postscript eps ${LSR} lw 2 'Helvetica' 10" >>${GNUPLOT}
 	PSPLOT=${PREFIX}_l${LC}r${RC}.ps
 	echo "set out '${PSPLOT}'" >>${GNUPLOT}
 	echo "replot" >>${GNUPLOT}
+	echo "!epstopdf '${PSPLOT}'" >> ${GNUPLOT}
 	echo "set term pop" >>${GNUPLOT}
     done
 done
