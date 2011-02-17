@@ -5,6 +5,7 @@ TESTFILE="europarl.se.txt.l1000"
 WOPR="/exp/pberck/wopr/wopr"
 SCRIPT="do_algos.wopr_script"
 PXSCRIPT="/exp/pberck/wopr/etc/pplx_px.pl"
+SCATTERSCRIPT="/exp/pberck/wopr/etc/create_cg_f_scatterplot.pl"
 LOG="README.ALG.txt"
 PLOT="DATA.ALG.plot"
 #
@@ -39,6 +40,11 @@ do
 		#
 		#reuters.martin.tok.1000.l3r2_ALG023.px
 		PXFILE=${TESTFILE}.l${LC}r${RC}_${ID}.px
+		WSFILE=${PXFILE}.ws
+		LEXFILE=${TRAINFILE}.lex
+		perl ${PXSCRIPT} -f ${PXFILE} -l ${LC} -r ${RC} -w > ${WSFILE}
+		perl ${SCATTERSCRIPT} -w ${WSFILE} -l ${LEXFILE}
+		#gnuplot?
 		#http://wiki.bash-hackers.org/commands/builtin/printf
 		#printf -v S "%s %s" ${ID} ${PXFILE}
 		#echo $S
