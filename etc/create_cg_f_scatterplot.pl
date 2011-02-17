@@ -70,6 +70,13 @@ print OFHD "set key bottom\n";
 print OFHD "set ylabel \"cg\"\n";
 print OFHD "set grid\n";
 print OFHD "plot [][] \"".$data_file."\" using 5:2\n";
+print OFHD "set terminal push\n";
+print OFHD "set terminal postscript eps enhanced color solid rounded lw 2 'Helvetica' 10\n";
+print OFHD "set out '".$ws_file.".ps'\n";
+print OFHD "replot\n";
+print OFHD "!epstopdf '".$ws_file.".ps'\n";
+print OFHD "set term pop\n";
+
 close(OFHD);
 
 # NB, perl log is base e.
