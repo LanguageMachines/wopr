@@ -198,7 +198,8 @@ if ( $wordscore == 1 ) {
     unless ( defined $word_score{$key}{"ic"} ) {
       $word_score{$key}{"ic"} = 0;
     }
-    printf( "%s: cg:%s cd:%s ic:%s\n", $key, $word_score{$key}{"cg"}, $word_score{$key}{"cd"}, $word_score{$key}{"ic"});
+    my $tot = $word_score{$key}{"cg"}+$word_score{$key}{"cd"}+$word_score{$key}{"ic"};
+    printf( "%s: cg:%s (%.2f%%) cd:%s (%.2f%%) ic:%s (%.2f%%)\n", $key, $word_score{$key}{"cg"}, $word_score{$key}{"cg"}/$tot*100, $word_score{$key}{"cd"}, $word_score{$key}{"cd"}/$tot*100, $word_score{$key}{"ic"}, $word_score{$key}{"ic"}/$tot*100);
   }
 }
 
