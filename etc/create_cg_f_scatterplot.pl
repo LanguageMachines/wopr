@@ -31,6 +31,9 @@ while ( my $line = <FHW> ) {
 }
 close(FHW);
 
+my $data_file = $ws_file.".data";
+open(OFHD, ">$data_file")  || die "Can't open outfile.";
+
 open(FHW, $ws_file)  || die "Can't open file.";
 while ( my $line = <FHW> ) {
   if ( substr($line, 0, 1) eq "#" ) {
@@ -50,12 +53,24 @@ while ( my $line = <FHW> ) {
 
     my $lex_f = $lex{$word} || 0;
     if ( $lex_f ) {
-      print "$word $cg_p $cd_p $ic_p $lex_f\n";
+      print OFHD "$word $cg_p $cd_p $ic_p $lex_f\n";
     }
   }
   
 }
 close(FHW);
+
+close(OFHD);
+
+my $plot_file = $ws_file.".plot";
+open(OFHD, ">$plot_file")  || die "Can't open outfile.";
+print OFHD "set title \"scatter\"\n";
+print OFHD "set xlabel \"frequency\"\n";
+print OFHD "set key bottom\n";
+print OFHD "set ylabel \"cg\"\n";
+print OFHD "set grid\n";
+print OFHD "plot [][] \"".$data_file."\" using 5:2\n";
+close(OFHD);
 
 # NB, perl log is base e.
 #
@@ -78,6 +93,12 @@ set key bottom
 set ylabel "cg"
 set grid
 plot [][] "foo.data" using 5:2
+set terminal push
+set terminal postscript eps enhanced color solid rounded lw 2 'Helvetica' 10
+set out 'NY_pplx_-a4+D.ps'
+replot
+!epstopdf 'NY_pplx_-a4+D.ps'
+set term pop
 
 
 foo.data:
