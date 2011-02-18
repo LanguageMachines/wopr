@@ -96,6 +96,7 @@ with: cg:18 (15.25%) cd:73 (61.86%) ic:27 (22.88%)
 
 set title "scatter"
 set xlabel "frequency"
+set logscale x
 set key bottom
 set ylabel "cg"
 set grid
