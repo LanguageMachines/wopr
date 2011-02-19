@@ -66,6 +66,7 @@ my $plot_file = $ws_file.".plot";
 open(OFHD, ">$plot_file")  || die "Can't open outfile.";
 print OFHD "set title \"scatter\"\n";
 print OFHD "set xlabel \"frequency\"\n";
+print OFHD "set logscale x\n";
 print OFHD "set key bottom\n";
 print OFHD "set ylabel \"cg\"\n";
 print OFHD "set grid\n";
