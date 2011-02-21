@@ -1,0 +1,120 @@
+# -*- shell-script -*-
+#
+# Two experiments:
+#
+# One "normal" IGTree experiment.
+# One word expert experiment (IB1, IGT, etc).
+# Compare the two output files with an external
+# Perl script. take best performing word experts,
+# Run a new experiment on the test set.
+#
+# wopr -s this.script -p filename:nyt.1e5,
+#                        focus:nyt.1e5.lex.r10n100,
+#                        testfile:nyt.tail1000,
+#                        devfile:nyt.dev1000
+#
+#params:filename:GIVEN
+#params:focus:GIVEN
+#params:testfile:GIVEN
+#params:devfile:GIVEN
+#
+params: topn:5
+params: rc:0
+params: lc:3
+#
+# Prepare testset first. Window it, save
+# the filename for later. Idem for development set.
+#
+set:saved_filename:$filename
+#
+set: filename:$testfile
+run:window_lr
+set:testfile:$filename
+#
+set: filename:$devfile
+run:window_lr
+set:devfile:$filename
+#
+# Set filename again, prepare data/sets
+#
+set:filename:$saved_filename
+#msg: filename = $filename and save_filename= $saved_filename
+run:lexicon
+run:window_lr
+# This filename/dataset we need later on
+set:saved_filename:$filename
+#
+# Experiment 1, IGT, pplx
+#
+params: timbl:-a1 +D
+run: make_ibase
+# Save the ibasefile/timbl settings for later
+# We add this ibase to the kvs file as default classifier.
+set:igt_ibasefile:$ibasefile
+set:igt_timbl:$timbl
+# Restore devfile, run pplxs
+set:filename:$devfile
+run:pplxs
+#
+# Experiment 2, WEP
+#
+# restore filename:
+set:filename:$saved_filename
+params: timbl:-a0 +D
+params: fco:1
+# NB: we take fcm 2 now, so we can re-use our full
+# default classifier without training all the unused
+# left over databases. fcm:2 does not create a dflt ibase,
+# we use the previously saved one.
+params: fcm:2
+params: nf:0
+run:focus
+# Restore devfile
+set:filename:$devfile
+# This was the IGTree ibase+settings:
+msg: igt_ibasefile: $igt_ibasefile
+msg: igt_timbl: $igt_timbl
+# Because the use fcm:2, we need to add a default classifier
+# to the kvs file. We do this "by hand" here. $variables need
+# spaces around them.
+extern: echo "# Added by script." >> $kvs
+extern: echo "classifier:dflt" >> $kvs
+extern: echo "ibasefile: $igt_ibasefile " >> $kvs
+extern: echo "timbl: $igt_timbl " >> $kvs
+extern: echo "gatedefault:1" >> $kvs
+#
+run:mg
+#
+extern: perl ~/prog/trunk/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc | grep TOTAL
+#
+# The first testset was a development set, now we need to run again.
+# We add an 'a' to the focus file and id: parameter because datasets
+# are not the same as those created in previous steps.
+add:focus:a
+add:id:a
+#
+# Create the list of better scoring experts.
+# Then go through the original kvs file and remove the badly performing
+# classifiers.
+#
+set:newkvs:$kvs
+add:newkvs:a
+extern: perl ~/prog/trunk/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $filename -l $lc -r $rc -b ic > $focus
+extern: perl ~/prog/trunk/sources/wopr/etc/filter_kvs.pl -k $kvs -l $focus -d > $newkvs
+#
+set:filename:$testfile
+set:kvs:$newkvs
+run:mg
+set: mg_filename:$filename
+#
+# Finally, we run pplx again on the test data
+#
+set: ibasefile:$igt_ibasefile
+set: timbl:$igt_timbl
+set:filename:$testfile
+run:pplxs
+#
+# Show the new score.
+#
+extern: perl ~/prog/trunk/sources/wopr/etc/compare_mg_px.pl -p $px_file -m $mg_filename -l $lc -r $rc | grep TOTAL
+
