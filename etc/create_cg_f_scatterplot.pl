@@ -70,6 +70,7 @@ print OFHD "set logscale x\n";
 print OFHD "set key bottom\n";
 print OFHD "set ylabel \"cg\"\n";
 print OFHD "set grid\n";
+#plot [10000:][] "< awk '{if (($2 >= 50) || ($5 >80000)) print $0;}' nyt.tail1000.l3r3_ALG7015.px.ws.data" using 5:2:1 with labels, "nyt.tail1000.l3r3_ALG7015.px.ws.data" using 5:2
 print OFHD "plot [][] \"".$data_file."\" using 5:2\n";
 print OFHD "set terminal push\n";
 print OFHD "set terminal postscript eps enhanced color solid rounded lw 2 'Helvetica' 10\n";
