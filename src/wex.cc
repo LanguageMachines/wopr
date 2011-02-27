@@ -670,7 +670,7 @@ int multi_dist( Logfile& l, Config& c ) {
 
 #ifdef TIMBL
 int multi_dist2( Logfile& l, Config& c ) {
-  l.log( "multi_clasifiers" );
+  l.log( "multi_classifiers" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
@@ -926,6 +926,13 @@ int multi_gated( Logfile& l, Config& c ) {
     stat_filename  = filename + ".stat";
   }
 
+  if ( file_exists( l, c, output_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
@@ -1154,12 +1161,6 @@ int multi_gated( Logfile& l, Config& c ) {
     file_out << " ]";
 
     file_out << std::endl;
-
-
-
-
-
-
 
   }
   file_in.close();
