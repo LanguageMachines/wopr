@@ -23,6 +23,9 @@ fi
 # WEX10321 500000 l3r1 2 1 cg 65433 68482 98912 0.69 66377 64408 102042 0.78 -a1+D -a4+D 1-500
 LCS=`cut -d' ' -f 3 ${DATA}  | cut -c2 | sort -u`
 RCS=`cut -d' ' -f 3 ${DATA}  | cut -c4 | sort -u`
+T0S=`cut -d' ' -f 15 ${DATA}  | sort -u`
+T1S=`cut -d' ' -f 16 ${DATA}  | sort -u`
+RS=`cut -d' ' -f 17 ${DATA}  | sort -u`
 #
 # First, get the data from all the experiments in their
 # own file.
@@ -40,7 +43,6 @@ done
 #
 #
 #
-IDX=7  #cg from step1 versus cg from step2
 U0="using 2:7"
 U1="using 2:11"
 XR="[9000:]"
@@ -58,7 +60,7 @@ do
 	echo "Generating ${GNUPLOT}"
 	echo "# autogen" >${GNUPLOT}
 	
-	echo "set title \"l${LC}r${RC}\"" >>${GNUPLOT}
+	echo "set title \"l${LC}r${RC} ${T0S}/${T1S} (${RS})\"" >>${GNUPLOT}
 	echo "set xlabel \"instances\""  >>${GNUPLOT}
 	echo "set key bottom"  >>${GNUPLOT}
 	echo "set logscale x" >>${GNUPLOT}
