@@ -3,10 +3,6 @@
 # Script to generate gnuplot files from the data file generated
 # by do_meta_nyt.sh.
 #
-#WEX10112 100000 l2r0 1 1 cg 35315 94039 103473 0.41 35392 89803 107632 0.46
-#WEX10113 100000 l2r1 2 1 cg 53663 69138 110026 0.63 55029 68436 109362 0.68
-#WEX10114 100000 l3r0 1 1 cg 34866 75394 122567 0.47 35096 73296 124435 0.54
-#
 PREFIX="pre"
 VAR="cg"
 if test $# -lt 1
@@ -24,8 +20,7 @@ fi
 # Determine algos used from file.
 # Determine the LC and RC used.
 # Format:
-# WEX10114 100000 l3r0 1 1 cg 34866 75394 122567 0.47 35096 73296 124435 0.54
-#
+# WEX10321 500000 l3r1 2 1 cg 65433 68482 98912 0.69 66377 64408 102042 0.78 -a1+D -a4+D 1-500
 LCS=`cut -d' ' -f 3 ${DATA}  | cut -c2 | sort -u`
 RCS=`cut -d' ' -f 3 ${DATA}  | cut -c4 | sort -u`
 #
@@ -45,8 +40,11 @@ done
 #
 #
 #
-XR="[1000:]"
-YR="[0:500]"
+IDX=7  #cg from step1 versus cg from step2
+U0="using 2:7"
+U1="using 2:11"
+XR="[9000:]"
+YR="[]"
 #
 # File per context size
 #
@@ -74,7 +72,8 @@ do
 	# Add if it exists
 	if [[ -s ${PLOTDATA} ]]
 	then
-	    PLOT="${PLOT}\"${PLOTDATA}\" ${U} w lp t \"${TSTR}\","
+	    PLOT="${PLOT}\"${PLOTDATA}\" ${U0} w lp t \"${TSTR}\","
+	    PLOT="${PLOT}\"${PLOTDATA}\" ${U1} w lp t \"${TSTR}\","
 	fi
 	echo ${PLOT%\,} >>${GNUPLOT}
     done
