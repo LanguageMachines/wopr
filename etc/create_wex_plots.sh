@@ -54,6 +54,7 @@ do
     do
 	CTXSTR=l${LC}r${RC}_${VAR}
 	GNUPLOT=${PREFIX}_${CTXSTR}.plot
+	PSPLOT=${PREFIX}_${CTXSTR}.ps
 	echo "Generating ${GNUPLOT}"
 	echo "# autogen" >${GNUPLOT}
 	
@@ -72,10 +73,17 @@ do
 	# Add if it exists
 	if [[ -s ${PLOTDATA} ]]
 	then
-	    PLOT="${PLOT}\"${PLOTDATA}\" ${U0} w lp t \"${TSTR}\","
-	    PLOT="${PLOT}\"${PLOTDATA}\" ${U1} w lp t \"${TSTR}\","
+	    PLOT="${PLOT}\"${PLOTDATA}\" ${U0} w lp t \"${CTXSTR}\","
+	    PLOT="${PLOT}\"${PLOTDATA}\" ${U1} w lp t \"${CTXSTR} (wex)\","
 	fi
 	echo ${PLOT%\,} >>${GNUPLOT}
+	#
+        echo "set terminal push" >>${GNUPLOT}
+        echo "set terminal postscript eps ${LSR} lw 2 'Helvetica' 10" >>${GNUPLOT}
+        echo "set out '${PSPLOT}'" >>${GNUPLOT}
+        echo "replot" >>${GNUPLOT}
+        echo "!epstopdf '${PSPLOT}'" >> ${GNUPLOT}
+        echo "set term pop" >>${GNUPLOT}
     done
 done
 #
