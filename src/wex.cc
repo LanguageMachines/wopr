@@ -315,6 +315,7 @@ int read_classifiers_from_file( std::ifstream& file,
 				std::vector<Classifier*>& cl )  {
   std::string a_line;
   Classifier* c = NULL;
+  
   while( std::getline( file, a_line )) {
     if ( a_line.length() == 0 ) {
       continue;
@@ -1000,6 +1001,7 @@ int multi_gated( Logfile& l, Config& c ) {
     }
     read_classifiers_from_file( file_kvs, cls );
     file_kvs.close();
+    l.log( "Read "+to_str(cls.size())+" classifiers from "+kvs_filename );
 
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
       (*cli)->init();
