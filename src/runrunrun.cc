@@ -3114,6 +3114,12 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     if (file_exists(l,c,output_filename) && file_exists(l,c,output_filename1)) {
       //l.log( "Output for "+a_file+" exists, removing from list." );
+      // We must set the variables for scripts anyway. Mostly if we supply
+      // only one file to process.
+      c.add_kv( "px_file", output_filename );
+      l.log( "SET px_file to "+output_filename );
+      c.add_kv( "pxs_file", output_filename1 );
+      l.log( "SET pxs_file to "+output_filename1 );
       --numfiles;
     }
   }
