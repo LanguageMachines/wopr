@@ -26,6 +26,9 @@ RCS=`cut -d' ' -f 3 ${DATA}  | cut -c4 | sort -u`
 T0S=`cut -d' ' -f 15 ${DATA}  | sort -u`
 T1S=`cut -d' ' -f 16 ${DATA}  | sort -u`
 RS=`cut -d' ' -f 17 ${DATA}  | sort -u`
+VAR=`cut -d' ' -f 6 ${DATA}  | sort -u`
+echo $T1S
+echo $VAR
 #
 # First, get the data from all the experiments in their
 # own file.
