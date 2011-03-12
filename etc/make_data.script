@@ -1,0 +1,23 @@
+msg: 
+msg: Script to generate data
+msg: -----------------------
+#
+run: lexicon
+#
+run: window_s
+#
+params: timbl:-a1 +D
+run: make_ibase
+#
+set: oldname:$filename
+#
+params: hpx:5
+run: hapax
+run: make_ibase
+#
+set: filename:$oldname
+params: hpx:1
+run: hapax
+run: make_ibase
+#
+msg: ready.
