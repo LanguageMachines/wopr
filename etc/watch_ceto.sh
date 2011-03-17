@@ -91,16 +91,22 @@ while true;
       then
 	  echo $ECHO "\n$MEM > $LIMIT"
 	  BIGGEST=`ps -u pberck -o pid,ppid,rss,vsize,pmem | sort -n -k5 | tail -n1 | awk '{print $1}'`
-	  echo $BIGGEST
-	  echo $ECHO "KILLING PID=$BIGGEST"
-	  kill $BIGGEST
-	  RES=$?
-	  echo "EXIT CODE=$RES"
-	  if test $MAILTO != ""
+	  BIGMEM=`ps -u pberck -o pid,ppid,rss,vsize,pmem | sort -n -k5 | tail\
+ -n1 | awk '{print $5}'`
+	  BIGMEM=${BIGMEM/.*}
+	  if [[ $BIGMEM -gt 10 ]] #...could be many small woprs...
 	  then
-	      echo "EXIT CODE=$RES" | mail -s "Killed Wopr (${BIGGEST})" $MAILTO
+	      echo $BIGGEST
+	      echo $ECHO "KILLING PID=$BIGGEST"
+	      kill $BIGGEST
+	      RES=$?
+	      echo "EXIT CODE=$RES"
+	      if test $MAILTO != ""
+	      then
+		  echo "EXIT CODE=$RES" | mail -s "Killed Wopr (${BIGGEST})" $MAILTO
+	      fi
+	      exit
 	  fi
-	  exit
       fi
   fi
   #
