@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # $Id: watch_ceto.sh 6416 2010-10-07 09:56:14Z pberck $
 #
@@ -6,9 +6,10 @@
 #
 # Checks if mem usage on ceto has reached $LIMIT.
 # If it has, kills the largest wopr owned by pberck.
+# Sends a warning mail if $LIMIT-1 is reached.
 #
 # Usage:
-# sh ./watch_ceto.sh LIMIT{M|G}
+# bash ./watch_ceto.sh LIMIT{M|G}
 #
 # ----
 #
@@ -35,25 +36,15 @@ then
 fi
 #
 SLEEP=10
-if test $# -eq 3
+if test $# -eq 2
 then
-  SLEEP=$3
+  SLEEP=$2
 fi
 #
-MEM_FILE="ceto_mem.txt"
-MEMWRITE_LAST=0;
 DATE_CMD="date '+%D %T'"
-#
-# --
-#
 ECHO="-e"
-MACH=`uname`
-if test $MACH == "Darwinddd" # OS X definitions
-then
-  ECHO=""
-fi
 #
-# Warn if we almost reach $LIMIT
+# Warn if we reach $LIMIT-1
 #
 WARN=$(echo "scale=0; $LIMIT - 1" | bc)
 WARNED=0
