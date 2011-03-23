@@ -1,7 +1,7 @@
 // $Id$
 
 /*****************************************************************************
- * Copyright 2010 Peter Berck                                                *
+ * Copyright 2010 - 2011 Peter Berck                                                *
  *                                                                           *
  * This file is part of Wopr.                                                *
  *                                                                           *

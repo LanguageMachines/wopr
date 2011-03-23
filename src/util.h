@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2005 Peter Berck                                                *
+ * Copyright 2005 - 2011 Peter Berck                                                *
  *                                                                           *
  * This file is part of PETeR.                                          *
  *                                                                           *

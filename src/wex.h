@@ -1,7 +1,7 @@
 // $Id: wex.h 1826 2007-12-05 10:16:34Z pberck $
 
 /*****************************************************************************
- * Copyright 2007 - 2010 Peter Berck                                         *
+ * Copyright 2007 - 2011 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *

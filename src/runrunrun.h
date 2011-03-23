@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2005-2010 Peter Berck                                           *
+ * Copyright 2005 - 2011-2010 Peter Berck                                           *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
