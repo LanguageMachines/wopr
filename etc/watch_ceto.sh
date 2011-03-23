@@ -35,6 +35,8 @@ then
   LIMIT=`echo "$PRE * 1024 * 1024" | bc`
 fi
 #
+KILLIM=3
+#
 SLEEP=10
 if test $# -eq 2
 then
@@ -96,6 +98,7 @@ while true;
 	  BIGMEM=${BIGMEM/.*}
 	  if [[ $BIGMEM -gt 10 ]] #...could be many small woprs...
 	  then
+	      ps -u pberck -o pid,rss,vsize,pmem,cmd | sort -n -k5 | tail -n5
 	      echo $BIGGEST
 	      echo $ECHO "KILLING PID=$BIGGEST"
 	      kill $BIGGEST
@@ -103,9 +106,14 @@ while true;
 	      echo "EXIT CODE=$RES"
 	      if test $MAILTO != ""
 	      then
-		  echo "EXIT CODE=$RES" | mail -s "Killed Wopr (${BIGGEST})" $MAILTO
+		  echo "EXIT CODE=$RES\nKILL LIM=$KILLIM" | mail -s "Killed Wopr (${BIGGEST})" $MAILTO
 	      fi
-	      exit
+	      KILLIM=$(( $KILLIM - 1 ))
+	      if [[ $KILLIM -eq 0 ]]
+	      then
+		  echo "No more kills left"
+		  exit 
+	      fi
 	  fi
       fi
   fi
