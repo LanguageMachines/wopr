@@ -7,26 +7,51 @@ PREFIX="pre"
 VAR="cg"
 if test $# -lt 1
 then
-  echo "Supply DATAFILE, (and PREFIX)"
+  echo "Supply DATAFILE PREFIX PLOTVAR"
   exit
 fi
 #
 DATA=$1
-if test $# -eq 2
+PREFIX=$2
+PLOTVAR=$3
+#
+U0="using 2:7"
+U1="using 2:11"
+XR="[9000:]"
+YR="[]"
+if [[ $PLOTVAR == "cd" ]]
 then
-    PREFIX=$2
+    U0="using 2:8"
+    U1="using 2:12"  
+fi
+if [[ $PLOTVAR == "ic" ]]
+then
+    U0="using 2:9"
+    U1="using 2:13"  
+fi
+if [[ $PLOTVAR == "pplx" ]]
+then
+    U0="using 2:20"
+    U1="using 2:21"  
 fi
 #
 # Determine algos used from file.
 # Determine the LC and RC used.
 # Format:
 # WEX10321 500000 l3r1 2 1 cg 65433 68482 98912 0.69 66377 64408 102042 0.78 -a1+D -a4+D 1-500
+#
+# We have newer files with 4 extra fields appended per line, with 
+# perplexity (px1, mg1, px2, mg2):
+# WEX10230 5000000 l2r0 1 1 cg 21.41 51.11 27.46 0.41 21.41 51.11 27.46 0.41 -a4+D -a4+D 1-200 196.12 196.12 174.35 174.35
+#
+# extra "var to plot" parameter? The U0 and U1 later on are hardcoded now.
+#
 LCS=`cut -d' ' -f 3 ${DATA}  | cut -c2 | sort -u`
 RCS=`cut -d' ' -f 3 ${DATA}  | cut -c4 | sort -u`
 T0S=`cut -d' ' -f 15 ${DATA}  | sort -u`
 T1S=`cut -d' ' -f 16 ${DATA}  | sort -u`
 RS=`cut -d' ' -f 17 ${DATA}  | sort -u`
-VAR=`cut -d' ' -f 6 ${DATA}  | sort -u`
+VAR=`cut -d' ' -f 6 ${DATA}  | sort -u` #optimalisation variable!
 echo $T1S
 echo $VAR
 #
@@ -38,18 +63,11 @@ do
     for RC in ${RCS}
     do
 	CTXSTR=l${LC}r${RC}
-	PLOTDATA=${PREFIX}_${CTXSTR}_${VAR}.data
+	PLOTDATA=${PREFIX}_${CTXSTR}_${VAR}_${PLOTVAR}.data
 	echo "Generating ${PLOTDATA}"
 	egrep " ${CTXSTR} (.*?) (.?*) ${VAR}" ${DATA} > ${PLOTDATA}
     done
 done
-#
-#
-#
-U0="using 2:7"
-U1="using 2:11"
-XR="[9000:]"
-YR="[]"
 #
 # File per context size
 #
@@ -57,17 +75,17 @@ for LC in ${LCS}
 do
     for RC in ${RCS}
     do
-	CTXSTR=l${LC}r${RC}_${VAR}
+	CTXSTR=l${LC}r${RC}_${VAR}_${PLOTVAR}
 	GNUPLOT=${PREFIX}_${CTXSTR}.plot
 	PSPLOT=${PREFIX}_${CTXSTR}.ps
 	echo "Generating ${GNUPLOT}"
 	echo "# autogen" >${GNUPLOT}
 	
-	echo "set title \"l${LC}r${RC} ${T0S}/${T1S} (${RS})\"" >>${GNUPLOT}
+	echo "set title \"l${LC}r${RC} ${T0S}/${T1S} ${VAR} (${RS})\"" >>${GNUPLOT}
 	echo "set xlabel \"instances\""  >>${GNUPLOT}
 	echo "set key bottom"  >>${GNUPLOT}
 	echo "set logscale x" >>${GNUPLOT}
-	echo "set ylabel \"${VAR}\""  >>${GNUPLOT}
+	echo "set ylabel \"${PLOTVAR}\""  >>${GNUPLOT}
 	echo "set grid"  >>${GNUPLOT}
 	#set xtics (100,1000,10000,20000,100000) 
 	
