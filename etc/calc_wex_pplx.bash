@@ -1,6 +1,12 @@
 #!/bin/bash
 #
-for W in {11400..11515}
+START=11400
+END=$(( $START + 199 ))
+DATA=DATA.wex.${START}.data
+DATANEW=${DATA}.pplx
+#
+for W in $(seq ${START} 1 ${END})
+#{ ${START}..${END} }
 do
   OUTFILE="output.WEX"${W};
   #echo $OUTFILE;
@@ -101,7 +107,11 @@ do
 	  then
 	      mg2ppl=${BASH_REMATCH[1]}
 	      mg2ppl1=${BASH_REMATCH[2]}
-	      echo ${OUTFILE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
+	      #echo ${OUTFILE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
+	      #
+	      DATALINE=`grep WEX${W} ${DATA} | tail -n1`
+	      echo $DATALINE ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
+	      echo $DATALINE ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl} >> ${DATANEW}
 	  else
 	      echo "NO MATCH"
 	  fi
