@@ -44,8 +44,6 @@ fi
 # perplexity (px1, mg1, px2, mg2):
 # WEX10230 5000000 l2r0 1 1 cg 21.41 51.11 27.46 0.41 21.41 51.11 27.46 0.41 -a4+D -a4+D 1-200 196.12 196.12 174.35 174.35
 #
-# extra "var to plot" parameter? The U0 and U1 later on are hardcoded now.
-#
 LCS=`cut -d' ' -f 3 ${DATA}  | cut -c2 | sort -u`
 RCS=`cut -d' ' -f 3 ${DATA}  | cut -c4 | sort -u`
 T0S=`cut -d' ' -f 15 ${DATA}  | sort -u`
