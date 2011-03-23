@@ -1,15 +1,22 @@
 #!/bin/bash
 #
-START=11400
-END=$(( $START + 199 ))
+while getopts s:e: o
+do case "$o" in
+	s)      START="$OPTARG";;
+	e)      END="$OPTARG";;
+	[?])    echo "Usage: $0 [-s start] [-e end]"
+	        exit 1;;
+    esac
+done
+#
 DATA=DATA.wex.${START}.data
 DATANEW=${DATA}.pplx
+PPLX="/exp/pberck/wopr/etc/pplx_px.pl"
 #
 for W in $(seq ${START} 1 ${END})
-#{ ${START}..${END} }
 do
   OUTFILE="output.WEX"${W};
-  #echo $OUTFILE;
+  echo $OUTFILE;
   #
   # NB:
   # We grab pplx figures twice, first for the unfiltered run, and then
@@ -33,7 +40,7 @@ do
 	  lc=${BASH_REMATCH[3]}
 	  rc=${BASH_REMATCH[4]}
 	  #
-	  LINE=`perl /exp/pberck/wopr/etc/pplx_px.pl -f ${px1file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
+	  LINE=`perl ${PPLX} -f ${px1file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
 	  #
 	  #Wopr ppl:    373.66 Wopr ppl1:    373.66  (No oov words.)
 	  #
@@ -51,7 +58,7 @@ do
 	  fi
 	  # And likewise for the mg file.
 	  #
-	  LINE=`perl /exp/pberck/wopr/etc/pplx_px.pl -f ${mg1file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
+	  LINE=`perl ${PPLX} -f ${mg1file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
 	  #
 	  RX='.* ([0-9]+\.[0-9]+) .* ([0-9]+\.[0-9]+) .*'
 	  mg1ppl=0
@@ -82,7 +89,7 @@ do
 	  lc=${BASH_REMATCH[3]}
 	  rc=${BASH_REMATCH[4]}
 	  #
-	  LINE=`perl /exp/pberck/wopr/etc/pplx_px.pl -f ${px2file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
+	  LINE=`perl ${PPLX} -f ${px2file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
 	  #
 	  # Grab the perplexity from the output.
 	  #
@@ -98,7 +105,7 @@ do
 	  fi
 	  # And likewise for the mg file.
 	  #
-	  LINE=`perl /exp/pberck/wopr/etc/pplx_px.pl -f ${mg2file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
+	  LINE=`perl ${PPLX} -f ${mg2file} -l ${lc} -r ${rc} | tail -n10 | grep ppl`
 	  #
 	  RX='.* ([0-9]+\.[0-9]+) .* ([0-9]+\.[0-9]+) .*'
 	  mg2ppl=0
@@ -110,8 +117,8 @@ do
 	      #echo ${OUTFILE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
 	      #
 	      DATALINE=`grep WEX${W} ${DATA} | tail -n1`
-	      echo ${DATALINE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
-	      echo ${DATALINE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl} >> ${DATANEW}
+	      echo $DATALINE ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
+	      echo $DATALINE ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl} >> ${DATANEW}
 	  else
 	      echo "NO MATCH"
 	  fi
