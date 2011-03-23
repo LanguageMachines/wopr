@@ -110,8 +110,8 @@ do
 	      #echo ${OUTFILE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
 	      #
 	      DATALINE=`grep WEX${W} ${DATA} | tail -n1`
-	      echo $DATALINE ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
-	      echo $DATALINE ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl} >> ${DATANEW}
+	      echo ${DATALINE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl}
+	      echo ${DATALINE} ${px1ppl} ${mg1ppl} ${px2ppl} ${mg2ppl} >> ${DATANEW}
 	  else
 	      echo "NO MATCH"
 	  fi
