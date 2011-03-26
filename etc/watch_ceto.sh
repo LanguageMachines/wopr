@@ -5,16 +5,33 @@
 # ----
 #
 # Checks if mem usage on ceto has reached $LIMIT.
-# If it has, kills the largest wopr owned by pberck.
-# Sends a warning mail if $LIMIT-1 is reached.
+# If it has, kills the largest process owned by ${ME} that
+# has memory usage over 10%.
+# Sends a warning mail if $LIMIT-1 is reached, or when
+# disk usages reaches 95%.
+# Quits after having killed three processes.
 #
 # Usage:
 # bash ./watch_ceto.sh LIMIT{M|G}
 #
-# ----
+# Output:
+#  17/90 [1]  (18 %) /exp:36% /exp2:85%  03/26/11 14:54:45
+#  |  |        |     |                   |
+#  |  |        |     +  disk usage in %  +  time of status
+#  |  |        +  % of limit used
+#  |  +  % mem limit
+#  +  % mem used
+#     
+# ---- PARAMETERS TO CHANGE ----------------------------------------
 #
+MAILTO="P.J.Berck@UvT.nl"  # Better change me
+DISKS="/exp /exp2"         # Disks to watch
+MINFREE=95                 # Warn when disusage over 95%
+ME=`whoami`                # Her processes will be killed
+KILLIM=3                   # We quit after having killed 3 processes
+SLEEP=10                   # Sleep between cycles
 #
-MAILTO="P.J.Berck@UvT.nl"
+# ------------------------------------------------------------------
 #
 if test $# -lt 1
 then
@@ -22,7 +39,7 @@ then
   exit
 fi
 #
-LIMIT=$1 # kB
+LIMIT=$1 # Percentage
 #
 PRE=`echo $LIMIT | sed s/.$//`
 SUF=`echo $LIMIT | sed -e "s/^.*\(.\)$/\1/"`
@@ -35,9 +52,6 @@ then
   LIMIT=`echo "$PRE * 1024 * 1024" | bc`
 fi
 #
-KILLIM=3
-#
-SLEEP=10
 if test $# -eq 2
 then
   SLEEP=$2
@@ -51,6 +65,7 @@ ECHO="-e"
 WARN=$(echo "scale=0; $LIMIT - 1" | bc)
 WARNED=0
 CYCLE=0
+DISKWARNED=0
 #
 #PREV=`ps -u pberck -o pid,ppid,rss,vsize,pmem | awk '{ rss += $3; vsize += $4; pmem += $5;} ; END { print  pmem }'`
 PREV=`ps -eo pid,ppid,rss,vsize,pmem | awk '{ rss += $3; vsize += $4; pmem += $5;} ; END { print  pmem }'`
@@ -70,8 +85,32 @@ while true;
   PREV=$MEM
   NOW=`eval $DATE_CMD`
   #process could disappear before MEM=... and here...
+  # Disk space
+  #
+  DSTR=""
+  for MP in ${DISKS}
+  do
+      USE=`df -kP $MP | tail -n 1 | awk '{print $5}'`
+      USE=`echo $USE | sed s/%//`
+      if [[ $USE -gt $MINFREE ]]; then
+	  #echo "Space critical on $MP:  $USE" 
+	  if [[ $DISKWARNED -eq 0 ]]
+	  then
+	      # Mail a warning, once
+	      if test $MAILTO != ""
+	      then
+		  echo $ECHO "Warning: Diskspace at $MINFREE" | mail -s "Warning limit!" $MAILTO
+	      fi
+	      DISKWARNED=1
+	  fi
+	  DSTR="${DSTR} !! ${MP}:${USE}% !! "
+      else
+	  DSTR="${DSTR}${MP}:${USE}% "
+      fi
+  done
+  #
   echo $ECHO "\r                                                           \c"
-  echo $ECHO "\r $MEM/$LIMIT [$DIFF]  ($PERC %) $NOW\c"
+  echo $ECHO "\r $MEM/$LIMIT [$DIFF]  ($PERC %) $DSTR $NOW\c"
   if [[ $WARNED -eq 0 ]]
   then
       if [[ $MEM -gt $WARN ]]
@@ -92,13 +131,13 @@ while true;
       if [[ $CYCLE -gt 0 ]]
       then
 	  echo $ECHO "\n$MEM > $LIMIT"
-	  BIGGEST=`ps -u pberck -o pid,ppid,rss,vsize,pmem | sort -n -k5 | tail -n1 | awk '{print $1}'`
-	  BIGMEM=`ps -u pberck -o pid,ppid,rss,vsize,pmem | sort -n -k5 | tail\
+	  BIGGEST=`ps -u ${ME} -o pid,ppid,rss,vsize,pmem | sort -n -k5 | tail -n1 | awk '{print $1}'`
+	  BIGMEM=`ps -u ${ME} -o pid,ppid,rss,vsize,pmem | sort -n -k5 | tail\
  -n1 | awk '{print $5}'`
 	  BIGMEM=${BIGMEM/.*}
 	  if [[ $BIGMEM -gt 10 ]] #...could be many small woprs...
 	  then
-	      ps -u pberck -o pid,rss,vsize,pmem,cmd | sort -n -k5 | tail -n5
+	      ps -u ${ME} -o pid,rss,vsize,pmem,cmd | sort -n -k5 | tail -n5
 	      echo $BIGGEST
 	      echo $ECHO "KILLING PID=$BIGGEST"
 	      kill $BIGGEST
