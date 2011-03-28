@@ -1,15 +1,25 @@
 #!/bin/bash
 #
-while getopts s:e: o
+while getopts d:s:e: o
 do case "$o" in
 	s)      START="$OPTARG";;
 	e)      END="$OPTARG";;
+	d)      DATA="$OPTARG";;
 	[?])    echo "Usage: $0 [-s start] [-e end]"
 	        exit 1;;
     esac
 done
 #
-DATA=DATA.wex.${START}.data
+if [[ $DATA ]]
+then
+    L1=`awk '{print $1}' ${DATA} | sed 's/...\(.*\)/\1/' | sort -n | tail -n1`
+    L0=`awk '{print $1}' ${DATA} | sed 's/...\(.*\)/\1/' | sort -n | head -n1`
+    START=${L0}
+    END=${L1}
+    echo "$L0 - $L1"
+else
+    DATA=DATA.wex.${START}.data
+fi
 DATANEW=${DATA}.pplx
 PPLX="/exp/pberck/wopr/etc/pplx_px.pl"
 #
