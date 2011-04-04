@@ -1725,6 +1725,9 @@ int server_mg( Logfile& l, Config& c ) {
   const int hapax                   = stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm                  = stoi( c.get_value( "skm", "0" )) == 1;
   const int keep                      = stoi( c.get_value( "keep", "0" ));
+  const int resm                      = stoi( c.get_value( "resm", "0" ));
+  const int lb                        = stoi( c.get_value( "lb", "0" ));
+  const int moses                     = stoi( c.get_value( "moses", "0" ));
 
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   int                fco              = stoi( c.get_value( "fco", "0" ));
@@ -1908,16 +1911,37 @@ int server_mg( Logfile& l, Config& c ) {
 	    cls.push_back( classify_line );
 	  }
 
-	  Tokenize( classify_line, words, ' ' ); // instance
+	  // Loop over all lines.
+	  //
+	  std::vector<std::string> words;
+	  probs.clear();
+	  for ( int i = 0; i < cls.size(); i++ ) {
+	    
+	    classify_line = cls.at(i);
+	    
+	    words.clear();
+	    Tokenize( classify_line, words, ' ' );
+	    
+	    if ( hapax > 0 ) {
+	      /*int c = hapax_vector( words, hpxfreqs, hapax );
+	      std::string t;
+	      vector_to_string(words, t);
+	      classify_line = t;
+	      if ( verbose > 1 ) {
+		l.log( "|" + classify_line + "| hpx" );
+		}*/
+	    } // hapax
+	    
+	    Tokenize( classify_line, words, ' ' ); // instance
 
-	  pos    = words.size()-1-fco;
-	  pos    = (pos < 0) ? 0 : pos;
-	  gate   = words[pos];
-	  target = words[words.size()-1];
-	  
-	  if ( verbose > 1 ) {
-	    l.log( "pos:"+to_str(pos)+" gate:"+gate );
-	  }
+	    pos    = words.size()-1-fco;
+	    pos    = (pos < 0) ? 0 : pos;
+	    gate   = words[pos];
+	    target = words[words.size()-1];
+	    
+	    if ( verbose > 1 ) {
+	      l.log( "pos:"+to_str(pos)+" gate:"+gate );
+	    }
 
 	  // Have we got a classifier with this gate?
 	  //
@@ -1966,8 +1990,69 @@ int server_mg( Logfile& l, Config& c ) {
 	    //file_out << log2( multidist.prob ) << " ";
 	  }
 
+	  double res_pl10 = -99; // or zero, like SRILM when pplx-ing
+	  if ( resm == 2 ) {
+	    res_pl10 = 0; // average w/o OOV words
+	  }
+	  if ( multidist.prob > 0 ) {
+	    res_pl10 = log10( multidist.prob );
+	  } else {
+	    // fall back to lex freq. of correct answer.
+	    /*
+	    std::map<std::string,int>::iterator wfi = wfreqs.find(target);
+	    if  (wfi != wfreqs.end()) {
+	      res_p = (int)(*wfi).second / (double)total_count ;
+	      res_pl10 = log10( res_p );
+	      if ( verbose > 1 ) {
+		l.log( "Fall back to lex freq of Timbl answer." );
+	      }
+	    }
+	    */
+	  }
+	  
+	  if ( verbose > 1 ) {
+	    l.log( "lprob10("+target+")="+to_str(res_pl10) );
+	  }
+	  
+	  probs.push_back( res_pl10 ); // store for later.
+	  
+	  } // i over cls
+	  
 	  //file_out << a_line << " " << multidist.answer << " ";
-	  newSock->write( to_str(multidist.prob) );
+	  //newSock->write( to_str(multidist.prob) );
+	  
+	  double ave_pl10 = 0.0;
+	    for ( int p = 0; p < probs.size(); p++ ) {
+	      double prob = probs.at(p);
+	      ave_pl10 += prob;
+	    }
+	    if ( verbose > 0 ) {
+	      l.log( "result sum="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	    }
+	    if ( resm != 1 ) { // normally, average, but not for resm:1
+	      ave_pl10 /= probs.size();
+	    }
+	    // else resm == 1, we return the sum.
+	    
+	    if ( verbose > 0 ) {
+	      l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	    }
+	    
+	    if ( lb == 0 ) { // lb:0 is no logs
+	      ave_pl10 = pow(10, ave_pl10);
+	    }
+	    if ( moses == 0 ) {
+	      newSock->write( to_str(ave_pl10) );
+	      
+	    } else if ( moses == 1 ) { // 6 char output which moses seems to expect
+	      char res_str[7];
+	      
+	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
+	      
+	      //std::cerr << "(" << res_str << ")" << std::endl;
+	      newSock->write( res_str );
+	    }
+
 
 	  connection_open = (keep == 1);
 	  //connection_open = false;
