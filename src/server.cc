@@ -60,6 +60,9 @@
 #include "watcher.h"
 #include "server.h"
 
+#include "Multi.h" // for server_mg
+#include "wex.h"   // for server_mg
+
 #ifdef TIMBL
 #include "timbl/TimblAPI.h"
 #endif
@@ -1704,3 +1707,298 @@ int vector_to_string( std::vector<std::string>& words, std::string& res ) {
 
   return 0;
 }
+
+// -----------
+
+#if defined(TIMBLSERVER) && defined(TIMBL)
+int server_mg( Logfile& l, Config& c ) {
+  l.log( "server multi_gated" );
+  const std::string  port             = c.get_value( "port", "1984" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& kvs_filename     = c.get_value( "kvs" );
+
+  const int mode                      = stoi( c.get_value( "mode", "0" ));
+  const int verbose                   = stoi( c.get_value( "verbose", "0" ));
+  const int lc                      = stoi( c.get_value( "lc", "2" ));
+  const int rc                      = stoi( c.get_value( "rc", "0" ));
+  const int hapax                   = stoi( c.get_value( "hpx", "0" ));
+  const bool skip_sm                  = stoi( c.get_value( "skm", "0" )) == 1;
+  const int keep                      = stoi( c.get_value( "keep", "0" ));
+
+  int                topn             = stoi( c.get_value( "topn", "1" ) );
+  int                fco              = stoi( c.get_value( "fco", "0" ));
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
+
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  // specify default to be able to choose default classifier?
+
+  l.inc_prefix();
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "filename:   "+filename );
+  l.log( "kvs:        "+kvs_filename );
+  l.log( "fco:        "+to_str(fco) ); 
+  l.log( "topn:       "+to_str(topn) );
+  l.log( "id:         "+id );
+  l.dec_prefix();
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  }
+
+  // Read kvs
+  //
+  std::vector<Classifier*> cls;
+  std::vector<Classifier*>::iterator cli;
+  std::map<std::string,Classifier*> gated_cls; // reverse list
+  int classifier_count = 0;
+  Classifier* dflt = NULL;
+  if ( kvs_filename != "" ) {
+    l.log( "Reading classifiers." );
+    std::ifstream file_kvs( kvs_filename.c_str() );
+    if ( ! file_kvs ) {
+      l.log( "ERROR: cannot load kvs file." );
+      return -1;
+    }
+    read_classifiers_from_file( file_kvs, cls );
+    file_kvs.close();
+    l.log( "Read "+to_str(cls.size())+" classifiers from "+kvs_filename );
+
+    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+      (*cli)->init();
+      l.log( (*cli)->id + "/" + to_str((*cli)->get_type()) );
+      //
+      // Gated classifier, rest is ignored.
+      //
+      if ( (*cli)->get_type() == 3 ) {
+	gated_cls[ (*cli)->get_gatetrigger() ] = (*cli);
+      } else if ( (*cli)->get_type() == 4 ) { //Well, not the default one
+	dflt = (*cli);
+      }
+
+      ++classifier_count;
+      l.log( (*cli)->info_str() );
+    }
+    
+    if ( dflt == NULL ) {
+      l.log( "ERROR: no default classifier" );
+      return -1;
+    }
+    l.log( "Read classifiers. Starting classification." );
+  }
+
+
+  std::string a_line;
+  std::vector<std::string> words;
+  int pos;
+  std::map<std::string, Classifier*>::iterator gci;
+  std::string gate;
+  std::string target;
+  int gates_triggered = 0;
+
+  md2    multidist;
+  double classifier_weight;
+  int    type;
+  int    subtype;
+  std::vector<md2_elem>::iterator dei;
+  Classifier* cl = NULL; // classifier used.
+  std::map<std::string,int>::iterator wfi;
+
+  try {
+
+    Sockets::ServerSocket server;
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
+    }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
+    l.log( "Starting server..." );
+
+    // loop
+    //
+    while ( c.get_status() != 0 ) {  // main accept() loop
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
+      }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+
+
+      std::string buf;
+      if ( c.get_status() && ( ! fork() )) { // this is the child process	
+	bool connection_open = true;
+	std::vector<std::string> cls; // classify lines
+	std::vector<double> probs;
+	
+	while ( connection_open ) {
+	  
+	  std::string tmp_buf;
+	  newSock->read( tmp_buf );
+	  tmp_buf = trim( tmp_buf, " \n\r" );
+	  
+	  if ( tmp_buf == "_CLOSE_" ) {
+	    connection_open = false;
+	    break;
+	  }
+	  if ( verbose > 0 ) {
+	    l.log( "|" + tmp_buf + "|" );
+	  }
+	  
+	  // Remove <s> </s> if so requested.
+	  //
+	  if ( skip_sm == true ) {
+	    if ( tmp_buf.substr(0, 4) == "<s> " ) {
+	      tmp_buf = tmp_buf.substr(4);
+	    }
+	    size_t bl =  tmp_buf.length();
+	    if ( tmp_buf.substr(bl-5, 5) == " </s>" ) {
+	      tmp_buf = tmp_buf.substr(0, bl-5);
+	    }
+	    if ( verbose > 1 ) {
+	      l.log( "|" + tmp_buf + "| skm" );
+	    }	      
+	  } //skip_sm
+	  
+	  cls.clear();
+	  std::string classify_line = tmp_buf;
+	  
+	  // Sentence based, window here, classify all, etc.
+	  //
+	  if ( mode == 1 ) {
+	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	  } else {
+	    cls.push_back( classify_line );
+	  }
+
+	  Tokenize( classify_line, words, ' ' ); // instance
+
+	  pos    = words.size()-1-fco;
+	  pos    = (pos < 0) ? 0 : pos;
+	  gate   = words[pos];
+	  target = words[words.size()-1];
+	  
+	  if ( verbose > 1 ) {
+	    l.log( "pos:"+to_str(pos)+" gate:"+gate );
+	  }
+
+	  // Have we got a classifier with this gate?
+	  //
+	  gci = gated_cls.find( gate );
+	  if ( gci != gated_cls.end() ) {
+	    cl = (*gci).second;
+	    ++gates_triggered;
+	  } else { // the default classifier.
+	    cl = dflt;
+	  }
+	  
+	  // Do the classification.
+	  //
+	  //l.log( cl->id + "/" + to_str(cl->get_type()) );
+	  cl->classify_one( classify_line );
+	  
+	  multidist = cl->classification;
+	  type      = cl->get_type();
+	  subtype   = cl->get_subtype();
+
+	  if ( verbose > 1 ) {
+	    l.log( multidist.answer );
+	    if ( cl->get_type() == 4 ) {
+	      l.log( "D" );
+	    } else {
+	      l.log( "G" );
+	    }
+	    l.log( cl->id );
+	  }	      
+
+	  // return only prob? pplx?
+	  //file_out << a_line << " " << multidist.answer << " ";
+
+	  std::string known = "k"; // unknown.
+	  if ( multidist.prob == 0 ) {
+	    known = "u";
+	    wfi = wfreqs.find(target);
+	    if ( wfi != wfreqs.end() ) {
+	      multidist.prob = (int)(*wfi).second / (double)total_count;
+	      known = "k";
+	    }
+	  }
+	  if ( multidist.prob == 0 ) {
+	    //file_out << "0 ";
+	  } else {
+	    //file_out << log2( multidist.prob ) << " ";
+	  }
+
+	  //file_out << a_line << " " << multidist.answer << " ";
+	  newSock->write( to_str(multidist.prob) );
+
+	  connection_open = (keep == 1);
+	  //connection_open = false;
+	  
+	  // If parent is gone, close connexion
+	  //
+	  if ( getppid() == 1 ) {
+	    l.log( "PARENT gone, exiting." );
+	    connection_open = false;
+	  }
+	  
+	} // connection_open
+        l.log( "connection closed." );
+	c.set_status(0);
+	return 0;
+	
+      } // fork
+      delete newSock;
+      
+    }
+    
+  } catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  } //-------------------------------------------
+  
+  return 0;
+}
+#else
+int server_mg( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );  
+  return -1;
+}
+#endif

@@ -54,5 +54,5 @@ int webdemo( Logfile&, Config& );
 int one( Logfile&, Config& );
 int hapax_vector( std::vector<std::string>&, std::map<std::string,int>, int);
 int vector_to_string( std::vector<std::string>& , std::string&  );
-
+int server_mg( Logfile&, Config& );
 #endif

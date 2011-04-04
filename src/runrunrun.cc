@@ -442,6 +442,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &server3;
   } else if ( a_fname == "server4" ) {
     return &server4;
+  } else if ( a_fname == "server_mg" ) {
+    return &server_mg;
   } else if ( a_fname == "webdemo" ) {
     return &webdemo;
   } else if ( a_fname == "one" ) {
