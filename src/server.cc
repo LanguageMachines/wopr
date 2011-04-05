@@ -1708,8 +1708,9 @@ int vector_to_string( std::vector<std::string>& words, std::string& res ) {
   return 0;
 }
 
-// -----------
-
+/*
+durian:weps pberck$ ../../wopr -r server_mg -p kvs:austen.train.l3r0.fcs1_EXP8.kvs,port:1984,lexicon:austen.train.lex,verbose:2,fco:1,keep:1,mode:1,lc:3
+*/
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int server_mg( Logfile& l, Config& c ) {
   l.log( "server multi_gated" );
@@ -1920,7 +1921,6 @@ int server_mg( Logfile& l, Config& c ) {
 	    classify_line = cls.at(i);
 	    
 	    words.clear();
-	    Tokenize( classify_line, words, ' ' );
 	    
 	    if ( hapax > 0 ) {
 	      /*int c = hapax_vector( words, hpxfreqs, hapax );
@@ -1933,8 +1933,9 @@ int server_mg( Logfile& l, Config& c ) {
 	    } // hapax
 	    
 	    Tokenize( classify_line, words, ' ' ); // instance
+	    l.log( classify_line );
 
-	    pos    = words.size()-1-fco;
+	    pos    = (int)words.size()-1-fco;
 	    pos    = (pos < 0) ? 0 : pos;
 	    gate   = words[pos];
 	    target = words[words.size()-1];
@@ -1963,7 +1964,7 @@ int server_mg( Logfile& l, Config& c ) {
 	  subtype   = cl->get_subtype();
 
 	  if ( verbose > 1 ) {
-	    l.log( multidist.answer );
+	    l.log( "ans:"+multidist.answer+" prob:"+to_str(multidist.prob) );
 	    if ( cl->get_type() == 4 ) {
 	      l.log( "D" );
 	    } else {
@@ -1996,18 +1997,6 @@ int server_mg( Logfile& l, Config& c ) {
 	  }
 	  if ( multidist.prob > 0 ) {
 	    res_pl10 = log10( multidist.prob );
-	  } else {
-	    // fall back to lex freq. of correct answer.
-	    /*
-	    std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-	    if  (wfi != wfreqs.end()) {
-	      res_p = (int)(*wfi).second / (double)total_count ;
-	      res_pl10 = log10( res_p );
-	      if ( verbose > 1 ) {
-		l.log( "Fall back to lex freq of Timbl answer." );
-	      }
-	    }
-	    */
 	  }
 	  
 	  if ( verbose > 1 ) {
