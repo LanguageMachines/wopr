@@ -100,7 +100,7 @@ do
 	echo ${PLOT%\,} >>${GNUPLOT}
 	#
         echo "set terminal push" >>${GNUPLOT}
-        echo "set terminal postscript eps ${LSR} lw 2 'Helvetica' 10" >>${GNUPLOT}
+        echo "set terminal postscript eps ${LSR} lw 4 'Helvetica' 20" >>${GNUPLOT}
         echo "set out '${PSPLOT}'" >>${GNUPLOT}
         echo "replot" >>${GNUPLOT}
         echo "!epstopdf '${PSPLOT}'" >> ${GNUPLOT}
