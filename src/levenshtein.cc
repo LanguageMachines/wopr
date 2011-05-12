@@ -742,6 +742,7 @@ int server_sc( Logfile& l, Config& c ) {
   int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
   // ratio target_lexfreq:tvs_lexfreq
   double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  const std::string empty        = c.get_value( "empty", "__EMPTY__" );
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -764,6 +765,8 @@ int server_sc( Logfile& l, Config& c ) {
   int mode  = 0;
   int lc    = 0;
   int rc    = 0;
+
+  char sep = '\t';
 
   // Load lexicon. 
   //
@@ -1078,19 +1081,23 @@ int server_sc( Logfile& l, Config& c ) {
 	    //
 	    double word_lp = pow( 2, -logprob );
 	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+
+	    // Return all, seperated by sep (tab).
+
+	    answer = "";
+	    int cntr = -1;
 	    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
-	    // Return the first one, as the best correction?
-	    answer = "NONE";
-	    if ( fi != distr_vec.end() ) {
-	      answer = (*fi)->name;
+	    if ( distr_vec.empty() ) {
+	      answer = empty;
+	    } else {
+	      while ( (fi != distr_vec.end()-1 ) && (--cntr != 0) ) {
+		answer = answer + (*fi)->name + sep;
+		delete *fi;
+		fi++;
+	      }
+	      answer = answer + (*fi)->name;
 	    }
 	    newSock->write( answer );
-	    /*std::cerr << cnt << " [ ";
-	      while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-	      std::cerr << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-	      delete *fi;
-	      fi++;
-	      }*/
 
 	    distr_vec.clear();
 	      
