@@ -55,6 +55,13 @@
 # include "timbl/TimblAPI.h"
 #endif
 
+#ifdef TIMBLSERVER
+#include "SocketBasics.h"
+#endif
+
+#define BACKLOG 5     // how many pending connections queue will hold
+#define MAXDATASIZE 2048 // max number of bytes we can get at once 
+
 int min3( int a, int b, int c ) {
   int mi;
   
@@ -694,4 +701,420 @@ int correct( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }  
+#endif
+
+// Spelling corrector server
+//lw0196:test_pplxs pberck$ ../wopr -r server_sc -p ibasefile:OpenSub-english.train.txt.l2r0.hpx1_-a1+D.ibase,timbl:"-a1 +D",lexicon:OpenSub-english.train.txt.lex,verbose:1
+//echo "man is _" | nc localhost 1984
+
+#if defined(TIMBLSERVER) && defined(TIMBL)
+int server_sc( Logfile& l, Config& c ) {
+  l.log( "server spelling correction" );
+  
+  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& ibasefile  = c.get_value( "ibasefile" );
+  const std::string port        = c.get_value( "port", "1984" );
+  const int verbose             = stoi( c.get_value( "verbose", "0" ));
+  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+
+  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  // maximum levenshtein distance (guess added if <= mld)
+  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  // max entropy (guess added if <= max_entropy)
+  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  // maximum distributie (guess added if <= max_distr)
+  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  // ratio target_lexfreq:tvs_lexfreq
+  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+
+  l.inc_prefix();
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "port:      "+port );
+  l.log( "keep:      "+to_str(keep) ); // keep conn. open after sending result
+  l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
+  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "lexicon    "+lexicon_filename ); // the lexicon
+  l.log( "mwl:        "+to_str(mwl) );
+  l.log( "mld:        "+to_str(mld) );
+  l.log( "max_ent:    "+to_str(max_ent) );
+  l.log( "max_distr:  "+to_str(max_distr) );
+  l.log( "min_ratio:  "+to_str(min_ratio) );
+  l.dec_prefix();
+
+  int hapax = 0;
+  int mode = 0;
+  int lc = 0;
+  int rc = 0;
+
+  // Load lexicon. 
+  //
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+  // Read the lexicon with word frequencies, freq > hapax.
+  //
+  l.log( "Reading lexicon." );
+  std::string a_word;
+  int wfreq;
+  unsigned long total_count     = 0;
+  unsigned long lex_entries     = 0;
+  unsigned long hpx_entries     = 0;
+  unsigned long N_1             = 0; // Count for p0 estimate.
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::map<std::string,int> hpxfreqs; // hapaxed list
+  while( file_lexicon >> a_word >> wfreq ) {
+    ++lex_entries;
+    total_count += wfreq;
+    wfreqs[a_word] = wfreq;
+    if ( wfreq == 1 ) {
+      ++N_1;
+    }
+    if ( wfreq > hapax ) {
+      hpxfreqs[a_word] = wfreq;
+      ++hpx_entries;
+    }
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
+
+  double p0 = 0.00001; // Arbitrary low probability for unknown words.
+  if ( total_count > 0 ) { // Better estimate if we have a lexicon
+    p0 = (double)N_1 / ((double)total_count * total_count);
+  }
+  
+  std::string distrib;
+  std::vector<std::string> distribution;
+  std::string result;
+  double distance;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+
+    Sockets::ServerSocket server;
+    
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
+    }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
+    
+    l.log( "Starting server..." );
+
+    // loop
+    //
+    while ( c.get_status() != 0 ) {  // main accept() loop
+
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
+      }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+
+      std::string buf;
+      
+      if ( c.get_status() && ( ! fork() )) { // this is the child process
+	
+	bool connection_open = true;
+	std::vector<std::string> cls; // classify lines
+	std::vector<double> probs;
+
+	while ( connection_open ) {
+
+	    std::string tmp_buf;
+	    newSock->read( tmp_buf );
+	    tmp_buf = trim( tmp_buf, " \n\r" );
+	    
+	    if ( tmp_buf == "_CLOSE_" ) {
+	      connection_open = false;
+	      c.set_status(0);
+	      break;
+	    }
+	    if ( verbose > 0 ) {
+	      l.log( "|" + tmp_buf + "|" );
+	    }
+
+	    cls.clear();
+	    
+	    std::string classify_line = tmp_buf;
+
+	    // Sentence based, window here, classify all, etc.
+	    //
+	    if ( mode == 1 ) {
+	      window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	    } else {
+	      cls.push_back( classify_line );
+	    }
+	    
+	    // Loop over all lines.
+	    //
+	    std::vector<std::string> words;
+    	    probs.clear();
+	    for ( int i = 0; i < cls.size(); i++ ) {
+	      
+	      classify_line = cls.at(i);
+	      
+	      words.clear();
+	      Tokenize( classify_line, words, ' ' );
+
+	      /*if ( hapax > 0 ) {
+		int c = hapax_vector( words, hpxfreqs, hapax );
+		std::string t;
+		vector_to_string(words, t);
+		classify_line = t;
+		if ( verbose > 1 ) {
+		  l.log( "|" + classify_line + "| hpx" );
+		}
+		}*/
+	      
+	      // if we take target from a pre-non-hapaxed vector, we
+	      // can hapax the whole sentence in the beginning and use
+	      // that for the instances-without-target
+	      //
+	      std::string target = words.at( words.size()-1 );
+
+	      // Is the target in the lexicon? We could calculate a smoothed
+	      // value here if we load the .cnt file too...
+	      //
+	      std::map<std::string,int>::iterator wfi = wfreqs.find( target );
+	      bool   target_unknown = false;
+	      bool   correct_answer = false;
+	      double target_lexfreq = 0.0;// should be double because smoothing
+	      double target_lexprob = 0.0;
+	      if ( wfi == wfreqs.end() ) {
+		target_unknown = true;
+	      } else {
+		target_lexfreq =  (int)(*wfi).second; // Take lexfreq
+		target_lexprob = (double)target_lexfreq / (double)total_count;
+	      }
+
+	      tv = My_Experiment->Classify( classify_line, vd, distance );
+	      if ( ! tv ) {
+		l.log( "ERROR: Timbl returned a classification error, aborting." );
+		break;
+	      }
+
+	      result = tv->Name();		
+	      size_t res_freq = tv->ValFreq();
+
+	      if ( verbose > 1 ) {
+		l.log( "timbl("+classify_line+")="+result );
+	      }
+
+	      std::string answer = tv->Name();
+	      if ( target == answer ) {
+		correct_answer = true;
+	      }
+
+
+
+
+      int cnt = 0;
+      int distr_count = 0;
+      int target_freq = 0;
+      int answer_freq = 0;
+      double prob            = 0.0;
+      double target_distprob = 0.0;
+      double answer_prob     = 0.0;
+      double entropy         = 0.0;
+
+      double sentence_prob      = 0.0;
+      double sum_logprob        = 0.0;
+      int    sentence_wordcount = 0;
+
+      bool in_distr          = false;
+      cnt = vd->size();
+      distr_count = vd->totalSize();
+
+      // Check if target word is in the distribution.
+      //
+      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+      while ( it != vd->end() ) {
+	//const Timbl::TargetValue *tv = it->second->Value();
+
+	std::string tvs  = it->second->Value()->Name();
+	double      wght = it->second->Weight();
+
+	if ( verbose > 1 ) {
+	  l.log(tvs+": "+to_str(wght));
+	}
+
+	// Prob. of this item in distribution.
+	//
+	prob     = (double)wght / (double)distr_count;
+	entropy -= ( prob * log2(prob) );
+
+	if ( tvs == target ) { // The correct answer was in the distribution!
+	  target_freq = wght;
+	  in_distr = true;
+	}
+
+	++it;
+      }
+      target_distprob = (double)target_freq / (double)distr_count;
+
+      // If correct: if target in distr, we take that prob, else
+      // the lexical prob.
+      // Unknown words?
+      //
+      double logprob = 0.0;
+      std::string info = "huh?";
+      if ( target_freq > 0 ) { // Right answer was in distr.
+	logprob = log2( target_distprob );
+	info = "target_distprob";
+      } else {
+	if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+	  logprob = log2( target_lexprob ); // SMOOTHED here, see above
+	  info = "target_lexprob";
+	} else {
+	  //
+	  // What to do here? We have an 'unknown' target, i.e. not in the
+	  // lexicon.
+	  //
+	  logprob = log2( p0 ); 
+	  info = "P(new_particular)";
+	}
+      }
+      sum_logprob += logprob;
+
+      //l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
+
+      // If we didn't have the correct answer in the distro, we take ld=1
+      // Skip words shorter than mwl.
+      //
+      it = vd->begin();
+      std::vector<distr_elem*> distr_vec;
+      std::map<std::string,int>::iterator tvsfi;
+      double factor = 0.0;
+      // if in_distr==true, we can look if att ld=1, and then at freq.factor!
+      if ( (target.length() > mwl) && (in_distr == false) ) {
+	while ( it != vd->end() ) {
+
+	  // 20100111: freq voorspelde woord : te voorspellen woord > 1
+	  //             uit de distr          target
+
+	  std::string tvs  = it->second->Value()->Name();
+	  double      wght = it->second->Weight();
+	  int ld = lev_distance( target, tvs );
+
+	  if ( verbose > 1 ) {
+	    l.log(tvs+": "+to_str(wght)+" ld: "+to_str(ld));
+	  }
+
+	  // If the ld of the word is less than the minimum,
+	  // we include the result in our output.
+	  //
+	  if (
+	      (entropy <= max_ent) &&
+	      (cnt <= max_distr)   &&
+	      ( ld <= mld )     
+	      ) { 
+	    //
+	    // So here we check frequency of tvs from the distr. with
+	    // frequency of the target.
+	    // 
+	    int tvs_lf = 0;
+	    double factor = 0.0;
+	    wfi = wfreqs.find( tvs );
+	    if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
+	      tvs_lf =  (int)(*wfi).second;
+	      factor = tvs_lf / target_lexfreq;
+	    }
+	    //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
+	    // If the target is not found (unknown words), we have no
+	    // ratio, and we only use the other parameters, ie. this
+	    // test falls through.
+	    //
+	    if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
+	      //
+	      distr_elem* d = new distr_elem(); 
+	      d->name = tvs;
+	      d->freq = ld;
+	      tvsfi = wfreqs.find( tvs );
+	      if ( tvsfi == wfreqs.end() ) {
+		d->lexfreq = 0;
+	      } else {
+		d->lexfreq = (double)(*tvsfi).second;
+	      }
+	    
+	      distr_vec.push_back( d );
+	    } // factor>min_ratio
+	  }
+	
+	  ++it;
+	}
+      }
+
+      // Word logprob (ref. Antal's mail 21/11/08)
+      // 2 ^ (-logprob(w)) 
+      //
+      double word_lp = pow( 2, -logprob );
+      int cntr = 4;
+      sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+      std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+      // Return the first one, as the best correction?
+      answer = "NONE";
+      if ( fi != distr_vec.end() ) {
+	answer = (*fi)->name;
+      }
+      newSock->write( answer );
+      /*std::cerr << cnt << " [ ";
+      while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+	std::cerr << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+	delete *fi;
+	fi++;
+	}*/
+
+      distr_vec.clear();
+	      
+	    } // i loop
+
+	    connection_open = (keep == 1);
+	    //connection_open = false;
+
+	    // If parent is gone, close connexion
+	    //
+	    if ( getppid() == 1 ) {
+	      l.log( "PARENT gone, exiting." );
+	      connection_open = false;
+	    }
+	    
+	} // connection_open
+        l.log( "connection closed." );
+	c.set_status(0);
+	return 0;
+
+      } // fork
+      delete newSock;
+
+    }
+  }
+  catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
+  
+  return 0;
+}
+#else
+int server_sc( Logfile& l, Config& c ) {
+  l.log( "Timbl support not built in." );  
+  return -1;
+}
 #endif
