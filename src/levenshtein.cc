@@ -757,10 +757,13 @@ int server_sc( Logfile& l, Config& c ) {
   l.log( "min_ratio:  "+to_str(min_ratio) );
   l.dec_prefix();
 
+
+  // To be implemented later (maybe)
+  //
   int hapax = 0;
-  int mode = 0;
-  int lc = 0;
-  int rc = 0;
+  int mode  = 0;
+  int lc    = 0;
+  int rc    = 0;
 
   // Load lexicon. 
   //
@@ -904,13 +907,12 @@ int server_sc( Logfile& l, Config& c ) {
 	    //
 	    std::string target = words.at( words.size()-1 );
 	    
-	    // Is the target in the lexicon? We could calculate a smoothed
-	    // value here if we load the .cnt file too...
+	    // Is the target in the lexicon?
 	    //
 	    std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	    bool   target_unknown = false;
 	    bool   correct_answer = false;
-	    double target_lexfreq = 0.0;// should be double because smoothing
+	    double target_lexfreq = 0.0;
 	    double target_lexprob = 0.0;
 	    if ( wfi == wfreqs.end() ) {
 	      target_unknown = true;
@@ -921,37 +923,35 @@ int server_sc( Logfile& l, Config& c ) {
 	    
 	    tv = My_Experiment->Classify( classify_line, vd, distance );
 	    if ( ! tv ) {
-	      l.log( "ERROR: Timbl returned a classification error, aborting." );
+	      l.log("ERROR: Timbl returned a classification error, aborting.");
 	      break;
 	    }
 	    
-	    result = tv->Name();		
-	    size_t res_freq = tv->ValFreq();
-	    
-	    if ( verbose > 1 ) {
-	      l.log( "timbl("+classify_line+")="+result );
+	    size_t      res_freq = tv->ValFreq();	    
+	    std::string answer   = tv->Name();
+	    if ( verbose > 0 ) {
+	      l.log( "timbl("+classify_line+")="+answer );
 	    }
-	    
-	    std::string answer = tv->Name();
+
 	    if ( target == answer ) {
 	      correct_answer = true;
 	    }
 	    
-	    int cnt = 0;
+	    int cnt         = 0;
 	    int distr_count = 0;
 	    int target_freq = 0;
 	    int answer_freq = 0;
+
 	    double prob            = 0.0;
 	    double target_distprob = 0.0;
 	    double answer_prob     = 0.0;
 	    double entropy         = 0.0;
-
-	    double sentence_prob      = 0.0;
-	    double sum_logprob        = 0.0;
-	    int    sentence_wordcount = 0;
+	    double sentence_prob   = 0.0;
+	    double sum_logprob     = 0.0;
 
 	    bool in_distr          = false;
-	    cnt = vd->size();
+
+	    cnt         = vd->size();
 	    distr_count = vd->totalSize();
 
 	    // Check if target word is in the distribution.
@@ -972,7 +972,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      prob     = (double)wght / (double)distr_count;
 	      entropy -= ( prob * log2(prob) );
 
-	      if ( tvs == target ) { // The correct answer was in the distribution!
+	      if ( tvs == target ) { // The correct answer was in the distr.
 		target_freq = wght;
 		in_distr = true;
 	      }
@@ -992,7 +992,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      info = "target_distprob";
 	    } else {
 	      if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-		logprob = log2( target_lexprob ); // SMOOTHED here, see above
+		logprob = log2( target_lexprob );
 		info = "target_lexprob";
 	      } else {
 		//
@@ -1005,8 +1005,6 @@ int server_sc( Logfile& l, Config& c ) {
 	    }
 	    sum_logprob += logprob;
 
-	    //l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
-
 	    // If we didn't have the correct answer in the distro, we take ld=1
 	    // Skip words shorter than mwl.
 	    //
@@ -1014,6 +1012,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    std::vector<distr_elem*> distr_vec;
 	    std::map<std::string,int>::iterator tvsfi;
 	    double factor = 0.0;
+
 	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	    if ( (target.length() > mwl) && (in_distr == false) ) {
 	      while ( it != vd->end() ) {
@@ -1041,13 +1040,14 @@ int server_sc( Logfile& l, Config& c ) {
 		  // So here we check frequency of tvs from the distr. with
 		  // frequency of the target.
 		  // 
-		  int tvs_lf = 0;
+		  int    tvs_lf = 0;
 		  double factor = 0.0;
 		  wfi = wfreqs.find( tvs );
 		  if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
 		    tvs_lf =  (int)(*wfi).second;
 		    factor = tvs_lf / target_lexfreq;
 		  }
+		  //
 		  //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
 		  // If the target is not found (unknown words), we have no
 		  // ratio, and we only use the other parameters, ie. this
@@ -1077,7 +1077,6 @@ int server_sc( Logfile& l, Config& c ) {
 	    // 2 ^ (-logprob(w)) 
 	    //
 	    double word_lp = pow( 2, -logprob );
-	    int cntr = 4;
 	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 	    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 	    // Return the first one, as the best correction?
