@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007, 2010 Peter Berck                                          *
+ * Copyright 2007, 2011 Peter Berck                                          *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -1865,7 +1865,6 @@ int server_mg( Logfile& l, Config& c ) {
 	       + std::string(newSock->getClientName()) );
       }
 
-
       std::string buf;
       if ( c.get_status() && ( ! fork() )) { // this is the child process	
 	bool connection_open = true;
@@ -1933,7 +1932,6 @@ int server_mg( Logfile& l, Config& c ) {
 	    } // hapax
 	    
 	    Tokenize( classify_line, words, ' ' ); // instance
-	    l.log( classify_line );
 
 	    pos    = (int)words.size()-1-fco;
 	    pos    = (pos < 0) ? 0 : pos;
@@ -1941,6 +1939,7 @@ int server_mg( Logfile& l, Config& c ) {
 	    target = words[words.size()-1];
 	    
 	    if ( verbose > 1 ) {
+	      l.log( classify_line );
 	      l.log( "pos:"+to_str(pos)+" gate:"+gate );
 	    }
 
@@ -2076,3 +2075,4 @@ int server_mg( Logfile& l, Config& c ) {
   return -1;
 }
 #endif
+
