@@ -1097,6 +1097,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      }
 	      answer = answer + (*fi)->name;
 	    }
+	    answer = answer + '\n';
 	    newSock->write( answer );
 
 	    distr_vec.clear();
