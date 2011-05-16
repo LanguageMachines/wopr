@@ -1101,7 +1101,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    newSock->write( answer );
 
 	    distr_vec.clear();
-	      
+	    
 	  } // i loop
 
 	  connection_open = (keep == 1);
@@ -1117,11 +1117,19 @@ int server_sc( Logfile& l, Config& c ) {
 	} // connection_open
         l.log( "connection closed." );
 	c.set_status(0);
-	return 0;
+	exit(0);
 	
-      } // fork
+      } else { //parent
+	if ( verbose > 1 ) {
+	  l.log("waiting");
+	}
+	int status;
+	wait(&status); /* wait for child to exit, and store its status */
+	if ( verbose > 1 ) {
+	  l.log("Caught child with"+to_str(WEXITSTATUS(status)));
+	}
+      }
       delete newSock;
-      
     }
   }
   catch ( const std::exception& e ) {
