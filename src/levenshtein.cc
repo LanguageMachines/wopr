@@ -810,13 +810,14 @@ int server_sc( Logfile& l, Config& c ) {
   const Timbl::TargetValue *tv;
   
   signal(SIGCHLD, SIG_IGN);
+  volatile sig_atomic_t running = 1;
 
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -826,32 +827,34 @@ int server_sc( Logfile& l, Config& c ) {
       return 1;
     };
     
-  while ( true ) {  // main accept() loop
-    l.log( "Listening..." );  
-
-    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
-    if ( !server.accept( *newSock ) ) {
-      if( errno == EINTR ) {
-	continue;
-      } else {
-	l.log( "ERROR: " + server.getMessage() );
-	return 1;
+    while ( running ) {  // main accept() loop
+      l.log( "Listening..." );  
+      
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
       }
-    }
-    if ( verbose > 0 ) {
-      l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	     + std::string(newSock->getClientName()) );
-    }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
     
-    if ( fork() == 0 ) { // child process
+      //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
+      int cpid = fork();
+      if ( cpid == 0 ) { // child process
 
-    std::string buf;
+	std::string buf;
     
-    bool connection_open = true;
-    std::vector<std::string> cls; // classify lines
-    std::vector<double> probs;
+	bool connection_open = true;
+	std::vector<std::string> cls; // classify lines
+	std::vector<double> probs;
 
-    while ( connection_open ) {
+	while ( running & connection_open ) {
 
 	  std::string tmp_buf;
 	  newSock->read( tmp_buf );
@@ -859,17 +862,15 @@ int server_sc( Logfile& l, Config& c ) {
 	  
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
-	    c.set_status(0);
-	    return(0);
+	    running = 0;
+	    break;
 	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
-	    c.set_status(0);
 	    break;
 	  }
 	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
-	    c.set_status(0);
 	    break;
 	  }
 	  if ( verbose > 0 ) {
@@ -1113,12 +1114,22 @@ int server_sc( Logfile& l, Config& c ) {
 	  //connection_open = false;
 	  	  
 	} // connection_open
-        l.log( "connection closed." );
 
+        l.log( "connection closed." );
+	if ( ! running ) {
+	  // Rather crude, children with connexion keep working
+	  // till exited/removed by system.
+	  kill( getppid(), SIGTERM );
+	}
 	exit(0);
-    } // end fork
-    delete newSock;
-  }//true
+
+      } else if ( cpid == -1 ) { // fork failed
+	l.log( "Error forking." );
+	perror("fork");
+	return(1);
+      }
+      delete newSock;
+    }//true
   } //try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
@@ -1254,296 +1265,296 @@ int server_sc_nf( Logfile& l, Config& c ) {
       return 1;
     };
     
-  while ( true ) {  // main accept() loop
-    l.log( "Listening..." );  
+    while ( true ) {  // main accept() loop
+      l.log( "Listening..." );  
 
-    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
-    if ( !server.accept( *newSock ) ) {
-      if( errno == EINTR ) {
-	continue;
-      } else {
-	l.log( "ERROR: " + server.getMessage() );
-	return 1;
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
       }
-    }
-    if ( verbose > 0 ) {
-      l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	     + std::string(newSock->getClientName()) );
-    }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
     
-    std::string buf;
+      std::string buf;
     
-    bool connection_open = true;
-    std::vector<std::string> cls; // classify lines
-    std::vector<double> probs;
+      bool connection_open = true;
+      std::vector<std::string> cls; // classify lines
+      std::vector<double> probs;
     
-    while ( connection_open ) {
+      while ( connection_open ) {
 
-	  std::string tmp_buf;
-	  newSock->read( tmp_buf );
-	  tmp_buf = trim( tmp_buf, " \n\r" );
+	std::string tmp_buf;
+	newSock->read( tmp_buf );
+	tmp_buf = trim( tmp_buf, " \n\r" );
 	  
-	  if ( tmp_buf == "_CLOSE_" ) {
-	    connection_open = false;
-	    c.set_status(0);
-	    return(0);
+	if ( tmp_buf == "_CLOSE_" ) {
+	  connection_open = false;
+	  c.set_status(0);
+	  return(0);
+	}
+	if ( tmp_buf.length() == 0 ) {
+	  connection_open = false;
+	  c.set_status(0);
+	  break;
+	}
+	if ( verbose > 0 ) {
+	  l.log( "|" + tmp_buf + "|" );
+	}
+	  
+	cls.clear();
+	  
+	std::string classify_line = tmp_buf;
+	  
+	// Sentence based, window here, classify all, etc.
+	//
+	if ( mode == 1 ) {
+	  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	} else {
+	  cls.push_back( classify_line );
+	}
+	  
+	// Loop over all lines.
+	//
+	std::vector<std::string> words;
+	probs.clear();
+	for ( int i = 0; i < cls.size(); i++ ) {
+	    
+	  classify_line = cls.at(i);
+	    
+	  words.clear();
+	  Tokenize( classify_line, words, ' ' );
+	    
+	  /*if ( hapax > 0 ) {
+	    int c = hapax_vector( words, hpxfreqs, hapax );
+	    std::string t;
+	    vector_to_string(words, t);
+	    classify_line = t;
+	    if ( verbose > 1 ) {
+	    l.log( "|" + classify_line + "| hpx" );
+	    }
+	    }*/
+	    
+	  // if we take target from a pre-non-hapaxed vector, we
+	  // can hapax the whole sentence in the beginning and use
+	  // that for the instances-without-target
+	  //
+	  std::string target = words.at( words.size()-1 );
+	    
+	  // Is the target in the lexicon?
+	  //
+	  std::map<std::string,int>::iterator wfi = wfreqs.find( target );
+	  bool   target_unknown = false;
+	  bool   correct_answer = false;
+	  double target_lexfreq = 0.0;
+	  double target_lexprob = 0.0;
+	  if ( wfi == wfreqs.end() ) {
+	    target_unknown = true;
+	  } else {
+	    target_lexfreq =  (int)(*wfi).second; // Take lexfreq
+	    target_lexprob = (double)target_lexfreq / (double)total_count;
 	  }
-	  if ( tmp_buf.length() == 0 ) {
-	    connection_open = false;
-	    c.set_status(0);
+	    
+	  tv = My_Experiment->Classify( classify_line, vd, distance );
+	  if ( ! tv ) {
+	    l.log("ERROR: Timbl returned a classification error, aborting.");
 	    break;
 	  }
+	    
+	  size_t      res_freq = tv->ValFreq();	    
+	  std::string answer   = tv->Name();
 	  if ( verbose > 0 ) {
-	    l.log( "|" + tmp_buf + "|" );
+	    l.log( "timbl("+classify_line+")="+answer );
 	  }
-	  
-	  cls.clear();
-	  
-	  std::string classify_line = tmp_buf;
-	  
-	  // Sentence based, window here, classify all, etc.
+
+	  if ( target == answer ) {
+	    correct_answer = true;
+	  }
+	    
+	  int cnt         = 0;
+	  int distr_count = 0;
+	  int target_freq = 0;
+	  int answer_freq = 0;
+
+	  double prob            = 0.0;
+	  double target_distprob = 0.0;
+	  double answer_prob     = 0.0;
+	  double entropy         = 0.0;
+	  double sentence_prob   = 0.0;
+	  double sum_logprob     = 0.0;
+
+	  bool in_distr          = false;
+
+	  cnt         = vd->size();
+	  distr_count = vd->totalSize();
+
+	  // Check if target word is in the distribution.
 	  //
-	  if ( mode == 1 ) {
-	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	  while ( it != vd->end() ) {
+	    //const Timbl::TargetValue *tv = it->second->Value();
+
+	    std::string tvs  = it->second->Value()->Name();
+	    double      wght = it->second->Weight();
+
+	    if ( verbose > 1 ) {
+	      l.log(tvs+": "+to_str(wght));
+	    }
+
+	    // Prob. of this item in distribution.
+	    //
+	    prob     = (double)wght / (double)distr_count;
+	    entropy -= ( prob * log2(prob) );
+
+	    if ( tvs == target ) { // The correct answer was in the distr.
+	      target_freq = wght;
+	      in_distr = true;
+	    }
+
+	    ++it;
+	  }
+	  target_distprob = (double)target_freq / (double)distr_count;
+
+	  // If correct: if target in distr, we take that prob, else
+	  // the lexical prob.
+	  // Unknown words?
+	  //
+	  double logprob = 0.0;
+	  std::string info = "huh?";
+	  if ( target_freq > 0 ) { // Right answer was in distr.
+	    logprob = log2( target_distprob );
+	    info = "target_distprob";
 	  } else {
-	    cls.push_back( classify_line );
-	  }
-	  
-	  // Loop over all lines.
-	  //
-	  std::vector<std::string> words;
-	  probs.clear();
-	  for ( int i = 0; i < cls.size(); i++ ) {
-	    
-	    classify_line = cls.at(i);
-	    
-	    words.clear();
-	    Tokenize( classify_line, words, ' ' );
-	    
-	    /*if ( hapax > 0 ) {
-	      int c = hapax_vector( words, hpxfreqs, hapax );
-	      std::string t;
-	      vector_to_string(words, t);
-	      classify_line = t;
-	      if ( verbose > 1 ) {
-	      l.log( "|" + classify_line + "| hpx" );
-	      }
-	      }*/
-	    
-	    // if we take target from a pre-non-hapaxed vector, we
-	    // can hapax the whole sentence in the beginning and use
-	    // that for the instances-without-target
-	    //
-	    std::string target = words.at( words.size()-1 );
-	    
-	    // Is the target in the lexicon?
-	    //
-	    std::map<std::string,int>::iterator wfi = wfreqs.find( target );
-	    bool   target_unknown = false;
-	    bool   correct_answer = false;
-	    double target_lexfreq = 0.0;
-	    double target_lexprob = 0.0;
-	    if ( wfi == wfreqs.end() ) {
-	      target_unknown = true;
+	    if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+	      logprob = log2( target_lexprob );
+	      info = "target_lexprob";
 	    } else {
-	      target_lexfreq =  (int)(*wfi).second; // Take lexfreq
-	      target_lexprob = (double)target_lexfreq / (double)total_count;
+	      //
+	      // What to do here? We have an 'unknown' target, i.e. not in the
+	      // lexicon.
+	      //
+	      logprob = log2( p0 ); 
+	      info = "P(new_particular)";
 	    }
-	    
-	    tv = My_Experiment->Classify( classify_line, vd, distance );
-	    if ( ! tv ) {
-	      l.log("ERROR: Timbl returned a classification error, aborting.");
-	      break;
-	    }
-	    
-	    size_t      res_freq = tv->ValFreq();	    
-	    std::string answer   = tv->Name();
-	    if ( verbose > 0 ) {
-	      l.log( "timbl("+classify_line+")="+answer );
-	    }
+	  }
+	  sum_logprob += logprob;
 
-	    if ( target == answer ) {
-	      correct_answer = true;
-	    }
-	    
-	    int cnt         = 0;
-	    int distr_count = 0;
-	    int target_freq = 0;
-	    int answer_freq = 0;
+	  // If we didn't have the correct answer in the distro, we take ld=1
+	  // Skip words shorter than mwl.
+	  //
+	  it = vd->begin();
+	  std::vector<distr_elem*> distr_vec;
+	  std::map<std::string,int>::iterator tvsfi;
+	  double factor = 0.0;
 
-	    double prob            = 0.0;
-	    double target_distprob = 0.0;
-	    double answer_prob     = 0.0;
-	    double entropy         = 0.0;
-	    double sentence_prob   = 0.0;
-	    double sum_logprob     = 0.0;
-
-	    bool in_distr          = false;
-
-	    cnt         = vd->size();
-	    distr_count = vd->totalSize();
-
-	    // Check if target word is in the distribution.
-	    //
-	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	  // if in_distr==true, we can look if att ld=1, and then at freq.factor!
+	  if ( (target.length() > mwl) && (in_distr == false) ) {
 	    while ( it != vd->end() ) {
-	      //const Timbl::TargetValue *tv = it->second->Value();
+
+	      // 20100111: freq voorspelde woord : te voorspellen woord > 1
+	      //             uit de distr          target
 
 	      std::string tvs  = it->second->Value()->Name();
 	      double      wght = it->second->Weight();
+	      int ld = lev_distance( target, tvs );
 
 	      if ( verbose > 1 ) {
-		l.log(tvs+": "+to_str(wght));
+		l.log(tvs+": "+to_str(wght)+" ld: "+to_str(ld));
 	      }
 
-	      // Prob. of this item in distribution.
+	      // If the ld of the word is less than the minimum,
+	      // we include the result in our output.
 	      //
-	      prob     = (double)wght / (double)distr_count;
-	      entropy -= ( prob * log2(prob) );
-
-	      if ( tvs == target ) { // The correct answer was in the distr.
-		target_freq = wght;
-		in_distr = true;
+	      if (
+		  (entropy <= max_ent) &&
+		  (cnt <= max_distr)   &&
+		  ( ld <= mld )     
+		  ) { 
+		//
+		// So here we check frequency of tvs from the distr. with
+		// frequency of the target.
+		// 
+		int    tvs_lf = 0;
+		double factor = 0.0;
+		wfi = wfreqs.find( tvs );
+		if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
+		  tvs_lf =  (int)(*wfi).second;
+		  factor = tvs_lf / target_lexfreq;
+		}
+		//
+		//l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
+		// If the target is not found (unknown words), we have no
+		// ratio, and we only use the other parameters, ie. this
+		// test falls through.
+		//
+		if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
+		  //
+		  distr_elem* d = new distr_elem(); 
+		  d->name = tvs;
+		  d->freq = ld;
+		  tvsfi = wfreqs.find( tvs );
+		  if ( tvsfi == wfreqs.end() ) {
+		    d->lexfreq = 0;
+		  } else {
+		    d->lexfreq = (double)(*tvsfi).second;
+		  }
+	    
+		  distr_vec.push_back( d );
+		} // factor>min_ratio
 	      }
-
+	
 	      ++it;
 	    }
-	    target_distprob = (double)target_freq / (double)distr_count;
+	  }
 
-	    // If correct: if target in distr, we take that prob, else
-	    // the lexical prob.
-	    // Unknown words?
-	    //
-	    double logprob = 0.0;
-	    std::string info = "huh?";
-	    if ( target_freq > 0 ) { // Right answer was in distr.
-	      logprob = log2( target_distprob );
-	      info = "target_distprob";
-	    } else {
-	      if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-		logprob = log2( target_lexprob );
-		info = "target_lexprob";
-	      } else {
-		//
-		// What to do here? We have an 'unknown' target, i.e. not in the
-		// lexicon.
-		//
-		logprob = log2( p0 ); 
-		info = "P(new_particular)";
-	      }
+	  // Word logprob (ref. Antal's mail 21/11/08)
+	  // 2 ^ (-logprob(w)) 
+	  //
+	  double word_lp = pow( 2, -logprob );
+	  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+
+	  // Return all, seperated by sep (tab).
+
+	  answer = "";
+	  int cntr = -1;
+	  std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	  if ( distr_vec.empty() ) {
+	    answer = empty;
+	  } else {
+	    while ( (fi != distr_vec.end()-1 ) && (--cntr != 0) ) {
+	      answer = answer + (*fi)->name + sep;
+	      delete *fi;
+	      fi++;
 	    }
-	    sum_logprob += logprob;
+	    answer = answer + (*fi)->name;
+	  }
+	  answer = answer + '\n';
+	  newSock->write( answer );
 
-	    // If we didn't have the correct answer in the distro, we take ld=1
-	    // Skip words shorter than mwl.
-	    //
-	    it = vd->begin();
-	    std::vector<distr_elem*> distr_vec;
-	    std::map<std::string,int>::iterator tvsfi;
-	    double factor = 0.0;
-
-	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
-	    if ( (target.length() > mwl) && (in_distr == false) ) {
-	      while ( it != vd->end() ) {
-
-		// 20100111: freq voorspelde woord : te voorspellen woord > 1
-		//             uit de distr          target
-
-		std::string tvs  = it->second->Value()->Name();
-		double      wght = it->second->Weight();
-		int ld = lev_distance( target, tvs );
-
-		if ( verbose > 1 ) {
-		  l.log(tvs+": "+to_str(wght)+" ld: "+to_str(ld));
-		}
-
-		// If the ld of the word is less than the minimum,
-		// we include the result in our output.
-		//
-		if (
-		    (entropy <= max_ent) &&
-		    (cnt <= max_distr)   &&
-		    ( ld <= mld )     
-		    ) { 
-		  //
-		  // So here we check frequency of tvs from the distr. with
-		  // frequency of the target.
-		  // 
-		  int    tvs_lf = 0;
-		  double factor = 0.0;
-		  wfi = wfreqs.find( tvs );
-		  if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-		    tvs_lf =  (int)(*wfi).second;
-		    factor = tvs_lf / target_lexfreq;
-		  }
-		  //
-		  //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
-		  // If the target is not found (unknown words), we have no
-		  // ratio, and we only use the other parameters, ie. this
-		  // test falls through.
-		  //
-		  if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
-		    //
-		    distr_elem* d = new distr_elem(); 
-		    d->name = tvs;
-		    d->freq = ld;
-		    tvsfi = wfreqs.find( tvs );
-		    if ( tvsfi == wfreqs.end() ) {
-		      d->lexfreq = 0;
-		    } else {
-		      d->lexfreq = (double)(*tvsfi).second;
-		    }
+	  distr_vec.clear();
 	    
-		    distr_vec.push_back( d );
-		  } // factor>min_ratio
-		}
-	
-		++it;
-	      }
-	    }
+	} // i loop, over cls
 
-	    // Word logprob (ref. Antal's mail 21/11/08)
-	    // 2 ^ (-logprob(w)) 
-	    //
-	    double word_lp = pow( 2, -logprob );
-	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
-
-	    // Return all, seperated by sep (tab).
-
-	    answer = "";
-	    int cntr = -1;
-	    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
-	    if ( distr_vec.empty() ) {
-	      answer = empty;
-	    } else {
-	      while ( (fi != distr_vec.end()-1 ) && (--cntr != 0) ) {
-		answer = answer + (*fi)->name + sep;
-		delete *fi;
-		fi++;
-	      }
-	      answer = answer + (*fi)->name;
-	    }
-	    answer = answer + '\n';
-	    newSock->write( answer );
-
-	    distr_vec.clear();
-	    
-	  } // i loop, over cls
-
-	  connection_open = (keep == 1);
-	  //connection_open = false;
+	connection_open = (keep == 1);
+	//connection_open = false;
 	  	  
-	} // connection_open
-        l.log( "connection closed." );
-	delete newSock;
-  }//true
+      } // connection_open
+      l.log( "connection closed." );
+      delete newSock;
+    }//true
   } //try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     std::cerr << e.what() << std::endl;
     return -1;
   }
-    ////  }// old true
+  ////  }// old true
   
   return 0;
 }
