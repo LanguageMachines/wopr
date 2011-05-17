@@ -809,6 +809,8 @@ int server_sc( Logfile& l, Config& c ) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   
+  signal(SIGCHLD, SIG_IGN);
+
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
@@ -824,41 +826,48 @@ int server_sc( Logfile& l, Config& c ) {
       return 1;
     };
     
-    l.log( "Starting server..." );
+  while ( true ) {  // main accept() loop
+    l.log( "Listening..." );  
 
-    // loop
-    //
-    while ( c.get_status() != 0 ) {  // main accept() loop
+    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+    if ( !server.accept( *newSock ) ) {
+      if( errno == EINTR ) {
+	continue;
+      } else {
+	l.log( "ERROR: " + server.getMessage() );
+	return 1;
+      }
+    }
+    if ( verbose > 0 ) {
+      l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	     + std::string(newSock->getClientName()) );
+    }
+    
+    if ( fork() == 0 ) { // child process
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
-      if ( !server.accept( *newSock ) ) {
-	if( errno == EINTR ) {
-	  continue;
-	} else {
-	  l.log( "ERROR: " + server.getMessage() );
-	  return 1;
-	}
-      }
-      if ( verbose > 0 ) {
-	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
-      }
-      
-      std::string buf;
-      
-      if ( c.get_status() && ( ! fork() )) { // this is the child process
-	
-	bool connection_open = true;
-	std::vector<std::string> cls; // classify lines
-	std::vector<double> probs;
-	
-	while ( connection_open ) {
-	  
+    std::string buf;
+    
+    bool connection_open = true;
+    std::vector<std::string> cls; // classify lines
+    std::vector<double> probs;
+
+    while ( connection_open ) {
+
 	  std::string tmp_buf;
 	  newSock->read( tmp_buf );
 	  tmp_buf = trim( tmp_buf, " \n\r" );
 	  
+	  if ( tmp_buf == "_EXIT_" ) {
+	    connection_open = false;
+	    c.set_status(0);
+	    return(0);
+	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
+	    connection_open = false;
+	    c.set_status(0);
+	    break;
+	  }
+	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
 	    c.set_status(0);
 	    break;
@@ -1098,41 +1107,25 @@ int server_sc( Logfile& l, Config& c ) {
 
 	    distr_vec.clear();
 	    
-	  } // i loop
+	  } // i loop, over cls
 
 	  connection_open = (keep == 1);
 	  //connection_open = false;
-	  
-	  // If parent is gone, close connexion
-	  //
-	  if ( getppid() == 1 ) {
-	    l.log( "PARENT gone, exiting." );
-	    connection_open = false;
-	  }
-	  
+	  	  
 	} // connection_open
         l.log( "connection closed." );
-	c.set_status(0);
+
 	exit(0);
-	
-      } else { //parent
-	if ( verbose > 1 ) {
-	  l.log("waiting");
-	}
-	int status;
-	wait(&status); /* wait for child to exit, and store its status */
-	if ( verbose > 1 ) {
-	  l.log("Caught child with"+to_str(WEXITSTATUS(status)));
-	}
-      }
-      delete newSock;
-    }
-  }
+    } // end fork
+    delete newSock;
+  }//true
+  } //try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
+    std::cerr << e.what() << std::endl;
     return -1;
   }
-  
+
   return 0;
 }
 #else
