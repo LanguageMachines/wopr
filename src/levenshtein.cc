@@ -553,21 +553,17 @@ int correct( Logfile& l, Config& c ) {
       // Unknown words?
       //
       double logprob = 0.0;
-      std::string info = "huh?";
       if ( target_freq > 0 ) { // Right answer was in distr.
 	logprob = log2( target_distprob );
-	info = "target_distprob";
       } else {
 	if ( ! target_unknown ) { // Wrong, we take lex prob if known target
 	  logprob = log2( target_lexprob ); // SMOOTHED here, see above
-	  info = "target_lexprob";
 	} else {
 	  //
 	  // What to do here? We have an 'unknown' target, i.e. not in the
 	  // lexicon.
 	  //
 	  logprob = log2( p0 /*0.0001*/ ); // Foei!
-	  info = "P(new_particular)";
 	}
       }
       sum_logprob += logprob;
@@ -1297,7 +1293,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
 	    c.set_status(0);
-	    break;
+	    return(0);
 	  }
 	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
