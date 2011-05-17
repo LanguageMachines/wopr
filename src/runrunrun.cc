@@ -446,6 +446,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &server_mg;
   } else if ( a_fname == "server_sc" ) {
     return &server_sc;
+  } else if ( a_fname == "server_sc_nf" ) {
+    return &server_sc_nf;
   } else if ( a_fname == "webdemo" ) {
     return &webdemo;
   } else if ( a_fname == "one" ) {
