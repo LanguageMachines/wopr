@@ -29,5 +29,5 @@ int levenshtein( Logfile&, Config& );
 int correct( Logfile&, Config& );
 int lev_distance(const std::string, const std::string);
 int server_sc( Logfile&, Config& );
-
+int server_sc_nf( Logfile&, Config& );
 #endif
