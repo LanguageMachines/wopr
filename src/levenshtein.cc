@@ -1150,13 +1150,6 @@ int server_sc( Logfile& l, Config& c ) {
 }
 #endif
 
-
-
-
-
-
-
-
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "server spelling correction" );

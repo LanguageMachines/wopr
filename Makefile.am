@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4 --install
 
 AUTOMAKE_OPTIONS = subdir-objects
 
-bin_PROGRAMS = wopr woprsm
+bin_PROGRAMS = wopr woprsm woprst
 
 wopr_SOURCES = \
 	src/main.cc \
@@ -50,6 +50,15 @@ wopr_SOURCES = \
 
 woprsm_SOURCES = \
 	src/woprsm.cc
+
+woprst_SOURCES = \
+	src/qlog.h \
+	src/qlog.cc \
+	src/util.h \
+	src/util.cc \
+	src/SocketBasics.h \
+	src/SocketBasics.cc \
+	src/woprst.cc
 
 man_MANS = man/wopr.1
 
