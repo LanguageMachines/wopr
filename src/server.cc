@@ -519,7 +519,7 @@ int server2(Logfile& l, Config& c) {
 	long diff2_mu_secs = f3 - f2;
 	l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
 	} // connection_open
-	exit(0);
+	_exit(0);
       } // fork
       delete newSock;
     }
@@ -977,6 +977,9 @@ int server4(Logfile& l, Config& c) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   
+  signal(SIGCHLD, SIG_IGN);
+  volatile sig_atomic_t running = 1;
+
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
@@ -992,11 +995,8 @@ int server4(Logfile& l, Config& c) {
       return 1;
     };
     
-    l.log( "Starting server..." );
-
-    // loop
-    //
-    while ( c.get_status() != 0 ) {  // main accept() loop
+    while ( running ) {  // main accept() loop
+      l.log( "Listening..." );  
 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
@@ -1012,24 +1012,35 @@ int server4(Logfile& l, Config& c) {
 	       + std::string(newSock->getClientName()) );
       }
 
+      //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
+      int cpid = fork();
+      if ( cpid == 0 ) { // child process
+
       std::string buf;
-      
-      if ( c.get_status() && ( ! fork() )) { // this is the child process
-	
-	bool connection_open = true;
+      	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
 
-	while ( connection_open ) {
+	while ( running & connection_open ) {
 
 	    std::string tmp_buf;
 	    newSock->read( tmp_buf );
 	    tmp_buf = trim( tmp_buf, " \n\r" );
 	    
-	    if ( tmp_buf == "_CLOSE_" ) {
-	      connection_open = false;
-	      break;
-	    }
+	  if ( tmp_buf == "_EXIT_" ) {
+	    connection_open = false;
+	    running = 0;
+	    break;
+	  }
+	  if ( tmp_buf == "_CLOSE_" ) {
+	    connection_open = false;
+	    break;
+	  }
+	  if ( tmp_buf.length() == 0 ) {
+	    connection_open = false;
+	    break;
+	  }
+
 	    if ( verbose > 0 ) {
 	      l.log( "|" + tmp_buf + "|" );
 	    }
@@ -1185,9 +1196,9 @@ int server4(Logfile& l, Config& c) {
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
 	    if ( moses == 0 ) {
-	      newSock->write( to_str(ave_pl10) );
+	      newSock->write( to_str(ave_pl10) + '\n' );
 	      
-	    } else if ( moses == 1 ) { // 6 char output which moses seems to expect
+	    } else if ( moses == 1 ) { // 6 char output for moses
 	      char res_str[7];
 	      
 	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
@@ -1198,24 +1209,26 @@ int server4(Logfile& l, Config& c) {
 
 	    connection_open = (keep == 1);
 	    //connection_open = false;
-
-	    // If parent is gone, close connexion
-	    //
-	    if ( getppid() == 1 ) {
-	      l.log( "PARENT gone, exiting." );
-	      connection_open = false;
-	    }
 	    
 	} // connection_open
-        l.log( "connection closed." );
-	c.set_status(0);
-	return 0;
 
-      } // fork
+        l.log( "connection closed." );
+	if ( ! running ) {
+	  // Rather crude, children with connexion keep working
+	  // till exited/removed by system.
+	  kill( getppid(), SIGTERM );
+	}
+	_exit(0);
+
+      } else if ( cpid == -1 ) { // fork failed
+	l.log( "Error forking." );
+	perror("fork");
+	return(1);
+      }
       delete newSock;
 
-    }
-  }
+    } // running
+  } // try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     return -1;
@@ -1835,6 +1848,9 @@ int server_mg( Logfile& l, Config& c ) {
   Classifier* cl = NULL; // classifier used.
   std::map<std::string,int>::iterator wfi;
 
+  signal(SIGCHLD, SIG_IGN);
+  volatile sig_atomic_t running = 1;
+
   try {
 
     Sockets::ServerSocket server;
@@ -1848,9 +1864,9 @@ int server_mg( Logfile& l, Config& c ) {
     };
     l.log( "Starting server..." );
 
-    // loop
-    //
-    while ( c.get_status() != 0 ) {  // main accept() loop
+    while ( running ) {  // main accept() loop
+      l.log( "Listening..." );  
+
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
@@ -1865,22 +1881,34 @@ int server_mg( Logfile& l, Config& c ) {
 	       + std::string(newSock->getClientName()) );
       }
 
-      std::string buf;
-      if ( c.get_status() && ( ! fork() )) { // this is the child process	
+      int cpid = fork();
+      if ( cpid == 0 ) { // child process
+
+	std::string buf;
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
 	
-	while ( connection_open ) {
+	while ( running & connection_open ) {
 	  
 	  std::string tmp_buf;
 	  newSock->read( tmp_buf );
 	  tmp_buf = trim( tmp_buf, " \n\r" );
 	  
+	  if ( tmp_buf == "_EXIT_" ) {
+	    connection_open = false;
+	    running = 0;
+	    break;
+	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
 	    break;
 	  }
+	  if ( tmp_buf.length() == 0 ) {
+	    connection_open = false;
+	    break;
+	  }
+
 	  if ( verbose > 0 ) {
 	    l.log( "|" + tmp_buf + "|" );
 	  }
@@ -2030,9 +2058,9 @@ int server_mg( Logfile& l, Config& c ) {
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
 	    if ( moses == 0 ) {
-	      newSock->write( to_str(ave_pl10) );
+	      newSock->write( to_str(ave_pl10) + '\n' ); // added lf
 	      
-	    } else if ( moses == 1 ) { // 6 char output which moses seems to expect
+	    } else if ( moses == 1 ) { // 6 char output for moses
 	      char res_str[7];
 	      
 	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
@@ -2043,29 +2071,31 @@ int server_mg( Logfile& l, Config& c ) {
 
 
 	  connection_open = (keep == 1);
-	  //connection_open = false;
-	  
-	  // If parent is gone, close connexion
-	  //
-	  if ( getppid() == 1 ) {
-	    l.log( "PARENT gone, exiting." );
-	    connection_open = false;
-	  }
 	  
 	} // connection_open
+
         l.log( "connection closed." );
-	c.set_status(0);
-	return 0;
+	if ( ! running ) {
+	  // Rather crude, children with connexion keep working
+	  // till exited/removed by system.
+	  kill( getppid(), SIGTERM );
+	}
+	_exit(0);
 	
-      } // fork
+      } else if ( cpid == -1 ) { // fork failed
+	l.log( "Error forking." );
+	perror("fork");
+	return(1);
+      }
       delete newSock;
       
-    }
+    } // true running
     
-  } catch ( const std::exception& e ) {
+  } // try
+  catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     return -1;
-  } //-------------------------------------------
+  } 
   
   return 0;
 }

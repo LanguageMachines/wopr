@@ -966,6 +966,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    // Check if target word is in the distribution.
 	    //
 	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	    if ( cnt < max_distr ) {
 	    while ( it != vd->end() ) {
 	      //const Timbl::TargetValue *tv = it->second->Value();
 
@@ -987,6 +988,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      }
 
 	      ++it;
+	    }
 	    }
 	    target_distprob = (double)target_freq / (double)distr_count;
 
@@ -1023,6 +1025,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    double factor = 0.0;
 
 	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
+	    if ( cnt < max_distr ) {
 	    if ( (target.length() > mwl) && (in_distr == false) ) {
 	      while ( it != vd->end() ) {
 
@@ -1081,6 +1084,7 @@ int server_sc( Logfile& l, Config& c ) {
 		++it;
 	      }
 	    }
+	    }// PJB max_distr, 
 
 	    // Word logprob (ref. Antal's mail 21/11/08)
 	    // 2 ^ (-logprob(w)) 
@@ -1121,7 +1125,7 @@ int server_sc( Logfile& l, Config& c ) {
 	  // till exited/removed by system.
 	  kill( getppid(), SIGTERM );
 	}
-	exit(0);
+	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed
 	l.log( "Error forking." );
