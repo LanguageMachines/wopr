@@ -967,28 +967,28 @@ int server_sc( Logfile& l, Config& c ) {
 	    //
 	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	    if ( cnt < max_distr ) {
-	    while ( it != vd->end() ) {
-	      //const Timbl::TargetValue *tv = it->second->Value();
-
-	      std::string tvs  = it->second->Value()->Name();
-	      double      wght = it->second->Weight();
-
-	      if ( verbose > 1 ) {
-		l.log(tvs+": "+to_str(wght));
+	      while ( it != vd->end() ) {
+		//const Timbl::TargetValue *tv = it->second->Value();
+		
+		std::string tvs  = it->second->Value()->Name();
+		double      wght = it->second->Weight();
+		
+		if ( verbose > 1 ) {
+		  l.log(tvs+": "+to_str(wght));
+		}
+		
+		// Prob. of this item in distribution.
+		//
+		prob     = (double)wght / (double)distr_count;
+		entropy -= ( prob * log2(prob) );
+		
+		if ( tvs == target ) { // The correct answer was in the distr.
+		  target_freq = wght;
+		  in_distr = true;
+		}
+		
+		++it;
 	      }
-
-	      // Prob. of this item in distribution.
-	      //
-	      prob     = (double)wght / (double)distr_count;
-	      entropy -= ( prob * log2(prob) );
-
-	      if ( tvs == target ) { // The correct answer was in the distr.
-		target_freq = wght;
-		in_distr = true;
-	      }
-
-	      ++it;
-	    }
 	    }
 	    target_distprob = (double)target_freq / (double)distr_count;
 
@@ -1026,64 +1026,64 @@ int server_sc( Logfile& l, Config& c ) {
 
 	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	    if ( cnt < max_distr ) {
-	    if ( (target.length() > mwl) && (in_distr == false) ) {
-	      while ( it != vd->end() ) {
+	      if ( (target.length() > mwl) && (in_distr == false) ) {
+		while ( it != vd->end() ) {
 
-		// 20100111: freq voorspelde woord : te voorspellen woord > 1
-		//             uit de distr          target
+		  // 20100111: freq voorspelde woord : te voorspellen woord > 1
+		  //             uit de distr          target
 
-		std::string tvs  = it->second->Value()->Name();
-		double      wght = it->second->Weight();
-		int ld = lev_distance( target, tvs );
+		  std::string tvs  = it->second->Value()->Name();
+		  double      wght = it->second->Weight();
+		  int ld = lev_distance( target, tvs );
 
-		if ( verbose > 1 ) {
-		  l.log(tvs+": "+to_str(wght)+" ld: "+to_str(ld));
-		}
-
-		// If the ld of the word is less than the minimum,
-		// we include the result in our output.
-		//
-		if (
-		    (entropy <= max_ent) &&
-		    (cnt <= max_distr)   &&
-		    ( ld <= mld )     
-		    ) { 
-		  //
-		  // So here we check frequency of tvs from the distr. with
-		  // frequency of the target.
-		  // 
-		  int    tvs_lf = 0;
-		  double factor = 0.0;
-		  wfi = wfreqs.find( tvs );
-		  if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-		    tvs_lf =  (int)(*wfi).second;
-		    factor = tvs_lf / target_lexfreq;
+		  if ( verbose > 1 ) {
+		    l.log(tvs+": "+to_str(wght)+" ld: "+to_str(ld));
 		  }
+
+		  // If the ld of the word is less than the minimum,
+		  // we include the result in our output.
 		  //
-		  //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
-		  // If the target is not found (unknown words), we have no
-		  // ratio, and we only use the other parameters, ie. this
-		  // test falls through.
-		  //
-		  if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
+		  if (
+		      (entropy <= max_ent) &&
+		      (cnt <= max_distr)   &&
+		      ( ld <= mld )     
+		      ) { 
 		    //
-		    distr_elem* d = new distr_elem(); 
-		    d->name = tvs;
-		    d->freq = ld;
-		    tvsfi = wfreqs.find( tvs );
-		    if ( tvsfi == wfreqs.end() ) {
-		      d->lexfreq = 0;
-		    } else {
-		      d->lexfreq = (double)(*tvsfi).second;
+		    // So here we check frequency of tvs from the distr. with
+		    // frequency of the target.
+		    // 
+		    int    tvs_lf = 0;
+		    double factor = 0.0;
+		    wfi = wfreqs.find( tvs );
+		    if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
+		      tvs_lf =  (int)(*wfi).second;
+		      factor = tvs_lf / target_lexfreq;
 		    }
+		    //
+		    //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
+		    // If the target is not found (unknown words), we have no
+		    // ratio, and we only use the other parameters, ie. this
+		    // test falls through.
+		    //
+		    if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
+		      //
+		      distr_elem* d = new distr_elem(); 
+		      d->name = tvs;
+		      d->freq = ld;
+		      tvsfi = wfreqs.find( tvs );
+		      if ( tvsfi == wfreqs.end() ) {
+			d->lexfreq = 0;
+		      } else {
+			d->lexfreq = (double)(*tvsfi).second;
+		      }
 	    
-		    distr_vec.push_back( d );
-		  } // factor>min_ratio
-		}
+		      distr_vec.push_back( d );
+		    } // factor>min_ratio
+		  }
 	
-		++it;
+		  ++it;
+		}
 	      }
-	    }
 	    }// PJB max_distr, 
 
 	    // Word logprob (ref. Antal's mail 21/11/08)
@@ -1401,27 +1401,29 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  // Check if target word is in the distribution.
 	  //
 	  Timbl::ValueDistribution::dist_iterator it = vd->begin();
-	  while ( it != vd->end() ) {
-	    //const Timbl::TargetValue *tv = it->second->Value();
-
-	    std::string tvs  = it->second->Value()->Name();
-	    double      wght = it->second->Weight();
-
-	    if ( verbose > 1 ) {
-	      l.log(tvs+": "+to_str(wght));
+	  if ( cnt < max_distr ) {
+	    while ( it != vd->end() ) {
+	      //const Timbl::TargetValue *tv = it->second->Value();
+	      
+	      std::string tvs  = it->second->Value()->Name();
+	      double      wght = it->second->Weight();
+	      
+	      if ( verbose > 1 ) {
+		l.log(tvs+": "+to_str(wght));
+	      }
+	      
+	      // Prob. of this item in distribution.
+	      //
+	      prob     = (double)wght / (double)distr_count;
+	      entropy -= ( prob * log2(prob) );
+	      
+	      if ( tvs == target ) { // The correct answer was in the distr.
+		target_freq = wght;
+		in_distr = true;
+	      }
+	      
+	      ++it;
 	    }
-
-	    // Prob. of this item in distribution.
-	    //
-	    prob     = (double)wght / (double)distr_count;
-	    entropy -= ( prob * log2(prob) );
-
-	    if ( tvs == target ) { // The correct answer was in the distr.
-	      target_freq = wght;
-	      in_distr = true;
-	    }
-
-	    ++it;
 	  }
 	  target_distprob = (double)target_freq / (double)distr_count;
 
@@ -1458,20 +1460,21 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  double factor = 0.0;
 
 	  // if in_distr==true, we can look if att ld=1, and then at freq.factor!
-	  if ( (target.length() > mwl) && (in_distr == false) ) {
-	    while ( it != vd->end() ) {
-
-	      // 20100111: freq voorspelde woord : te voorspellen woord > 1
-	      //             uit de distr          target
-
-	      std::string tvs  = it->second->Value()->Name();
+	  if ( cnt < max_distr ) {
+	    if ( (target.length() > mwl) && (in_distr == false) ) {
+	      while ( it != vd->end() ) {
+		
+		// 20100111: freq voorspelde woord : te voorspellen woord > 1
+		//             uit de distr          target
+		
+		std::string tvs  = it->second->Value()->Name();
 	      double      wght = it->second->Weight();
 	      int ld = lev_distance( target, tvs );
-
+	      
 	      if ( verbose > 1 ) {
 		l.log(tvs+": "+to_str(wght)+" ld: "+to_str(ld));
 	      }
-
+	      
 	      // If the ld of the word is less than the minimum,
 	      // we include the result in our output.
 	      //
@@ -1508,15 +1511,15 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		  } else {
 		    d->lexfreq = (double)(*tvsfi).second;
 		  }
-	    
+		  
 		  distr_vec.push_back( d );
 		} // factor>min_ratio
 	      }
-	
+	      
 	      ++it;
+	      }
 	    }
 	  }
-
 	  // Word logprob (ref. Antal's mail 21/11/08)
 	  // 2 ^ (-logprob(w)) 
 	  //
