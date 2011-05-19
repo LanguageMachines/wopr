@@ -1151,6 +1151,13 @@ int server_sc( Logfile& l, Config& c ) {
 #endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
+struct cache_elem {
+  int cnt;
+  std::string ans;
+  bool operator<(const cache_elem& rhs) const {
+    return cnt > rhs.cnt;
+  }
+};
 int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "server spelling correction" );
   
@@ -1172,6 +1179,8 @@ int server_sc_nf( Logfile& l, Config& c ) {
   double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
   const std::string empty        = c.get_value( "empty", "__EMPTY__" );
 
+  const long cachesize            = stoi( c.get_value( "cs", "100000" ));
+
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+port );
@@ -1185,7 +1194,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "max_distr:  "+to_str(max_distr) );
   l.log( "min_ratio:  "+to_str(min_ratio) );
   l.dec_prefix();
-
 
   // To be implemented later (maybe)
   //
@@ -1234,8 +1242,8 @@ int server_sc_nf( Logfile& l, Config& c ) {
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
   
-  std::map<std::string,std::string> cache;
-  std::map<std::string,std::string>::iterator ci;
+  std::map<std::string,cache_elem> cache;
+  std::map<std::string,cache_elem>::iterator ci;
 
   std::string distrib;
   std::vector<std::string> distribution;
@@ -1301,6 +1309,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	}
 	if ( tmp_buf == "_CLEAR_" ) {
 	  cache.clear();
+	  l.log( "Cache now: "+to_str(cache.size())+" elements." );
 	  continue;
 	}
 	if ( tmp_buf.length() == 0 ) {
@@ -1312,24 +1321,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  l.log( "|" + tmp_buf + "|" );
 	}
 
-
 	cls.clear();
-
-	//check cache
-	  
-	ci = cache.find( tmp_buf ); //langzaam?
-	if ( ci == cache.end() ) {
-	  //nope
-	} else {
-	  //yes
-	  if ( verbose > 0 ) {
-	    l.log( "Found in cache," );
-	  }
-	  std::string answer = (*ci).second;
-	  answer = answer + '\n';
-	  newSock->write( answer );
-	  continue;
-	}
 
 	std::string classify_line = tmp_buf;
 	  
@@ -1349,6 +1341,18 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    
 	  classify_line = cls.at(i);
 	    
+	  // Check the cache
+	  //
+	  ci = cache.find( classify_line );
+	  if ( ci != cache.end() ) {
+	    if ( verbose > 0 ) {
+	      l.log( "Found in cache," );
+	    }
+	    (*ci).second.cnt += 1;
+	    newSock->write(  (*ci).second.ans + '\n' );
+	    continue;
+	  }
+
 	  words.clear();
 	  Tokenize( classify_line, words, ' ' );
 	    
@@ -1559,7 +1563,10 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    answer = answer + (*fi)->name;
 	  }
 
-	  cache[tmp_buf] = answer;
+	  cache_elem ce;
+	  ce.ans = answer;
+	  ce.cnt = 1;
+	  cache[tmp_buf] = ce; //answer;
 
 	  answer = answer + '\n';
 	  newSock->write( answer );
@@ -1569,21 +1576,39 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	} // i loop, over cls
 
 	connection_open = (keep == 1);
-	//connection_open = false;
 	  	  
       } // connection_open
       l.log( "connection closed." );
       delete newSock;
 
-      // print cache
-      //
-      /*for ( ci = cache.begin(); ci != cache.end(); ci++ ) {
-	if ( (*ci).second != "__EMPTY__" ) {
-	  l.log( (*ci).first + "=" + (*ci).second );
+      size_t ccs = cache.size();
+      l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+      if ( ccs > cachesize ) {
+	// if larger than threshold...do
+	int min = 1000;
+	int max = 0;
+	for ( ci = cache.begin(); ci != cache.end(); ci++ ) {
+	  //l.log( (*ci).first + "=" + to_str( (*ci).second.cnt ) );
+	  int cnt = (*ci).second.cnt;
+	  if ( cnt < min ) {
+	    min = cnt;
+	  }
+	  if ( cnt > max ) {
+	    max = cnt;
+	  }
 	}
-	}*/
-      l.log( "Cache now: "+to_str(cache.size())+" elements." );
-
+	l.log( "min="+to_str(min)+", max="+to_str(max) );
+	// delete min elements (and max != min)
+	for (ci = cache.begin(); ci !=cache.end();) {
+	  if ( (*ci).second.cnt == min ) {
+	    cache.erase(ci++);
+	  } else {
+	    ++ci;
+	  }
+	}
+	l.log( "Cache now: "+to_str(cache.size())+" elements." );
+      }
+      
     }//true
   } //try
   catch ( const std::exception& e ) {
