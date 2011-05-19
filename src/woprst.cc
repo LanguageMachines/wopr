@@ -206,6 +206,17 @@ in /Users/pberck/prog/trunk/sources/wopr/test/esslli2010/correct
 ~/prog/trunk/sources/wopr/wopr -r server_sc -p ibasefile:austen.train.l2r0_-a1+D.ibase,timbl:"-a1 +D",lexicon:austen.train.lex,verbose:1,mld:1,mwl:2,max_ent:100,max_distr:1000,keep:1
 
 durian:wopr pberck$ ./woprst -f  /Users/pberck/prog/trunk/sources/wopr/test/esslli2010/correct/austen.test.l2r0
+
+10:16:11.02: microseconds: 8966595
+10:16:11.02: microseconds/8308: 1079
+
+same, but server_sc_nf (with cache):
+10:16:44.72: microseconds: 7233901
+10:16:44.72: microseconds/8308: 870
+
+second run with cache:
+10:17:03.89: microseconds: 1542052
+10:17:03.89: microseconds/8308: 185
 */
 int run_file( Logfile& l, const std::string& filename,
 	      const std::string& host, const std::string& port) {
