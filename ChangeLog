@@ -1,3 +1,5 @@
+1.28.5	Added caching size/parameter.
+	
 1.28.4	Simple caching in server_nc_nf added.
 	
 1.28.3	Benchmark added.
