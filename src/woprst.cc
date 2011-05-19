@@ -198,6 +198,14 @@ max_distr: 1000000
 max_distr: 100000000
 11:43:15.93: microseconds: 10867859
 11:43:15.93: microseconds/915: 11877
+
+Other experiment:
+
+in /Users/pberck/prog/trunk/sources/wopr/test/esslli2010/correct
+
+~/prog/trunk/sources/wopr/wopr -r server_sc -p ibasefile:austen.train.l2r0_-a1+D.ibase,timbl:"-a1 +D",lexicon:austen.train.lex,verbose:1,mld:1,mwl:2,max_ent:100,max_distr:1000,keep:1
+
+durian:wopr pberck$ ./woprst -f  /Users/pberck/prog/trunk/sources/wopr/test/esslli2010/correct/austen.test.l2r0
 */
 int run_file( Logfile& l, const std::string& filename,
 	      const std::string& host, const std::string& port) {
@@ -227,7 +235,9 @@ int run_file( Logfile& l, const std::string& filename,
     (void)cs.write( a_line +"\n" );
     std::string answer;
     cs.read(answer);
-    //l.log( answer );
+    if ( answer != "__EMPTY__" ) {
+      l.log( a_line + "/" + answer );
+    }
     ++lines;
   }
   u_secs1 = clock_u_secs();

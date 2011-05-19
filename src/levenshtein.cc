@@ -1234,6 +1234,9 @@ int server_sc_nf( Logfile& l, Config& c ) {
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
   
+  std::map<std::string,std::string> cache;
+  std::map<std::string,std::string>::iterator ci;
+
   std::string distrib;
   std::vector<std::string> distribution;
   std::string result;
@@ -1296,6 +1299,10 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  c.set_status(0);
 	  return(0);
 	}
+	if ( tmp_buf == "_CLEAR_" ) {
+	  cache.clear();
+	  continue;
+	}
 	if ( tmp_buf.length() == 0 ) {
 	  connection_open = false;
 	  c.set_status(0);
@@ -1304,9 +1311,26 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	if ( verbose > 0 ) {
 	  l.log( "|" + tmp_buf + "|" );
 	}
-	  
+
+
 	cls.clear();
+
+	//check cache
 	  
+	ci = cache.find( tmp_buf ); //langzaam?
+	if ( ci == cache.end() ) {
+	  //nope
+	} else {
+	  //yes
+	  if ( verbose > 0 ) {
+	    l.log( "Found in cache," );
+	  }
+	  std::string answer = (*ci).second;
+	  answer = answer + '\n';
+	  newSock->write( answer );
+	  continue;
+	}
+
 	std::string classify_line = tmp_buf;
 	  
 	// Sentence based, window here, classify all, etc.
@@ -1534,6 +1558,9 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    }
 	    answer = answer + (*fi)->name;
 	  }
+
+	  cache[tmp_buf] = answer;
+
 	  answer = answer + '\n';
 	  newSock->write( answer );
 
@@ -1547,6 +1574,16 @@ int server_sc_nf( Logfile& l, Config& c ) {
       } // connection_open
       l.log( "connection closed." );
       delete newSock;
+
+      // print cache
+      //
+      /*for ( ci = cache.begin(); ci != cache.end(); ci++ ) {
+	if ( (*ci).second != "__EMPTY__" ) {
+	  l.log( (*ci).first + "=" + (*ci).second );
+	}
+	}*/
+      l.log( "Cache now: "+to_str(cache.size())+" elements." );
+
     }//true
   } //try
   catch ( const std::exception& e ) {
