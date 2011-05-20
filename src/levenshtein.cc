@@ -1151,13 +1151,6 @@ int server_sc( Logfile& l, Config& c ) {
 #endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
-struct cache_elem {
-  int cnt;
-  std::string ans;
-  bool operator<(const cache_elem& rhs) const {
-    return cnt > rhs.cnt;
-  }
-};
 int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "server spelling correction" );
   
@@ -1346,7 +1339,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  ci = cache.find( classify_line );
 	  if ( ci != cache.end() ) {
 	    if ( verbose > 0 ) {
-	      l.log( "Found in cache," );
+	      l.log( "Found in cache." );
 	    }
 	    (*ci).second.cnt += 1;
 	    newSock->write(  (*ci).second.ans + '\n' );
@@ -1566,7 +1559,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  cache_elem ce;
 	  ce.ans = answer;
 	  ce.cnt = 1;
-	  cache[tmp_buf] = ce; //answer;
+	  cache[classify_line] = ce; //answer;
 
 	  answer = answer + '\n';
 	  newSock->write( answer );

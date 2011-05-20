@@ -921,6 +921,7 @@ int server4(Logfile& l, Config& c) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const int hapax               = stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm            = stoi( c.get_value( "skm", "0" )) == 1;
+  const long cachesize          = stoi( c.get_value( "cs", "100000" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -1015,18 +1016,23 @@ int server4(Logfile& l, Config& c) {
       //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
       int cpid = fork();
       if ( cpid == 0 ) { // child process
-
-      std::string buf;
+	
+	std::string buf;
       	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
 
+	// Local cache. Useful for pbmbmt which holds connection
+	// the whole time.
+	std::map<std::string, cache_elem> cache;
+	std::map<std::string, cache_elem>::iterator ci;
+
 	while ( running & connection_open ) {
 
-	    std::string tmp_buf;
-	    newSock->read( tmp_buf );
-	    tmp_buf = trim( tmp_buf, " \n\r" );
-	    
+	  std::string tmp_buf;
+	  newSock->read( tmp_buf );
+	  tmp_buf = trim( tmp_buf, " \n\r" );
+	  
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = 0;
@@ -1040,45 +1046,57 @@ int server4(Logfile& l, Config& c) {
 	    connection_open = false;
 	    break;
 	  }
-
+	  
+	  if ( verbose > 0 ) {
+	    l.log( "|" + tmp_buf + "|" );
+	  }
+	  
+	  // Remove <s> </s> if so requested.
+	  //
+	  if ( skip_sm == true ) {
+	    if ( tmp_buf.substr(0, 4) == "<s> " ) {
+	      tmp_buf = tmp_buf.substr(4);
+	    }
+	    size_t bl =  tmp_buf.length();
+	    if ( tmp_buf.substr(bl-5, 5) == " </s>" ) {
+	      tmp_buf = tmp_buf.substr(0, bl-5);
+	    }
+	    if ( verbose > 1 ) {
+	      l.log( "|" + tmp_buf + "| skm" );
+	    }	      
+	    
+	  }
+	  
+	  cls.clear();
+	  
+	  std::string classify_line = tmp_buf;
+	  
+	  // Check the cache
+	  //
+	  ci = cache.find( classify_line );
+	  if ( ci != cache.end() ) {
 	    if ( verbose > 0 ) {
-	      l.log( "|" + tmp_buf + "|" );
+	      l.log( "Found in cache." );
 	    }
+	    (*ci).second.cnt += 1;
+	    newSock->write(  (*ci).second.ans + '\n' ); //moses format?
+	    continue;
+	  }
 
-	    // Remove <s> </s> if so requested.
-	    //
-	    if ( skip_sm == true ) {
-	      if ( tmp_buf.substr(0, 4) == "<s> " ) {
-		tmp_buf = tmp_buf.substr(4);
-	      }
-	      size_t bl =  tmp_buf.length();
-	      if ( tmp_buf.substr(bl-5, 5) == " </s>" ) {
-		tmp_buf = tmp_buf.substr(0, bl-5);
-	      }
-	      if ( verbose > 1 ) {
-		l.log( "|" + tmp_buf + "| skm" );
-	      }	      
-	      
-	    }
-
-	    cls.clear();
+	  // Sentence based, window here, classify all, etc.
+	  //
+	  if ( mode == 1 ) {
+	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	  } else {
+	    cls.push_back( classify_line );
+	  }
+	  
+	  // Loop over all lines.
+	  //
+	  std::vector<std::string> words;
+	  probs.clear();
+	  for ( int i = 0; i < cls.size(); i++ ) {
 	    
-	    std::string classify_line = tmp_buf;
-
-	    // Sentence based, window here, classify all, etc.
-	    //
-	    if ( mode == 1 ) {
-	      window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
-	    } else {
-	      cls.push_back( classify_line );
-	    }
-	    
-	    // Loop over all lines.
-	    //
-	    std::vector<std::string> words;
-    	    probs.clear();
-	    for ( int i = 0; i < cls.size(); i++ ) {
-	      
 	      classify_line = cls.at(i);
 	      
 	      words.clear();
@@ -1196,15 +1214,22 @@ int server4(Logfile& l, Config& c) {
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
 	    if ( moses == 0 ) {
+	      cache_elem ce;
+	      ce.ans = to_str(ave_pl10);
+	      ce.cnt = 1;
+	      cache[classify_line] = ce;
 	      newSock->write( to_str(ave_pl10) + '\n' );
-	      
 	    } else if ( moses == 1 ) { // 6 char output for moses
 	      char res_str[7];
-	      
+
 	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
-	      
 	      //std::cerr << "(" << res_str << ")" << std::endl;
 	      newSock->write( res_str );
+
+	      cache_elem ce;
+	      ce.ans = res_str;
+	      ce.cnt = 1;
+	      cache[classify_line] = ce;	      
 	    }
 
 	    connection_open = (keep == 1);
@@ -1218,6 +1243,8 @@ int server4(Logfile& l, Config& c) {
 	  // till exited/removed by system.
 	  kill( getppid(), SIGTERM );
 	}
+	size_t ccs = cache.size();
+	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed
