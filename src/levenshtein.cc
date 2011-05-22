@@ -54,12 +54,12 @@
 #include "util.h"
 #include "Config.h"
 #include "runrunrun.h"
-#include "server.h"
 #include "tag.h"
 #include "Classifier.h"
 #include "Multi.h"
 #include "levenshtein.h"
 #include "elements.h"
+#include "cache.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -1151,13 +1151,13 @@ int server_sc( Logfile& l, Config& c ) {
 #endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
-struct cache_elem {
+/*struct cache_elem {
   int cnt;
   std::string ans;
   bool operator<(const cache_elem& rhs) const {
     return cnt > rhs.cnt;
   }
-};
+  };*/
 int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "server spelling correction" );
   
@@ -1242,8 +1242,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
   
-  std::map<std::string,cache_elem> cache;
-  std::map<std::string,cache_elem>::iterator ci;
+  Cache *cache = new Cache( cachesize );
 
   std::string distrib;
   std::vector<std::string> distribution;
@@ -1308,8 +1307,8 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  return(0);
 	}
 	if ( tmp_buf == "_CLEAR_" ) {
-	  cache.clear();
-	  l.log( "Cache now: "+to_str(cache.size())+" elements." );
+	  //cache.clear();
+	  //l.log( "Cache now: "+to_str(cache.size())+" elements." );
 	  continue;
 	}
 	if ( tmp_buf.length() == 0 ) {
@@ -1343,13 +1342,12 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    
 	  // Check the cache
 	  //
-	  ci = cache.find( classify_line );
-	  if ( ci != cache.end() ) {
+	  std::string cache_ans = cache->get( classify_line );
+	  if ( cache_ans != "" ) {
 	    if ( verbose > 0 ) {
 	      l.log( "Found in cache." );
 	    }
-	    (*ci).second.cnt += 1;
-	    newSock->write(  (*ci).second.ans + '\n' );
+	    newSock->write(  cache_ans + '\n' );
 	    continue;
 	  }
 
@@ -1563,10 +1561,9 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    answer = answer + (*fi)->name;
 	  }
 
-	  cache_elem ce;
-	  ce.ans = answer;
-	  ce.cnt = 1;
-	  cache[classify_line] = ce; //answer;
+	  // Add.
+	  //
+	  cache->add( classify_line, answer );
 
 	  answer = answer + '\n';
 	  newSock->write( answer );
@@ -1581,34 +1578,10 @@ int server_sc_nf( Logfile& l, Config& c ) {
       l.log( "connection closed." );
       delete newSock;
 
-      size_t ccs = cache.size();
+      size_t ccs = cache->get_size();
       l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-      if ( ccs > cachesize ) {
-	// if larger than threshold...do
-	int min = 1000;
-	int max = 0;
-	for ( ci = cache.begin(); ci != cache.end(); ci++ ) {
-	  //l.log( (*ci).first + "=" + to_str( (*ci).second.cnt ) );
-	  int cnt = (*ci).second.cnt;
-	  if ( cnt < min ) {
-	    min = cnt;
-	  }
-	  if ( cnt > max ) {
-	    max = cnt;
-	  }
-	}
-	l.log( "min="+to_str(min)+", max="+to_str(max) );
-	// delete min elements (and max != min)
-	for (ci = cache.begin(); ci !=cache.end();) {
-	  if ( (*ci).second.cnt == min ) {
-	    cache.erase(ci++);
-	  } else {
-	    ++ci;
-	  }
-	}
-	l.log( "Cache now: "+to_str(cache.size())+" elements." );
-      }
-      
+      cache->last();
+
     }//true
   } //try
   catch ( const std::exception& e ) {

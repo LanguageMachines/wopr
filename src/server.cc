@@ -1217,7 +1217,7 @@ int server4(Logfile& l, Config& c) {
 	    if ( moses == 0 ) {
 	      std::string ans = to_str(ave_pl10);
 	      cache->add( classify_line, ans );
-	      newSock->write( ans + '\n' );
+	      newSock->write( ans + "\n" );
 	    } else if ( moses == 1 ) { // 6 char output for moses
 	      char res_str[7];
 
@@ -1227,7 +1227,6 @@ int server4(Logfile& l, Config& c) {
 
 	      //cache->add( res_str );
 	    }
-
 	    connection_open = (keep == 1);
 	    //connection_open = false;
 	    
