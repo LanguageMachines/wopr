@@ -242,6 +242,68 @@ same, but server_sc_nf (with cache):
 second run with cache:
 10:17:03.89: microseconds: 1542052
 10:17:03.89: microseconds/8308: 185
+
+Chaos:
+                                         server_sc
+pberck@chaos:/exp/pberck/wopr$ ./wopr -r server_sc_nf -p ibasefile:/exp/antalb/valkuil-servers/DUTCH-TWENTE-ILK.tok.1e5.l3r3.ibase,timbl:"-a1 +D",lexicon:/exp/antalb/sources/valkuil/valkuil-servers/DUTCH-TWENTE-ILK.tok.1e5.lex,port:1984,keep:1,mwl:3,cs:5000
+
+pberck@chaos:/exp/pberck/wopr$ head -n10000  /exp/pberck/wopr_exps1/timbl-a1+D/ibase_1e6.l3r3/DUTCH-TWENTE-ILK.tok.l10000.l3r3 >tst.l3r3.10000
+pberck@chaos:/exp/pberck/wopr$ ./woprst -f tst.l3r3.10000 
+
+server_sc
+cache: 1:
+10:59:35.37: microseconds: 43331205
+10:59:35.37: microseconds/10000: 4333
+
+cache: 10000:
+10:57:58.18: microseconds: 46286894
+10:57:58.18: microseconds/10000: 4628
+
+cache: 100000:
+11:01:21.67: microseconds: 42992410
+11:01:21.67: microseconds/10000: 4299
+(11:01:21.67: 9485:shmer:9485:515:9485:0:0)
+
+server_sc_nf
+cache: 1:
+11:03:06.20: microseconds: 41519889
+11:03:06.20: microseconds/10000: 4151
+(11:03:06.20: 1:shmer:10000:0:10000:9999:0)
+
+Run 2:
+11:06:10.88: microseconds: 40837104
+11:06:10.88: microseconds/10000: 4083
+(11:06:10.88: 1:shmer:20000:0:20000:19999:0)
+
+cache: 5000:
+11:10:54.40: microseconds: 38985134
+11:10:54.40: microseconds/10000: 3898
+(11:10:54.40: 5000:shmer:9494:506:9494:4494:0)
+
+Run 2:
+11:11:54.57: microseconds: 38608015
+11:11:54.57: microseconds/10000: 3860
+(11:11:54.57: 5000:shmer:18985:1015:18985:13985:0)
+
+cache: 10000:
+11:08:06.04: microseconds: 40839831
+11:08:06.04: microseconds/10000: 4083
+(11:08:06.04: 9485:shmer:9485:515:9485:0:0)
+
+Run 2:
+11:08:46.21: microseconds: 849391
+11:08:46.21: microseconds/10000: 84
+(11:08:46.21: 9485:shmer:9485:10515:9485:0:0)
+
+cache: 1000000:
+11:15:08.90: microseconds: 39774270
+11:15:08.90: microseconds/10000: 3977
+(11:15:08.90: 9485:shmer:9485:515:9485:0:0)
+
+Run 2:
+11:16:15.99: microseconds: 726631
+11:16:15.99: microseconds/10000: 72
+(11:16:15.99: 9485:shmer:9485:10515:9485:0:0)
 */
 int run_file( Logfile& l, const std::string& filename,
 	      const std::string& host, const std::string& port) {
