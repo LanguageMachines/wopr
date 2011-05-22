@@ -63,6 +63,8 @@
 #include "Multi.h" // for server_mg
 #include "wex.h"   // for server_mg
 
+#include "cache.h"
+
 #ifdef TIMBL
 #include "timbl/TimblAPI.h"
 #endif
@@ -1024,8 +1026,8 @@ int server4(Logfile& l, Config& c) {
 
 	// Local cache. Useful for pbmbmt which holds connection
 	// the whole time.
-	std::map<std::string, cache_elem> cache;
-	std::map<std::string, cache_elem>::iterator ci;
+	//
+	Cache *cache = new Cache( cachesize );
 
 	while ( running & connection_open ) {
 
@@ -1073,13 +1075,12 @@ int server4(Logfile& l, Config& c) {
 	  
 	  // Check the cache
 	  //
-	  ci = cache.find( classify_line );
-	  if ( ci != cache.end() ) {
+	  std::string cache_ans = cache->get( classify_line );
+	  if ( cache_ans != "" ) {
 	    if ( verbose > 0 ) {
 	      l.log( "Found in cache." );
 	    }
-	    (*ci).second.cnt += 1;
-	    newSock->write(  (*ci).second.ans + '\n' ); //moses format?
+	    newSock->write(  cache_ans + '\n' ); //moses format?
 	    continue;
 	  }
 
@@ -1214,11 +1215,9 @@ int server4(Logfile& l, Config& c) {
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
 	    if ( moses == 0 ) {
-	      cache_elem ce;
-	      ce.ans = to_str(ave_pl10);
-	      ce.cnt = 1;
-	      cache[classify_line] = ce;
-	      newSock->write( to_str(ave_pl10) + '\n' );
+	      std::string ans = to_str(ave_pl10);
+	      cache->add( classify_line, ans );
+	      newSock->write( ans + '\n' );
 	    } else if ( moses == 1 ) { // 6 char output for moses
 	      char res_str[7];
 
@@ -1226,10 +1225,7 @@ int server4(Logfile& l, Config& c) {
 	      //std::cerr << "(" << res_str << ")" << std::endl;
 	      newSock->write( res_str );
 
-	      cache_elem ce;
-	      ce.ans = res_str;
-	      ce.cnt = 1;
-	      cache[classify_line] = ce;	      
+	      //cache->add( res_str );
 	    }
 
 	    connection_open = (keep == 1);
@@ -1243,8 +1239,9 @@ int server4(Logfile& l, Config& c) {
 	  // till exited/removed by system.
 	  kill( getppid(), SIGTERM );
 	}
-	size_t ccs = cache.size();
+	size_t ccs = cache->get_size();
 	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+	cache->last();
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed

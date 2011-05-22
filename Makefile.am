@@ -46,7 +46,8 @@ wopr_SOURCES = \
 	src/wex.cc \
 	src/SocketBasics.h \
 	src/SocketBasics.cc \
-	src/MersenneTwister.h
+	src/MersenneTwister.h \
+	src/cache.h
 
 woprsm_SOURCES = \
 	src/woprsm.cc
@@ -58,6 +59,7 @@ woprst_SOURCES = \
 	src/util.cc \
 	src/SocketBasics.h \
 	src/SocketBasics.cc \
+	src/cache.h \
 	src/woprst.cc
 
 man_MANS = man/wopr.1

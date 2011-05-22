@@ -1151,6 +1151,13 @@ int server_sc( Logfile& l, Config& c ) {
 #endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
+struct cache_elem {
+  int cnt;
+  std::string ans;
+  bool operator<(const cache_elem& rhs) const {
+    return cnt > rhs.cnt;
+  }
+};
 int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "server spelling correction" );
   

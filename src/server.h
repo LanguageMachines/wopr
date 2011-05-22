@@ -34,14 +34,6 @@
 #include "timbl/TimblAPI.h"
 #endif
 
-struct cache_elem {
-  int cnt;
-  std::string ans;
-  bool operator<(const cache_elem& rhs) const {
-    return cnt > rhs.cnt;
-  }
-};
-
 int server2( Logfile&, Config& );
 std::string json_safe( const std::string& );
 std::string str_clean( const std::string& );

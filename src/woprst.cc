@@ -34,12 +34,15 @@
 #include "qlog.h"
 #include "util.h"
 
+#include "cache.h"
+
 #ifdef TIMBLSERVER
 #include "SocketBasics.h"
 #endif
 
 int run_file( Logfile&, const std::string&,
 	      const std::string&, const std::string& );
+int run_cache( Logfile&, const std::string& );
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -118,7 +121,29 @@ int main( int argc, char* argv[] ) {
     }
   } // while
 
+  Cache *cache = new Cache( 10 );
+
+  cache->add( "1 b c", "one" );
+  cache->print();
+  cache->add( "1 b c", "one" );
+  cache->print();
+  cache->add( "2 b d", "two" );
+  cache->print();
+  cache->add( "3 b c", "three" );
+  cache->print();
+  cache->add( "1 b c", "one" );
+  cache->print();
+  cache->add( "4 b c", "four" );
+  cache->print();
+  cache->last();
+
+  std::cout << "cache get:" << cache->get( "1 b c" ) << std::endl;
+  std::cout << "cache get:" << cache->get( "2 b d" ) << std::endl;
+  std::cout << "cache get:" << cache->get( "3 b c" ) << std::endl;
+  std::cout << "cache get:" << cache->get( "4 b c" ) << std::endl;
+
   run_file( l, filename, host, port );
+  //run_cache( l, filename );
 
   return 0;
 }
@@ -224,7 +249,12 @@ int run_file( Logfile& l, const std::string& filename,
   l.log( "Running: "+filename );
 
   Sockets::ClientSocket cs;
-  bool res = cs.connect( host.c_str(), port.c_str() );
+  try {
+    bool res = cs.connect( host.c_str(), port.c_str() );
+  } catch ( const std::exception& e ) {
+    l.log( "ERROR: exception caught." );
+    return -1;
+  }
 
   std::ifstream infile( filename.c_str() );
   if ( ! infile ) {
@@ -253,10 +283,70 @@ int run_file( Logfile& l, const std::string& filename,
   }
   u_secs1 = clock_u_secs();
   std::cout << u_secs1 << std::endl;
-
   l.log( "End test..." );
   l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
   l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
 
   infile.close();
+}
+
+int run_cache( Logfile& l, const std::string& filename ) {
+
+  l.log( "Running: "+filename );
+
+  std::ifstream infile( filename.c_str() );
+  if ( ! infile ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  l.log( "Starting test..." );
+
+  Cache *cache = new Cache(100000);
+
+  std::string a_line;
+  long u_secs0;
+  long u_secs1;
+  int lines = 0;
+
+  u_secs0 = clock_u_secs();
+  std::cout << u_secs0 << std::endl;
+  while( std::getline( infile, a_line ) ) {    
+    //l.log( a_line );
+    cache->add( a_line, a_line );
+    ++lines;
+  }
+  u_secs1 = clock_u_secs();
+  std::cout << u_secs1 << std::endl;
+  cache->last();
+  l.log( "End test..." );
+  l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
+  l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
+
+  infile.close();
+
+  std::ifstream infile2( filename.c_str() );
+  if ( ! infile2 ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  l.log( "Starting test 2..." );
+  lines = 0;
+
+  u_secs0 = clock_u_secs();
+  std::cout << u_secs0 << std::endl;
+  while( std::getline( infile2, a_line ) ) {    
+    //l.log( a_line );
+    cache->get( a_line );
+    ++lines;
+  }
+  u_secs1 = clock_u_secs();
+  std::cout << u_secs1 << std::endl;
+  cache->last();
+  l.log( "End test..." );
+  l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
+  l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
+
+  infile2.close();
 }
