@@ -728,6 +728,7 @@ int server_sc( Logfile& l, Config& c ) {
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
   const int keep                = stoi( c.get_value( "keep", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const long cachesize          = stoi( c.get_value( "cs", "100000" ));
 
   int                mwl              = stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
@@ -741,12 +742,13 @@ int server_sc( Logfile& l, Config& c ) {
   const std::string empty        = c.get_value( "empty", "__EMPTY__" );
 
   l.inc_prefix();
-  l.log( "ibasefile: "+ibasefile );
-  l.log( "port:      "+port );
-  l.log( "keep:      "+to_str(keep) ); // keep conn. open after sending result
-  l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
+  l.log( "ibasefile:  "+ibasefile );
+  l.log( "port:       "+port );
+  l.log( "keep:       "+to_str(keep) ); // keep conn. open after sending result
+  l.log( "verbose:    "+to_str(verbose) ); // be verbose, or more verbose
   l.log( "timbl:     "+timbl ); // timbl settings
-  l.log( "lexicon    "+lexicon_filename ); // the lexicon
+  l.log( "lexicon     "+lexicon_filename ); // the lexicon
+  l.log( "cache_size: "+to_str(cachesize) ); // size of the cache
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
@@ -801,7 +803,7 @@ int server_sc( Logfile& l, Config& c ) {
   if ( total_count > 0 ) { // Better estimate if we have a lexicon
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
-  
+
   std::string distrib;
   std::vector<std::string> distribution;
   std::string result;
@@ -848,6 +850,8 @@ int server_sc( Logfile& l, Config& c ) {
       int cpid = fork();
       if ( cpid == 0 ) { // child process
 
+	Cache *cache = new Cache( cachesize ); // local cache
+
 	std::string buf;
     
 	bool connection_open = true;
@@ -880,6 +884,17 @@ int server_sc( Logfile& l, Config& c ) {
 	  cls.clear();
 	  
 	  std::string classify_line = tmp_buf;
+
+	  // Check the cache
+	  //
+	  std::string cache_ans = cache->get( classify_line );
+	  if ( cache_ans != "" ) {
+	    if ( verbose > 0 ) {
+	      l.log( "Found in cache." );
+	    }
+	    newSock->write(  cache_ans + '\n' );
+	    continue;
+	  }
 	  
 	  // Sentence based, window here, classify all, etc.
 	  //
@@ -1107,6 +1122,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      }
 	      answer = answer + (*fi)->name;
 	    }
+	    cache->add( classify_line, answer );
 	    answer = answer + '\n';
 	    newSock->write( answer );
 
@@ -1125,6 +1141,9 @@ int server_sc( Logfile& l, Config& c ) {
 	  // till exited/removed by system.
 	  kill( getppid(), SIGTERM );
 	}
+	size_t ccs = cache->get_size();
+	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+	l.log( cache->stat() );
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed
@@ -1182,12 +1201,13 @@ int server_sc_nf( Logfile& l, Config& c ) {
   const long cachesize            = stoi( c.get_value( "cs", "100000" ));
 
   l.inc_prefix();
-  l.log( "ibasefile: "+ibasefile );
-  l.log( "port:      "+port );
-  l.log( "keep:      "+to_str(keep) ); // keep conn. open after sending result
-  l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:     "+timbl ); // timbl settings
-  l.log( "lexicon    "+lexicon_filename ); // the lexicon
+  l.log( "ibasefile:  "+ibasefile );
+  l.log( "port:       "+port );
+  l.log( "keep:       "+to_str(keep) ); // keep conn. open after sending result
+  l.log( "verbose:    "+to_str(verbose) ); // be verbose, or more verbose
+  l.log( "timbl:      "+timbl ); // timbl settings
+  l.log( "lexicon     "+lexicon_filename ); // the lexicon
+  l.log( "cache_size: "+to_str(cachesize) ); // size of the cache
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
@@ -1580,7 +1600,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
       size_t ccs = cache->get_size();
       l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-      cache->last();
+      l.log( cache->stat() );
 
     }//true
   } //try

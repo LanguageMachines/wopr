@@ -941,6 +941,7 @@ int server4(Logfile& l, Config& c) {
   l.log( "lexicon    "+lexicon_filename ); // the lexicon...
   l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
   l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
+  l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
   l.dec_prefix();
 
   // Load lexicon. 
@@ -1240,7 +1241,7 @@ int server4(Logfile& l, Config& c) {
 	}
 	size_t ccs = cache->get_size();
 	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-	cache->last();
+	l.log( cache->stat() );
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed

@@ -3332,6 +3332,13 @@ int pplx_simple( Logfile& l, Config& c ) {
 
       words.clear();
       a_line = trim( a_line );
+
+      // Check new cache here, return result-as-string if found. Skip
+      // everything else. The old rationale behind the cache was that
+      // different instances will give a mismatch, returning at least
+      // a cached disribution. But having a cache for the instances
+      // themselves could also save time.
+
       Tokenize( a_line, words, ' ' );
 
       if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.

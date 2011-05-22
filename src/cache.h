@@ -149,9 +149,13 @@ class Cache {
 
   // Print some info.
   //
-  const std::string& last() {
-    std::cout << cache.size() << ":" << cache_list.front() << " - " << cache_list.back() << std::endl;
-    std::cout << "shmer:" << stores << ":" << hits << ":" << misses << ":" << evictions << ":" << reinserts << std::endl;
+  const std::string stat() {
+    std::string ans = to_str(cache.size()) + ":" + "shmer:" + to_str(stores)
+      + ":" + to_str(hits)
+      + ":" + to_str(misses)
+      + ":" + to_str(evictions)
+      + ":" + to_str(reinserts);
+    return ans;
   }
 
   void print() {

@@ -135,7 +135,7 @@ int main( int argc, char* argv[] ) {
   cache->print();
   cache->add( "4 b c", "four" );
   cache->print();
-  cache->last();
+  l.log( cache->stat() );
 
   std::cout << "cache get:" << cache->get( "1 b c" ) << std::endl;
   std::cout << "cache get:" << cache->get( "2 b d" ) << std::endl;
@@ -318,7 +318,7 @@ int run_cache( Logfile& l, const std::string& filename ) {
   }
   u_secs1 = clock_u_secs();
   std::cout << u_secs1 << std::endl;
-  cache->last();
+  l.log( cache->stat() );
   l.log( "End test..." );
   l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
   l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
@@ -343,7 +343,7 @@ int run_cache( Logfile& l, const std::string& filename ) {
   }
   u_secs1 = clock_u_secs();
   std::cout << u_secs1 << std::endl;
-  cache->last();
+  std::cout << cache->stat() << std::endl;
   l.log( "End test..." );
   l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
   l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
