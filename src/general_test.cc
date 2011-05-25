@@ -46,6 +46,7 @@
 #include "util.h"
 #include "lcontext.h"
 #include "runrunrun.h"
+#include "cache.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -89,6 +90,8 @@ int gen_test( Logfile& l, Config& c ) {
   std::vector<std::string> distribution;
   std::string        result;
   double             distance;
+
+  Cache *cache = new Cache(10000);
 
   // Sanity check.
   //
@@ -251,11 +254,18 @@ int gen_test( Logfile& l, Config& c ) {
       distr_cache.push_back( c );
     }
     long timbl_time = 0;
-    
+
     while( std::getline( file_in, a_line )) { ///// GETLINE <---------- \\\\\\ \
       
       words.clear();
       a_line = trim( a_line );
+
+      std::string cache_ans = cache->get( a_line );
+      if ( cache_ans != "" ) {
+	file_out << cache_ans << std::endl;
+	continue;
+      }	
+
       Tokenize( a_line, words, ' ' );
       
       std::string target         = words.at( words.size()-1 );
@@ -422,30 +432,32 @@ int gen_test( Logfile& l, Config& c ) {
       //
       // #target classification logprob entropy word_lp (dist.cnt [topn])
       //
-      file_out << /*a_line << ' ' <<*/ target 
+      std::ostringstream out;
+
+      out << /*a_line << ' ' <<*/ target 
 	       << ' ' << answer << ' '
 	/*<< entropy << ' '*/ ;
-      
+
       if ( answer == target ) {
-	file_out << "cg "; // correct guess
+	out << "cg "; // correct guess
       } else if ( (answer != target) && (target_in_dist == true) ) {
-	file_out << "cd "; // correct distr.
+	out << "cd "; // correct distr.
       } else {
-	file_out << "ic "; // incorrect
+	out << "ic "; // incorrect
       }
       
       // New in 1.10.0, the matchDepth and matchedAtLeaf
       //
-      file_out << md << ' ' << mal << ' ';
-      
+      out << md << ' ' << mal << ' ';
+
       if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
 	int cntr = topn;
 	sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
 	std::vector<distr_elem>::iterator fi;
 	fi = distr_vec.begin();
-	file_out << cnt << ' ' << distr_count << " [ ";
+	out << cnt << ' ' << distr_count << " [ ";
 	while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
-	  file_out << (*fi).name << ' ' << (*fi).freq << ' ';
+	  out << (*fi).name << ' ' << (*fi).freq << ' ';
 	  if ( cache_level == 1 ) {
 	    distr_elem d;
 	    d.name = (*fi).name;
@@ -454,10 +466,12 @@ int gen_test( Logfile& l, Config& c ) {
 	  }
 	  fi++;
 	}
-	file_out << "]";
+	out << "]";
       }
       
-      file_out << std::endl;
+      std::string out_str = out.str();
+      file_out << out_str << std::endl;
+      cache->add( a_line, out_str );
       
       // Find new lowest here. Overdreven om sort te gebruiken?
       //
@@ -478,6 +492,8 @@ int gen_test( Logfile& l, Config& c ) {
     file_out.close();
     file_in.close();
     
+    l.log( cache->stat() );
+
     double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
     l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
     double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;

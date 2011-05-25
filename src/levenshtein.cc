@@ -1152,7 +1152,8 @@ int server_sc( Logfile& l, Config& c ) {
 	return(1);
       }
       delete newSock;
-    }//true
+
+    }// running is true
   } //try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
