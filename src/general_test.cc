@@ -84,6 +84,7 @@ int gen_test( Logfile& l, Config& c ) {
   int                cache_size       = stoi( c.get_value( "cache", "3" ) );
   int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
   int                skip             = 0;
+  int                cs               = stoi( c.get_value( "cs", "10000" ) );
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -91,7 +92,7 @@ int gen_test( Logfile& l, Config& c ) {
   std::string        result;
   double             distance;
 
-  Cache *cache = new Cache(10000);
+  Cache *cache = new Cache(cs);
 
   // Sanity check.
   //
@@ -260,6 +261,9 @@ int gen_test( Logfile& l, Config& c ) {
       words.clear();
       a_line = trim( a_line );
 
+      // This speeds up the process, but messs up the stats at the end.
+      // We don't add to the cg/ic/cd counts when retrieving from cache...
+      //
       std::string cache_ans = cache->get( a_line );
       if ( cache_ans != "" ) {
 	file_out << cache_ans << std::endl;

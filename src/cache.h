@@ -51,8 +51,8 @@ class Cache {
     hits = misses = evictions = stores = reinserts = 0;
   };
   Cache( int s ) {
-    if ( s <= 0 ) {
-      s = 1;
+    if ( s < 0 ) {
+      s = 0;
     }
     cache_size =  s;
     empty = "";
@@ -86,6 +86,10 @@ class Cache {
   // both the map and the list.
   //
   void add( const std::string& a, const std::string& b ) {
+
+    if ( cache_size == 0 ) {
+      return; // fall through for size-0
+    }
 
     ++stores;
 	
@@ -137,6 +141,9 @@ class Cache {
   // Retrieve string answer from cache. 
   //
   const std::string& get( const std::string& a ) {
+    if ( cache_size == 0 ) {
+      return empty; // fall through for 0
+    }
     ci = cache.find( a );
     if ( ci != cache.end() ) {
       ++hits;
