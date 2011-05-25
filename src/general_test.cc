@@ -120,6 +120,7 @@ int gen_test( Logfile& l, Config& c ) {
   l.log( "topn:           "+to_str(topn) );
   l.log( "cache:          "+to_str(cache_size) );
   l.log( "cache threshold:"+to_str(cache_threshold) );
+  l.log( "instance cache :"+to_str(cs) );
   l.log( "id:             "+id );
   l.dec_prefix();
 
@@ -498,15 +499,17 @@ int gen_test( Logfile& l, Config& c ) {
     
     l.log( cache->stat() );
 
-    double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
-    l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
-    double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
-    l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
-    int correct_total = correct_distr+correct;
-    double ct_perc = correct_perc+cd_perc;
-    l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
-    l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
-    
+    if ( cs == 0 ) {
+      double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
+      l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
+      double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
+      l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
+      int correct_total = correct_distr+correct;
+      double ct_perc = correct_perc+cd_perc;
+      l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
+      l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
+    }
+
     l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
     
     c.add_kv( "gt_file", output_filename );
