@@ -9,11 +9,12 @@ use Getopt::Std;
 # ...
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_i $opt_l $opt_r $opt_w /;
+use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_w /;
 
-getopts('f:il:r:w');
+getopts('f:g:il:r:w');
 
 my $wopr_file  = $opt_f || 0;
+my $gcs        = $opt_g || 0; #for global context
 my $ignore_oov = $opt_i || 0;
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
@@ -28,16 +29,16 @@ for ( my $i = 0; $i < 6; $i++ ) {
 }
 my @vsum_txt = ( "unk", "match leaf", "cg", "cd", "ig" );
 my %word_score;			#cg,cd,ic counts
-my $log2prob_pos  = $lc + $rc + 2;
-my $target_pos    = $lc + $rc + 0;
-my $class_pos     = $lc + $rc + 1; #classification
-my $classtype_pos = $lc + $rc + 5;
-my $unknown_pos   = $lc + $rc + 6;
-my $md_pos        = $lc + $rc + 7;  #match depth
-my $ml_pos        = $lc + $rc + 8;  #matched at leaf
-my $dcnt_pos      = $lc + $rc + 9;  #dist count
-my $dsum_pos      = $lc + $rc + 10; #dist sum (of freqs in dist)
-my $rr_pos        = $lc + $rc + 11; #matched at leaf
+my $log2prob_pos  = $lc + $rc + $gcs + 2;
+my $target_pos    = $lc + $rc + $gcs + 0;
+my $class_pos     = $lc + $rc + $gcs + 1; #classification
+my $classtype_pos = $lc + $rc + $gcs + 5;
+my $unknown_pos   = $lc + $rc + $gcs + 6;
+my $md_pos        = $lc + $rc + $gcs + 7;  #match depth
+my $ml_pos        = $lc + $rc + $gcs + 8;  #matched at leaf
+my $dcnt_pos      = $lc + $rc + $gcs + 9;  #dist count
+my $dsum_pos      = $lc + $rc + $gcs + 10; #dist sum (of freqs in dist)
+my $rr_pos        = $lc + $rc + $gcs + 11; #matched at leaf
 
 my $wopr_sumlog10  = 0.0;
 my $srilm_sumlog10 = 0.0;
