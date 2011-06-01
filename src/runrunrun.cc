@@ -104,22 +104,28 @@ int make_ibase( Logfile& l, Config& c ) {
   l.log( "make_ibase");
   const std::string& timbl          =  c.get_value("timbl");
   const std::string& filename       = c.get_value( "filename" );
+  const std::string& ibasefile      = c.get_value( "ibasefile", "" ); //pbmbmt
   std::string        id             = c.get_value( "id", "" );
 
   std::string t_ext = timbl;
   std::string ibase_filename = filename;
-  t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '),
-	       t_ext.end());
-  if ( t_ext != "" ) {
-    ibase_filename = ibase_filename+"_"+t_ext;
+
+  if ( ibasefile != "" ) {
+    ibase_filename = ibasefile;
+  } else {
+    t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '),
+		 t_ext.end());
+    if ( t_ext != "" ) {
+      ibase_filename = ibase_filename+"_"+t_ext;
+    }
+    
+    /* DISABLED because of the t_ext string.
+       if ( (id != "") && ( ! contains_id( filename, id)) ) {
+       ibase_filename = ibase_filename + "_" + id;
+       }
+    */
+    ibase_filename = ibase_filename + ".ibase";
   }
-  
-  /* DISABLED because of the t_ext string.
-  if ( (id != "") && ( ! contains_id( filename, id)) ) {
-    ibase_filename = ibase_filename + "_" + id;
-  }
-  */
-  ibase_filename = ibase_filename + ".ibase";
 
   if ( file_exists(l, c, ibase_filename) ) {
     l.log( "IBASE exists, not overwriting." );
@@ -245,7 +251,6 @@ int script(Logfile& l, Config& c)  {
 	kv_pairs.clear();
       }
       if ( lhs == "msg" ) {
-
 	Tokenize( rhs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
 	for ( int j = 0; j < kv_pairs.size(); j++ ) {
@@ -3337,7 +3342,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       // everything else. The old rationale behind the cache was that
       // different instances will give a mismatch, returning at least
       // a cached disribution. But having a cache for the instances
-      // themselves could also save time.
+      // themselves could also save time. Problem: we create two output
+      // files, one .px and one .pxs. Save both output lines in one
+      // string? For the .pcs file we need to know if we are at line
+      // endings...
 
       Tokenize( a_line, words, ' ' );
 
