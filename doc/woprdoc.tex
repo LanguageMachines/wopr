@@ -1,0 +1,603 @@
+% $Id:$
+%
+\documentclass[a4paper,10pt,twoside]{report}
+%
+\usepackage[english,dutch,ngerman,english]{babel}
+\usepackage{microtype}
+\usepackage{relsize} %for \textscale{.75}
+\usepackage{booktabs}
+\usepackage{varioref}
+\usepackage[verbose]{geometry}
+%
+%\usepackage{tikz}
+%\usetikzlibrary{shapes.geometric,shapes.arrows,decorations.pathmorphing}
+%\usetikzlibrary{matrix,chains,scopes,positioning,arrows,fit}
+%
+% These three are together:
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[style=british]{csquotes}
+%
+\usepackage{color}
+\usepackage{url}
+\usepackage{sepnum}
+\usepackage{appendix}
+\usepackage{amssymb} %for twoheadrightarrow 
+%
+\usepackage{setspace}
+\onehalfspacing
+%
+\usepackage{verbatim}
+%
+%http://tex.stackexchange.com/questions/18969/creating-a-zebra-effect-using-listings
+\usepackage{lstlinebgrd}
+%
+% ---- Commands/definitions/&c.
+%
+%\makeatletter
+\input{defs.tex}
+\input{acronyms.tex}
+\input{tikzdefs.tex}
+%\makeatother
+%
+% Chapter/section style
+\usepackage{pbstyle}
+% ----
+
+%%I'm afraid that if you look at a thing long enough, it loses
+%% all of its meaning. --Andy Warhol
+
+\begin{document}
+
+\title{Wopr}
+\author{Peter Berck}
+\date{\today}
+
+\maketitle
+
+%% ----------------------------------------------------------------
+%\makeemptypage
+\clearpage
+\tableofcontents
+
+%% ---
+
+\chapter{Intro}
+
+\Wopr{} is a wrapper around the \knn{} classifier in \Timbl{},
+offering word prediction and language modeling
+functionalities. Trained on a text corpus, \wopr{} can predict missing
+words, report perplexities at the word level and the text level, and
+generate spelling correction hypotheses.
+
+\par
+Besides the \Timbl{}-related functionality, \wopr{} can create and
+manipulated data sets.
+
+\chapter{Walk Throughs}
+
+Without further ado, we present a number of common tasks which can be
+performed with \wopr{}. We'll jump right in, and explain the different
+steps and option on the way.
+
+\section{Memory Based Language Model}
+
+A memory based version of a trigram model. The following text corpora
+are used in the experiments; \cmp{rmt.5e5} for our training data, and
+\cmp{rmt.t1000} to test on. The former consists of the first
+\num{500000} lines of the Reuters Newspaper corpus, while the latter
+contains the last \num{1000} lines.
+
+The following steps are typically taken when creating a model from
+scratch.
+
+\begin{varlist}{m}
+\item[1] Create a lexicon
+\item[2] Create a windowed data set (both for training and testing)
+\item[3] Train the instance base
+\item[4] Run a test on a test data set
+\end{varlist}
+
+The lexicon is created as follows.
+
+\begin{bash}{Creating a lexicon}
+wopr -r lexicon -p filename:rmt.5e5
+\end{bash}
+
+This will create a frequency list of all the tokens in the specified
+file. Before we explain what we did, we will show the second step.
+
+%\begin{lstlisting}[language=C,basicstyle=\ttfamily,numberstyle=\zebra{green!25}{green!2},numbers=left]
+\begin{bash}{Creating a data set}
+wopr -r window_lr -p filename:rmt.5e5,lc:2,rc:0
+\end{bash}
+
+These examples shows how \wopr{} is typically used. The two main
+points to note are \cmp{-r window\_lr}, and the \cmp{-p \ldots}. The
+\cmp{-r} tells \wopr{} to run the \cmp{window\_lr}
+function. Everything that follows after \cmp{-p} are the parameters
+passed to the function. The parameters are specified as a comma
+seperated list of \cmp{keyword:value} pairs. In this case, we specify
+a \cmp{filename}, \cmp{rmt.5e5} and the size of the left- and right
+contexts. The context consists of two words on the left of the target,
+and none on the right. This is abbreviated as \cmp{l2r0}.
+
+\Wopr{} is quite verbose:
+
+\begin{bash}{\Wopr{} output}
+wopr -r window_lr -p filename:rmt.5e5,lc:2,rc:0
+06:58:37.21: Timbl support built in.
+06:58:37.22: /Users/pberck/local/
+06:58:37.22: Starting wopr 1.29.3
+06:58:37.22: PID:   7433 PPID:   2142
+06:58:37.22: Starting.
+06:58:37.22: Running: window_lr
+06:58:37.22: window_lr
+06:58:37.22:  filename:  rmt.5e5
+06:58:37.22:  lc:        2
+06:58:37.22:  rc:        0
+06:58:37.22:  to:        0
+06:58:37.22:  OUTPUT:    rmt.5e5.l2r0
+06:59:15.61: SET filename to rmt.5e5.l2r0
+06:59:15.61: Result = 0
+06:59:15.61: Running for 38s
+06:59:15.61: Ready.
+\end{bash}
+
+Note lines 13 and 14. In line 13, \wopr{} prints the name of the
+output file it creates. These filenames are generated automatically by
+\wopr{} and contain information about the parameters used. In the case
+of \cmp{window\_lr}, it incorporates the context size in the file
+name. This allows \wopr{} to skip steps in its processing if they have
+been done before. Running the exact same command again will show the
+following:
+
+\begin{bash}{}
+wopr -l -r window_lr -p filename:rmt.5e5,lc:2,rc:0
+07:15:36.38: Running: window_lr
+07:15:36.38: window_lr
+07:15:36.38:  filename:  rmt.5e5
+07:15:36.38:  lc:        2
+07:15:36.38:  rc:        0
+07:15:36.38:  to:        0
+07:15:36.38:  OUTPUT:    rmt.5e5.l2r0
+07:15:36.38: OUTPUT exists, not overwriting.
+07:15:36.38: SET filename to rmt.5e5.l2r0
+07:15:36.38: Result = 0
+\end{bash}
+
+Another thing to notice is the \cmp{SET} statement in line
+\num{10}. This is useful when combining the different steps. This will
+be explained later.
+
+The next step is the creation of the instance base (output has been
+reduced to improve readability).
+
+\begin{bash}{Creating an instance base}
+wopr -l -r make_ibase -p filename:rmt.5e5.l2r0,timbl:"-a4 +D"
+10:02:16.99: Running: make_ibase
+10:02:16.99: make_ibase
+10:02:16.99:  timbl:     -a4 +D
+10:02:16.99:  filename:  rmt.5e5.l2r0
+10:02:16.99:  ibasefile: rmt.5e5.l2r0_-a4+D.ibase
+...
+Size of InstanceBase = 3366271 Nodes, (134650840 bytes), 29.46 % compression
+Learning took 527 seconds, 732 milliseconds and 483 microseconds
+Writing Instance-Base in: rmt.5e5.l2r0_-a4+D.ibase
+10:12:57.87: SET ibasefile to rmt.5e5.l2r0_-a4+D.ibase
+10:12:57.87: Result = 0
+\end{bash}
+
+Creating the instance based is delegated to \Timbl{}. We refer to
+\cite{Daelemans+09} for a thorough explanation. The variables
+specified in the \cmp{timbl} parameter are passed verbatim to \Timbl{}.
+
+%The \cmp{\ldots} show where \Timbl{}, which is used by \wopr{} to
+%train the instance base, prints its output.
+
+And finally, we use this instance base to run a perplexity calculation
+on a test set. The test set has been prepared in a step not shown
+here, in the same format as the training data. It contains the last
+\num{1000} lines of the Reuters data. Here we also specify the lexicon
+created in step \textsf{1}. The lexicon is used to determine if a word
+is known or unknown to the system.
+
+\begin{bash}{Running a test}
+wopr -l -r pplxs -p ibasefile:rmt.5e5.l2r0_-a4+D.ibase,
+                    filename:rmt.t1000.l2r0,timbl:"-a4 +D",
+                    lexicon:rmt.5e5.lex
+...
+11:50:10.93:  Correct:       3368 (20.5893)
+11:50:10.93:  Correct Distr: 6250 (38.2076)
+11:50:10.93:  Correct Total: 9618 (58.7969)
+11:50:10.93:  Wrong:         6740 (41.2031)
+11:50:10.93:  Timbl took: 11m47s
+11:50:10.93:  SET px_file to rmt.t1000.l2r0_11615.px
+11:50:10.93:  SET pxs_file to rmt.t1000.l2r0_11615.pxs
+11:50:11.09: Result = 0
+\end{bash}
+
+\Wopr{} generates two output files. The important one is
+\cmp{rmt.t1000.l2r0\_11615.px}. That contains the prediction and
+statistics for each test instance we processed.
+
+An extra perl script, \cmp{pplxs\_px.pl} has been supplied to post
+process the output. It can be found in the \cmp{etc/} directory in the
+\wopr{} distribution. It computes perplexity and other statistics on
+the output. It is run as follows.
+
+\begin{bash}{Post processing of \wopr{} output}
+perl pplx_px.pl -f rmt.t1000.l2r0_11615.px -l2 -r0
+\end{bash}
+
+The file to process is specified with the \cmp{-f} parameter. The
+context size is specified with the \cmp{-l} and \cmp{-r}
+parameters. It contains a line for each instance, followed by a
+summary. A fragment of the output:
+
+\begin{wout}{}
+0.02119694  -5.5600  -1.6737  1 1 [01010] ways
+0.41176411  -1.2801  -0.3854  1 1 [01010] of
+\end{wout}
+
+It shows the probability of the classification, followed by the
+$log_2$ and $log_{10}$ of the probability. For an explanation of the
+other values, see the reference chapter. The summary at the end shows,
+amongst other statistics, the perplexity on the test data.
+
+\begin{wout}{}
+Wordcount: 16358 sentencecount: 0 oovcount: 542
+Wopr ppl:    251.41 Wopr ppl1:    251.41  (No oov words.)
+\end{wout}
+
+To get performance per word, the \cmp{-w} flag can be added.
+
+\begin{wout}{}
+winner: cg:0 (0.00%) cd:0 (0.00%) ic:1 (100.00%)
+with: cg:11 (18.33%) cd:22 (36.67%) ic:27 (45.00%)
+\end{wout}
+
+This show that the word \cmp{winner} appeared once in the test set,
+and was incorrectly predicted. The word \cmp{with} was predicted
+correctly in ten cases, \etc{}.
+
+\subsection{Combining Commands}
+
+As we mentioned before, the \wopr{}-commands can be combined. \Wopr{}
+has a mechanism to automatically generate output filenames based on
+certain parameters. It will \q{create} come of these parameters after
+each run, so they will be available to the next function as input
+without having to specify them from the start. We can combine several
+of the steps we shows in the previous part like this.
+
+\begin{bash}{Combining commands}
+wopr -r lexicon,window_lr,make_ibase,pplxs -p filename:rmt.5e5,
+                                              timbl:"-a4 +D",lc:2,rc:0
+...
+09:11:54.15: SET ibasefile to rmt.5e5.l2r0_-a4+D.ibase
+09:11:54.15: Result = 0
+09:11:54.15: Running: pplxs
+09:11:54.15: pplxs
+09:11:54.15:  ibasefile:      rmt.5e5.l2r0_-a4+D.ibase
+09:11:54.15:  lexicon:        rmt.5e5.lex
+09:11:54.15:  counts:         rmt.5e5.cnt
+...
+\end{bash}
+
+If we look at the last step, \cmp{pplxs}, we see that the instance base
+filename and the other parameters have been taken from the previous
+steps. Note that we cannot also generate the windowed test set in this
+chain. That has to be done seperately.
+
+\section{\ngram{}-model}
+
+\Wopr{} can also create a classical \ngram{}-model. This functionality
+has been included so as to be able to compare the \mb{} \lm{} to 
+\q{pure} \ngram{}-model. It has neither been optimised for speed,
+nor for memory efficiency.
+
+Creation of the model consists of one step; \cmp{ngl}.
+
+\begin{bash}{Creation of an \ngram{} model}
+wopr -r ngl -p filename:rmt.5e5
+11:19:40.16: Running: ngl
+11:19:40.18: ngl
+11:19:40.18:  filename:  rmt.5e5
+11:19:40.18:  n:         3
+11:19:40.18:  fco:       0
+11:19:40.18:  OUTPUT:    rmt.5e5.ngl3f0
+11:19:40.18: Reading...
+11:21:33.15: Writing...
+11:22:36.35: SET ngl to rmt.5e5.ngl3f0
+11:22:45.65: Result = 0
+\end{bash}
+
+The output contains a list with all the \ngram{}s followed by a
+frequency count and a conditional probability. The default \ngram{}
+size is three.
+
+The command to process a test file is called \cmp{ngt}.
+
+\begin{bash}{testing with an \ngram{} model}
+wopr -r ngt -p ngl:rmt.5e5.ngl3f0,testfile:rmt.t1000
+11:31:50.24: Running: ngt
+11:31:50.24: ngt
+11:31:50.24:  filename:  rmt.t1000
+11:31:50.24:  ngl file:  rmt.5e5.ngl3f0
+11:31:50.24:  counts:    
+11:31:50.24:  n:         3
+11:31:50.24:  id:        
+11:31:50.24:  OUTPUT:    rmt.t1000.ngt3
+11:31:50.24:  OUTPUT:    rmt.t1000.ngp3
+11:31:50.24: NOTICE: cannot read counts file, no smoothing will be applied.
+11:31:50.24: P(0) = 1e-06
+11:31:50.24: Reading ngrams...
+11:31:59.71: Writing output...
+11:32:00.02: Total words: 16358
+11:32:00.02: Total oovs: 542
+11:32:00.02: Total log2prob: -121551
+11:32:00.02: Average log2prob: -7.6853
+11:32:00.02: Average pplx: 205.828
+11:32:00.02: SET ngt_file to rmt.t1000.ngt3
+11:32:00.02: SET ngp_file to rmt.t1000.ngp3
+11:32:01.90: Result = 0
+\end{bash}
+
+This produces two output files. One, \cmp{rmt.t1000.ngt3}, containing
+statistics for each classifiation, as shown in the following fragment. It
+shows a word, the \ngram{} probability, the size of the matching
+\ngram{} and the \ngram{} itself.
+
+\begin{wout}{}
+and 0.0928793 2 puts and
+calls 0.5 3 puts and calls
+\end{wout}
+
+The other, \cmp{rmt.t1000.ngp3}, contains statistics per line of text.
+
+\begin{wout}{}
+-81.9518 293.087 10 0 The officers quickly managed to calm down ...
+\end{wout}
+
+The output contains the entropy, perplexity, word count and number of
+unknown words, followed by the text line itself.
+
+\chapter{Installation}
+
+\Timbl{} is required to run \wopr{}.
+
+Assuming \Timbl{} is configured and installed locally with
+\cmp{--prefix=/home/pberck/local}. We also install \wopr{} locally:
+
+%\begin{lstlisting}[language=bash,basicstyle=\ttfamily,linebackgroundcolor={\ifodd\value{lstnumber}\color{green!25}\else\color{green!2}\fi}]
+\begin{bash}{Configuring \wopr{} locally}
+sh bootstrap
+./configure --prefix=/home/pberck/local \
+            --with-timbl=/home/pberck/local
+make
+make install
+\end{bash}
+
+If \Timbl{} is installed system wide, the \cmp{--with-timbl} parameter
+can be omitted. The configure script should be able to figure out
+where the libraries are. Wopr can be built without \Timbl{} by specifying
+\cmp{--without-timbl}. This will leave you with a \wopr{} which can
+create datafiles and run an \ngram{} model only.
+%On Debian we need: \cmp{export LD\_LIBRARY\_PATH=\$LD\_LIBRARY\_PATH:/home/pberck/local/lib}
+The \cmp{LD\_LIBRARY\_PATH} and \cmp{PATH} variables might need to be
+set as well. A short test to see if all went well:
+
+\begin{bash}{Running \wopr{}}
+./wopr
+10:44:32.19: Timbl support built in.
+10:44:32.19: /Users/pberck/local/
+10:44:32.19: Starting wopr 1.29.3
+10:44:32.20: PID:   4173 PPID:   1136
+10:44:32.20: Starting.
+10:44:32.21: Running for 00s
+10:44:32.21: Ready.
+\end{bash}
+
+The second line shows the path tot the \Timbl{} libraries.
+
+\chapter{Performance}
+
+\section{Memory}
+
+\begin{comment}
+// ---- 2011-06-13 15:47:50 Mon -----------------------------------------------
+ceto
+pberck@ceto:/exp2/pberck\$ /exp/pberck/wopr/wopr -l -r make_ibase -p filename:nyt.3e7.100000.l3r0,timbl:"-a1 +D"
+
+and:
+pberck@ceto:/exp/pberck/wopr/etc\$ bash watch_wopr.sh 30341 88G 10 1
+
+gnuplot 30341_mem.plot
+durian:doc pberck\$ scp -P223 pberck@portal.ticc.uvt.nl:doorgeefluik/303* .
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\pdfwidth]{30341_mem.pdf}
+ \caption{Example gc instance base}
+  \label{fig:30341_mem.pdf}
+\end{figure}
+
+// ---- 2011-06-13 15:55:26 Mon -----------------------------------------------
+
+pberck@ceto:/exp2/pberck\$ wc -l nyt.3e7.1000000.l3r0                            22855429 nyt.3e7.1000000.l3r0
+
+/exp/pberck/wopr/wopr -l -r make_ibase -p filename:nyt.3e7.1000000.l3r0,timbl:"-a1 +D"
+bash watch_wopr.sh 32376 88G 10 1
+
+testing with about ibase:
+/exp/pberck/wopr/wopr -l -r pplxs -p
+ibasefile:nyt.3e7.1000000.l3r0_-a1+D.ibase,timbl:"-a1+D",filename:lc/nyt.tail1000.l3r0
+bash watch_wopr.sh  26251 88G 10 1
+\end{comment}
+
+Memory use when training a classifier on \num{1000000} lines of text
+(\num{22855429} instances).
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\pdfwidth]{32376_mem.pdf}
+ \caption{nyt.1000000.l3r0}
+  \label{fig:32376_mem.pdf}
+\end{figure}
+
+Memory use when using the above instance base for a classification
+task.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\pdfwidth]{26251_mem.pdf}
+ \caption{nyt.1000000.l3r0 ibase, test tail1000}
+  \label{fig:26251_mem.pdf}
+\end{figure}
+
+\chapter{Reference}
+
+\section{Data}
+
+\subsection{window\_lr}
+
+\begin{varlist}{lc}
+\item[lc] Left context. Number of words on the left side of the target.
+\item[rc] Right context. Number of words on the right side of the target.
+\item[to] target offset. Shift the target position. Setting this to
+  one will skip one word on the left, that is, a b -> d, c will be skipped.
+\end{varlist}
+
+\section{Training}
+
+\subsection{make\_ibase}
+
+\begin{varlist}{filename}
+\item[filename] Filename of the windowed data set.
+\item[timbl] Settings for \Timbl{}.
+\end{varlist}
+
+\section{Testing}
+
+\subsection{\cmp{pplxs}}
+
+The \cmp{pplxs} function is geared towards word prediction. It takes
+an instance base, and calls \Timbl{} to process the test file. A
+number of word prediction related values are calculated and written to
+the output file.
+
+The output contains the following:
+
+\begin{wout}{}
+85 bp bp 0 0 1 cg k 1 1 1 11 1 [ bp 11 ]
+bp over over 0 0 1 cg k 1 1 1 11 1 [ over 11 ]
+over LIBOR Libor -16.4148 0 87364.5 ic k 1 1 1 11 0 [ Libor 11 ]
+LIBOR delayed . -13.915 2.502 15452.2 ic k 1 1 8 44 0 [ . 14 , 11 for 6 ]
+\end{wout}
+
+The first tokens contain the instance (in this case \cmp{l1r0}),
+followed by the classification. This is followed by the logprob of the
+classification, the entropy of the distribution and the word level
+perplexity. The logprob is the $log_2$ of the probability of the
+classification. The entropy of the distribution $D$ is calculated as
+follows:
+
+\begin{equation}
+H(p) = -\sum_{x \in D} \, p(x)\log_2 p(x)
+\label{eq:entropy}
+\end{equation}
+
+The word level perplexity is defined as:
+
+\begin{equation}
+wlp = 2^{-p_{classification}}
+\label{eq:wlp}
+\end{equation}
+
+These three numbers are followed by an indicator (cg, cd or ic),
+followed by an known/unknown word indicator. This is followed by the
+match-depth and a boolean value indicating matched-at-leaf (one or
+zero). See \cite{Daelemans+09} for a more thorough explanation. The
+following three values are the distribution size, the sum of the
+distribution frequencies, and the \emph{reciprocal rank} of the
+answer. Finally, the output contains the top-$n$ of the distributions,
+specified as a list of \cmp{token frequency} pairs.
+
+\begin{varlist}{ibasefile}
+\item[filename] Test file to process.
+\item[dir] Instead of one file, a whole directory with files will be
+  processed if the \cmp{dir} parameter is specified instead of the
+  \cmp{filename} parameter.
+\item[dirmatch] A regular expression which determines which files will
+  be read from the directory specified with \cmp{dir}.
+\item[ibasefile] Filename of the instance base.
+\item[timbl] Settings used to create the instance base.
+\item[lexicon] Lexicon to determine known/unknown words.
+\item[counts] Counts of ranks for the lexicon. This can be used to
+  introduce smoothed or changed probabilities to the perplexity
+  calculations. 
+\item[hapax] Used when reading the lexicon.
+\item[lc] Not used.
+\item[rc] Not used.
+\item[topn] Number of elements from the \Timbl{} distribution to
+  include in the output. Most frequent one first.
+\item[cache] Number of elements in the cache (the default of three is
+  good). 
+\item[cth] Cache threshold: A distribution is not cached until it
+  contains this many items.
+\item[is] Include the whole sentence in the output (pxs).
+\item[id] Identifier to append to the output filenames. If not
+  specified, it defaults to the \pid{}.
+\end{varlist}
+
+\subsection{\cmp{gt}}
+
+The \cmp{gt} function is a general test routine; it calls \Timbl{} and
+writes the output to a file. The word prediction calculations are not
+performed. The output filename is the name of the testfile, followed
+by the \cmp{id} and the suffix \cmp{gt}.
+
+The output contains the following:
+
+\begin{wout}{}
+million million cg 1 1 20 224 [ million 139 mln 30 billion 11 ]
+\end{wout}
+
+The first token is the target, the second the classification from
+\Timbl{}. This is followed by an indicator (cg, cd, or ic), followed
+by two values which indicate the match-depth, and a boolean value
+specifying matched-at-leaf (one or zero). If the \cmp{topn} parameter
+had been specified, this is followed by the distribution count, the
+sum of the frequency of the elements in the distribution, and the
+top-$n$ from the distribution. The latter is a list with
+\cmp{token frequency} pairs.
+
+\begin{varlist}{ibasefile}
+\item[filename] Test file to process.
+\item[dir] Instead of one file, a whole directory with files will be
+  processed if the \cmp{dir} parameter is specified instead of the
+  \cmp{filename} parameter.
+\item[dirmatch] A regular expression which determines which files will
+  be read from the directory specified with \cmp{dir}.
+\item[ibasefile] Filename of the instance base.
+\item[timbl] Settings used to create the instance base.
+\item[cache] Number of elements in the cache (the default of three is
+  good). 
+\item[cth] Cache threshold: A distribution is not cached until it
+  contains this many items.
+\item[cs] Size of the cache which caches test instances. Default is
+  \num{10000}. Note that this is a different cache from the cache which
+  caches distributions. 
+\item[topn] Number of elements from the \Timbl{} distribution to
+  include in the output. Most frequent one first.
+\item[id] Identifier to append to the output filenames. If not
+  specified, it defaults to the \pid{}.
+\end{varlist}
+
+
+\bibliographystyle{apalike}
+\bibliography{ilk}
+
+\end{document}
+
+
