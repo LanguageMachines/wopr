@@ -259,7 +259,7 @@ with: cg:11 (18.33%) cd:22 (36.67%) ic:27 (45.00%)
 
 This show that the word \cmp{winner} appeared once in the test set,
 and was incorrectly predicted. The word \cmp{with} was predicted
-correctly in ten cases, \etc{}.
+correctly in \num{11} cases, \etc{}.
 
 \subsection{Combining Commands}
 
@@ -286,13 +286,13 @@ wopr -r lexicon,window_lr,make_ibase,pplxs -p filename:rmt.5e5,
 
 If we look at the last step, \cmp{pplxs}, we see that the instance base
 filename and the other parameters have been taken from the previous
-steps. Note that we cannot also generate the windowed test set in this
-chain. That has to be done seperately.
+steps. Note that we cannot generate the windowed test set in the
+same chain. That has to be done seperately.
 
 \section{\ngram{}-model}
 
 \Wopr{} can also create a classical \ngram{}-model. This functionality
-has been included so as to be able to compare the \mb{} \lm{} to 
+has been included so as to be able to compare the \mb{} \lm{} to a 
 \q{pure} \ngram{}-model. It has neither been optimised for speed,
 nor for memory efficiency.
 
@@ -361,6 +361,78 @@ The other, \cmp{rmt.t1000.ngp3}, contains statistics per line of text.
 
 The output contains the entropy, perplexity, word count and number of
 unknown words, followed by the text line itself.
+
+\section{Text Generation}
+
+\Wopr{} can also be used in reverse, and generate text from a
+\lm{}. The command is called \cmp{generate}.
+
+\begin{bash}{Text generation}
+wopr -r generate -p ibasefile:rmt.5e5.l2r0_-a4+D.ibase,timbl:'-a4 +D',
+                    filename:out1,ws:2
+\end{bash}
+
+The command still uses the older specification for context,
+\cmp{ws}. It needs to be set to the sum of the left and right context
+specifiers. 
+
+\begin{wout}{}
+Kodjo took the loss , no delays . 
+USA : U.S. farm commodities to Russia , China . 
+The state had to evacuate the church for two consecutive terms in an 
+   abandoned car in the market moved in and out of parliament Koigi 
+   wa Wamwere and two hawks on to Baltimore . 
+The other 14 first list equities were unchanged in higher management
+   ranks . 
+\end{wout}
+
+
+\section{Spelling Correction}
+
+\Wopr{} can also be used to do spelling correction. The correction
+algorithm is based on words in the predicted list of words. A filter
+is applied to the list, removing words which fall outside predefined
+parameters such as levenshtein distance, word length and frequency.
+
+\begin{bash}{Spelling correction}
+wopr -r correct -p ibasefile:rmt.5e5.l2r0_-a4+D.ibase,timbl:"-a4 +D",
+                   filename:rmt.t1000.l2r0
+14:16:50.07: Running: correct
+14:16:50.07: correct
+14:16:50.07:  ibasefile:  rmt.5e5.l2r0_-a4+D.ibase
+14:16:50.07:  lexicon:    
+14:16:50.07:  counts:     
+14:16:50.07:  timbl:      -a4 +D
+14:16:50.07:  id:         7272
+14:16:50.07:  mwl:        5
+14:16:50.07:  mld:        1
+14:16:50.07:  max_ent:    5
+14:16:50.07:  max_distr:  10
+14:16:50.07:  min_ratio:  0
+14:16:50.07: Processing 1 files.
+...
+14:17:13.02: Processing: rmt.t1000.l2r0
+14:17:13.02: OUTPUT:     rmt.t1000.l2r0_7272.sc
+...
+14:35:42.79:  SET sc_file to rmt.t1000.l2r0_7272.sc
+14:35:42.80: Result = 0
+\end{bash}
+
+The statistics printed (here removed) can be ignored. The output will
+contain a list with the words falling within the parameters. They are
+potential corrections of misspelt words.
+
+Reuters doesn't contain misspellings, so we show output from another
+file.
+
+\begin{wout}{}
+_ _ Her ssiter (sister) -6.26454 0 76.88 1 [ sister 1 ]
+\end{wout}
+
+It shows the instance, followed by the classifiers best guess between
+parenthesis. This is followed by the logprob, the entropy and the word
+logprob ($2^{-logprob}$). The final number is the size of the \Timbl{}
+distribution returned, followed by a list with potential misspellings.
 
 \chapter{Installation}
 
@@ -476,6 +548,18 @@ task.
 \item[filename] Filename of the windowed data set.
 \item[timbl] Settings for \Timbl{}.
 \end{varlist}
+
+\subsection{ngl}
+
+Create an \ngram{} model.
+
+\begin{varlist}{filename}
+\item[filename] Filename of the plain text data.
+\item[n] The $n$ in \ngram{}.
+\item[fco] Frequency cut-off; \ngram{}s with a frequency below the
+  value of the \cmp{fco} parameter are excluded from the model.
+\end{varlist}
+
 
 \section{Testing}
 
@@ -594,6 +678,77 @@ top-$n$ from the distribution. The latter is a list with
   specified, it defaults to the \pid{}.
 \end{varlist}
 
+\subsection{\cmp{ngt}}
+
+Apply an \ngram{} model to the test set.
+
+\begin{varlist}{filename}
+\item[filename] Filename of the plain text file to apply the model to.
+\item[ngl] The \ngram{} model.
+\item[counts] File with counts.
+\item[n] Only \ngram{}s up to and including $n$ are used.
+\item[id] Identifier to append to the output filenames. If not
+  specified, it defaults to the empty string.
+\end{varlist}
+
+\subsection{\cmp{correct}}
+
+Word correction based on contents of the distribution returned by the
+classifier.
+
+\begin{varlist}{max\_distr}
+\item[filename] Test file to process.
+\item[dir] Instead of one file, a whole directory with files will be
+  processed if the \cmp{dir} parameter is specified instead of the
+  \cmp{filename} parameter.
+\item[dirmatch] A regular expression which determines which files will
+  be read from the directory specified with \cmp{dir}.
+\item[ibasefile] Filename of the instance base.
+\item[timbl] Settings used to create the instance base.
+\item[lexicon] Lexicon to determine known/unknown words.
+\item[counts] Counts of ranks for the lexicon. This can be used to
+  introduce smoothed or changed probabilities to the perplexity
+  calculations. 
+\item[mwl] Minimum word length (guess added if > mwl). Default 5.
+\item[mld] Maximum levenshtein distance (guess added if <=
+  mld). Default 1. Setting this to a larger value will introduce many
+  potential misspellings.
+\item[max\_ent] Max entropy of the distribution (guess added if <=
+  max\_entropy). Default 5.
+\item[max\_distr] Maximum size of the distribution (guess added if <=
+  max\_distr). Default 10.
+\item[min\_ratio] Ratio of the target lexical frequency versus the
+  frequency of the words in the distribution. This is geared towards
+  the disambiguation of confusibles and correctly spelt words on
+  levenshtein distance one (like \cmp{woman} versus
+  \cmp{women}). Default 0 (ignored).
+\item[id] Identifier to append to the output filenames. If not
+  specified, it defaults to the \pid{}.
+\end{varlist}
+
+
+\section{Miscellaneous}
+
+\subsection{\cmp{generate}}
+
+\begin{varlist}{ibasefile}
+\item[start] Fill the starting context with this string. The default
+  is to start generating from an empty context. It needs to contain as
+  many words as specified in the \cmp{ws} parameter.
+\item[filename] Output filename prefix.
+\item[ibasefile] The instance base.
+\item[timbl] The corresponding \Timbl{} settings.
+\item[end] The end of sentence marker, defaults to a full stop.
+\item[ws] The size of the left and right context added together.
+\item[mode] A parameter to control if the next word taken from a
+  number of possibilities is weighted according to frequency. Default
+  is on (\cmp{1}). Setting it to \cmp{0} gives equal probability to
+  each possibility.
+\item[sc] Show the frequency count of each word.
+\item[len] The maximum length of each sentence if the end of sentence
+  marker is not reached.
+\item[n] The number of sentences to generate.
+\end{varlist}
 
 \bibliographystyle{apalike}
 \bibliography{ilk}
