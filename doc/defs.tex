@@ -1,0 +1,73 @@
+% ----
+\newcommand{\cmp}[1]{\texttt{#1}} %%computer (was cmd)
+\newcommand{\step}[1]{step \textsf{#1}} %%step 1a->\step{1a}
+\newcommand{\topn}[1]{top--\ensuremath{#1}}
+\newcommand{\num}[1]{\sepnum{.}{\,}{}{#1}}
+\newcommand{\faint}[1]{\color[gray]{0.4}{#1}}
+\newcommand{\q}[1]{\enquote{#1}}
+\newcommand{\qq}[1]{\enquote*{#1}}
+\newcommand{\lf}[0]{\ \\ \noindent}
+\newcommand{\lflf}[0]{\ \\ \ \\ \noindent}
+\newcommand{\fv}[1]{\emph{#1}} %%feature value
+\newcommand{\tv}[1]{\emph{#1}} %%target value
+\newcommand{\numexpl}[2]{\ensuremath{#1_{\textrm{\footnotesize{#2}}}}}
+%\newcommand{\dist}[2]{\ensuremath{\left(\shortstack[l]{{\sf #1} \\ \small{#2}}\right)}}
+\newcommand{\dist}[2]{\scalebox{1.3}{\ensuremath{\frac{\sf #1}{#2}}}}
+\newcommand{\inst}[1]{\boxed{\small{{\sf #1}}}} %instance
+\newcommand{\targ}[1]{\boxed{\small{{\sf #1}}}} %target
+\newcommand{\patt}[2]{\inst{#1}~\targ{#2}} %full pattern
+%%                           after Big] \rule[-1mm]{0mm}{4mm}
+\newcommand{\dsum}[2]{\ensuremath{\Big]_{#2}^{#1}}} %dist size/fsum
+%\newcommand{\pattt}[3]{\inst{#1}~$\frac{{\sf #2}}{{\bf #3}}$} %full pattern
+% ----
+\newenvironment{varlist}[1]{%
+\begin{list}{}{%
+    \settowidth{\labelwidth}{\textsf{#1} }     %longest label length
+%    \addtolength{\labelsep}{3ex}          %extra space between lbl/txt
+    \setlength{\leftmargin}{\labelwidth}  %determine leftmargin
+    \addtolength{\leftmargin}{\labelsep}  %determine leftmargin
+    \setlength{\parsep}{0.5ex plus 0.2ex minus 0.2ex}
+    \setlength{\itemsep}{0.3ex}
+    \renewcommand{\makelabel}[1]{\textsf{##1}\hfill}}}%
+{\end{list}}
+%
+\newcounter{exampleno}
+\newcommand\theexample{\arabic{exampleno}}
+\newenvironment{example}%
+{\refstepcounter{exampleno}\vspace{\parsep}\noindent\begin{slshape}}%b
+{\hspace{\stretch{1}\end{slshape}(\theexample\vspace{\parsep}}\hspace{\parsep}}%e
+%
+%
+\newenvironment{technical}%
+{\begin{slshape}}
+{\end{slshape}}
+%
+\renewcommand\arraystretch{1.1}%
+%
+\newlength{\pdfwidth}
+%%\setlength{\pdfwidth}{1.0\textwidth}
+\setlength{\pdfwidth}{0.45\textwidth}
+\newlength{\halfpage}
+\setlength{\halfpage}{0.5\textwidth}
+\newlength{\halfpagefig}
+\setlength{\halfpagefig}{0.5\textwidth}
+\addtolength{\halfpagefig}{-0.25cm}
+\newlength{\thirdpage}
+\setlength{\thirdpage}{0.33\textwidth}
+%
+% from http://blog.pcode.nl/2007/07/19/latex-tips-tricks/:
+\renewcommand{\bfdefault}{sb}
+%
+\newcommand{\boxed}[1]{\fbox{#1\strut}}
+% ----
+\definecolor{Burgundy}{rgb}{.647,.129,.149}
+\definecolor{Grey}{rgb}{.5,.5,.5}
+%
+\lstnewenvironment{bash}[1]%
+{\lstset{aboveskip=\bigskipamount,belowskip=\bigskipamount,numbers=left,numberstyle=\tiny,language=bash,caption=#1,abovecaptionskip=\bigskipamount,basicstyle=\ttfamily\small,linebackgroundcolor={\ifodd\value{lstnumber}\color{green!25}\else\color{green!2}\fi}}}
+{}
+%
+\lstnewenvironment{wout}[1]%
+{\lstset{aboveskip=\bigskipamount,belowskip=\bigskipamount,language=bash,caption=#1,basicstyle=\ttfamily\small,linebackgroundcolor={\ifodd\value{lstnumber}\color{black!10}\else\color{black!2}\fi}}}
+{}
+%
