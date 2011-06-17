@@ -434,6 +434,156 @@ parenthesis. This is followed by the logprob, the entropy and the word
 logprob ($2^{-logprob}$). The final number is the size of the \Timbl{}
 distribution returned, followed by a list with potential misspellings.
 
+\section{Global Context}
+
+\Wopr{} contains a mechanism to include a larger, \emph{global}
+context in the classifier. This is done by marking words from a list
+with words that are deemed important. When going through a text to
+make instances, we put the words from the list we encounter in the
+text in the global context. The global context has a certain size, so
+that older words are pushed out by newer words. We also put a decay
+factor on the words, so that they will disappear even if they are not
+pushed out by newer words. These global context instances can be seen
+as instances with gaps in them (after all, we don't include every
+word), and the idea is that they capture the essence of the
+(preceeding) text. The gaps are of variable length, so they have been
+dubbed \emph{elastigrams}. To create the instances for \Timbl{}, we
+add the global context instances to already existing \q{normal}
+instances (in fact, the global context instances are created from a
+regular data set).
+
+There is a function to create the global context called
+\cmp{lcontext}, and one to create a list with important words from the
+lexicon, called \cmp{rfl}.
+
+The steps involved are the following.
+
+\begin{varlist}{m}
+\item[1] create training data
+\item[2] create a list
+\item[3] create the global context from the list and training data
+\end{varlist}
+
+The first steps have been explained before, and will just be mentioned
+here.
+
+\begin{bash}{Creating lexicon and training data}
+wopr -r lexicon -p filename:rmt.5e5
+wopr -r window_lr -p filename:rmt.5e5,lc:2,rc:0
+\end{bash}
+
+In the next step, we create a list with words which we want to include
+in our global context. We take a part of the lexicon, namely from the
+50th most frequent word to the 550th most frequent word. We skip the
+top-50 words because these are function words, and deemed less
+important when trying to catch the essence of the text. The list will
+still not be perfect, but serves our purpose.
+
+\begin{bash}{Creating list for global context training data}
+wopr -r rfl -p lexicon:rmt.5e5.lex,m:50,n:550
+...
+10:53:37.62: range_from_lex
+10:53:37.62:  lexicon: rmt.5e5.lex
+10:53:37.62:  m:       50
+10:53:37.62:  n:       550
+10:53:37.62:  OUTPUT:  rmt.5e5.lex.r50n550
+10:53:37.62: Reading lexicon.
+10:53:37.95: Read lexicon.
+10:53:38.19: Frequency list: 1786 items.
+10:53:38.25: Range file contains 539 items.
+10:53:38.25: SET range to rmt.5e5.lex.r50n550
+10:53:38.34: Result = 0
+\end{bash}
+
+The first five word in the file are:
+
+\begin{wout}{}
+year 17964
+U.S. 17870
+market 17175
+but 16501
+after 16004
+\end{wout}
+
+Now we can combine the list and the training data to form the global
+context training data.
+
+\begin{bash}{Creating global context training data}
+wopr -r lcontext -p range:rmt.5e5.lex.r50n550,filename:rmt.5e5.l2r0,
+                    gcd:50,gcs:10
+...
+10:58:39.91: lcontext
+10:58:39.91: Reading range file.
+10:58:39.91: Loaded range file, 539 items.
+10:58:39.91:  filename:  rmt.5e5.l2r0
+10:58:39.91:  range:     rmt.5e5.lex.r50n550
+10:58:39.91:  gcs:       10
+10:58:39.91:  gcd:       50
+10:58:39.91:  gct:       0
+10:58:39.91:  from_data: true
+10:58:39.91:  gc_sep:    true
+10:58:39.91:  OUTPUT:    rmt.5e5.l2r0.gc10d50t0
+11:01:34.19: SET filename to rmt.5e5.l2r0.gc10d50t0
+11:01:34.72: Result = 0
+\end{bash}
+
+The following shows a fragment of the resulting data set. In line two,
+the word \cmp{markets} is (again) added to the head of the global context
+part of the instance (fourth word from the right). In line three \cmp{into}
+is added, and everything shifts a place to the left.
+
+\begin{wout}{}
+_ _ _ _ _ _ markets markets economy back sent Mexican markets
+_ _ _ _ _ markets markets economy back markets Mexican markets into
+_ _ _ _ markets markets economy back markets into markets into a
+_ _ _ _ markets markets economy back markets into into a buzz
+\end{wout}
+
+Finally, we create a new instance base, and run a word prediction
+experiment.
+
+\begin{bash}{Creating global context training data}
+wopr -r make_ibase -p filename:rmt.5e5.l2r0.gc10d50t0,timbl:'-a4 +D'
+11:07:57.72: Timbl support built in.
+11:07:57.72: /Users/pberck/local/
+11:07:57.72: Starting wopr 1.29.3
+11:07:57.72: PID:   9161 PPID:   4617
+11:07:57.72: Starting.
+11:07:57.72: Running: make_ibase
+11:07:57.72: make_ibase
+11:07:57.72:  timbl:     -a4 +D
+11:07:57.72:  filename:  rmt.5e5.l2r0.gc10d50t0
+11:07:57.72:  ibasefile: rmt.5e5.l2r0.gc10d50t0_-a4+D.ibase
+...
+11:20:12.39: SET ibasefile to rmt.5e5.l2r0.gc10d50t0_-a4+D.ibase
+11:20:12.39: Result = 0
+\end{bash}
+
+\begin{bash}{Creating global context training data}
+/exp/pberck/wopr/wopr -l -r pplxs -p filename:rmt.t1000.l2r0.gc10d50t0,
+              timbl:"-a4 +D",ibasefile:rmt.5e5.l2r0.gc10d50t0_-a4+D.ibase,
+              lexicon:rmt.5e5.lex
+...
+11:58:55.32: Processing: rmt.t1000.l2r0.gc10d50t0
+11:58:55.32: OUTPUT:     rmt.t1000.l2r0.gc10d50t0_30826.px
+11:58:55.32: OUTPUT:     rmt.t1000.l2r0.gc10d50t0_30826.pxs
+12:51:30.18:  Correct:       3141 (19.2016)
+12:51:30.18:  Correct Distr: 866 (5.29405)
+12:51:30.18:  Correct Total: 4007 (24.4957)
+12:51:30.18:  Wrong:         12351 (75.5043)
+12:51:30.18:  Timbl took: 52m25s
+12:51:30.18:  SET px_file to rmt.t1000.l2r0.gc10d50t0_30826.px
+12:51:30.18:  SET pxs_file to rmt.t1000.l2r0.gc10d50t0_30826.pxs
+12:51:30.24: Result = 0
+\end{bash}
+
+There are a number of parameters that can be tweaked to get a better
+peformance. We refer to the reference section for details.
+
+\section{Multi-classifiers}
+
+\ldots
+
 \chapter{Installation}
 
 \Timbl{} is required to run \wopr{}.
@@ -539,6 +689,47 @@ task.
 \item[to] target offset. Shift the target position. Setting this to
   one will skip one word on the left, that is, a b -> d, c will be skipped.
 \end{varlist}
+
+\subsection{\cmp{rfl}}
+
+This command outputs a range of words taken from a lexicon. The
+entries in the lexicon are sorted by frequency. The highest frequency
+comes first and has rank 1.  Because we take ranks, a range of ten
+ranks can contain more than ten items as a number of words can have
+the same rank.
+
+\begin{varlist}{lexicon}
+\item[lexicon] The lexicon file to process.
+\item[n] Starting rank.
+\item[m] Last rank.
+\end{varlist}
+
+\subsection{\cmp{lcontext}}
+
+Create the global context part of the instances, and optionally merge
+them with a normal data set.
+
+\begin{varlist}{lexicon}
+\item[filename] The normal data set or text file, depending on the
+  value of the \cmp{gct} parameter.
+\item[range] The file containing the words for the global context.
+\item[gcs] Global context size
+\item[gcd] Global context decay
+\item[gct] Global context type. Type \cmp{0}, the default, creates a
+  global context consisting of words. Type \cmp{1} creates binary
+  features. The latter means a binary value for every word in the
+  \cmp{range} list supplied. The \cmp{gcs} parameter is ignored in
+  this case.
+\item[fd] Create from data (default \cmp{1}). Takes the words from a
+  normal, windowed data set. Setting this to \cmp{0} creates global
+  context from a normal text file.
+\item[id] Identifier to append to the output filenames. If not
+  specified, it defaults to the empty string.
+\item[gc\_sep] Defaults to \cmp{1}, a space. This space is inserted
+  between the binary (type \cmp{1}) feature values. Setting it to
+  \cmp{0} concatenates all the binary features in one binary string.
+\end{varlist}
+
 
 \section{Training}
 
