@@ -917,8 +917,22 @@ relating 114508940294
 triangle 114508940294
 \end{wout}
 
-\subsection{\cmp{ngram}}
+\subsection{\cmp{ngl}}
 
+This creates a file with uni- to \ngram{}s for the given text
+file. For each \ngram{}, the absolute frequency count and a
+conditional probability is calculated. The \cmp{fco} parameter is a
+frequency cut off value; only \ngram{}s which occur more often than
+the specified \cmp{fco} parameter are included in the model.
+
+\begin{varlist}{filename}
+\item[filename] The text file to read.
+\item[n] The largest \ngram{} to include. Default is \cmp{3}.
+\item[fco] The frequency cut-off value, defaults to \cmp{0}.
+\end{varlist}
+
+The output file will have the extension \cmp{.ngl3f0}, both the
+\cmp{n} and \cmp{fco} value are included.
 
 \subsection{\cmp{rfl}}
 
@@ -991,7 +1005,8 @@ an instance base, and calls \Timbl{} to process the test file. A
 number of word prediction related values are calculated and written to
 the output file.
 
-The output contains the following:
+It creates two output files, one with suffix \cmp{.px} and one with
+suffix \cmp{.pxs}.  The \cmp{.px} output contains the following:
 
 \begin{wout}{}
 85 bp bp 0 0 1 cg k 1 1 1 11 1 [ bp 11 ]
@@ -1003,7 +1018,7 @@ LIBOR delayed . -13.915 2.502 15452.2 ic k 1 1 8 44 0 [ . 14 , 11 for 6 ]
 The first tokens contain the instance (in this case \cmp{l1r0}),
 followed by the classification. This is followed by the logprob of the
 classification, the entropy of the distribution and the word level
-perplexity. The logprob is the $log_2$ of the probability of the
+perplexity (\wlp{}). The logprob is the $log_2$ of the probability of the
 classification. The entropy of the distribution $D$ is calculated as
 follows:
 
@@ -1015,18 +1030,34 @@ H(p) = -\sum_{x \in D} \, p(x)\log_2 p(x)
 The word level perplexity is defined as:
 
 \begin{equation}
-wlp = 2^{-p_{classification}}
+\wlp{} = 2^{-p_{classification}}
 \label{eq:wlp}
 \end{equation}
 
-These three numbers are followed by an indicator (cg, cd or ic),
-followed by an known/unknown word indicator. This is followed by the
-match-depth and a boolean value indicating matched-at-leaf (one or
-zero). See \cite{Daelemans+09} for a more thorough explanation. The
-following three values are the distribution size, the sum of the
-distribution frequencies, and the \emph{reciprocal rank} of the
-answer. Finally, the output contains the top-$n$ of the distributions,
-specified as a list of \cmp{token frequency} pairs.
+These three numbers are followed by an indicator (\cmp{cg}, \cmp{cd}
+or \cmp{ic}), followed by an known/unknown word indicator
+(\cmp{k}/\cmp{u}). This is followed by the match-depth and a boolean
+value indicating matched-at-leaf (one or zero). See
+\cite{Daelemans+09} for a more thorough explanation. The following
+three values are the distribution size, the sum of the distribution
+frequencies, and the \emph{reciprocal rank} of the answer. Finally,
+the output contains the top-$n$ of the distributions, specified as a
+list of \cmp{token frequency} pairs.
+
+The \cmp{.pxs} output contains a summary per line of input. It
+contains the sentence number, followed by the number of words in the
+sentence, the sum of the logprobs of the words, the average
+perplexity, and the average \wlp{}. This is followed by
+the number of unknown words in the sentence, the sum of the logprobs
+of the known words and the standard deviation of the word level
+perplexities. The final element in the output is a list with the
+\wlp{} of each word in the sentence.
+
+\begin{wout}{}
+0 14 -113.718 278.73 30724.6 14 -113.718 75772.5 [ 594.087 105.375
+                     181718 28.3925 392.646 116.143 1.61151 216331
+                     2616.16 28.3925 28129.8 68.2397 2 11.6667 ]
+\end{wout}
 
 \begin{varlist}{ibasefile}
 \item[filename] Test file to process.
@@ -1042,8 +1073,10 @@ specified as a list of \cmp{token frequency} pairs.
   introduce smoothed or changed probabilities to the perplexity
   calculations. 
 \item[hapax] Used when reading the lexicon.
-\item[lc] Not used.
-\item[rc] Not used.
+\item[lc] Used to determine when a new sentence starts (for the
+  \cmp{.pxs} output).
+\item[rc] Used to determine when a new sentence starts (for the
+  \cmp{.pxs} output). 
 \item[topn] Number of elements from the \Timbl{} distribution to
   include in the output. Most frequent one first.
 \item[cache] Number of elements in the cache (the default of three is
@@ -1101,7 +1134,8 @@ top-$n$ from the distribution. The latter is a list with
 
 \subsection{\cmp{ngt}}
 
-Apply an \ngram{} model to the test set.
+Apply an \ngram{} model to the test set. It finds the longest matching
+\ngram{} from the supplied \ngram{}-model that fits.
 
 \begin{varlist}{filename}
 \item[filename] Filename of the plain text file to apply the model to.
@@ -1111,6 +1145,12 @@ Apply an \ngram{} model to the test set.
 \item[id] Identifier to append to the output filenames. If not
   specified, it defaults to the empty string.
 \end{varlist}
+
+It creates two output files, one with the extension \cmp{.ngp3}, and
+one with the extension \cmp{.ngp3}. The \cmp{3} refers to the
+$n$-parameter supplied. The \cmp{.ngt} output contains information per
+word in the text. The \cmp{.ngp} file contains statistics per line of
+text. 
 
 \subsection{\cmp{correct}}
 
