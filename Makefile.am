@@ -84,5 +84,13 @@ EXTRA_DIST = \
 	web/generator/generator.script \
 	web/generator/index.html \
 	web/generator/js/generator.js \
-	web/generator/js/mootools-1.2.1-core.js
+	web/generator/js/mootools-1.2.1-core.js \
+	doc/woprdoc.tex \
+	doc/acronyms.tex \
+	doc/defs.tex \
+	doc/tikzdefs.tex \
+	doc/32376_mem.pdf \
+	doc/26251_mem.pdf \
+	doc/NY_pplx_-a1+D.pdf \
+	doc/NY_pplx_slirm.pdf
 
