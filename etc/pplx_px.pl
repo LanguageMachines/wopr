@@ -9,7 +9,7 @@ use Getopt::Std;
 # ...
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_w /;
+use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_t $opt_w /;
 
 getopts('f:g:il:r:w');
 
@@ -18,9 +18,14 @@ my $gcs        = $opt_g || 0; #for global context
 my $ignore_oov = $opt_i || 0;
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
+my $gct        = $opt_t || 0; #global context type
 my $wordscore  = $opt_w || 0;
 
 #------------------------------------------------------------------------------
+
+if ( $gct > 0 ) {
+  $gcs = 1
+}
 
 my %summary;
 my @vsum;
