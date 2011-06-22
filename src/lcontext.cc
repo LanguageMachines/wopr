@@ -207,6 +207,7 @@ int range_from_lex( Logfile& l, Config& c ) {
 struct gc_elem {
   std::string word;
   int         strength;
+  unsigned long long hv;
   bool operator<(const gc_elem& rhs) const {
     return strength > rhs.strength;
   }
@@ -350,6 +351,7 @@ int lcontext( Logfile& l, Config& c ) {
   empty.strength = 999999;
   std::deque<gc_elem> global_context(gcs+1, empty); // hmmm, like this?
   std::deque<gc_elem>::iterator di;
+  unsigned long long gc_hash = 0;
 
   std::string lc_str = "";
   di = global_context.begin()+gcs;
@@ -388,6 +390,13 @@ int lcontext( Logfile& l, Config& c ) {
 	gc_elem gce;
 	gce.word     = wrd;
 	gce.strength = gcd;
+	int pos = (*ri).second - 1;
+	gce.hv = 0;
+	if ( wrd != "_" ) {
+	  // Need to add one to pos, to avoid 0.
+	  gce.hv = (unsigned long long)pow((unsigned long long)(pos+1),5);
+	  //std::cerr << "hv(" << wrd << ") = " << pos << "," << gce.hv << std::endl;
+	}
 
 	++range_stats[ wrd ];
 
@@ -402,12 +411,19 @@ int lcontext( Logfile& l, Config& c ) {
 	  int pos = (*ri).second - 1; // gcs must be big enough!
 	  //l.log( "binary gc pos="+to_str(pos)+" "+wrd );
 	  global_context.at( pos ) = gce;
+	} else if ( gct == 2 ) { // hashed type
+	  // just save the pre-calculated version.
+	  global_context.push_front( gce );
 	}
       }
 
-      // Output line of data
+      // Output line of data, this is the *previous* lc_str!
       //
-      file_out << lc_str;
+      if ( gct != 2 ) {
+	file_out << lc_str;
+      } else {
+	file_out << gc_hash << " ";
+      }
       //
       // Check if ends in space? (gc_space could be "").
       //
@@ -425,19 +441,24 @@ int lcontext( Logfile& l, Config& c ) {
       // Create the new global context.
       //
       di = global_context.begin()+gcs;
-      int cnt = gcs;      
+      int cnt = gcs;
       lc_str = "";
+      gc_hash = 0;
       do {
 	*di--;
 	if ( gct == 0 ) { // Normal
 	  lc_str = lc_str + (*di).word + " ";
-	} else { // binary
+	} else if ( gct == 1 ) { // binary
 	  if ( (*di).word == "_" ) {
 	    lc_str = lc_str + "0";
 	  } else {
 	    lc_str = lc_str + "1";
 	  }
 	  lc_str = lc_str + gc_space;
+	} else if ( gct == 2 ) { // hashed value, if not "_"
+	  if ( (*di).word != "_" ) {
+	    gc_hash += (*di).hv;
+	  }
 	}
       } while ( di != global_context.begin() );
       //--
@@ -455,7 +476,7 @@ int lcontext( Logfile& l, Config& c ) {
       } while ( di != global_context.begin() );
       //--
 
-    }
+    } // i
     words.clear();
       
   } //while

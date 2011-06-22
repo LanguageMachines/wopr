@@ -3670,7 +3670,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       // What we want: average word_lp and standard dev.
       //
       double logprob = log2( w_prob );
-      double word_lp = pow( 2, -logprob );
+      double word_lp = pow( 2, -logprob ); // word level pplx
       sum_logprob += logprob;
       sum_wlp     += word_lp;
       w_pplx.push_back( word_lp );

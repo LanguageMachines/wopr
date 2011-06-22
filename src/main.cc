@@ -209,12 +209,16 @@ int main( int argc, char* argv[] ) {
 
     case 'e':
       l.log( "--" );
-      l.log( "wopr -r make_ibase -p filename:file.ws7,timbl:'-a1 +D'" );
-      l.log( "wopr -r window_s -p filename:file,ws:3" );
-      l.log( "wopr -r ngram -p filename:file,n:3" );
-      l.log( "wopr -r tag -p ibasefile:file.ibase" );
-      l.log( "wopr -r lexicon,window_s -p filename:forAntalPeter.txt,ws:5,pre_s:'<s>',suf_s:'</s>'" );
-      l.log( "wopr -r tag -p ibasefile:forAntalPeter.txt.ws5.ibase,n:5" );
+      l.log( "wopr -r make_ibase -p filename:data.l2r2,timbl:'-a1 +D'" );
+      l.log( "wopr -r window_lr -p filename:data.txt,lc:3,rc:1" );
+      l.log( "wopr -r ngram -p filename:data.txt,n:3" );
+      l.log( "wopr -r tag -p ibasefile:data.ibase" );
+      l.log( "wopr -r lexicon,window_lr -p filename:data.txt,lc:2,rc:0,pre_s:'<s>',suf_s:'</s>'" );
+      l.log( "wopr -r tag -p ibasefile:data.txt.l4r0.ibase,n:5" );
+      l.log( "wopr -r pplxs -p filename:data.test.l2r0,ibasefile:data.train.l2r0_-a1+D.ibase,timbl:'-a1 +D',lexicon:data.lex,topn:5,id:EXP8" );
+      l.log( "wopr -r server4 -p ibasefile:austen.50e3.l2r0_-a1+D.ibase,timbl:'-a1 +D',lexicon:austen.50e3.p.lex,mode:1,verbose:2,resm:0,skm:0" );
+      l.log( "wopr -r gt -p ibasefile:austen.txt.l3r0.ibase,filename:austen.txt.l3r0,topn:10" );
+      l.log( "wopr -r server4 -p port:8888,ibasefile:rmt.5e3.l2r0_-a1+D.ibase,timbl:'-a1 +D',lexicon:rmt.5e3.lex,verbose:1,mode:1,keep:1" );
       l.log( "--" );
       break;
 
