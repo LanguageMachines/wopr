@@ -11,7 +11,7 @@ use Getopt::Std;
 
 use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_t $opt_w /;
 
-getopts('f:g:il:r:w');
+getopts('f:g:il:r:t:w');
 
 my $wopr_file  = $opt_f || 0;
 my $gcs        = $opt_g || 0; #for global context
