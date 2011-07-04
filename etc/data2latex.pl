@@ -58,8 +58,8 @@ while ( my $line = <FH> ) {
   }
   if ( $cg == 3 ) { #cg, cg, ic, gcs, gcd, range
     print "\\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+1])."} & \\num{".sprintf( "%4.2f", $parts[$cg+2])."} & ";
-    print "\\num{".sprintf( "%i", $parts[$cg+3])."} & \\num{".sprintf( "%i", $parts[$cg+4])."} & \\num{".sprintf( "%s", $parts[$cg+6])."} ";
-    print "\\\\ \n";
+    print "\\num{".sprintf( "%i", $parts[$cg+3])."} & \\num{".sprintf( "%i", $parts[$cg+4])."} & \\cmp{".sprintf( "%s", $parts[$cg+6])."} ";
+    print "\\\\ % ".$parts[0]."\n";
   }
 
 
