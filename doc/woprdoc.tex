@@ -261,6 +261,36 @@ This show that the word \cmp{winner} appeared once in the test set,
 and was incorrectly predicted. The word \cmp{with} was predicted
 correctly in \num{11} cases, \etc{}.
 
+\subsection{Multiple Test Files}
+
+Instead of processing just one file, a directory argument can be given
+to \wopr{} to process all files matching a certain expression.
+
+\begin{bash}{Processing multiple files}
+wopr -l -r pplxs -p ibasefile:rmt.5e5.l2r0_-a4+D.ibase,
+                    dir:expdir,timbl:"-a4 +D",
+                    lexicon:rmt.5e5.lex
+...
+13:28:05.56:  dir:             expdir
+13:28:05.56:  dirmatch:        .*
+13:28:05.56: Processing 1 files.
+...
+13:28:34.65: Processing: expdir/rmt.t1000.l2r0
+13:28:34.65: OUTPUT:     expdir/rmt.t1000.l2r0_4713.px
+13:28:34.65: OUTPUT:     expdir/rmt.t1000.l2r0_4713.pxs
+...
+\end{bash}
+
+Lines five and six show the directory, and the expression used to
+match the files. The default is to take all the files in the
+directory. To specify something else the parameter \cmp{dirmatch} can
+be specified. To process all files ending in \cmp{l2r0}, the
+expression \cmp{l2r0\$} can be supplied.
+
+Line seven shows there is only one file, and the rest of the output
+shows that each file is processed in a similar manner to the single
+file method.
+
 \subsection{Combining Commands}
 
 As we mentioned before, the \wopr{}-commands can be combined. \Wopr{}
@@ -713,6 +743,12 @@ right answer.
 
 \subsection{multi\_gated, mg (for wex)} %multi_gated: mg
 
+\section{Server}
+
+\Wopr{} can be run in \emph{server} mode where it will listen on a socket
+for input and return a classification result.
+
+
 
 \chapter{Installation}
 
@@ -1093,7 +1129,9 @@ them with a normal data set.
   global context consisting of words. Type \cmp{1} creates binary
   features. The latter means a binary value for every word in the
   \cmp{range} list supplied. The \cmp{gcs} parameter is ignored in
-  this case.
+  this case. Type \cmp{2} creates a \q{hashed} value, that is, one
+  value representing the words in the global context, in a position
+  independent order.
 \item[fd] Create from data (default \cmp{1}). Takes the words from a
   normal, windowed data set. Setting this to \cmp{0} creates global
   context from a normal text file.
@@ -1101,9 +1139,11 @@ them with a normal data set.
   specified, it defaults to the empty string.
 \item[gc\_sep] Defaults to \cmp{1}, a space. This space is inserted
   between the binary (type \cmp{1}) feature values. Setting it to
-  \cmp{0} concatenates all the binary features in one binary string.
+  \cmp{0} concatenates all the binary features into one binary string
+  feature. 
 \end{varlist}
 
+%woordn^5  =>?  woordx^5 + woordy^5 (collision)
 
 \section{Training}
 
