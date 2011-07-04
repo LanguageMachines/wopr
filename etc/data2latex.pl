@@ -30,9 +30,9 @@ while ( my $line = <FH> ) {
     next;
   }
 
-  my $cg = 6;
+  my $cg = 6; #WEX format
   if ( $#parts < 12 ) {
-    $cg = 3;
+    $cg = 3; #GC format
   }
 
   if ( $parts[$cg] > 100 ) { # converto to % first
@@ -47,20 +47,26 @@ while ( my $line = <FH> ) {
     $parts[$cg+6] = $parts[$cg+6]*100/$t;
   }
   
+  print "%".$line."\n";
+
   my $pdiff = 0;
   if ( $parts[$cg] > 0 ) {
     $pdiff = sprintf( "%4.2f", ($parts[$cg+4]-$parts[$cg])*100/$parts[$cg] );
   }
-  print "\\num{".$parts[1]."} & \\cmp{".$parts[2]."} & ";
+  print "\\num{".$parts[1]."} ";     #lines
+  print "& \\cmp{".$parts[2]."} ";   #context
   if ( $cg == 6 ) {
-    print "\\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+4])."} & ";
-    print "\\num{".$pdiff."} \\\\ \n";
+    print "& \\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+4])."} & ";
+    print "\\num{".$pdiff."} ";
   }
-  if ( $cg == 3 ) { #cg, cg, ic, gcs, gcd, range
-    print "\\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+1])."} & \\num{".sprintf( "%4.2f", $parts[$cg+2])."} & ";
-    print "\\num{".sprintf( "%i", $parts[$cg+3])."} & \\num{".sprintf( "%i", $parts[$cg+4])."} & \\cmp{".sprintf( "%s", $parts[$cg+6])."} ";
-    print "\\\\ % ".$parts[0]."\n";
+  if ( $cg == 3 ) { 
+    print "& \\num{".sprintf( "%4.2f", $parts[$cg])."} ";     #cg
+    print "& \\num{".sprintf( "%4.2f", $parts[$cg+1])."} ";   #cd
+    print "& \\num{".sprintf( "%4.2f", $parts[$cg+2])."} ";   #ic
+    print "& \\num{".sprintf( "%i", $parts[$cg+3])."} ";      #gcs
+    print "& \\num{".sprintf( "%i", $parts[$cg+4])."} ";      #gcd
+    print "& \\cmp{".sprintf( "%s", $parts[$cg+6])."} ";      #range
   }
-
+  print "\\\\ \n"; #% ".$parts[0]."\n";
 
 }
