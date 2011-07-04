@@ -20,6 +20,8 @@ while ( my $line = <FH> ) {
   }
 
 # WEX10101 10000 l2r1 2 1 cg 17.53 27.29 55.16 0.57 18.82 26.82 54.35 0.70 -a1+D -a4+D 1-200
+#   or
+# GC26000 10000 l0r1 13.73 25.09 61.18 1 100 -a4+D 200-250 0
 
   chomp $line;
 
@@ -28,24 +30,37 @@ while ( my $line = <FH> ) {
     next;
   }
 
-  if ( $parts[6] > 100 ) { # converto to % first
-    my $t = $parts[6]+$parts[7]+$parts[8];
-    $parts[6] = $parts[6]*100/$t;
-    $parts[7] = $parts[7]*100/$t;
-    $parts[8] = $parts[8]*100/$t;
+  my $cg = 6;
+  if ( $#parts < 12 ) {
+    $cg = 3;
+  }
 
-    $t = $parts[10]+$parts[11]+$parts[12];
-    $parts[10] = $parts[10]*100/$t;
-    $parts[11] = $parts[11]*100/$t;
-    $parts[12] = $parts[12]*100/$t;
+  if ( $parts[$cg] > 100 ) { # converto to % first
+    my $t = $parts[$cg]+$parts[7]+$parts[8];
+    $parts[$cg] = $parts[$cg]*100/$t;
+    $parts[$cg+1] = $parts[$cg+1]*100/$t;
+    $parts[$cg+2] = $parts[$cg+2]*100/$t;
+
+    $t = $parts[$cg+4]+$parts[$cg+5]+$parts[$cg+6];
+    $parts[$cg+4] = $parts[$cg+4]*100/$t;
+    $parts[$cg+5] = $parts[$cg+5]*100/$t;
+    $parts[$cg+6] = $parts[$cg+6]*100/$t;
   }
   
   my $pdiff = 0;
-  if ( $parts[6] > 0 ) {
-    $pdiff = sprintf( "%4.2f", ($parts[10]-$parts[6])*100/$parts[6] );
+  if ( $parts[$cg] > 0 ) {
+    $pdiff = sprintf( "%4.2f", ($parts[$cg+4]-$parts[$cg])*100/$parts[$cg] );
   }
   print "\\num{".$parts[1]."} & \\cmp{".$parts[2]."} & ";
-  print "\\num{".sprintf( "%4.2f", $parts[6])."} & \\num{".sprintf( "%4.2f", $parts[10])."} & ";
-  print "\\num{".$pdiff."} \\\\ \n";
+  if ( $cg == 6 ) {
+    print "\\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+4])."} & ";
+    print "\\num{".$pdiff."} \\\\ \n";
+  }
+  if ( $cg == 3 ) { #cg, cg, ic, gcs, gcd, range
+    print "\\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+1])."} & \\num{".sprintf( "%4.2f", $parts[$cg+2])."} & ";
+    print "\\num{".sprintf( "%i", $parts[$cg+3])."} & \\num{".sprintf( "%i", $parts[$cg+4])."} & \\num{".sprintf( "%s", $parts[$cg+6])."} ";
+    print "\\\\ \n";
+  }
+
 
 }
