@@ -22,6 +22,7 @@ while ( my $line = <FH> ) {
 # WEX10101 10000 l2r1 2 1 cg 17.53 27.29 55.16 0.57 18.82 26.82 54.35 0.70 -a1+D -a4+D 1-200
 #   or
 # GC26000 10000 l0r1 13.73 25.09 61.18 1 100 -a4+D 200-250 0
+# GC28000 10000 l2r0 11.41 22.21 66.38 1 200 -a4+D 1-500 0 449.33 449.33 0.265 0.515
 
   chomp $line;
 
@@ -31,7 +32,7 @@ while ( my $line = <FH> ) {
   }
 
   my $cg = 6; #WEX format
-  if ( $#parts < 12 ) {
+  if ( $#parts < 15 ) {
     $cg = 3; #GC format
   }
 
@@ -66,6 +67,10 @@ while ( my $line = <FH> ) {
     print "& \\num{".sprintf( "%i", $parts[$cg+3])."} ";      #gcs
     print "& \\num{".sprintf( "%i", $parts[$cg+4])."} ";      #gcd
     print "& \\cmp{".sprintf( "%s", $parts[$cg+6])."} ";      #range
+    if ( $#parts > 10 ) {
+      print "& \\cmp{".sprintf( "%s", $parts[$cg+8])."} ";      #pplx
+      print "& \\cmp{".sprintf( "%s", $parts[$cg+10])."} ";     #mmr(cd)
+    }
   }
   print "\\\\ \n"; #% ".$parts[0]."\n";
 
