@@ -1,0 +1,48 @@
+%%
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{pbstyle}[2007/09/11 v1.0 PB Style]
+
+%% Load up fancy headers and footers package
+\RequirePackage{fancyhdr}
+
+%% now reset the headers and footers
+\fancyhead{}
+\fancyfoot{}
+%% make the odd pages have the section name on the top right
+\fancyhead[RO]{\sffamily\bfseries \rightmark}
+%% make the even pages have the chapter name on the top left
+\fancyhead[LE]{\sffamily\bfseries \leftmark}
+
+\fancyfoot[LE]{\thepage}
+\fancyfoot[RO]{\thepage}
+
+%% bring the style into effect
+\pagestyle{fancy}
+
+%% this next section (till \makeatother) makes sure that blank pages
+%% are actually completely blank, cause they're not usually
+\makeatletter
+\def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
+	\hbox{}
+	\vspace*{\fill}
+	\thispagestyle{empty}
+	\newpage
+	\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
+%% now change the chapter style
+%% load up the quotchap package
+\RequirePackage{quotchap}
+
+%% make the quotation appear next to the chapter number
+\renewcommand\chapterheadstartvskip{\vspace*{-5\baselineskip}}
+
+%% now change the section heading to have a line beneath it
+%% load up the fancy title-style package
+\RequirePackage[calcwidth]{titlesec}
+
+\titleformat{\section}[hang]{\sffamily\bfseries}
+{\Large\thesection}{12pt}{\Large}[{\titlerule[0.5pt]}]
+
+% ----
+
