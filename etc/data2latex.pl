@@ -52,26 +52,29 @@ while ( my $line = <FH> ) {
 
   my $pdiff = 0;
   if ( $parts[$cg] > 0 ) {
-    $pdiff = sprintf( "%4.2f", ($parts[$cg+4]-$parts[$cg])*100/$parts[$cg] );
+    $pdiff = sprintf( "%.2f", ($parts[$cg+4]-$parts[$cg])*100/$parts[$cg] );
   }
 
   print "\\num{".$parts[1]."} ";     #lines
   #print "& \\cmp{".$parts[2]."} ";   #context
 
   if ( $cg == 6 ) {
-    print "& \\num{".sprintf( "%4.2f", $parts[$cg])."} & \\num{".sprintf( "%4.2f", $parts[$cg+4])."} & ";
+    print "& \\num{".sprintf( "%.2f", $parts[$cg])."} & \\num{".sprintf( "%.2f", $parts[$cg+4])."} & ";
     print "\\num{".$pdiff."} ";
   }
   if ( $cg == 3 ) { 
-    print "& \\num{".sprintf( "%4.1f", $parts[$cg])."} ";     #cg
-    print "& \\num{".sprintf( "%4.1f", $parts[$cg+1])."} ";   #cd
-    print "& \\num{".sprintf( "%4.1f", $parts[$cg+2])."} ";   #ic
+    print "& \\num{".sprintf( "%.1f", $parts[$cg])."} ";     #cg
+    print "& \\num{".sprintf( "%.1f", $parts[$cg+1])."} ";   #cd
+    print "& \\num{".sprintf( "%.1f", $parts[$cg+2])."} ";   #ic
     print "& \\num{".sprintf( "%i", $parts[$cg+3])."} ";      #gcs
-    #print "& \\num{".sprintf( "%i", $parts[$cg+4])."} ";     #gcd
-    #print "& \\cmp{".sprintf( "%s", $parts[$cg+6])."} ";     #range
+    print "& \\num{".sprintf( "%i", $parts[$cg+4])."} ";     #gcd
+    print "& \\cmp{".sprintf( "%s", $parts[$cg+6])."} ";     #range
     if ( $#parts > 10 ) {
       print "& \\num{".sprintf( "%.0f", $parts[$cg+8])."} ";   #pplx
-      print "& \\num{".sprintf( "%4.3f", $parts[$cg+10])."} ";    #mmr(cd)
+      print "& \\num{".sprintf( "%.3f", $parts[$cg+10])."} ";    #mmr(cd)
+    } else {
+      print "& \\num{0} ";   #pplx
+      print "& \\num{0} ";    #mmr(cd)
     }
   }
   print "\\\\ \n"; #% ".$parts[0]."\n";
