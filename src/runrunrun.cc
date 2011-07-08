@@ -485,6 +485,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &range_from_lex;
   } else if ( a_fname == "lcontext" ) { // from lcontext.cc
     return &lcontext;
+  } else if ( a_fname == "occgaps" ) { // from lcontext.cc
+    return &occgaps;
   } else if ( a_fname == "focus" ) { // from focus.cc
     return &focus;
   } else if ( a_fname == "tr" ) { // from tr.cc
