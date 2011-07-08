@@ -575,28 +575,39 @@ int occgaps( Logfile& l, Config& c ) {
   //
   std::map<std::string, Tvref >::iterator wpi;
   Tvref::iterator vri;
+  bool inside = false;
   for( wpi = word_positions.begin(); wpi != word_positions.end(); ++wpi ) {
     
     Tvref vv = (*wpi).second;
-    std::cout << (*wpi).first << std::endl;
     
+    // bracket them? (3 6 7) 1234 8745 (3 5) ?
     if ( vv.size() > 1 ) {
+      file_out << (*wpi).first << " ";
+
       double sum = 0;
       for( int i = 1; i < vv.size(); i++ ) {
 	// only if gap < 200 for the stats?
-	std::cout << vv.at(i)-vv.at(i-1) << " ";
-	sum += (vv.at(i)-vv.at(i-1));
+	long this_gap = vv.at(i)-vv.at(i-1);
+	if ( this_gap < gap ) {
+	  if ( ! inside ) {
+	    inside = true;
+	    file_out << "(";
+	  }
+	  file_out << this_gap << " ";
+	  sum += (vv.at(i)-vv.at(i-1));
+	} else { // this_gap >> gap
+	  if (  inside ) {
+	    inside = false;
+	    file_out << ")";
+	  }
+	  file_out << this_gap << " ";
+
+	}
       }
-      std::cout << std::endl;
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
-      std::cout << sum << "/" << ave << std::endl;
+      file_out << sum << " " << ave << std::endl;
     }
-    
-    for( vri = vv.begin(); vri != vv.end(); ++vri ) {
-      std::cout << *vri << " ";
-    }
-    std::cout << std::endl;
     
   }
   file_out.close();
