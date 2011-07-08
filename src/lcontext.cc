@@ -591,18 +591,21 @@ int occgaps( Logfile& l, Config& c ) {
 	if ( this_gap < gap ) {
 	  if ( ! inside ) {
 	    inside = true;
-	    file_out << "(";
+	    file_out << "( ";
 	  }
 	  file_out << this_gap << " ";
 	  sum += (vv.at(i)-vv.at(i-1));
 	} else { // this_gap >> gap
 	  if (  inside ) {
 	    inside = false;
-	    file_out << ")";
+	    file_out << ") ";
 	  }
 	  file_out << this_gap << " ";
 
 	}
+      }
+      if ( inside ) {
+	file_out << ") ";
       }
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
