@@ -500,4 +500,111 @@ int lcontext( Logfile& l, Config& c ) {
   return 0;
 }
 
+/*
+  Count word positions to calculate "200 words" occurences
+  Occurrence gap?
+*/
+int occgaps( Logfile& l, Config& c ) {
+  l.log( "occurrence gaps" );
+  const std::string& filename        = c.get_value( "filename" ); // dataset
+  const std::string& lex_filename    = c.get_value( "lexicon" );
+  std::string        id              = c.get_value( "id", "" );
+
+  int gap = 200;
+
+  std::string output_filename = filename + ".gaps" + to_str(gap);
+
+  if ( (id != "") && (contains_id(output_filename, id) == false) ) {
+    output_filename = output_filename + "_" + id;
+  }
+
+  // Save in outputfilename.gaps ?
+  //
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  // Open range file. 
+  //
+  std::ifstream file_rng( lex_filename.c_str() );
+  if ( ! file_rng ) {
+    l.log( "ERROR: cannot load range file." );
+    return -1;
+  }
+  l.log( "Reading lexicon file." );
+  std::string a_word;
+  long wfreq;
+  std::map<std::string, int> range;
+  typedef std::vector<long> Tvref;
+  std::map<std::string, Tvref > word_positions;
+  int i = 0;
+  while( file_rng >> a_word >> wfreq ) {
+    range[ a_word ] = i; 
+    //                
+    ++i;
+    //word_positions[ a_word ].push_back(0);
+  }
+  l.log( "Loaded range file, "+to_str(range.size())+" items." );
+  file_rng.close();
+
+  // File to process. Text.
+  //
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load data file." );
+    return -1;
+  }
+
+  long idx = 0;
+  std::map<std::string, int>::iterator ri;
+  while( file_in >> a_word ) {
+
+    ri = range.find( a_word ); // word is in .rng list?
+    if ( ri != range.end() ) {
+      word_positions[ a_word ].push_back(idx);
+    }
+    ++idx;
+
+  }
+  std::cout << idx << std::endl;
+  file_in.close();
+
+  // Save
+  //
+  std::map<std::string, Tvref >::iterator wpi;
+  Tvref::iterator vri;
+  for( wpi = word_positions.begin(); wpi != word_positions.end(); ++wpi ) {
+    
+    Tvref vv = (*wpi).second;
+    std::cout << (*wpi).first << std::endl;
+    
+    if ( vv.size() > 1 ) {
+      double sum = 0;
+      for( int i = 1; i < vv.size(); i++ ) {
+	// only if gap < 200 for the stats?
+	std::cout << vv.at(i)-vv.at(i-1) << " ";
+	sum += (vv.at(i)-vv.at(i-1));
+      }
+      std::cout << std::endl;
+      //average gap? ag / all words?
+      float ave = sum / (vv.size()-1);
+      std::cout << sum << "/" << ave << std::endl;
+    }
+    
+    for( vri = vv.begin(); vri != vv.end(); ++vri ) {
+      std::cout << *vri << " ";
+    }
+    std::cout << std::endl;
+    
+  }
+  file_out.close();
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+
+}
+
 // ---------------------------------------------------------------------------

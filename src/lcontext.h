@@ -34,5 +34,5 @@
 
 int range_from_lex( Logfile&, Config& );
 int lcontext( Logfile&, Config& );
-
+int occgaps( Logfile&, Config& );
 #endif
