@@ -314,10 +314,14 @@ wopr -r lexicon,window_lr,make_ibase,pplxs -p filename:rmt.5e5,
 ...
 \end{bash}
 
-If we look at the last step, \cmp{pplxs}, we see that the instance base
-filename and the other parameters have been taken from the previous
-steps. Note that we cannot generate the windowed test set in the
-same chain. That has to be done seperately.
+If we look at the last step, \cmp{pplxs}, we see that the instance
+base filename and the other parameters have been taken from the
+previous steps. This example also shows theproblem with this
+mechanism; we cannot generate the windowed test set in the same
+chain. That has to be done seperately. (To be clear, one would not run
+the example in real life. It was to show both the strength and
+weakness of the combined commands.) For complex \wopr{} usage,
+\emph{scripting} can (should) be used.
 
 \section{\ngram{}-model}
 
