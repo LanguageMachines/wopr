@@ -582,7 +582,7 @@ int occgaps( Logfile& l, Config& c ) {
     
     // bracket them? (3 6 7) 1234 8745 (3 5) ?
     if ( vv.size() > 1 ) {
-      file_out << (*wpi).first << " ";
+      file_out << (*wpi).first << " " << vv.size() << ": ";
 
       double sum = 0;
       for( int i = 1; i < vv.size(); i++ ) {
@@ -596,12 +596,11 @@ int occgaps( Logfile& l, Config& c ) {
 	  file_out << this_gap << " ";
 	  sum += (vv.at(i)-vv.at(i-1));
 	} else { // this_gap >> gap
-	  if (  inside ) {
+	  if ( inside ) {
 	    inside = false;
 	    file_out << ") ";
 	  }
 	  file_out << this_gap << " ";
-
 	}
       }
       if ( inside ) {
@@ -609,7 +608,8 @@ int occgaps( Logfile& l, Config& c ) {
       }
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
-      file_out << sum << " " << ave << std::endl;
+      file_out << "[ " << sum << " " << ave << " ]" << std::endl;
+      inside = false;
     }
     
   }
