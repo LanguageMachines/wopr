@@ -518,7 +518,7 @@ int occgaps( Logfile& l, Config& c ) {
     output_filename = output_filename + "_" + id;
   }
 
-  // Save in outputfilename.gaps ?
+  // Save in outputfilename.gaps
   //
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
@@ -585,8 +585,8 @@ int occgaps( Logfile& l, Config& c ) {
       file_out << (*wpi).first << " " << vv.size() << ": ";
 
       double sum  = 0;
-      double igrps = 0;
-      double ogrps = 0;
+      double igrps = 0; // count bracketed groups in all groups.
+      double ogrps = 0; // single large gaps are a group
       for( int i = 0; i < vv.size()-1; i++ ) {
 	// only if gap < 200 for the stats?
 	long this_gap = vv.at(i+1)-vv.at(i);
@@ -604,8 +604,7 @@ int occgaps( Logfile& l, Config& c ) {
 	    inside = false;
 	    file_out << ") ";
 	  }
-	    ++ogrps;
-	    
+	  ++ogrps;
 	  //if ( ( ! inside ) && ( ogrps == 0 ) ) {
 	  //  ogrps = 1; // adjustment if started with big gaps.
 	  //}
