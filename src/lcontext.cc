@@ -616,6 +616,7 @@ int occgaps( Logfile& l, Config& c ) {
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
       file_out << "[ " << igrps << " " << ogrps << " " 
+	       << (float)igrps/ogrps << " "
 	       <<sum << " " << ave << " ]" << std::endl;
       inside = false;
     }
