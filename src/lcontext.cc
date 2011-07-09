@@ -512,13 +512,24 @@ int occgaps( Logfile& l, Config& c ) {
   int                gap             = stoi( c.get_value( "gap", "200" ));
 
   bool               filter          = stoi( c.get_value( "filter", "0" )) == 1;
+  // parameters for token frequency
   long               min_f           = stoi( c.get_value( "min_f", "1" ));
   long               max_f           = stoi( c.get_value( "max_f", "0" ));
-  float              min_r           = stod( c.get_value( "min_r", "0.8" ));
+  // parameters for small gap/gaps ratio
+  float              min_r           = stod( c.get_value( "min_r", "0.0" ));
   float              max_r           = stod( c.get_value( "max_r", "1.1" ));
+  // min_a/max_a: parameters for average small gap
+  long               min_a           = stoi( c.get_value( "min_a", "0" ));
+  long               max_a           = stoi( c.get_value( "max_a", "0" ));
+  // parameters for groups/potential groups ratio
+  float              min_g           = stod( c.get_value( "min_g", "0.0" ));
+  float              max_g           = stod( c.get_value( "max_g", "1.1" ));
 
   if ( max_f == 0 ) {
     max_f = std::numeric_limits<long>::max();
+  }
+  if ( max_a == 0 ) {
+    max_a = std::numeric_limits<long>::max();
   }
 
   std::string output_filename = filename + ".gap" + to_str(gap);
@@ -541,6 +552,10 @@ int occgaps( Logfile& l, Config& c ) {
     l.log( "max_f:     "+to_str(max_f) );
     l.log( "min_r:     "+to_str(min_r) );
     l.log( "max_r:     "+to_str(max_r) );
+    l.log( "min_a :    "+to_str(min_a) );
+    l.log( "max_a:     "+to_str(max_a) );
+    l.log( "min_g:     "+to_str(min_g) );
+    l.log( "max_g:     "+to_str(max_g) );
   }
   l.log( "OUTPUT:    "+output_filename );
   l.log( "OUTPUT:    "+gs_filename );
@@ -627,7 +642,8 @@ int occgaps( Logfile& l, Config& c ) {
 
       file_out << (*wpi).first << " " << vv.size() << " ";
 
-      double sum  = 0;
+      double sum_sg  = 0; // small gaps sum
+      double sum_lg  = 0; // large gaps sum
       double igrps = 0; // count bracketed groups in all groups.
       double ogrps = 0; // single large gaps are a group
       double sgaps = 0; // small gaps
@@ -644,7 +660,7 @@ int occgaps( Logfile& l, Config& c ) {
 	  }
 	  file_out << this_gap << " ";
 	  ++sgaps;
-	  sum += (vv.at(i+1)-vv.at(i));
+	  sum_sg += (vv.at(i+1)-vv.at(i));
 	} else { // this_gap >> gap
 	  if ( inside ) {
 	    inside = false;
@@ -656,6 +672,7 @@ int occgaps( Logfile& l, Config& c ) {
 	  //}
 	  file_out << this_gap << " ";
 	  ++lgaps;
+	  sum_lg += (vv.at(i+1)-vv.at(i));
 	}
       }
       if ( inside ) {
@@ -665,26 +682,37 @@ int occgaps( Logfile& l, Config& c ) {
 	ogrps = 1;
       }
       //average gap? ag / all words?
-      float ave = sum / (vv.size()-1);
+      float ave_sg = sum_sg / (vv.size()-1);
+      float ave_lg = sum_lg / (vv.size()-1);
+      float g1 = (float)igrps/ogrps; // inside/outside groups? misnomer
       float r1 = (float)sgaps/(sgaps+lgaps);
+      float a1 = (float)ave_sg/ave_lg;
       file_out << "[ " 
-	       << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
+	       << igrps << " " << ogrps << " " << g1 << " "
 	       << sgaps << " " << lgaps << " " << r1 << " "
-	       << sum << " " << ave 
+	       << sum_sg << " " << ave_sg << " "
+	       << a1
 	       << " ]" << std::endl;
       inside = false;
 
       if ( (filter == false) 
 	   ||
-	   ( (r1 >= min_r) &&
-	     (r1 < max_r) &&
-	     (vv.size() >= min_f) &&
-	     (vv.size() < max_f) )
+	   (
+	    (r1 >= min_r) &&
+	    (r1 < max_r) &&
+	    (vv.size() >= min_f) &&
+	    (vv.size() < max_f) &&
+	    (g1 >= min_g) &&
+	    (g1 < max_g) &&
+	    (ave_sg >= min_a) &&
+	    (ave_sg < max_a)
+	    )
 	   ) {
 	gs_out << (*wpi).first << " " << vv.size() << " ";
 	gs_out << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
 	       << sgaps << " " << lgaps << " " << r1 << " "
-	       << sum << " " << ave 
+	       << sum_sg << " " << ave_sg << " "
+	       << a1
 	       << std::endl;	
       }
 
