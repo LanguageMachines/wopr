@@ -514,6 +514,7 @@ int occgaps( Logfile& l, Config& c ) {
   int                min_f           = stoi( c.get_value( "min_f", "1" ));
   int                max_f           = stoi( c.get_value( "max_f", "999999" ));
   float              min_r           = stod( c.get_value( "min_r", "0.8" ));
+  float              max_r           = stod( c.get_value( "max_r", "1.1" ));
 
   std::string output_filename = filename + ".gap" + to_str(gap);
   std::string gs_filename     = filename + ".gs" + to_str(gap);
@@ -529,6 +530,13 @@ int occgaps( Logfile& l, Config& c ) {
   l.log( "filename:  "+filename );
   l.log( "lexicon:   "+lex_filename );
   l.log( "gap:       "+to_str(gap) );
+  l.log( "filter:    "+to_str(filter) );
+  if ( filter ) {
+    l.log( "min_f :    "+to_str(min_f) );
+    l.log( "max_f:     "+to_str(max_f) );
+    l.log( "min_r:     "+to_str(min_r) );
+    l.log( "max_r:     "+to_str(max_r) );
+  }
   l.log( "OUTPUT:    "+output_filename );
   l.log( "OUTPUT:    "+gs_filename );
   l.dec_prefix();
@@ -663,7 +671,8 @@ int occgaps( Logfile& l, Config& c ) {
 
       if ( (filter == false) 
 	   ||
-	   ( (r1 > min_r) &&
+	   ( (r1 >= min_r) &&
+	     (r1 < max_r) &&
 	     (vv.size() >= min_f) &&
 	     (vv.size() < max_f) )
 	   ) {
