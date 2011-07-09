@@ -511,9 +511,13 @@ int occgaps( Logfile& l, Config& c ) {
   int                gap             = stoi( c.get_value( "gap", "200" ));
 
   std::string output_filename = filename + ".gap" + to_str(gap);
+  std::string gs_filename     = filename + ".gs" + to_str(gap);
 
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
     output_filename = output_filename + "_" + id;
+  }
+  if ( (id != "") && (contains_id(gs_filename, id) == false) ) {
+    gs_filename = gs_filename + "_" + id;
   }
 
   l.inc_prefix();
@@ -521,6 +525,7 @@ int occgaps( Logfile& l, Config& c ) {
   l.log( "lexicon:   "+lex_filename );
   l.log( "gap:       "+to_str(gap) );
   l.log( "OUTPUT:    "+output_filename );
+  l.log( "OUTPUT:    "+gs_filename );
   l.dec_prefix();
 
   if ( file_exists( l, c, output_filename ) ) {
@@ -537,11 +542,17 @@ int occgaps( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
+  std::ofstream gs_out( gs_filename.c_str(), std::ios::out );
+  if ( ! gs_out ) {
+    l.log( "ERROR: cannot write output file." );
+    file_out.close();
+    return -1;
+  }
 
-  // Open range file. 
+  // Open lex file. 
   //
-  std::ifstream file_rng( lex_filename.c_str() );
-  if ( ! file_rng ) {
+  std::ifstream file_lex( lex_filename.c_str() );
+  if ( ! file_lex ) {
     l.log( "ERROR: cannot load range file." );
     return -1;
   }
@@ -552,14 +563,14 @@ int occgaps( Logfile& l, Config& c ) {
   typedef std::vector<long> Tvref;
   std::map<std::string, Tvref > word_positions;
   int i = 0;
-  while( file_rng >> a_word >> wfreq ) {
+  while( file_lex >> a_word >> wfreq ) {
     range[ a_word ] = i; 
     //                
     ++i;
     //word_positions[ a_word ].push_back(0);
   }
   l.log( "Loaded range file, "+to_str(range.size())+" items." );
-  file_rng.close();
+  file_lex.close();
 
   // File to process. Text.
   //
@@ -592,10 +603,12 @@ int occgaps( Logfile& l, Config& c ) {
   for( wpi = word_positions.begin(); wpi != word_positions.end(); ++wpi ) {
     
     Tvref vv = (*wpi).second;
-    
+
     // bracket them? (3 6 7) 1234 8745 (3 5) ?
     if ( vv.size() > 1 ) {
-      file_out << (*wpi).first << " " << vv.size() << ": ";
+      gs_out << (*wpi).first << " " << vv.size() << " ";
+
+      file_out << (*wpi).first << " " << vv.size() << " ";
 
       double sum  = 0;
       double igrps = 0; // count bracketed groups in all groups.
@@ -643,6 +656,12 @@ int occgaps( Logfile& l, Config& c ) {
 	       << sum << " " << ave 
 	       << " ]" << std::endl;
       inside = false;
+
+      gs_out << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
+	     << sgaps << " " << lgaps << " " << r1 << " "
+	     << sum << " " << ave 
+	     << std::endl;
+
       if ( r1 > 0.8 ) {
 	l.log( (*wpi).first+":"+to_str(r1) );
       }
