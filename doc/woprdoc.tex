@@ -1147,6 +1147,80 @@ them with a normal data set.
   feature. 
 \end{varlist}
 
+\subsection{\cmp{gap}}
+
+A function to examine how words are distributed in a text. Can even be
+used to generate data for the \emph{global context} data.
+
+This function counts the number of tokens between the occurrences of
+the words we are examining. A \cmp{gap} parameter is used to determine
+whether words are \q{close} together or not. Two output files are
+produced, one with suffix \cmp{gap} and one with suffix \cmp{gs}. The
+gap size is appended to the suffixes. The first file contains a list
+with words plus the gaps and a few statistics. Groups of small gaps
+are enclosed between parenthesis, giving an idea of how the words are
+clustered. The second file contains just the words and the statistics,
+and can optionally be filtered on several parameters.
+
+An example of the contents of the first file.
+
+\begin{wout}{\cmp{gap} output}
+wines 13 ( 51 93 ) 396 ( 101 39 29 38 17 78 11 22 16 ) 
+                                  [ 2 3 0.666667 11 1 0.916667 495 41.25 ]
+\end{wout}
+
+The example shows the token \cmp{wines}, which occurs \num{14} times
+in the text. The first three (note that we show \emph{gaps}) are
+\num{51} and \num{93} tokens apart. Then there is a gap of \num{396}
+tokens until we come across the next occurrence of \cmp{wines}. Then
+there is another group of \num{10} occurrences close together.
+
+The first two numbers in the statistics show the number of close
+groups, and the number of potential groups. We have the two bracketed
+groups represented by the first number. There could have been three
+groups if the large gap in the middle had had an occurrence of
+\cmp{wines} within the gap distance, so that makes the total
+three. The number after that shows the ratio between those two
+numbers. The next numbers, \num{11} and \num{1}, show we have \num{11}
+close gaps and only one large gap. The ratio between the number of
+close gaps and the total number of gaps is shown by the next
+number. Note that with \num{13} occurrences of the token, we only have
+\num{12} gaps. The number \num{495} is the sum of the close gaps
+values, which in its turn is followed by the average close gap
+distance. 
+
+The second file contains the same information as the first one, but
+without the gaps.
+
+\begin{wout}{\cmp{gs} output}
+wines 13 2 3 0.666667 11 1 0.916667 495 41.25
+\end{wout}
+
+This list can be filtered by setting the \cmp{filter} parameter to
+\cmp{1}. Only tokes satisfying the conditions will be added to the
+\cmp{gs} file. The \cmp{gap} file will still contain all the tokens
+from the specified lexicon.
+
+\begin{varlist}{lexicon}
+\item[filename] A normal text file.
+\item[lexicon] List of words to examine, in \wopr{}s lexicon format.
+\item[gap] The maximum gap between tokens to consider them
+  \q{together}.
+\item[filter] A boolean to specify if we want to filer the \cmp{.gs}
+  output. If set, the following four conditions must be met for a word
+  to be included in the output.
+\item[min\_f] Minimum word frequency of words to include. Defaults to
+  0. The token frequency must be larger or equal to this.
+\item[max\_f] Maximum word frequency of words to include. Defaults to
+  the maximum \emph{long} value the computer can handle. The token
+  frequency must be less than this.
+\item[min\_r] Minimum ratio between small and large gaps. Defaults to
+  0.5. The ratio must be larger or equal to this.
+\item[max\_r] Maximum ratio between small and large gaps. Defaults to
+  1.1. It can never be more than 1, but the default will make sure it
+  will be included. The ratio has to be less that this parameter.
+\end{varlist}
+
 %woordn^5  =>?  woordx^5 + woordy^5 (collision)
 
 \section{Training}
