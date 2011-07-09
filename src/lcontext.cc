@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <iterator>
 #include <deque>
+#include <limits>
 
 #include "qlog.h"
 #include "Config.h"
@@ -511,10 +512,14 @@ int occgaps( Logfile& l, Config& c ) {
   int                gap             = stoi( c.get_value( "gap", "200" ));
 
   bool               filter          = stoi( c.get_value( "filter", "0" )) == 1;
-  int                min_f           = stoi( c.get_value( "min_f", "1" ));
-  int                max_f           = stoi( c.get_value( "max_f", "999999" ));
+  long               min_f           = stoi( c.get_value( "min_f", "1" ));
+  long               max_f           = stoi( c.get_value( "max_f", "0" ));
   float              min_r           = stod( c.get_value( "min_r", "0.8" ));
   float              max_r           = stod( c.get_value( "max_r", "1.1" ));
+
+  if ( max_f == 0 ) {
+    max_f = std::numeric_limits<long>::max();
+  }
 
   std::string output_filename = filename + ".gap" + to_str(gap);
   std::string gs_filename     = filename + ".gs" + to_str(gap);
