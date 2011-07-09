@@ -506,24 +506,27 @@ int lcontext( Logfile& l, Config& c ) {
 */
 int occgaps( Logfile& l, Config& c ) {
   l.log( "occurrence gaps" );
-  const std::string& filename        = c.get_value( "filename" ); // dataset
-  const std::string& lex_filename    = c.get_value( "lexicon" );
-  std::string        id              = c.get_value( "id", "" );
-  int                gap             = stoi( c.get_value( "gap", "200" ));
+  const std::string& filename     = c.get_value( "filename" ); // dataset
+  const std::string& lex_filename = c.get_value( "lexicon" );
+  std::string        id           = c.get_value( "id", "" );
+  int                gap          = stoi( c.get_value( "gap", "200" ));
 
-  bool               filter          = stoi( c.get_value( "filter", "0" )) == 1;
+  bool               filter       = stoi( c.get_value( "filter", "0" )) == 1;
   // parameters for token frequency
-  long               min_f           = stoi( c.get_value( "min_f", "1" ));
-  long               max_f           = stoi( c.get_value( "max_f", "0" ));
+  long               min_f        = stoi( c.get_value( "min_f", "1" ));
+  long               max_f        = stoi( c.get_value( "max_f", "0" ));
   // parameters for small gap/gaps ratio
-  float              min_r           = stod( c.get_value( "min_r", "0.0" ));
-  float              max_r           = stod( c.get_value( "max_r", "1.1" ));
+  float              min_r        = stod( c.get_value( "min_r", "0.0" ));
+  float              max_r        = stod( c.get_value( "max_r", "1.1" ));
   // min_a/max_a: parameters for average small gap
-  long               min_a           = stoi( c.get_value( "min_a", "0" ));
-  long               max_a           = stoi( c.get_value( "max_a", "0" ));
+  long               min_a        = stoi( c.get_value( "min_a", "0" ));
+  long               max_a        = stoi( c.get_value( "max_a", "0" ));
   // parameters for groups/potential groups ratio
-  float              min_g           = stod( c.get_value( "min_g", "0.0" ));
-  float              max_g           = stod( c.get_value( "max_g", "1.1" ));
+  float              min_p        = stod( c.get_value( "min_p", "0.0" ));
+  float              max_p        = stod( c.get_value( "max_p", "1.1" ));
+  // parameters for ave_lg:ave_sg ratio (note order)
+  float              min_g        = stod( c.get_value( "min_g", "0.0" ));
+  float              max_g        = stod( c.get_value( "max_g", "99999999" ));
 
   if ( max_f == 0 ) {
     max_f = std::numeric_limits<long>::max();
@@ -554,6 +557,8 @@ int occgaps( Logfile& l, Config& c ) {
     l.log( "max_r:     "+to_str(max_r) );
     l.log( "min_a :    "+to_str(min_a) );
     l.log( "max_a:     "+to_str(max_a) );
+    l.log( "min_p:     "+to_str(min_p) );
+    l.log( "max_p:     "+to_str(max_p) );
     l.log( "min_g:     "+to_str(min_g) );
     l.log( "max_g:     "+to_str(max_g) );
   }
@@ -681,17 +686,22 @@ int occgaps( Logfile& l, Config& c ) {
       if ( ogrps == 0 ) {
 	ogrps = 1;
       }
+
       //average gap? ag / all words?
-      float ave_sg = sum_sg / (vv.size()-1);
-      float ave_lg = sum_lg / (vv.size()-1);
-      float g1 = (float)igrps/ogrps; // inside/outside groups? misnomer
+      float ave_sg = sum_sg / (vv.size()-1); // vv.size > 1
+      float ave_lg = sum_lg / (vv.size()-1); // vv.size > 1
+      float p1 = (float)igrps/ogrps; // inside/outside groups? misnomer
       float r1 = (float)sgaps/(sgaps+lgaps);
-      float a1 = (float)ave_sg/ave_lg;
+      float g1 = 0; // gap ratio, LARGE:SMALL !
+      if ( ave_sg > 0 ) {
+	g1 = (float)ave_lg/ave_sg;
+      }
+
       file_out << "[ " 
-	       << igrps << " " << ogrps << " " << g1 << " "
+	       << igrps << " " << ogrps << " " << p1 << " "
 	       << sgaps << " " << lgaps << " " << r1 << " "
 	       << sum_sg << " " << ave_sg << " "
-	       << a1
+	       << g1
 	       << " ]" << std::endl;
       inside = false;
 
@@ -702,17 +712,19 @@ int occgaps( Logfile& l, Config& c ) {
 	    (r1 < max_r) &&
 	    (vv.size() >= min_f) &&
 	    (vv.size() < max_f) &&
-	    (g1 >= min_g) &&
-	    (g1 < max_g) &&
+	    (p1 >= min_p) &&
+	    (p1 < max_p) &&
 	    (ave_sg >= min_a) &&
-	    (ave_sg < max_a)
+	    (ave_sg < max_a) &&
+	    (g1 >= min_g) &&
+	    (g1 < max_g)
 	    )
 	   ) {
 	gs_out << (*wpi).first << " " << vv.size() << " ";
-	gs_out << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
+	gs_out << igrps << " " << ogrps << " " << p1 << " "
 	       << sgaps << " " << lgaps << " " << r1 << " "
 	       << sum_sg << " " << ave_sg << " "
-	       << a1
+	       << g1
 	       << std::endl;	
       }
 
