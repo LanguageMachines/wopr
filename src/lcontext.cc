@@ -595,6 +595,7 @@ int occgaps( Logfile& l, Config& c ) {
 	    inside = true;
 	    file_out << "( ";
 	    ++igrps;
+	    ++ogrps;
 	  }
 	  file_out << this_gap << " ";
 	  sum += (vv.at(i+1)-vv.at(i));
@@ -602,16 +603,20 @@ int occgaps( Logfile& l, Config& c ) {
 	  if ( inside ) {
 	    inside = false;
 	    file_out << ") ";
+	  }
 	    ++ogrps;
-	  }
-	  if ( ( ! inside ) && ( ogrps == 0 ) ) {
-	    ogrps = 1; // adjustment if started with big gaps.
-	  }
+	    
+	  //if ( ( ! inside ) && ( ogrps == 0 ) ) {
+	  //  ogrps = 1; // adjustment if started with big gaps.
+	  //}
 	  file_out << this_gap << " ";
 	}
       }
       if ( inside ) {
 	file_out << ") ";
+      }
+      if ( ogrps == 0 ) {
+	ogrps = 1;
       }
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
