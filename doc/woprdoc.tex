@@ -1166,7 +1166,7 @@ An example of the contents of the first file.
 
 \begin{wout}{\cmp{gap} output}
 wines 13 ( 51 93 ) 396 ( 101 39 29 38 17 78 11 22 16 ) 
-                                  [ 2 3 0.666667 11 1 0.916667 495 41.25 ]
+                             [ 2 3 0.666667 11 1 0.916667 495 41.25 1.25 ]
 \end{wout}
 
 The example shows the token \cmp{wines}, which occurs \num{14} times
@@ -1187,17 +1187,18 @@ close gaps and the total number of gaps is shown by the next
 number. Note that with \num{13} occurrences of the token, we only have
 \num{12} gaps. The number \num{495} is the sum of the close gaps
 values, which in its turn is followed by the average close gap
-distance. 
+distance. The last number is the ratio between the average small gap
+size and the average large gap size.
 
 The second file contains the same information as the first one, but
 without the gaps.
 
 \begin{wout}{\cmp{gs} output}
-wines 13 2 3 0.666667 11 1 0.916667 495 41.25
+wines 13 2 3 0.666667 11 1 0.916667 495 41.25 1.25
 \end{wout}
 
 This list can be filtered by setting the \cmp{filter} parameter to
-\cmp{1}. Only tokes satisfying the conditions will be added to the
+\cmp{1}. Only tokens satisfying the conditions will be added to the
 \cmp{gs} file. The \cmp{gap} file will still contain all the tokens
 from the specified lexicon.
 
@@ -1207,7 +1208,7 @@ from the specified lexicon.
 \item[gap] The maximum gap between tokens to consider them
   \q{together}.
 \item[filter] A boolean to specify if we want to filer the \cmp{.gs}
-  output. If set, the following four conditions must be met for a word
+  output. If set, the following conditions must be met for a word
   to be included in the output.
 \item[min\_f] Minimum word frequency of words to include. Defaults to
   0. The token frequency must be larger or equal to this.
@@ -1219,6 +1220,10 @@ from the specified lexicon.
 \item[max\_r] Maximum ratio between small and large gaps. Defaults to
   1.1. It can never be more than 1, but the default will make sure it
   will be included. The ratio has to be less that this parameter.
+\item[min\_a] Minimum average small gap value.
+\item[max\_a] Maximum average small gap value.
+\item[min\_g] Minimum groups to potential groups ratio.
+\item[max\_g] Maximum groups to potential groups ratio.
 \end{varlist}
 
 %woordn^5  =>?  woordx^5 + woordy^5 (collision)
