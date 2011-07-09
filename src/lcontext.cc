@@ -502,17 +502,15 @@ int lcontext( Logfile& l, Config& c ) {
 
 /*
   Count word positions to calculate "200 words" occurences
-  Occurrence gap?
 */
 int occgaps( Logfile& l, Config& c ) {
   l.log( "occurrence gaps" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& lex_filename    = c.get_value( "lexicon" );
   std::string        id              = c.get_value( "id", "" );
+  int                gap             = stoi( c.get_value( "gap", "200" ));
 
-  int gap = 200;
-
-  std::string output_filename = filename + ".gaps" + to_str(gap);
+  std::string output_filename = filename + ".gap" + to_str(gap);
 
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
     output_filename = output_filename + "_" + id;
@@ -568,11 +566,12 @@ int occgaps( Logfile& l, Config& c ) {
     ++idx;
 
   }
-  std::cout << idx << std::endl;
+  //std::cout << idx << std::endl;
   file_in.close();
 
   // Save
   //
+  l.log( "Writing output." );
   std::map<std::string, Tvref >::iterator wpi;
   Tvref::iterator vri;
   bool inside = false;
@@ -587,6 +586,8 @@ int occgaps( Logfile& l, Config& c ) {
       double sum  = 0;
       double igrps = 0; // count bracketed groups in all groups.
       double ogrps = 0; // single large gaps are a group
+      double sgaps = 0; // small gaps
+      double lgaps = 0; // large gaps
       for( int i = 0; i < vv.size()-1; i++ ) {
 	// only if gap < 200 for the stats?
 	long this_gap = vv.at(i+1)-vv.at(i);
@@ -598,6 +599,7 @@ int occgaps( Logfile& l, Config& c ) {
 	    ++ogrps;
 	  }
 	  file_out << this_gap << " ";
+	  ++sgaps;
 	  sum += (vv.at(i+1)-vv.at(i));
 	} else { // this_gap >> gap
 	  if ( inside ) {
@@ -609,6 +611,7 @@ int occgaps( Logfile& l, Config& c ) {
 	  //  ogrps = 1; // adjustment if started with big gaps.
 	  //}
 	  file_out << this_gap << " ";
+	  ++lgaps;
 	}
       }
       if ( inside ) {
@@ -619,9 +622,11 @@ int occgaps( Logfile& l, Config& c ) {
       }
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
-      file_out << "[ " << igrps << " " << ogrps << " " 
-	       << (float)igrps/ogrps << " "
-	       <<sum << " " << ave << " ]" << std::endl;
+      file_out << "[ " 
+	       << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
+	       << sgaps << " " << lgaps << " "
+	       << sum << " " << ave 
+	       << " ]" << std::endl;
       inside = false;
     }
     
