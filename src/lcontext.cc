@@ -516,6 +516,20 @@ int occgaps( Logfile& l, Config& c ) {
     output_filename = output_filename + "_" + id;
   }
 
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "lexicon:   "+lex_filename );
+  l.log( "gap:       "+to_str(gap) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists( l, c, output_filename ) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+
   // Save in outputfilename.gaps
   //
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
