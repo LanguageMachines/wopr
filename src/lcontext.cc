@@ -688,8 +688,14 @@ int occgaps( Logfile& l, Config& c ) {
       }
 
       //average gap? ag / all words?
-      float ave_sg = sum_sg / (vv.size()-1); // vv.size > 1
-      float ave_lg = sum_lg / (vv.size()-1); // vv.size > 1
+      float ave_sg = 0;
+      if ( sgaps > 0 ) {
+	ave_sg = sum_sg / sgaps; 
+      }
+      float ave_lg = 0;
+      if ( lgaps > 0 ) {
+	ave_lg = sum_lg / lgaps; 
+      }
       float p1 = (float)igrps/ogrps; // inside/outside groups? misnomer
       float r1 = (float)sgaps/(sgaps+lgaps);
       float g1 = 0; // gap ratio, LARGE:SMALL !
