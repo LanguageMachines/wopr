@@ -561,7 +561,7 @@ int occgaps( Logfile& l, Config& c ) {
   std::map<std::string, int>::iterator ri;
   while( file_in >> a_word ) {
 
-    ri = range.find( a_word ); // word is in .rng list?
+    ri = range.find( a_word ); // word is in .lex list?
     if ( ri != range.end() ) {
       word_positions[ a_word ].push_back(idx);
     }
@@ -584,21 +584,28 @@ int occgaps( Logfile& l, Config& c ) {
     if ( vv.size() > 1 ) {
       file_out << (*wpi).first << " " << vv.size() << ": ";
 
-      double sum = 0;
-      for( int i = 1; i < vv.size(); i++ ) {
+      double sum  = 0;
+      double igrps = 0;
+      double ogrps = 0;
+      for( int i = 0; i < vv.size()-1; i++ ) {
 	// only if gap < 200 for the stats?
-	long this_gap = vv.at(i)-vv.at(i-1);
+	long this_gap = vv.at(i+1)-vv.at(i);
 	if ( this_gap < gap ) {
 	  if ( ! inside ) {
 	    inside = true;
 	    file_out << "( ";
+	    ++igrps;
 	  }
 	  file_out << this_gap << " ";
-	  sum += (vv.at(i)-vv.at(i-1));
+	  sum += (vv.at(i+1)-vv.at(i));
 	} else { // this_gap >> gap
 	  if ( inside ) {
 	    inside = false;
 	    file_out << ") ";
+	    ++ogrps;
+	  }
+	  if ( ( ! inside ) && ( ogrps == 0 ) ) {
+	    ogrps = 1; // adjustment if started with big gaps.
 	  }
 	  file_out << this_gap << " ";
 	}
@@ -608,7 +615,8 @@ int occgaps( Logfile& l, Config& c ) {
       }
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
-      file_out << "[ " << sum << " " << ave << " ]" << std::endl;
+      file_out << "[ " << igrps << " " << ogrps << " " 
+	       <<sum << " " << ave << " ]" << std::endl;
       inside = false;
     }
     
