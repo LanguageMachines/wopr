@@ -510,6 +510,11 @@ int occgaps( Logfile& l, Config& c ) {
   std::string        id              = c.get_value( "id", "" );
   int                gap             = stoi( c.get_value( "gap", "200" ));
 
+  bool               filter          = stoi( c.get_value( "filter", "0" )) == 1;
+  int                min_f           = stoi( c.get_value( "min_f", "1" ));
+  int                max_f           = stoi( c.get_value( "max_f", "999999" ));
+  float              min_r           = stod( c.get_value( "min_r", "0.8" ));
+
   std::string output_filename = filename + ".gap" + to_str(gap);
   std::string gs_filename     = filename + ".gs" + to_str(gap);
 
@@ -606,7 +611,6 @@ int occgaps( Logfile& l, Config& c ) {
 
     // bracket them? (3 6 7) 1234 8745 (3 5) ?
     if ( vv.size() > 1 ) {
-      gs_out << (*wpi).first << " " << vv.size() << " ";
 
       file_out << (*wpi).first << " " << vv.size() << " ";
 
@@ -657,14 +661,19 @@ int occgaps( Logfile& l, Config& c ) {
 	       << " ]" << std::endl;
       inside = false;
 
-      gs_out << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
-	     << sgaps << " " << lgaps << " " << r1 << " "
-	     << sum << " " << ave 
-	     << std::endl;
-
-      if ( r1 > 0.8 ) {
-	l.log( (*wpi).first+":"+to_str(r1) );
+      if ( (filter == false) 
+	   ||
+	   ( (r1 > min_r) &&
+	     (vv.size() >= min_f) &&
+	     (vv.size() < max_f) )
+	   ) {
+	gs_out << (*wpi).first << " " << vv.size() << " ";
+	gs_out << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
+	       << sgaps << " " << lgaps << " " << r1 << " "
+	       << sum << " " << ave 
+	       << std::endl;	
       }
+
     }
     
   }
