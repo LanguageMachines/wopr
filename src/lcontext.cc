@@ -636,12 +636,16 @@ int occgaps( Logfile& l, Config& c ) {
       }
       //average gap? ag / all words?
       float ave = sum / (vv.size()-1);
+      float r1 = (float)sgaps/(sgaps+lgaps);
       file_out << "[ " 
 	       << igrps << " " << ogrps << " " << (float)igrps/ogrps << " "
-	       << sgaps << " " << lgaps << " "
+	       << sgaps << " " << lgaps << " " << r1 << " "
 	       << sum << " " << ave 
 	       << " ]" << std::endl;
       inside = false;
+      if ( r1 > 0.8 ) {
+	l.log( (*wpi).first+":"+to_str(r1) );
+      }
     }
     
   }
