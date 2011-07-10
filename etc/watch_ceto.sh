@@ -28,7 +28,7 @@ MAILTO="P.J.Berck@UvT.nl"  # Better change me
 DISKS="/exp /exp2"         # Disks to watch
 MINFREE=95                 # Warn when disusage over 95%
 ME=`whoami`                # Her processes will be killed
-KILLIM=3                   # We quit after having killed 3 processes
+KILLIM=99                  # We quit after having killed 3 processes
 SLEEP=10                   # Sleep between cycles
 #
 # ------------------------------------------------------------------
