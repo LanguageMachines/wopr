@@ -9,9 +9,9 @@ use Getopt::Std;
 # ...
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_t $opt_w /;
+use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w /;
 
-getopts('f:g:il:r:t:w');
+getopts('f:g:il:r:R:t:w');
 
 my $wopr_file  = $opt_f || 0;
 my $gcs        = $opt_g || 0; #for global context
@@ -19,12 +19,21 @@ my $ignore_oov = $opt_i || 0;
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
 my $gct        = $opt_t || 0; #global context type
+my $rfl        = $opt_R || 0; #RFL file for gct == 1 feature count
 my $wordscore  = $opt_w || 0;
 
 #------------------------------------------------------------------------------
 
 if ( $gct == 2 ) {
   $gcs = 1
+}
+
+if ( $gct == 1 ) {
+    my $count = 0;
+    open(FILE, "< $rfl") or die "can't open $rfl: $!";
+    $count++ while <FILE>;
+    close FILE;
+    $gcs = $count;
 }
 
 my %summary;

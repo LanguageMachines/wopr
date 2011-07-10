@@ -555,7 +555,7 @@ int occgaps( Logfile& l, Config& c ) {
     l.log( "max_f:     "+to_str(max_f) );
     l.log( "min_r:     "+to_str(min_r) );
     l.log( "max_r:     "+to_str(max_r) );
-    l.log( "min_a :    "+to_str(min_a) );
+    l.log( "min_a:     "+to_str(min_a) );
     l.log( "max_a:     "+to_str(max_a) );
     l.log( "min_p:     "+to_str(min_p) );
     l.log( "max_p:     "+to_str(max_p) );
