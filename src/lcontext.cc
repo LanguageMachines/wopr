@@ -655,7 +655,7 @@ int occgaps( Logfile& l, Config& c ) {
       double lgaps = 0; // large gaps
       for( int i = 0; i < vv.size()-1; i++ ) {
 	// only if gap < 200 for the stats?
-	long this_gap = vv.at(i+1)-vv.at(i);
+	long this_gap = vv.at(i+1)-vv.at(i)-1;
 	if ( this_gap < gap ) {
 	  if ( ! inside ) {
 	    inside = true;
@@ -665,7 +665,7 @@ int occgaps( Logfile& l, Config& c ) {
 	  }
 	  file_out << this_gap << " ";
 	  ++sgaps;
-	  sum_sg += (vv.at(i+1)-vv.at(i));
+	  sum_sg += this_gap;
 	} else { // this_gap >> gap
 	  if ( inside ) {
 	    inside = false;
@@ -677,7 +677,7 @@ int occgaps( Logfile& l, Config& c ) {
 	  //}
 	  file_out << this_gap << " ";
 	  ++lgaps;
-	  sum_lg += (vv.at(i+1)-vv.at(i));
+	  sum_lg += this_gap;
 	}
       }
       if ( inside ) {
