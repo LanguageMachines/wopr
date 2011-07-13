@@ -68,6 +68,7 @@ class Logfile {
   void unlock();
   void get_raw( timeval& );
   void set_mark();
+  void DBG(std::string);
 
   long clock_start();
   long clock_elapsed();

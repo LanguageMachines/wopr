@@ -281,6 +281,29 @@ void Logfile::get_raw( timeval& tv ) {
   //return tv;
 }
 
+void Logfile::DBG( std::string s ) {
+  char      timestring[32];
+  timeval   tv;
+  struct tm *t;
+
+  pthread_mutex_lock( &mtx );
+
+  gettimeofday( &tv, 0 );
+  t = localtime( &tv.tv_sec );
+  
+  strftime( timestring, 32, time_format.c_str(),  t );
+
+  int msec = tv.tv_usec;
+
+  std::cout << timestring << "." << std::setfill( '0' )
+	    << std::setw( 6 ) << msec << ": ";
+  //std::cout << s << "\n";
+  //std::cout << "\033[1;33m";//This is yellow\033[m" ;
+  std::cout << s << std::endl;
+
+  pthread_mutex_unlock( &mtx );
+}
+
 /*!
   It is also possible to do some crude timing with Logfiles:
   \code

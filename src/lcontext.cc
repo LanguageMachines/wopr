@@ -224,6 +224,7 @@ int lcontext( Logfile& l, Config& c ) {
   int                gcs             = stoi( c.get_value( "gcs",  "3" ));
   int                gcd             = stoi( c.get_value( "gcd", "50" ));
   int                gct             = stoi( c.get_value( "gct",  "0" ));
+  int                gco             = stoi( c.get_value( "gco",  "0" ));
   bool               from_data       = stoi( c.get_value( "fd", "1" )) == 1;
   std::string        id              = c.get_value( "id", "" );
   bool               gc_sep          = stoi(c.get_value( "gc_sep", "1" )) == 1;
@@ -231,6 +232,12 @@ int lcontext( Logfile& l, Config& c ) {
   std::string gc_space = " ";
   if ( gc_sep == false ) {
     gc_space = "";
+  }
+
+  // 0 is actually 1, we start after we have seen the first word.
+  //
+  if ( gco < 0 ) {
+    gco = 0;
   }
 
   // Open range file. Annoying, but we need to read the file, even though
@@ -273,6 +280,9 @@ int lcontext( Logfile& l, Config& c ) {
   std::string output_filename = filename + ".gc" + to_str(gcs)
     + "d" + to_str(gcd)
     + "t" + to_str(gct);
+  if ( gco != 0 ) {
+    output_filename += "o"+to_str(gco); // only if non zero to be backwards campatible.
+  }
 
   if ( (id != "") && (contains_id(output_filename, id) == false) ) { //was filename?
     output_filename = output_filename + "_" + id;
@@ -284,6 +294,7 @@ int lcontext( Logfile& l, Config& c ) {
   l.log( "gcs:       "+to_str(gcs) );
   l.log( "gcd:       "+to_str(gcd) );
   l.log( "gct:       "+to_str(gct) );
+  l.log( "gco:       "+to_str(gco) );
   l.log( "from_data: "+to_str(from_data) );
   l.log( "gc_sep:    "+to_str(gc_sep) );
   l.log( "OUTPUT:    "+output_filename );
@@ -364,7 +375,10 @@ int lcontext( Logfile& l, Config& c ) {
       lc_str = lc_str + "0" + gc_space;
     }
   } while ( di != global_context.begin() );
-  
+
+  // lc_str in array, so we can skip a few, "delay" the start
+  std::deque<std::string> gc(gco+1, lc_str);
+
   while( std::getline( file_in, a_line ) ) { 
 
     Tokenize( a_line, words, ' ' );
@@ -420,8 +434,11 @@ int lcontext( Logfile& l, Config& c ) {
 
       // Output line of data, this is the *previous* lc_str!
       //
+      std::string output_gc = gc.front();
+      gc.pop_front();
+      
       if ( gct != 2 ) {
-	file_out << lc_str;
+	file_out << output_gc; //lc_str;
       } else {
 	file_out << gc_hash << " ";
       }
@@ -461,8 +478,10 @@ int lcontext( Logfile& l, Config& c ) {
 	    gc_hash += (*di).hv;
 	  }
 	}
-      } while ( di != global_context.begin() );
+      } while ( di != global_context.begin() ); 
       //--
+
+      gc.push_back( lc_str );
 
       // Decay gc.
       //
