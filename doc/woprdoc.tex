@@ -74,6 +74,30 @@ generate spelling correction hypotheses.
 Besides the \Timbl{}-related functionality, \wopr{} can create and
 manipulated data sets.
 
+\par
+
+\Mb{} word prediction illustrates an interesting idea. Complex
+abstraction levels are not needed for (some) linguistic
+tasks. In the case of word prediction, the words themselves provide
+enough information. To put it bluntly, we generalise without
+abstracting. 
+
+\par
+This manual is divided into several parts. Chapter Two contains a walk
+through illustrating the main use cases of \wopr{}. Chapter Three
+shows how to compile and install \wopr{}. Chapter Four has some
+information about the performance of \wopr{}, and compares the output
+to \srilm{} output. Finally, Chapter Five contains a more detailed
+reference or some of the \wopr{} functions.
+
+\par
+This manual assumes familiarity with language modeling in
+general. Experience with memory based based learning techniques (or
+with \Timbl{}) is an distinct advantage.
+
+% word pred: archetypal problem of NLP (Even-Zohar, Roth, Zelenko, 1999
+% Many classes, zipfian distr, same as the feature values
+
 \chapter{Walk Throughs}
 
 Without further ado, we present a number of common tasks which can be
@@ -322,6 +346,8 @@ chain. That has to be done seperately. (To be clear, one would not run
 the example in real life. It was to show both the strength and
 weakness of the combined commands.) For complex \wopr{} usage,
 \emph{scripting} can (should) be used.
+
+For complex \wopr{} usage, \emph{scripting} can (should) be used.
 
 \section{\ngram{}-model}
 
@@ -983,9 +1009,9 @@ Some predictions show a similar logprob from both \wopr{} and
 the sentence, \cmp{The}. Also the second word, \cmp{Carlyle} gets
 similar logprobs. The next word shows a marked difference. \Srilm{}
 matched a four-gram, that means the whole sequence \cmp{<s> The
-  Carlyle Group} was found in the training data. The difference is due
-to \emph{smoothing} and \emph{hapaxing}, which is done by \srilm{} but
-not by \wopr{}.
+  Carlyle Group} was found in the training data. The difference is
+most likely due to \emph{smoothing} and \emph{hapaxing}, which is done
+by \srilm{} but not by \wopr{}.
 
 \subsection{pplx}
 
@@ -1164,16 +1190,18 @@ and can optionally be filtered on several parameters.
 
 An example of the contents of the first file.
 
+%pberck@scylla:/exp2/pberck/mrr$ /exp/pberck/wopr/wopr -r gaps -p filename:nyt.10000,lexicon:nyt.100000.lex,overwrite:1
 \begin{wout}{\cmp{gap} output}
-wines 13 ( 51 93 ) 396 ( 101 39 29 38 17 78 11 22 16 ) 
-                             [ 2 3 0.666667 11 1 0.916667 495 41.25 1.25 ]
+wines 13 ( 50 92 ) 395 ( 100 38 28 37 16 77 10 21 15 )
+                            [ 2 3 0.666667 11 1 0.916667 484 44 8.97727 ]
 \end{wout}
 
 The example shows the token \cmp{wines}, which occurs \num{14} times
 in the text. The first three (note that we show \emph{gaps}) are
-\num{51} and \num{93} tokens apart. Then there is a gap of \num{396}
-tokens until we come across the next occurrence of \cmp{wines}. Then
-there is another group of \num{10} occurrences close together.
+\num{50} and \num{92} tokens apart (a \emph{close} group). Then there
+is a large gap of \num{395} tokens until we come across the next
+occurrence of \cmp{wines}. Then there is another group of \num{10}
+occurrences close together.
 
 The first two numbers in the statistics show the number of close
 groups, and the number of potential groups. We have the two bracketed
@@ -1185,16 +1213,16 @@ numbers. The next numbers, \num{11} and \num{1}, show we have \num{11}
 close gaps and only one large gap. The ratio between the number of
 close gaps and the total number of gaps is shown by the next
 number. Note that with \num{13} occurrences of the token, we only have
-\num{12} gaps. The number \num{495} is the sum of the close gaps
+\num{12} gaps. The number \num{484} is the sum of the close gaps
 values, which in its turn is followed by the average close gap
-distance. The last number is the ratio between the average small gap
-size and the average large gap size.
+distance. The last number is the ratio between the average large gap
+size and the average small gap size.
 
 The second file contains the same information as the first one, but
 without the gaps.
 
 \begin{wout}{\cmp{gs} output}
-wines 13 2 3 0.666667 11 1 0.916667 495 41.25 1.25
+wines 13 2 3 0.666667 11 1 0.916667 484 44 8.97727
 \end{wout}
 
 This list can be filtered by setting the \cmp{filter} parameter to
@@ -1222,8 +1250,10 @@ from the specified lexicon.
   will be included. The ratio has to be less that this parameter.
 \item[min\_a] Minimum average small gap value.
 \item[max\_a] Maximum average small gap value.
-\item[min\_g] Minimum groups to potential groups ratio.
-\item[max\_g] Maximum groups to potential groups ratio.
+\item[min\_p] Minimum groups to potential groups ratio.
+\item[max\_p] Maximum groups to potential groups ratio.
+\item[min\_g] Minimum average large to small groups size ratio.
+\item[max\_g] Maximum average large to small groups size ratio. 
 \end{varlist}
 
 %woordn^5  =>?  woordx^5 + woordy^5 (collision)
