@@ -281,7 +281,7 @@ int lcontext( Logfile& l, Config& c ) {
     + "d" + to_str(gcd)
     + "t" + to_str(gct);
   if ( gco != 0 ) {
-    output_filename += "o"+to_str(gco); // only if non zero to be backwards campatible.
+    output_filename += "o"+to_str(gco); // only if non zero to be backwards compatible.
   }
 
   if ( (id != "") && (contains_id(output_filename, id) == false) ) { //was filename?
