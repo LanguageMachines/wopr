@@ -14,6 +14,19 @@ getopts('f:');
 my $file       = $opt_f ||  0;
 
 open(FH, $file) || die "Can't open file.";
+
+print "%generated  perl data2latex.pl -f $file\n";
+print <<'EOF';
+\begin{table}[h!]\caption{Scores}
+\centering
+\vspace{\baselineskip}
+\begin{tabular}{ r r r r r }
+\toprule
+Lines & Ctx & cg1 & cg2 & \%$\Delta$ \\
+\midrule
+EOF
+
+
 while ( my $line = <FH> ) {
   if ( substr($line, 0, 1) eq "#" ) {
     next;
@@ -23,6 +36,8 @@ while ( my $line = <FH> ) {
 #   or
 # GC26000 10000 l0r1 13.73 25.09 61.18 1 100 -a4+D 200-250 0
 # GC28000 10000 l2r0 11.41 22.21 66.38 1 200 -a4+D 1-500 0 449.33 449.33 0.265 0.515
+#   or
+# ALG10001 1000 13.57 28.25 58.18 182.10 182.10 0.187 1.000 0.451 1205.31 5797.41 l2r1_-a1+D
 
   chomp $line;
 
@@ -34,6 +49,9 @@ while ( my $line = <FH> ) {
   my $cg = 6; #WEX format
   if ( $#parts < 15 ) {
     $cg = 3; #GC format
+  }
+  if ( substr($parts[0], 0, 3) eq "ALG" ) {
+    $cg = 2; #ALG format
   }
 
   if ( $parts[$cg] > 100 ) { # converto to % first
@@ -77,6 +95,22 @@ while ( my $line = <FH> ) {
       print "& \\num{0} ";    #mmr(cd)
     }
   }
+  if ( $cg == 2 ) { 
+    print "& \\num{".sprintf( "%.1f", $parts[$cg])."} ";     #cg
+    print "& \\num{".sprintf( "%.1f", $parts[$cg+1])."} ";   #cd
+    print "& \\num{".sprintf( "%.1f", $parts[$cg+2])."} ";   #ic
+    print "& \\num{".sprintf( "%.0f", $parts[$cg+3])."} ";   #pplx
+    print "& \\num{".sprintf( "%.3f", $parts[$cg+5])."} ";   #mmr(cd)
+    (my $timbl = $parts[$cg+10]) =~ tr/_/ /;
+    print "& \\cmp{".sprintf( "%s", $timbl)."} ";  #timbl
+  }
   print "\\\\ \n"; #% ".$parts[0]."\n";
 
 }
+
+print <<'EOF';
+\bottomrule
+\end{tabular}
+\label{tab:scoresexperiment2}
+\end{table}
+EOF
