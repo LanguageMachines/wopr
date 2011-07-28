@@ -107,12 +107,26 @@ int make_ibase( Logfile& l, Config& c ) {
   const std::string& ibasefile      = c.get_value( "ibasefile", "" ); //pbmbmt
   std::string        id             = c.get_value( "id", "" );
 
-  std::string t_ext = timbl;
+  //std::string t_ext = timbl;
   std::string ibase_filename = filename;
 
   if ( ibasefile != "" ) {
     ibase_filename = ibasefile;
   } else {
+    /*t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '),
+      t_ext.end());*/
+    // should remove -k also, ibase is the same anyway.
+    // split timbl string first, re-assemble again.
+    // this will influence bash scripts too
+    std::string t_ext = "";
+    std::vector<std::string> t_bits;
+    Tokenize( timbl, t_bits );
+    for ( int i = 0; i < t_bits.size(); i++ ) {
+      std::string t_bit = t_bits.at(i);
+      if ( t_bit.substr(0, 2) != "-k" ) {
+	t_ext += t_bit;
+      }
+    }
     t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '),
 		 t_ext.end());
     if ( t_ext != "" ) {
