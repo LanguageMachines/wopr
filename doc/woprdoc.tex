@@ -778,7 +778,44 @@ right answer.
 \Wopr{} can be run in \emph{server} mode where it will listen on a socket
 for input and return a classification result.
 
+Several implementations have been tried, the most recent and working
+function is called \cmp{server4}. It has a few obscure options to make
+it compatible with third party software like \cmp{moses} and
+\pbmbmt{}. The following command line shows an example of how it
+can be used with \pbmbmt{}.
 
+\begin{bash}{}
+%wopr -r server4 -p ibasefile:OpenSub-english.train.txt.l2r0_-a1+D.ibase,
+%           timbl:'-a1 +D',mode:1,keep:1,verbose:1,
+%           lexicon:OpenSub-english.train.txt.lex,port:8888
+
+wopr -r server4 -p ibasefile:rmt.5e5.l2r0_-a4+D.ibase,lexicon:rmt.5e5.lex,
+                   keep:1,mode:1,verbose:1
+16:47:42.60: Timbl support built in.
+16:47:42.60: /Users/pberck/local/
+16:47:42.60: Starting wopr 1.29.8
+16:47:42.60: PID:  34818 PPID:  34459
+16:47:42.93: Starting.
+16:47:42.93: Running: server4
+16:47:42.93: server4. Returns a log10prob over sequence.
+...
+\end{bash}
+
+\Wopr{} will respond like this to input.
+
+\begin{wout}{}
+16:48:24.22: Connection 4/www.wopr.dev [127.0.0.1]
+16:48:24.23: Listening...
+16:48:26.31: |1 2 3|
+16:48:26.77: result sum=-6.98105/1.04459e-07
+16:48:26.77: result ave=-2.32702/0.00470958
+\end{wout}
+
+The esoteric options are \cmp{mode}, and \cmp{keep}. The \cmp{mode:1}
+argument specifies that we will send an \emph{instance} to
+\wopr{}. The default, \cmp{mode:0} indicates we send a whole sentence
+which will be windowed first. For this to work, the context size must
+be specified as well, with the parameters \cmp{lc} and \cmp{rc}.
 
 \chapter{Installation}
 
@@ -1155,6 +1192,11 @@ them with a normal data set.
 \item[range] The file containing the words for the global context.
 \item[gcs] Global context size
 \item[gcd] Global context decay
+\item[gco] Global context offset. Default to \cmp{0} which means that
+  the global context starts directly after we have seen a word. This
+  means that overlap between the normal and the global context is
+  possible. The \cmp{gco} parameters introduces an extra offset of the
+  specified number of instances. 
 \item[gct] Global context type. Type \cmp{0}, the default, creates a
   global context consisting of words. Type \cmp{1} creates binary
   features. The latter means a binary value for every word in the
