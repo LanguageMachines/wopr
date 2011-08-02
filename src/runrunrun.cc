@@ -1954,6 +1954,11 @@ int hapax(Logfile& l, Config& c)  {
   const std::string& filename = c.get_value( "filename" );
   int hapax = stoi( c.get_value( "hpx", "1" ));
 
+  if ( hapax <= 0 ) {
+    l.log( "WARNING: not doing hapax <=0" );
+    return 0;
+  }
+
   std::string output_filename = filename;
   std::string        id             = c.get_value( "id", "" );
   if ( (id != "") && ( ! contains_id( filename, id)) ) {
