@@ -119,7 +119,7 @@ scratch.
 \item[1] Create a lexicon
 \item[2] Create a windowed data set (both for training and testing)
 \item[3] Train the instance base
-\item[4] Run a test on a test data set
+\item[4] Run a prediction test on test data set
 \end{varlist}
 
 The lexicon is created as follows.
@@ -1115,7 +1115,8 @@ The output filename will have the context appended to it, in the form
 
 Hapaxing translates all tokes with a frequency less than or equal to
 the \cmp{hpx} parameter to the string \cmp{$<$unk$>$}. For hapaxing we use
-a previously created lexicon on a \emph{windowed} data set.
+a previously created lexicon on a \emph{windowed} data set. The target
+(i.e the last token on each line of data) is not hapaxed.
 
 \begin{varlist}{filename}
 \item[filename] The windowed data set to hapax.
@@ -1136,7 +1137,13 @@ of a list of tokens, followed by its frequency.
 
 It creates three output files, one with the suffix \cmp{.lex}
 containing the lexicon, and one with \cmp{.cnt} containing counts of
-counts. The third file has the extension \cmp{.av} and contains a
+counts. The first lines consists, for historical reasons, of three 
+zeroes. The next line shows the number of tokens that occur once,
+followed by the number of tokens that occur twice, \etc{}. Each line
+contains the number of occurences, followed by the frequency, followed
+by the number of occurences again. Only the first two columns are
+interesting, the third was part of a now abandoned smoothing experiment.
+The third file has the extension \cmp{.av} and contains a
 anagram value for each word. The value is the sum over each letters'
 \textsc{ascii} value to the power 5. This allows the rapid searching
 of anagrams in a lexicon; the same letters will give the same value,
@@ -1306,7 +1313,9 @@ from the specified lexicon.
 
 \begin{varlist}{filename}
 \item[filename] Filename of the windowed data set.
-\item[timbl] Settings for \Timbl{}.
+\item[timbl] Settings for \Timbl{}. The parameters will be included in
+  the name of the saved instance base file, with exception of the
+  \cmp{k} parmeter which only affects processing a test set.
 \end{varlist}
 
 \subsection{ngl}
