@@ -145,6 +145,7 @@ int lev_distance(const std::string source, const std::string target) {
       int above = matrix[i-1][j];
       int left  = matrix[i][j-1];
       int diag  = matrix[i-1][j-1];
+
       //const int cell  = min( above + 1, min(left + 1, diag + cost));
       int cell  = min3( above + 1, left + 1, diag + cost );
 
@@ -156,12 +157,21 @@ int lev_distance(const std::string source, const std::string target) {
 
       if ( i>2 && j>2 ) {
         int trans = matrix[i-2][j-2] + 1;
-        if ( source[i-2] != t_j ) {
+
+	// Code was /* ... */, bet that gave LD:2 to a
+	// transposition.
+        /*if ( source[i-2] != t_j ) {
 	  trans++;
 	}
         if ( s_i != target[j-2] ) {
 	  trans++;
+	  }*/
+	if ( source[i-2] != t_j ) {
+	  if ( s_i != target[j-2] ) {
+	    trans++;
+	  }
 	}
+
         if ( cell > trans ) {
 	  cell = trans;
 	}
@@ -178,9 +188,20 @@ int lev_distance(const std::string source, const std::string target) {
 
 int levenshtein( Logfile& l, Config& c ) {
 
-  l.log( to_str( lev_distance( "gumbo", "gambol" )));
-  l.log( to_str( lev_distance( "peter", "petr" )));
+  l.log( "gumbo-gambol: "+to_str( lev_distance( "gumbo", "gambol" )));
+  l.log( "peter-petr: "+to_str( lev_distance( "peter", "petr" )));
+  l.log( "switch-swicth: "+to_str( lev_distance( "switch", "swicth" )));
+  l.log( "noswitch-noswitch: "+to_str( lev_distance( "noswitch", "noswitch" )));
+  l.log( "123-312: "+to_str( lev_distance( "123", "312" )));
+  l.log( "123-321: "+to_str( lev_distance( "123", "321" )));
+  l.log( "12-123: "+to_str( lev_distance( "12", "123" )));
+  l.log( "123-12: "+to_str( lev_distance( "123", "12" )));
+  l.log( "aaaabbbb-aaaabbbb: "+to_str( lev_distance( "aaaabbbb", "aaaabbbb" )));
+  l.log( "aaaabbbb-aaababbb: "+to_str( lev_distance( "aaaabbbb", "aaababbb" )));
+  l.log( "aaaabbbb-aabababb: "+to_str( lev_distance( "aaaabbbb", "aabababb" )));
+  l.log( "aaaabbbb-bbbbaaaa: "+to_str( lev_distance( "aaaabbbb", "bbbbaaaa" )));
 
+  return 0;
 }
 
 // Spellings correction.
