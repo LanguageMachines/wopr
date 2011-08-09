@@ -1,0 +1,165 @@
+#!/usr/bin/perl -w
+# $Id:$
+#
+use strict;
+use Getopt::Std;
+
+#------------------------------------------------------------------------------
+# User options
+#
+# Check correct output.
+#
+# Takes the .sc output from wopr, tested on a "modified" test file with
+# make_spelerr.pl. Output is compared to the original, unmodified
+# test file used to create the file with errors. Computes statistics.
+#
+# ../wopr -r correct -p ibasefile:rmt.1e5.l2r0_-a1+D.ibase,lexicon:rmt.1e5.lex,
+#    timbl:"-a1 +D",filename:tmp,max_ent:10000,max_distr:10000
+#
+# for file in `ls tmp*sc`; do echo $file;
+#   perl ../etc/check_spelerr.pl -s $file -o rmt.t1000.l2r0;
+# done
+#
+#durian:doc pberck$ perl ../etc/check_spelerr.pl -o rmt.t1000.l2r0 -s rmt.t1000err.l2r0_EXP02.sc 
+# lines:      16358
+# errors:     1218
+# good_sugg:  28
+# bad_sugg:   21
+# wrong_sugg: 0
+# no_sugg:    1190
+#durian:doc pberck$ perl ../etc/check_spelerr.pl -o rmt.t1000.l2r0 -s rmt.t1000err.l2r0_EXP01.sc 
+# lines:      16358
+# errors:     1218
+# good_sugg:  21
+# bad_sugg:   20
+# wrong_sugg: 0
+# no_sugg:    1197
+#
+#------------------------------------------------------------------------------
+
+use vars qw/ $opt_o $opt_s $opt_v/;
+
+getopts('o:s:v:');
+
+my $orig_file = $opt_o || "";   #original instances (testfile)
+my $sc_file   = $opt_s || "";   #wopr output
+my $v         = $opt_v || 0;    #verbosity
+
+#------------------------------------------------------------------------------
+
+# sc output:
+#  third quarter profit (,) -10.1461 4.29174 1133.16 30 [ profits 1 ]
+#  , the 10-year (company) -13.6654 9.18617 12993 1271 [ 30-year 1 15-year 1 ]
+#
+#  0 1   2  => instance from test_file
+
+open(FHO, $orig_file) || die "Can't open file.";
+open(FHS, $sc_file)   || die "Can't open file.";
+
+#Skip headers?
+
+my $l = 0; #position of (word)
+my $c = 0; #position of bracket before first [ correction 1 ]
+
+my $good_sugg  = 0; # corrected a real mistake
+my $no_sugg    = 0; # should have corrected a real mistake
+my $bad_sugg   = 0; # tried to correct a mistake, got it wrong
+my $wrong_sugg = 0; # tried to correct a correct word.
+my $lines      = 0;
+my $errors     = 0;
+
+while ( my $ls = <FHS> ) {
+
+  ++$lines;
+
+  my $lo = <FHO>; #No check if unequal lengths
+  chomp $lo;
+  my @po = split(/ /, $lo);
+  my $orig_target = $po[$#po]; #should be the correct word
+
+  chomp $ls;
+  my @ps = split(/ /, $ls);
+ 
+  my $i = 0;
+  if ( $l == 0 ) { #do only once
+    while ( $i < $#ps ) {
+      if ( $ps[$i] =~ /\(.*\)/ ) {
+	$l = $i;
+      }
+      if ( $ps[$i] eq "[" ) {
+	$c = $i;
+	$i = $#ps;
+      }
+      ++$i;
+    }
+  }
+  
+  my $test_target = $ps[ $l - 1 ]; #target in "spelerr"ed file.
+  my $corrections = $#ps - $c - 1; #words between [ ]
+
+  # Count "real" errors.
+  #
+  if ( $test_target ne $orig_target ) {
+    ++$errors;
+  }
+
+  # Do we have suggestions from wopr?
+  #
+  if ( $corrections > 0 ) {
+    #print "$test_target/$orig_target: $l $c $corrections\n";
+    if ( $v > 0 ) {
+      print "$test_target (was $orig_target)\n";
+    }
+    for ( my $idx = $c+1; $idx < $#ps; $idx += 2) {
+      my $correction = $ps[$idx];
+      #
+      # If one of the suggestions equals $orig_target, we did
+      # a correct spelling correction correction. :-)
+      #
+      if ( $correction eq $orig_target ) {
+	if ( $v > 0 ) {
+	  print "$test_target -> $correction GOODSUGG\n";
+	}
+	++$good_sugg;
+      } else {
+	#check for unneccessary corrections also
+	# could be a mistake, corrected wrongly, or no mistake to start with.
+	#   states -> status (should be: states) BADSUGG
+	# versus
+	#   Austraia -> Austria (should be: Australia) BADSUGG
+	if ( $test_target eq $orig_target ) {
+	  if ( $v > 0 ) {
+	    print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
+	  }
+	  ++$bad_sugg;
+	} else {
+	  if ( $v > 0 ) {
+	    print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
+	  }
+	  ++$wrong_sugg;
+	}
+      }
+    }
+  }
+  # No suggestions, but we had an error.
+  #
+  if ( ($corrections == 0) && ($test_target ne $orig_target) ) {
+    if ( $v > 0 ) {
+      print "$test_target (was $orig_target) NOSUGG\n";
+    }
+    ++$no_sugg;
+  }
+  
+}
+close(FHS);
+close(FHO);
+
+print "lines:      $lines\n";
+print "errors:     $errors\n";
+print "good_sugg:  $good_sugg\n";
+print "bad_sugg:   $bad_sugg\n";
+print "wrong_sugg: $wrong_sugg\n";
+print "no_sugg:    $no_sugg\n";
+
+__END__
+
