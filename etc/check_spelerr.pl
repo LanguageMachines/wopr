@@ -45,6 +45,8 @@ my $orig_file = $opt_o || "";   #original instances (testfile)
 my $sc_file   = $opt_s || "";   #wopr output
 my $v         = $opt_v || 0;    #verbosity
 
+my $oneliner = 1;
+
 #------------------------------------------------------------------------------
 
 # sc output:
@@ -154,12 +156,17 @@ while ( my $ls = <FHS> ) {
 close(FHS);
 close(FHO);
 
-print "lines:      $lines\n";
-print "errors:     $errors\n";
-print "good_sugg:  $good_sugg\n";
-print "bad_sugg:   $bad_sugg\n";
-print "wrong_sugg: $wrong_sugg\n";
-print "no_sugg:    $no_sugg\n";
+if ($oneliner) {
+  #print "l:$lines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
+  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg\n";
+} else {
+  print "lines:      $lines\n";
+  print "errors:     $errors\n";
+  print "good_sugg:  $good_sugg\n";
+  print "bad_sugg:   $bad_sugg\n";
+  print "wrong_sugg: $wrong_sugg\n";
+  print "no_sugg:    $no_sugg\n";
+}
 
 __END__
 
