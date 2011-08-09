@@ -3958,9 +3958,10 @@ bool contains_id( const std::string& str, const std::string& id  ) {
 }
 
 int test_wopr( Logfile& l, Config& c ) {
-  for ( long i = 0; i < 1000000; i++ ) {
+  //for ( long i = 0; i < 1000000; i++ ) {
     levenshtein(l, c);
-  }
+    //}
+    return 0;
 }  
 
 /*
