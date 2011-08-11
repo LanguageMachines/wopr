@@ -162,7 +162,9 @@ close(FHO);
 
 if ($oneliner) {
   #print "l:$lines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
-  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg\n";
+  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  my $out = sprintf("%.2f %.2f %.2f %.2f", ($good_sugg/$errors*100),($bad_sugg/$errors*100),($wrong_sugg/$errors*100),($no_sugg/$errors*100));
+  print "$out\n";
 } else {
   print "lines:      $lines\n";
   print "errors:     $errors\n";
