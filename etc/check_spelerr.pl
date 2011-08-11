@@ -110,6 +110,7 @@ while ( my $ls = <FHS> ) {
   if ( $corrections > 0 ) {
     #print "$test_target/$orig_target: $l $c $corrections\n";
     if ( $v > 0 ) {
+      # There is a difference between the targets, i.e an error.
       print "$test_target (was $orig_target)\n";
     }
     for ( my $idx = $c+1; $idx < $#ps; $idx += 2) {
@@ -128,14 +129,16 @@ while ( my $ls = <FHS> ) {
 	# could be a mistake, corrected wrongly, or no mistake to start with.
 	#   states -> status (should be: states) BADSUGG
 	# versus
-	#   Austraia -> Austria (should be: Australia) BADSUGG
+	#   Austraia -> Austria (should be: Australia) WRONGSUGG
 	if ( $test_target eq $orig_target ) {
 	  if ( $v > 0 ) {
+	    # here we suggest a correction for something that is not wrong.
 	    print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
 	  }
 	  ++$bad_sugg;
 	} else {
 	  if ( $v > 0 ) {
+	    # here we suggest the wrong correction for an error.
 	    print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
 	  }
 	  ++$wrong_sugg;
@@ -147,6 +150,7 @@ while ( my $ls = <FHS> ) {
   #
   if ( ($corrections == 0) && ($test_target ne $orig_target) ) {
     if ( $v > 0 ) {
+      # we should have suggested a correction.
       print "$test_target (was $orig_target) NOSUGG\n";
     }
     ++$no_sugg;
