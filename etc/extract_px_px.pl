@@ -42,7 +42,7 @@ my $wordcount = 0;
 my $mg_0count = 0;
 my $px_0count = 0;
 
-while ( my $mline = <FHM> ) {
+while ( my $mline = get_next(*FHM) ) {
 
   chomp $mline;
 
