@@ -526,6 +526,10 @@ int ngram_test( Logfile& l, Config& c ) {
   long   total_words = 0;
   long   total_oovs  = 0;
   double total_H     = 0.0;
+  double sum_rr      = 0;
+  long   cg          = 0;
+  long   cd          = 0;
+  long   unigrams    = 0; // stats for each n?
 
   while ( std::getline( file_in, a_line )) {
 
@@ -657,6 +661,12 @@ int ngram_test( Logfile& l, Config& c ) {
 	    ++idx;
 	  }
 	  out = out + " " + to_str(class_rr);
+	  sum_rr += class_rr;
+	  if ( class_idx == 1 ) {
+	    ++cg;
+	  } else {
+	    ++cd;
+	  }
 
 	  // Now the top-n
 	  int cnt = topn;
@@ -671,6 +681,7 @@ int ngram_test( Logfile& l, Config& c ) {
 
 	} else {
 	  out = out + " 1 0 0 0 [ ]"; // rr for lex lookup = 1 or 0 ?
+	  ++unigrams;
 	}
 	ngd_out << out << std::endl;
 	// -- dist
@@ -714,6 +725,11 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "Average log2prob: "+to_str( total_H/(total_words-total_oovs) ) );
     l.log( "Average pplx: "+to_str( pow( 2, -total_H/(total_words-total_oovs))));
   }
+  l.log( "MRR: "+to_str(sum_rr/total_words) );
+  // sum(cg,cd,1g) + OOVS = WORDS
+  l.log( "cg: "+to_str(cg)+" "+to_str((float)cg/total_words) );
+  l.log( "cd: "+to_str(cd)+" "+to_str((float)cd/total_words) );
+  l.log( "1g: "+to_str(unigrams)+" "+to_str((float)unigrams/total_words) );
   c.add_kv( "ngt_file", ngt_filename );
   l.log( "SET ngt_file to "+ngt_filename );
   c.add_kv( "ngp_file", ngp_filename );
