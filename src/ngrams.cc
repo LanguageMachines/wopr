@@ -212,31 +212,81 @@ void split( std::string& str, std::string& nmin1gram, std::string& lw ) {
     }
 }
 
+// Extracts ngram between tabs from SRILM.lm
+// If two tabs, return three parts. If only one tab,
+// return two, last part will be "". No tabs returns
+// empty strings. Only the outer tabs will be used in
+// the case of more tabs.
+//
+void split_tab( std::string& str, std::string& l, std::string& ngram, std::string& r ) {
+    size_t t0 = str.find( '\t' );
+    size_t t1 = str.rfind( '\t' );
+    if ( (t0 != std::string::npos) && (t1 != std::string::npos) ) {
+      if ( t0 == t1 ) {
+	// one tab
+	l = str.substr(0, t0);
+	ngram = str.substr(t0+1);
+	r = "";
+      } else {
+	l = str.substr(0, t0);
+	ngram = str.substr(t0+1, t1-t0-1);
+	r = str.substr(t1+1);
+      }
+    } else {
+      l = "";
+      ngram = "";
+      r = "";
+    }
+}
+
+struct ngde { // ngram dist element
+  std::string token;
+  int freq;
+  double prob;
+  double l10prob;
+  bool operator<(const ngde& rhs) const {
+    // fall back to prob if freqs are equal?
+    return freq > rhs.freq; // || prob > rhs.prob;
+  }
+};
+struct ngmd { // ngram meta data
+  double distr_count;
+  double distr_sum;
+  std::vector<ngde> distr;
+};
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
   const std::string& filename        = c.get_value( "testfile" );//filename?
   const std::string& ngl_filename    = c.get_value( "ngl" );
-  const std::string& counts_filename = c.get_value( "counts" );
   int                n               = stoi( c.get_value( "n", "3" ));
-  std::string        id             = c.get_value( "id", "" );
+  std::string        id              = c.get_value( "id", "" );
+  int                topn            = stoi( c.get_value( "topn", "0" ) );
+  std::string        mode            = c.get_value( "mode", "wopr" );
+  const std::string& ngc_filename    = c.get_value( "ngc" ); //srilm ngram counts ?
 
   std::string        ngt_filename    = filename;
   std::string        ngp_filename    = filename;
+  std::string        ngd_filename    = filename;
   if ( (id != "") && ( ! contains_id( filename, id)) ) {
     ngt_filename = ngt_filename + "_" + id;
     ngp_filename = ngp_filename + "_" + id;
+    ngd_filename = ngd_filename + "_" + id;
   }
   ngt_filename = ngt_filename + ".ngt" + to_str(n);
   ngp_filename = ngp_filename + ".ngp" + to_str(n);
+  ngd_filename = ngd_filename + ".ngd" + to_str(n);
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "ngl file:  "+ngl_filename );
-  l.log( "counts:    "+counts_filename );
+  l.log( "ngc file:  "+ngc_filename );
   l.log( "n:         "+to_str(n) );
   l.log( "id:        "+id );
+  l.log( "topn:      "+to_str(topn) );
+  l.log( "mode:      "+mode );
   l.log( "OUTPUT:    "+ngt_filename );
   l.log( "OUTPUT:    "+ngp_filename );
+  l.log( "OUTPUT:    "+ngd_filename );
   l.dec_prefix();
 
   if ( file_exists(l,c,ngt_filename) ) {
@@ -245,36 +295,10 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "SET ngt_file to "+ngt_filename );
     c.add_kv( "ngp_file", ngp_filename );
     l.log( "SET ngp_file to "+ngp_filename );
+    c.add_kv( "ngd_file", ngd_filename );
+    l.log( "SET ngd_file to "+ngd_filename );
     return 0;
   }
-
-  unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
-  std::map<int,double> c_stars;
-  int    Nc0;
-  double Nc1;
-  int    count;
-  std::ifstream file_counts( counts_filename.c_str() );
-  if ( ! file_counts ) {
-    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
-  } else {
-    l.log( "Reading counts." );
-    while( file_counts >> count >> Nc0 >> Nc1 ) {
-      c_stars[count] =  Nc1;
-      total_count    += Nc0;
-      if ( count == 1 ) {
-	N_1 = Nc0;
-      }
-    }
-    file_counts.close();
-  }
-  double p0 = 1e-6;
-  if ( (total_count > 0) && (N_1 > 0) ) {
-    p0 = (double)N_1 / (double)total_count;
-    // Assume N_0 equals N_1...
-    p0 = p0 / (double)N_1;
-  }
-  l.log( "P(0) = " + to_str(p0) );
 
   std::ifstream file_ngl( ngl_filename.c_str() );
   if ( ! file_ngl ) {
@@ -286,32 +310,177 @@ int ngram_test( Logfile& l, Config& c ) {
   std::vector<std::string> results;
   std::map<std::string,double> ngrams; // NB no ngl_elem here!
   std::map<std::string,double>::iterator gi;
+  std::map<std::string,long> srilm_ngrams;
+  std::map<std::string,long>::iterator sngi;
 
   std::string ngram;
   std::string prob_str;
   std::string freq_str;
   long   freq;
   double prob;
+  double l10prob;
   size_t pos, pos1;
 
   l.log( "Reading ngrams..." );
 
   // format: ngram freq prob
-  // ngram can contain spaces. freq is ignored at the mo.
+  // ngram can contain spaces. 
   // NB: input and stod are not checked for errors (TODO).
   //
-  while( std::getline( file_ngl, a_line ) ) {  
-    pos      = a_line.rfind(' ');
-    prob_str = a_line.substr(pos+1);
-    prob     = stod( prob_str );
+  // he sat 10 0.000467006
+  // he sat at 1 0.1
+  // he sat in 8 0.8
+  // he sat out 1 0.1
+  //
+  // SRILM format:
+  //
+  // \data 
+  // ngram 1=1865
+  // ngram 2=7353
+  // ...
+  //
+  // \1-grams:
+  // -4.028785       23rd    -0.08447222
+  // -4.028785       8th     -0.07160085
+  //
+  // \2-grams:
+  // -0.7512997      23rd just
+  //
+  std::map< std::string, ngmd > foo;
+  std::map< std::string, ngmd >::iterator fooi;
 
-    pos1     = a_line.rfind(' ', pos-1);
-    //freq_str = a_line.substr(pos1+1, pos-pos1-1);
-    ngram    = a_line.substr(0, pos1);
-    
+  if ( mode == "srilm" ) {
+    // read srilm counts file, for later use. Problem is that the counts
+    // are "plain", unmodified, and the probs in the .lm file have
+    // been smoothed, etc etc. 
+    //
+    // Users/pberck/work/mbmt/srilm/bin/macosx/ngram-count -no-eos -no-sos -text rmt.1e5 -sort -write srilm.counts
+    // format is "ngram freq".
+    //
+    // --> Could use an ngl file as well...contains the same info, only use srilm for
+    // changed probs.
+    //
+    std::ifstream file_ngc( ngc_filename.c_str() );
+    int offset = 2;//2 for srilm, 3 for wopr
+    if ( file_ngc ) {
+      l.log( "Reading SRILM counts file." );
+      while( std::getline( file_ngc, a_line ) ) { 
+	results.clear();
+	// maybe with split_tab and a separate SRILM/WOPR mode?
+	replace( a_line.begin(), a_line.end(), '\t', ' ' );
+	Tokenize( a_line, results );
+	ngram.clear();
+	int i;
+	for ( i = 0; i < results.size()-offset; i++ ) {
+	  ngram = ngram + results.at(i) + " ";
+	}
+	ngram = ngram + results.at(i); 
+
+	++i;
+	freq = stol( results.at(i) );
+	srilm_ngrams[ngram] = freq;
+	//l.log( ngram + " / " + to_str(freq) );
+      }
+      file_ngc.close();
+      l.log( "Read SRILM counts file." );
+    }
+  }
+
+  while( std::getline( file_ngl, a_line ) ) { // both SRILM and WOPR files
+
+    // SRILM: if line starts with a probability,...
+    // We don't have the absolute frequencies though
+    // the ngram-count frequency output has, all, we should read
+    // it first, before we read the ngrams/probs from lm, and read only
+    // those that are in the .lm file. See above.
+    //
+    if ( mode == "srilm" ) {
+      std::string fc = a_line.substr(0, 1);
+      if ( (fc == "\\") || (fc == "n") || (fc == "") ) {
+	continue;
+      }
+
+      std::string lp;
+      std::string rp;
+      split_tab( a_line, lp, ngram, rp );
+      //l.log( lp+"/"+ngram+"/"+rp );
+      l10prob = stod( lp );
+      prob = pow(10, stod( lp )); 
+
+      sngi = srilm_ngrams.find( ngram );
+      if ( (sngi == srilm_ngrams.end()) ) {
+	continue;
+      }
+      freq = (*sngi).second;
+    } else { // WOPR file
+
+      pos      = a_line.rfind(' ');
+      prob_str = a_line.substr(pos+1);
+      prob     = stod( prob_str );
+      l10prob  = log10( prob );
+      
+      pos1     = a_line.rfind(' ', pos-1);
+      freq_str = a_line.substr(pos1+1, pos-pos1-1);
+      freq     = stol( freq_str );
+      ngram    = a_line.substr(0, pos1);
+      //l.log( ngram+": "+freq_str );
+    }
+
     ngrams[ngram] = prob;
+
+    // foo
+    // Can be optimised by remembering the "fooi" till we have a new
+    // res part, they are ordered.
+    //
+    std::string res;
+    std::string token;
+    split( ngram, res, token ); // "a b c", "a b", "c"
+    if ( token != "" ) {
+      //l.log( ngram+"="+res+"/"+token );
+
+      fooi = foo.find(res); // find this distribution
+      if ( fooi != foo.end() ) {
+	//l.log( "Already present/update with: "+res+"/"+token );
+	ngde ngde_new;
+	ngde_new.token = token;
+	ngde_new.freq = freq;
+	ngde_new.prob = prob;
+	// (*fooi).second is the ngmd with the the distr vector
+	(((*fooi).second).distr).push_back( ngde_new );
+	((*fooi).second).distr_count += 1;
+	((*fooi).second).distr_sum += ngde_new.freq;
+      } else {
+	//l.log( "New ngram/token: "+res+"/"+token );
+	ngde ngde_new;
+	ngde_new.token = token;
+	ngde_new.freq = freq;
+	ngde_new.prob = prob;
+	ngmd ngmd_new;
+	ngmd_new.distr_count = 1;
+	ngmd_new.distr_sum = ngde_new.freq;
+	(ngmd_new.distr).push_back( ngde_new );
+	foo[res] = ngmd_new;
+      }
+
+    }
+    // foo --
+
   }
   file_ngl.close();
+
+  // Sort once, use forever. Although most won't be used...
+  //
+  for( fooi = foo.begin(); fooi != foo.end(); ++fooi ) {
+    sort( ((*fooi).second).distr.begin(), ((*fooi).second).distr.end() );
+  }
+  /*for( fooi = foo.begin(); fooi != foo.end(); ++fooi ) {
+    std::vector<ngde> v = (*fooi).second;
+    l.log( (*fooi).first + ":" );
+    std::vector<ngde>::iterator vi;
+    for ( vi = v.begin(); vi != v.end(); ++vi ) {
+      l.log( "  "+(*vi).token+":"+to_str((*vi).freq) );
+    }
+    }*/
 
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
@@ -331,6 +500,13 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .ngp output file." );
     return -1;
   }
+
+  std::ofstream ngd_out( ngd_filename.c_str(), std::ios::out );
+  if ( ! ngd_out ) {
+    l.log( "ERROR: cannot write .ngd output file." );
+    return -1;
+  }
+  ngd_out << "# target l10p n d.count d.sum rr [ topn ]" << std::endl;
 
   // Just need a last-word-of-ngram to size/prob
   // First extract all possible ngrams, then go over input
@@ -364,7 +540,10 @@ int ngram_test( Logfile& l, Config& c ) {
     for ( int i = 1; i <= n; i++ ) { // loop over ngram sizes
       results.clear();
 
-      if ( ngram_line( a_line, i, results ) == 0 ) { // input to ngrams size i
+      // convert input to ngrams size i, look them up in ngl list, 
+      // start small, try to find largest.
+      //
+      if ( ngram_line( a_line, i, results ) == 0 ) { 
 
 	int word_idx = i-1;
 	for ( ri = results.begin(); ri != results.end(); ri++ ) {
@@ -422,7 +601,9 @@ int ngram_test( Logfile& l, Config& c ) {
     int    oov = 0;
     Tokenize( a_line, results, ' ' );
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
+      std::string target = results.at(wc);
       double p = (*ni).p;
+      double l10p = log10( p );
       // Before, we set p to p0 and continued like nothing happened, but
       if ( p == 0 ) { // OOV words are skipped in SRILM
 	file_out << "<unk> "
@@ -432,7 +613,64 @@ int ngram_test( Logfile& l, Config& c ) {
 		 << std::endl;
 	++wc;
 	++oov;
+	// ngd: target stats ...
+	ngd_out << target << " 0 0 0 0 0 [ ]" << std::endl;
       } else {
+	// dist
+	std::string ngram = (*ni).ngram;
+	std::string left;
+	std::string out = target + " " + to_str(l10p); // "classification"
+	but_last_word( ngram, left );
+	if ( ngram != left ) { // if equal, one word: is lexical
+	  std::vector<ngde> v = foo[left].distr;
+	  double dc = foo[left].distr_count;
+	  double ds = foo[left].distr_sum;
+	  out = out + " " + to_str((*ni).n) + " " + to_str(dc)+" "+to_str(ds);
+
+	  // RR like pplxs
+	  //
+	  long classification_freq = 0;
+	  std::map<long, long, std::greater<long> > dfreqs;
+	  std::vector<ngde>::iterator vi;
+	  vi = v.begin();
+	  while ( vi != v.end() ) {
+	    long freq = (*vi).freq; // SRILM has no freqs, only in counts file
+	    dfreqs[freq] += 1;
+	    if ( (*vi).token == target ) { // position in distribution
+	      classification_freq = freq;
+	    }
+	    vi++;
+	  }
+	  long   idx       = 1;
+	  long   class_idx = 0;
+	  double class_rr = 0.0;
+	  std::map<long, long>::iterator dfi = dfreqs.begin();
+	  while ( dfi != dfreqs.end() ) {
+	    if ( dfi->first == classification_freq ) {
+	      class_idx = idx;
+	      class_rr = (double)1.0/idx;
+	    }
+	    ++dfi;
+	    ++idx;
+	  }
+	  out = out + " " + to_str(class_rr);
+
+	  // Now the top-n
+	  int cnt = topn;
+	  vi = v.begin();
+	  out = out + " [";
+	  while ( (vi != v.end()) && (--cnt >= 0) ) {
+	    long freq = (*vi).freq;
+	    out = out + " " + (*vi).token+" "+to_str(freq); 
+	    ++vi;
+	  }
+	  out = out + " ]";
+
+	} else {
+	  out = out + " 1 0 0 0 [ ]"; // rr for lex lookup = 1 or 0 ?
+	}
+	ngd_out << out << std::endl;
+	// -- dist
 	file_out << results.at(wc) << " "
 		 << p << " "
 		 << (*ni).n << " "
@@ -461,6 +699,7 @@ int ngram_test( Logfile& l, Config& c ) {
     total_H     += H;
 
   } // getline
+  ngd_out.close();
   ngp_out.close();
   file_out.close();
   file_in.close();
@@ -476,301 +715,10 @@ int ngram_test( Logfile& l, Config& c ) {
   l.log( "SET ngt_file to "+ngt_filename );
   c.add_kv( "ngp_file", ngp_filename );
   l.log( "SET ngp_file to "+ngp_filename );
+  c.add_kv( "ngd_file", ngd_filename );
+  l.log( "SET ngd_file to "+ngd_filename );
   return 0;
 }
-
-struct ngram_dist { // not very efficient...?
-  std::string ngram;
-  std::vector<std::string> dist;
-  int dist_size;
-  int freq;
-  double prob;
-};
-int ngram_test_WIP( Logfile& l, Config& c ) {
-  l.log( "ngt" );
-  const std::string& filename        = c.get_value( "testfile" );//filename?
-  const std::string& ngl_filename    = c.get_value( "ngl" );
-  const std::string& counts_filename = c.get_value( "counts" );
-  int                n               = stoi( c.get_value( "n", "3" ));
-  std::string        id             = c.get_value( "id", "" );
-
-  std::string        ngt_filename    = filename;
-  std::string        ngp_filename    = filename;
-  if ( (id != "") && ( ! contains_id( filename, id)) ) {
-    ngt_filename = ngt_filename + "_" + id;
-    ngp_filename = ngp_filename + "_" + id;
-  }
-  ngt_filename = ngt_filename + ".ngt" + to_str(n);
-  ngp_filename = ngp_filename + ".ngp" + to_str(n);
-
-  l.inc_prefix();
-  l.log( "filename:  "+filename );
-  l.log( "ngl file:  "+ngl_filename );
-  l.log( "counts:    "+counts_filename );
-  l.log( "n:         "+to_str(n) );
-  l.log( "id:        "+id );
-  l.log( "OUTPUT:    "+ngt_filename );
-  l.log( "OUTPUT:    "+ngp_filename );
-  l.dec_prefix();
-
-  if ( file_exists(l,c,ngt_filename) ) {
-    l.log( "OUTPUT files exist, not overwriting." );
-    c.add_kv( "ngt_file", ngt_filename );
-    l.log( "SET ngt_file to "+ngt_filename );
-    c.add_kv( "ngp_file", ngp_filename );
-    l.log( "SET ngp_file to "+ngp_filename );
-    return 0;
-  }
-
-  unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
-  std::map<int,double> c_stars;
-  int    Nc0;
-  double Nc1;
-  int    count;
-  std::ifstream file_counts( counts_filename.c_str() );
-  if ( ! file_counts ) {
-    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
-  } else {
-    l.log( "Reading counts." );
-    while( file_counts >> count >> Nc0 >> Nc1 ) {
-      c_stars[count] =  Nc1;
-      total_count    += Nc0;
-      if ( count == 1 ) {
-	N_1 = Nc0;
-      }
-    }
-    file_counts.close();
-  }
-  double p0 = 1e-6;
-  if ( (total_count > 0) && (N_1 > 0) ) {
-    p0 = (double)N_1 / (double)total_count;
-    // Assume N_0 equals N_1...
-    p0 = p0 / (double)N_1;
-  }
-  l.log( "P(0) = " + to_str(p0) );
-
-  std::ifstream file_ngl( ngl_filename.c_str() );
-  if ( ! file_ngl ) {
-    l.log( "ERROR: cannot load file." );
-    return -1;
-  }
-
-  std::string a_line;
-  std::vector<std::string> results;
-  std::map<std::string,double> ngrams;
-  std::map<std::string,ngram_dist> ngram_dists;
-  std::map<std::string,ngram_dist>::iterator ngdi;
-
-  std::string ngram;
-  std::string prob_str;
-  std::string freq_str;
-  long   freq;
-  double prob;
-  size_t pos, pos1;
-
-  l.log( "Reading ngrams..." );
-
-  // format: ngram freq prob
-  // ngram can contain spaces. freq is ignored at the mo.
-  // NB: input and stod are not checked for errors (TODO).
-  //
-  std::string last_ngram = "";
-  ngram_dist dummy;
-  std::map<std::string,ngram_dist>::iterator last_dist;
-  while( std::getline( file_ngl, a_line ) ) {  
-    pos      = a_line.rfind(' ');
-    prob_str = a_line.substr(pos+1);
-    prob     = stod( prob_str );
-
-    pos1     = a_line.rfind(' ', pos-1);
-    freq_str = a_line.substr(pos1+1, pos-pos1-1);
-    ngram    = a_line.substr(0, pos1);
-    
-    std::string res;
-    but_last_word( ngram, res ); // "a b c", "a b"
-    if ( last_ngram != res ) {
-      ngdi = ngram_dists.find(res); // find this distribution
-      if ( ngdi != ngram_dists.end() ) {
-	//l.log( "Already present:"+res );
-	last_dist  = ngdi;
-	last_ngram = res;
-      } else {
-	ngram_dist ngd1;
-	ngd1.dist_size = 0;
-	ngd1.freq=stoi(freq_str);
-	//ngdi = ngram_dists.begin();
-	//ngram_dists.insert( ngdi, std::pair<std::string,ngram_dist>(res, ngd1));
-	ngram_dists[res] = ngd1;
-	ngdi = ngram_dists.find(res);
-	last_ngram = res;
-	last_dist = ngdi;
-      }
-    }
-
-    // Break off the last word, add it to the distribution in the
-    // n-1 gram which is left over.
-    std::string n1g, lw;
-    split( ngram, n1g, lw );
-    if ( lw != "" ) {
-      std::string pair_str = lw+" "+freq_str; // need freq too
-      //l.log( "update: ["+n1g+"]["+pair_str+"] ("+last_ngram+")" );
-      ((*last_dist).second).dist.push_back(pair_str);
-      ((*last_dist).second).dist_size = (((*last_dist).second).dist_size) + 1;
-    }
-  }
-  file_ngl.close();
-
-  for( ngdi = ngram_dists.begin(); ngdi != ngram_dists.end(); ++ngdi ) {
-    ngram_dist n = (*ngdi).second;
-    l.log( (*ngdi).first + ":" + to_str(n.freq) );
-    std::vector<std::string>::iterator vi;
-    for ( vi = n.dist.begin(); vi != n.dist.end(); ++vi ) {
-      l.log( "  "+(*vi) );
-    }
-  }
-
-  std::ifstream file_in( filename.c_str() );
-  if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
-    return -1;
-  }
-
-  std::ofstream file_out( ngt_filename.c_str(), std::ios::out );
-  if ( ! file_out ) {
-    l.log( "ERROR: cannot write .ngt output file." );
-    return -1;
-  }
-  file_out << "# word prob n ngram" << std::endl;
-
-  std::ofstream ngp_out( ngp_filename.c_str(), std::ios::out );
-  if ( ! ngp_out ) {
-    l.log( "ERROR: cannot write .ngp output file." );
-    return -1;
-  }
-
-  // Just need a last-word-of-ngram to size/prob
-  // First extract all possible ngrams, then go over input
-  // sentence, and for each word, look at n-grams which end
-  // with said word.
-
-  std::vector<std::string>::iterator ri;
-  std::map<std::string,std::string>::iterator mi;
-  std::vector<ngram_elem> best_ngrams;
-  std::vector<ngram_elem>::iterator ni;
- 
-  l.log( "Writing output..." );
-
-  long   total_words = 0;
-  long   total_oovs  = 0;
-  double total_H     = 0.0;
-
-  while( std::getline( file_in, a_line )) {
-
-    a_line = trim( a_line, "\n\r " );
-
-    if ( a_line == "" ) {
-      continue;
-    }
-
-    // Tokenize the input, create a vector for each word
-    // with a pointer to best n-gram.
-    //
-    best_ngrams.clear();
-
-    for ( int i = 1; i <= n; i++ ) { // loop over ngram sizes
-      results.clear();
-
-      if ( ngram_line( a_line, i, results ) == 0 ) { // input to ngrams size i
-
-      }
-    }
-    //
-    // Print.
-    //
-    results.clear();
-    double H   = 0.0;
-    int    wc  = 0;
-    int    oov = 0;
-    Tokenize( a_line, results, ' ' );
-    for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
-      double p = (*ni).p;
-      // Before, we set p to p0 and continued like nothing happened, but
-      if ( p == 0 ) { // OOV words are skipped in SRILM
-	file_out << "<unk> "
-		 << 0 << " "
-		 << 0 << " "
-		 << "OOV"
-		 << std::endl;
-	++wc;
-	++oov;
-      } else {
-	file_out << results.at(wc) << " "
-		 << p << " "
-		 << (*ni).n << " "
-		 << (*ni).ngram
-		 << std::endl;
-	/*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
-	  + "   " + (*ni).ngram );*/
-	H += log2(p);
-	++wc;
-      }
-    }
-    double pplx = 0;
-    if ( (wc-oov) > 0 ) {
-      pplx = pow( 2, -H/(double)(wc-oov) );
-    }
-    ngp_out << H << " " 
-	    << pplx << " "
-	    << wc << " "
-	    << oov << " "
-	    << a_line << std::endl;
-    // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
-    // in our code, SRILM takes log10s and then pow(10) in the end.
-
-    total_words += wc;
-    total_oovs  += oov;
-    total_H     += H;
-
-  } // getline
-  ngp_out.close();
-  file_out.close();
-  file_in.close();
-
-  l.log( "Total words: "+to_str(total_words) );
-  l.log( "Total oovs: "+to_str(total_oovs) );
-  l.log( "Total log2prob: "+to_str(total_H) );
-  if ( (total_words-total_oovs) > 0 ) {
-    l.log( "Average log2prob: "+to_str( total_H/(total_words-total_oovs) ) );
-    l.log( "Average pplx: "+to_str( pow( 2, -total_H/(total_words-total_oovs))));
-  }
-  c.add_kv( "ngt_file", ngt_filename );
-  l.log( "SET ngt_file to "+ngt_filename );
-  c.add_kv( "ngp_file", ngp_filename );
-  l.log( "SET ngp_file to "+ngp_filename );
-  return 0;
-}
-
-// Return possible words after given nmin1gram.
-// We (ab)use the ngram_elements for this, sotre word+freq.
-// Returns the number found.
-//
-// Problem: we have no index, need to search...
-//
-// Maybe we should calcuclate this when learning, and store a distribution
-// with each ngram of possible n+1 words...
-// We have the info in *ngl - construct when reading back the file.
-//
-int foobar( std::string nmin1gram, std::vector<ngram_elem>& res ) {
-  
-}
-
-/*
-  a b c, where c is unknown
-  calculate prob. of unknown word after a b, not just "any unknown word".
-*/
-
-
 
 /*
   For use in the ngram server.

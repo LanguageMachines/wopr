@@ -1,3 +1,6 @@
+1.31.0	Redid the pure ngram LM, returns distributions now. Also added
+	possibility to load an SRILM LM and counts file to be able to look
+	at SRILM distributions.
 1.30.2	Changed levenshtein to return LD:1 for transpositions.
 	
 1.30.1	Testing special server for pbmbmt.

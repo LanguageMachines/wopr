@@ -81,7 +81,7 @@ while ( my $line = <FH> ) {
     print "& \\num{".sprintf( "%.2f", $parts[$cg])."} & \\num{".sprintf( "%.2f", $parts[$cg+4])."} & ";
     print "\\num{".$pdiff."} ";
   }
-  if ( $cg == 3 ) { 
+  if ( $cg == 3 ) {  #GC experiments
     print "& \\num{".sprintf( "%.1f", $parts[$cg])."} ";     #cg
     print "& \\num{".sprintf( "%.1f", $parts[$cg+1])."} ";   #cd
     print "& \\num{".sprintf( "%.1f", $parts[$cg+2])."} ";   #ic
