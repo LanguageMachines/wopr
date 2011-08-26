@@ -468,6 +468,8 @@ int ngram_test( Logfile& l, Config& c ) {
   }
   file_ngl.close();
 
+  l.log( "n-grams: "+to_str(ngrams.size()) );
+
   // Sort once, use forever. Although most won't be used...
   //
   for( fooi = foo.begin(); fooi != foo.end(); ++fooi ) {
@@ -500,6 +502,7 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .ngp output file." );
     return -1;
   }
+  ngp_out << "# entropy perplexity wordcount OOVcount sentence";
 
   std::ofstream ngd_out( ngd_filename.c_str(), std::ios::out );
   if ( ! ngd_out ) {
@@ -603,7 +606,7 @@ int ngram_test( Logfile& l, Config& c ) {
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       std::string target = results.at(wc);
       double p = (*ni).p;
-      double l10p = log10( p );
+      double l10p = log10( p ); // for SRILM unnecessary...store l10p there?
       // Before, we set p to p0 and continued like nothing happened, but
       if ( p == 0 ) { // OOV words are skipped in SRILM
 	file_out << "<unk> "
