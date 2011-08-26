@@ -313,6 +313,18 @@ int ngram_test( Logfile& l, Config& c ) {
   std::map<std::string,long> srilm_ngrams;
   std::map<std::string,long>::iterator sngi;
 
+  // We calculate lexican+freqs and ranks from unigrams in
+  // the LM. For SRILM we gather counts when reading the
+  // ngc file, for the WOPR mode we do this when reading
+  // the ngl file.
+  //
+  std::map<long,int, std::greater<long> > lex_freqs;
+  std::map<long,int>::iterator lfi;
+  std::map<std::string,double> lex; // lexicon entry -> freq
+  std::map<std::string,double>::iterator li;
+  std::map<long,int> lex_ranks; // map directly freq -> rank
+  std::map<long,int>::iterator lri;
+
   std::string ngram;
   std::string prob_str;
   std::string freq_str;
@@ -380,6 +392,14 @@ int ngram_test( Logfile& l, Config& c ) {
 	freq = stol( results.at(i) );
 	srilm_ngrams[ngram] = freq;
 	//l.log( ngram + " / " + to_str(freq) );
+
+	// if UNIGRAM, process for lex RR!
+	//
+	if ( results.size() == 2 ) {
+	  //l.log( ngram + " / " + to_str(freq) );
+	  lex[ngram] = freq;
+	  lex_freqs[freq] += 1;
+	}
       }
       file_ngc.close();
       l.log( "Read SRILM counts file." );
@@ -424,6 +444,16 @@ int ngram_test( Logfile& l, Config& c ) {
       freq     = stol( freq_str );
       ngram    = a_line.substr(0, pos1);
       //l.log( ngram+": "+freq_str );
+
+      // No spaces is UNIGRAM, process for lex RR
+      //
+      pos = ngram.find(' ');
+      if ( pos == std::string::npos ) {
+	//l.log( ngram + " / " + freq_str );
+	lex[ngram] = freq;
+	lex_freqs[freq] += 1;
+      }
+
     }
 
     ngrams[ngram] = prob;
@@ -469,6 +499,17 @@ int ngram_test( Logfile& l, Config& c ) {
   file_ngl.close();
 
   l.log( "n-grams: "+to_str(ngrams.size()) );
+
+  // Prepare ranks of lexical (unigram) items.
+  //
+  lfi = lex_freqs.begin();
+  int idx = 1;
+  while ( lfi != lex_freqs.end() ) {
+    //l.log( to_str((*lfi).first)+":"+to_str((*lfi).second) );
+    lex_ranks[(*lfi).first] = idx;
+    ++lfi;
+    ++idx;
+  }
 
   // Sort once, use forever. Although most won't be used...
   //
@@ -680,7 +721,17 @@ int ngram_test( Logfile& l, Config& c ) {
 	  out = out + " ]";
 
 	} else {
-	  out = out + " 1 0 0 0 [ ]"; // rr for lex lookup = 1 or 0 ?
+	  // rr for lex lookup = ? Like wopr, see lex als distr?
+	  // look up rank in lexicon.
+	  li = lex.find(target);
+	  if ( li != lex.end() ) {
+	    lri = lex_ranks.find( (*li).second );
+	    if ( lri != lex_ranks.end() ) {
+	      out = out + " 1 0 0 " + to_str(1/(float)(*lri).second) + " [ ]";
+	    }
+	  } else {
+	    out = out + " 1 0 0 0 [ ]";
+	  }
 	  ++unigrams;
 	}
 	ngd_out << out << std::endl;
