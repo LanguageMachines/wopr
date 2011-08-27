@@ -263,6 +263,7 @@ int ngram_test( Logfile& l, Config& c ) {
   int                topn            = stoi( c.get_value( "topn", "0" ) );
   std::string        mode            = c.get_value( "mode", "wopr" );
   const std::string& ngc_filename    = c.get_value( "ngc" ); //srilm ngram counts ?
+  int                log_base        = stoi( c.get_value( "log", "2" ) );
 
   std::string        ngt_filename    = filename;
   std::string        ngp_filename    = filename;
@@ -276,6 +277,19 @@ int ngram_test( Logfile& l, Config& c ) {
   ngp_filename = ngp_filename + ".ngp" + to_str(n);
   ngd_filename = ngd_filename + ".ngd" + to_str(n);
 
+  typedef double(*pt2log)(double);
+  pt2log mylog = &log2;
+  if ( log_base == 10 ) {
+    // In ngd output only
+    mylog = &log10;
+  } else {
+    if ( log_base != 2 ) {
+      l.log( "Log must be 2 or 10, setting to 2." );
+    }
+    log_base = 2;
+    mylog = &log2;
+  }
+
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "ngl file:  "+ngl_filename );
@@ -284,6 +298,7 @@ int ngram_test( Logfile& l, Config& c ) {
   l.log( "id:        "+id );
   l.log( "topn:      "+to_str(topn) );
   l.log( "mode:      "+mode );
+  l.log( "log:       "+to_str(log_base) );
   l.log( "OUTPUT:    "+ngt_filename );
   l.log( "OUTPUT:    "+ngp_filename );
   l.log( "OUTPUT:    "+ngd_filename );
@@ -324,6 +339,8 @@ int ngram_test( Logfile& l, Config& c ) {
   std::map<std::string,double>::iterator li;
   std::map<long,int> lex_ranks; // map directly freq -> rank
   std::map<long,int>::iterator lri;
+  long lex_count = 0;
+  long lex_sumf  = 0;
 
   std::string ngram;
   std::string prob_str;
@@ -399,6 +416,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	  //l.log( ngram + " / " + to_str(freq) );
 	  lex[ngram] = freq;
 	  lex_freqs[freq] += 1;
+	  lex_count += 1;
+	  lex_sumf += freq;
 	}
       }
       file_ngc.close();
@@ -452,6 +471,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	//l.log( ngram + " / " + freq_str );
 	lex[ngram] = freq;
 	lex_freqs[freq] += 1;
+	lex_count += 1;
+	lex_sumf += freq;
       }
 
     }
@@ -550,7 +571,7 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .ngd output file." );
     return -1;
   }
-  ngd_out << "# target l10p n d.count d.sum rr [ topn ]" << std::endl;
+  ngd_out << "# target l" << log_base << "p n d.count d.sum rr [ top" << topn << " ]" << std::endl;
 
   // Just need a last-word-of-ngram to size/prob
   // First extract all possible ngrams, then go over input
@@ -651,7 +672,8 @@ int ngram_test( Logfile& l, Config& c ) {
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       std::string target = results.at(wc);
       double p = (*ni).p;
-      double l10p = log10( p ); // for SRILM unnecessary...store l10p there?
+      //double l10p = log10( p ); // for SRILM unnecessary...store l10p there?
+      double l10p = mylog( p ); // for SRILM unnecessary...store l10p there?
       // Before, we set p to p0 and continued like nothing happened, but
       if ( p == 0 ) { // OOV words are skipped in SRILM
 	file_out << "<unk> "
@@ -727,7 +749,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	  if ( li != lex.end() ) {
 	    lri = lex_ranks.find( (*li).second );
 	    if ( lri != lex_ranks.end() ) {
-	      out = out + " 1 0 0 " + to_str(1/(float)(*lri).second) + " [ ]";
+	      out = out + " 1 " +to_str(lex_count) + " " + to_str(lex_sumf) + " " + to_str(1/(float)(*lri).second) + " [ ]";
 	    }
 	  } else {
 	    out = out + " 1 0 0 0 [ ]";
