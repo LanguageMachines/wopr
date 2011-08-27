@@ -1,3 +1,4 @@
+1.31.2	Better info in output
 1.31.1	Added better statistics and MRR.
 1.31.0	Redid the pure ngram LM, returns distributions now. Also added
 	possibility to load an SRILM LM and counts file to be able to look
