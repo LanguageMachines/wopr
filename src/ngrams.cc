@@ -414,7 +414,7 @@ int ngram_test( Logfile& l, Config& c ) {
   int                topn            = stoi( c.get_value( "topn", "0" ) );
   std::string        mode            = c.get_value( "mode", "wopr" );
   const std::string& ngc_filename    = c.get_value( "ngc" ); //srilm ngram counts ?
-  int                log_base        = stoi( c.get_value( "log", "2" ) );
+  int                log_base        = stoi( c.get_value( "log", "10" ) );
 
   std::string        ngt_filename    = filename;
   std::string        ngp_filename    = filename;
@@ -507,7 +507,7 @@ int ngram_test( Logfile& l, Config& c ) {
   // ngram can contain spaces. 
   // NB: input and stod are not checked for errors (TODO).
   //
-  // he sat 10 0.000467006
+  // he sat 10 0.000467006  -> probs, not l10probs or l2probs
   // he sat at 1 0.1
   // he sat in 8 0.8
   // he sat out 1 0.1
@@ -715,7 +715,7 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .ngp output file." );
     return -1;
   }
-  ngp_out << "# entropy perplexity wordcount OOVcount sentence";
+  ngp_out << "# entropy perplexity wordcount OOVcount sentence" << std::endl;
 
   std::ofstream ngd_out( ngd_filename.c_str(), std::ios::out );
   if ( ! ngd_out ) {

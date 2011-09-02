@@ -3069,11 +3069,24 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
   bool               inc_sen          = stoi( c.get_value( "is", "0" )) == 1;
   int                skip             = 0;
+  int                log_base         = stoi( c.get_value( "log", "2" ) ); // default like log2 before
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
   double             distance;
+
+  typedef double(*pt2log)(double);
+  pt2log mylog = &log2;
+  if ( log_base == 10 ) {
+    mylog = &log10;
+  } else {
+    if ( log_base != 2 ) {
+      l.log( "Log must be 2 or 10, setting to 2." );
+    }
+    log_base = 2;
+    mylog = &log2;
+  }
 
   // No slash at end of dirname.
   //
@@ -3112,6 +3125,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "cache threshold:"+to_str(cache_threshold) );
   l.log( "incl. sentence: "+to_str(inc_sen) );
   l.log( "id:             "+id );
+  l.log( "log:            "+to_str(log_base) );
   //l.log( "OUTPUT:         "+output_filename );
   //l.log( "OUTPUT:         "+output_filename1 );
   l.dec_prefix();
@@ -3293,14 +3307,14 @@ int pplx_simple( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot write .px output file." ); // for px
       return -1;
     }
-    file_out << "# instance+target classification logprob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])" << std::endl;
+    file_out << "# instance+target classification log" << log_base << "prob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])" << std::endl;
     
     std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
     if ( ! file_out1 ) {
       l.log( "ERROR: cannot write .pxs output file." ); // for pxs
       return -1;
     }
-    file_out1 << "# nr. #words sum(log2prob) avg.pplx avg.wordlp #nOOV sum(nOOVl2p) std.dev(wordlp) [wordlp(each word)]" << std::endl;
+    file_out1 << "# nr. #words sum(log" << log_base << "prob) avg.pplx avg.wordlp #nOOV sum(nOOVl"  << log_base << "p) std.dev(wordlp) [wordlp(each word)]" << std::endl;
     
     l.inc_prefix();
 
@@ -3386,7 +3400,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount > 0) ) {
 	double avg_ent  = sum_logprob / (double)sentence_wordcount;
 	double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
-	double avg_pplx = pow( 2, -avg_ent ); 
+	double avg_pplx = pow( log_base, -avg_ent ); 
 	file_out1 << sentence_count << " "
 		  << sentence_wordcount << " "
 		  << sum_logprob << " "
@@ -3627,7 +3641,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	  // Entropy of whole distr. Cache.
 	  //
 	  prob     = (double)wght / (double)distr_count;
-	  entropy -= ( prob * log2(prob) );
+	  entropy -= ( prob * mylog(prob) );
 	
 	  ++it;
 	} // end loop distribution
@@ -3692,8 +3706,8 @@ int pplx_simple( Logfile& l, Config& c ) {
       //
       // What we want: average word_lp and standard dev.
       //
-      double logprob = log2( w_prob );
-      double word_lp = pow( 2, -logprob ); // word level pplx
+      double logprob = mylog( w_prob );
+      double word_lp = pow( log_base, -logprob ); // word level pplx
       sum_logprob += logprob;
       sum_wlp     += word_lp;
       w_pplx.push_back( word_lp );
@@ -3794,7 +3808,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	   ) {
 	double avg_ent  = sum_logprob / (double)sentence_wordcount;
 	double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
-	double avg_pplx = pow( 2, -avg_ent ); 
+	double avg_pplx = pow( log_base, -avg_ent ); 
 	file_out1 << sentence_count << " "
 		  << sentence_wordcount << " "
 		  << sum_logprob << " "
@@ -3849,7 +3863,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     if ( sentence_wordcount > 0 ) { // Left over (or all)
       double avg_ent  = sum_logprob / (double)sentence_wordcount;
       double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
-      double avg_pplx = pow( 2, -avg_ent );
+      double avg_pplx = pow( log_base, -avg_ent );
       file_out1 << sentence_count << " "
 		<< sentence_wordcount << " "
 		<< sum_logprob << " "
