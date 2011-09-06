@@ -427,6 +427,12 @@ int ngram_test( Logfile& l, Config& c ) {
       mylog = &log2;
     }
   }
+  if ( mode == "srilm" ) {
+    if ( log_base != 10 ) {
+      log_base = 10;
+      l.log( "Setting log to 10 for SRILM." );
+    }
+  }
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
@@ -617,6 +623,7 @@ int ngram_test( Logfile& l, Config& c ) {
       } else if ( log_base == 2 ) {
 	l2prob = stod( prob_str );
 	if ( l2prob > 0 ) {
+	  l.log( a_line );
 	  l.log( "ERROR, not a valid log2." );
 	  file_ngl.close();
 	  return 1;
@@ -626,6 +633,7 @@ int ngram_test( Logfile& l, Config& c ) {
       } else {
 	prob    = stod( prob_str );
 	if ( prob < 0 ) {
+	  l.log( a_line );
 	  l.log( "ERROR, not a valid probability." );
 	  file_ngl.close();
 	  return 1;
