@@ -37,26 +37,35 @@ while ( my $line = <FHS> ) {
 
     #logprob= -24.6601 ppl= 292.419 ppl1= 549.549
     if ( $line =~ /ppl= (.*) ppl1= (.*)/ ) {
-	#print $line;
+	print $line;
 
-	my $srilm_ppl  = $1;
+	my $srilm_ppl  = $1; #can be "undefined"
 	my $srilm_ppl1 = $2;
 
 	my $wline = get_next_wopr();
+	if ( ! $wline ) {
+	  next;
+	}
+
 	my @parts  = split (/ /, $wline);
 
 	my $wopr_ppl  = $parts[$wopr_pplx_pos]; #ngp is like SRILM, no OOV
 
-	printf( "%7.2f ", $wopr_ppl );
-	printf( "%7.2f %7.2f\n", $srilm_ppl, $srilm_ppl1 );
-	
 	my $indicator = 0;
-	my $ratio = $wopr_ppl / $srilm_ppl;
-	if ( $ratio >= 2 ) {
+
+	printf( "%7.2f ", $wopr_ppl );
+	unless ( $srilm_ppl eq "undefined" ) {
+	  printf( "%7.2f %7.2f\n", $srilm_ppl, $srilm_ppl1 );
+	  my $ratio = $wopr_ppl / $srilm_ppl;
+	  if ( $ratio >= 2 ) {
 	    $indicator += 1;
-	} elsif ( $ratio < 0.5 ) {
+	  } elsif ( $ratio < 0.5 ) {
 	    $indicator += 2;
+	  }
+	} else {
+	  print "undefined undefined\n";
 	}
+
 	++$summary{$indicator};
     } 
 }
@@ -77,7 +86,10 @@ close(FHW);
 
 sub get_next_wopr {
     my $line = <FHW>;
-    if ( substr($line, 0, 1) eq "#" ) {
+    if ( ! $line ) {
+      return 0;
+    }
+    if ( ($line eq "") || (substr($line, 0, 1) eq "#") ) {
 	return get_next_wopr();
     }
     chomp $line;

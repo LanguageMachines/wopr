@@ -3,15 +3,20 @@
 #
 use strict;
 use Getopt::Std;
+#use Math::BigFloat;
+#Math::BigFloat->accuracy(10);
 
 #------------------------------------------------------------------------------
 # User options
 # ...
+# Assumes the output is generated with log:2 (the default), else use -L10.
+# The .px file needs to be generated with the lexicon, otherwise all
+# words are "unknown".
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w /;
+use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w $opt_L /;
 
-getopts('f:g:il:r:R:t:w');
+getopts('f:g:il:r:R:t:wL:');
 
 my $wopr_file  = $opt_f || 0;
 my $gcs        = $opt_g || 0; #for global context
@@ -21,6 +26,7 @@ my $rc         = $opt_r || 0;
 my $gct        = $opt_t || 0; #global context type
 my $rfl        = $opt_R || 0; #RFL file for gct == 1 feature count
 my $wordscore  = $opt_w || 0;
+my $logbase    = $opt_L || 2;
 
 #------------------------------------------------------------------------------
 
@@ -92,9 +98,17 @@ while ( my $line = <FHW> ) {
     
   @parts  = split (/ /, $line);
   $target         = $parts[ $target_pos ];
-  $wopr_log2prob  = $parts[ $log2prob_pos ]; # native logp value
-  $wopr_prob      = 2 ** $wopr_log2prob;
-  $wopr_log10prob = log2tolog10( $wopr_log2prob );
+  if ( $logbase == 2 ) {
+    $wopr_log2prob  = $parts[ $log2prob_pos ]; # native logp value, log2
+    $wopr_prob      = 2 ** $wopr_log2prob;
+    #my $x = Math::BigFloat->new(2);
+    #my $tmp = $x->bpow($wopr_log2prob);
+    $wopr_log10prob = log2tolog10( $wopr_log2prob );
+  } else {
+    $wopr_log10prob  = $parts[ $log2prob_pos ]; #log2prob_pos is log10
+    $wopr_prob      = 10 ** $wopr_log10prob;
+    $wopr_log2prob = log10tolog2( $wopr_log10prob );
+  }
   $icu            = $parts[$unknown_pos];
   $md             = $parts[$md_pos];
   $ml             = $parts[$ml_pos];
@@ -147,7 +161,7 @@ while ( my $line = <FHW> ) {
   }
 
   if ( $wordscore == 0 ) {
-    printf( "%.8f %8.4f %8.4f ", $wopr_prob, $wopr_log2prob, $wopr_log10prob );
+    printf( "%.5f %8.4f %8.4f ", $wopr_prob, $wopr_log2prob, $wopr_log10prob );
     printf( "%2i %1i ", $md, $ml );
 
     #
@@ -186,6 +200,9 @@ if ( $wordscore == 0 ) {
   printf( "Wopr:  %8.2f\n", $wopr_sumlog10 );
   printf( "Wordcount: %i sentencecount: %i oovcount: %i\n", 
 	  $wordcount, $sentencecount, $oovcount );
+  if ( $wordcount == $oovcount ) {
+    $oovcount = 0;
+  }
   if ( ! $ignore_oov ) {
     printf( "Wopr ppl:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount-$oovcount+$sentencecount)));
     printf( "Wopr ppl1:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount-$oovcount)));
@@ -227,6 +244,16 @@ sub log2tolog10 {
   my $log2 = 0.3010299957;
 
   return $l * $log2;
+}
+
+# NB, perl log is base e.
+#
+sub log10tolog2 {
+  my $l     = shift;
+  my $e     = 2.718281828;
+  my $log10 = 3.321928095;
+
+  return $l * $log10;
 }
 
 __END__
