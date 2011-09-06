@@ -178,7 +178,7 @@ int ngram_list( Logfile& l, Config& c ) {
       // srilm saves log10 of probability in its files.
       double p = e.freq / (float)sum_freq;
       if ( log_base > 0 ) {
-	p = mylog(p);
+	p = mylog(p); // save the logprob instead of the prob
       }
       file_out << ngram << " " << e.freq << " "
 	       << p << std::endl;
@@ -390,21 +390,6 @@ void split_tab( std::string& str, std::string& l, std::string& ngram, std::strin
     }
 }
 
-struct ngde { // ngram dist element
-  std::string token;
-  int freq;
-  double prob;
-  double l10prob;
-  bool operator<(const ngde& rhs) const {
-    // fall back to prob if freqs are equal?
-    return freq > rhs.freq; // || prob > rhs.prob;
-  }
-};
-struct ngmd { // ngram meta data
-  double distr_count;
-  double distr_sum;
-  std::vector<ngde> distr;
-};
 int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
   const std::string& filename        = c.get_value( "testfile" );//filename?
@@ -414,7 +399,7 @@ int ngram_test( Logfile& l, Config& c ) {
   int                topn            = stoi( c.get_value( "topn", "0" ) );
   std::string        mode            = c.get_value( "mode", "wopr" );
   const std::string& ngc_filename    = c.get_value( "ngc" ); //srilm ngram counts ?
-  int                log_base        = stoi( c.get_value( "log", "10" ) );
+  int                log_base        = stoi( c.get_value( "log", "0" ) );
 
   std::string        ngt_filename    = filename;
   std::string        ngp_filename    = filename;
@@ -430,15 +415,17 @@ int ngram_test( Logfile& l, Config& c ) {
 
   typedef double(*pt2log)(double);
   pt2log mylog = &log2;
-  if ( log_base == 10 ) {
-    // In ngd output only
-    mylog = &log10;
-  } else {
-    if ( log_base != 2 ) {
-      l.log( "Log must be 2 or 10, setting to 2." );
+  if ( log_base != 0 ) {
+    if ( log_base == 10 ) {
+      // In ngd output only
+      mylog = &log10;
+    } else {
+      if ( log_base != 2 ) {
+	l.log( "Log must be 2 or 10, setting to 2." );
+      }
+      log_base = 2;
+      mylog = &log2;
     }
-    log_base = 2;
-    mylog = &log2;
   }
 
   l.inc_prefix();
@@ -449,7 +436,9 @@ int ngram_test( Logfile& l, Config& c ) {
   l.log( "id:        "+id );
   l.log( "topn:      "+to_str(topn) );
   l.log( "mode:      "+mode );
-  l.log( "log:       "+to_str(log_base) );
+  if ( log_base != 0 ) {
+    l.log( "log:       "+to_str(log_base) );
+  }
   l.log( "OUTPUT:    "+ngt_filename );
   l.log( "OUTPUT:    "+ngp_filename );
   l.log( "OUTPUT:    "+ngd_filename );
@@ -474,8 +463,8 @@ int ngram_test( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> results;
-  std::map<std::string,double> ngrams; // NB no ngl_elem here!
-  std::map<std::string,double>::iterator gi;
+  std::map<std::string,ngp> ngrams; // Now struc instead of prob only
+  std::map<std::string,ngp>::iterator gi;
   std::map<std::string,long> srilm_ngrams;
   std::map<std::string,long>::iterator sngi;
 
@@ -507,7 +496,7 @@ int ngram_test( Logfile& l, Config& c ) {
   // ngram can contain spaces. 
   // NB: input and stod are not checked for errors (TODO).
   //
-  // he sat 10 0.000467006  -> probs, not l10probs or l2probs
+  // he sat 10 0.000467006  -> probs, not l10probs, unless log:10 parameter
   // he sat at 1 0.1
   // he sat in 8 0.8
   // he sat out 1 0.1
@@ -595,7 +584,7 @@ int ngram_test( Logfile& l, Config& c ) {
       split_tab( a_line, lp, ngram, rp );
       //l.log( lp+"/"+ngram+"/"+rp );
       l10prob = stod( lp );
-      prob = pow(10, stod( lp )); 
+      prob = pow( 10, l10prob ); 
 
       sngi = srilm_ngrams.find( ngram );
       if ( (sngi == srilm_ngrams.end()) ) {
@@ -604,16 +593,32 @@ int ngram_test( Logfile& l, Config& c ) {
       freq = (*sngi).second;
     } else { // WOPR file
 
+      // and the measures 2 0.00118765
+      //                 | ^pos
+      //                 ^pos1
+      //
       pos      = a_line.rfind(' ');
       prob_str = a_line.substr(pos+1);
-      prob     = stod( prob_str );
-      l10prob  = log10( prob );
-      
+      //
+      // If the log:10 is specified in ngl, we assume log:10 here also!!
+      // It needs to be specified with the log:10 parameter.
+      //
+      if ( log_base == 10 ) {
+	l10prob = stod( prob_str );
+	prob    = pow(10, l10prob );
+      } else if ( log_base == 2 ) {
+	l10prob = stod( prob_str ) * 0.3010299957;
+	prob    = pow(10, l10prob );
+      } else {
+	prob    = stod( prob_str );
+	l10prob = log10( prob );
+      }
+
       pos1     = a_line.rfind(' ', pos-1);
       freq_str = a_line.substr(pos1+1, pos-pos1-1);
       freq     = stol( freq_str );
       ngram    = a_line.substr(0, pos1);
-      //l.log( ngram+": "+freq_str );
+      //l.log( ngram+": "+freq_str+"/"+to_str(prob)+","+to_str(l10prob) );
 
       // No spaces is UNIGRAM, process for lex RR
       //
@@ -628,7 +633,10 @@ int ngram_test( Logfile& l, Config& c ) {
 
     }
 
-    ngrams[ngram] = prob;
+    ngp the_ngp;
+    the_ngp.prob    = prob;
+    the_ngp.l10prob = l10prob;
+    ngrams[ngram]   = the_ngp; // was prob;
 
     // foo
     // Can be optimised by remembering the "fooi" till we have a new
@@ -636,7 +644,7 @@ int ngram_test( Logfile& l, Config& c ) {
     //
     std::string res;
     std::string token;
-    split( ngram, res, token ); // "a b c", "a b", "c"
+    split( ngram, res, token ); // "a b c" => "a b", "c"
     if ( token != "" ) {
       //l.log( ngram+"="+res+"/"+token );
 
@@ -665,7 +673,7 @@ int ngram_test( Logfile& l, Config& c ) {
       }
 
     }
-    // foo --
+    // end foo 
 
   }
   file_ngl.close();
@@ -722,7 +730,8 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .ngd output file." );
     return -1;
   }
-  ngd_out << "# target l" << log_base << "p n d.count d.sum rr [ top" << topn << " ]" << std::endl;
+  // was log_base instead of 10, but always log10 output. log_base is for input.
+  ngd_out << "# target l" << 10 << "p n d.count d.sum rr [ top" << topn << " ]" << std::endl;
 
   // Just need a last-word-of-ngram to size/prob
   // First extract all possible ngrams, then go over input
@@ -736,13 +745,14 @@ int ngram_test( Logfile& l, Config& c ) {
  
   l.log( "Writing output..." );
 
-  long   total_words = 0;
-  long   total_oovs  = 0;
-  double total_H     = 0.0;
-  double sum_rr      = 0;
-  long   cg          = 0;
-  long   cd          = 0;
-  long   unigrams    = 0; // stats for each n?
+  long   total_words    = 0;
+  long   total_oovs     = 0;
+  double total_H        = 0.0;
+  double total_sum_l10p = 0.0;
+  double sum_rr         = 0;
+  long   cg             = 0;
+  long   cd             = 0;
+  long   unigrams       = 0; // stats for each n?
 
   while ( std::getline( file_in, a_line )) {
 
@@ -779,7 +789,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	    //
 	    if ( i == 1 ) { // start with unigrams, no element present.
 	      ngram_elem ne;
-	      ne.p = (*gi).second;
+	      ne.p = (*gi).second.prob;
+	      ne.l10p = (*gi).second.l10prob;
 	      ne.n = i;
 	      ne.ngram = matchgram;
 	      //l.log( matchgram+"/"+to_str(ne.p));
@@ -792,7 +803,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	      //if ( (*gi).second > ne.p ) { // Higher prob than stored.
 		if ( i > ne.n ) { // Higher length than stored, ignore prob
 		//l.log( "Replace "+ne.ngram+" with: "+matchgram+"/"+to_str(ne.p));
-		ne.p = (*gi).second;
+		ne.p = (*gi).second.prob;
+		ne.l10p = (*gi).second.l10prob;
 		ne.n = i;
 		ne.ngram = matchgram;
 	      }
@@ -803,6 +815,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	    if ( i == 1 ) { // start with unigrams
 	      ngram_elem ne;
 	      ne.p = 0;
+	      ne.l10p = -99; // uhm
 	      ne.n = 0;
 	      best_ngrams.push_back(ne);
 	    }
@@ -819,12 +832,13 @@ int ngram_test( Logfile& l, Config& c ) {
     double H   = 0.0;
     int    wc  = 0;
     int    oov = 0;
+    double sum_l10p = 0.0;
     Tokenize( a_line, results, ' ' );
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       std::string target = results.at(wc);
       double p = (*ni).p;
-      //double l10p = log10( p ); // for SRILM unnecessary...store l10p there?
-      double l10p = mylog( p ); // for SRILM unnecessary...store l10p there?
+      double l10p = (*ni).l10p; //mylog( p ); // for SRILM unnecessary...store l10p there?
+
       // Before, we set p to p0 and continued like nothing happened, but
       if ( p == 0 ) { // OOV words are skipped in SRILM
 	file_out << "<unk> "
@@ -917,12 +931,15 @@ int ngram_test( Logfile& l, Config& c ) {
 	/*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
 	  + "   " + (*ni).ngram );*/
 	H += log2(p);
+	sum_l10p += l10p;
 	++wc;
       }
     }
-    double pplx = 0;
+    double pplx   = 0.0;
+    double pplx10 = 0.0;
     if ( (wc-oov) > 0 ) {
-      pplx = pow( 2, -H/(double)(wc-oov) );
+      pplx   = pow(  2, -H/(double)(wc-oov) );
+      pplx10 = pow( 10, -sum_l10p/(double)(wc-oov) );
     }
     ngp_out << H << " " 
 	    << pplx << " "
@@ -932,9 +949,10 @@ int ngram_test( Logfile& l, Config& c ) {
     // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
     // in our code, SRILM takes log10s and then pow(10) in the end.
 
-    total_words += wc;
-    total_oovs  += oov;
-    total_H     += H;
+    total_words    += wc;
+    total_oovs     += oov;
+    total_H        += H;
+    total_sum_l10p += sum_l10p;
 
   } // getline
   ngd_out.close();
@@ -944,10 +962,13 @@ int ngram_test( Logfile& l, Config& c ) {
 
   l.log( "Total words: "+to_str(total_words) );
   l.log( "Total oovs: "+to_str(total_oovs) );
-  l.log( "Total log2prob: "+to_str(total_H) );
+  //l.log( "Total log2prob: "+to_str(total_H) );
+  l.log( "Total log10prob: "+to_str(total_sum_l10p) );
   if ( (total_words-total_oovs) > 0 ) {
-    l.log( "Average log2prob: "+to_str( total_H/(total_words-total_oovs) ) );
-    l.log( "Average pplx: "+to_str( pow( 2, -total_H/(total_words-total_oovs))));
+    //l.log( "Average log2prob: "+to_str( total_H/(total_words-total_oovs) ) );
+    //l.log( "Average pplx: "+to_str( pow( 2, -total_H/(total_words-total_oovs))));
+    l.log( "Average log10prob: "+to_str( total_sum_l10p/(total_words-total_oovs) ) );
+    l.log( "Average pplx: "+to_str( pow( 10, -total_sum_l10p/(total_words-total_oovs))));
   }
   l.log( "MRR: "+to_str(sum_rr/total_words) );
   // sum(cg,cd,1g) + OOVS = WORDS
