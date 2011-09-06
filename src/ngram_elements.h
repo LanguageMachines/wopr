@@ -32,8 +32,30 @@ struct ngl_elem {
 
 struct ngram_elem {
   double p;
+  double l10p;
   int    n;
   std::string ngram;
+};
+
+struct ngde { // ngram dist element
+  std::string token;
+  int freq;
+  double prob;
+  double l10prob;
+  bool operator<(const ngde& rhs) const {
+    // fall back to prob if freqs are equal?
+    return freq > rhs.freq; // || prob > rhs.prob;
+  }
+};
+struct ngmd { // ngram meta data
+  double distr_count;
+  double distr_sum;
+  std::vector<ngde> distr;
+};
+
+struct ngp { // contains the prob, l10prob, ...
+  double prob;
+  double l10prob;
 };
 
 #endif
