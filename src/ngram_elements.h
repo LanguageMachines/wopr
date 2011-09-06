@@ -33,6 +33,7 @@ struct ngl_elem {
 struct ngram_elem {
   double p;
   double l10p;
+  double l2p;
   int    n;
   std::string ngram;
 };
@@ -56,6 +57,7 @@ struct ngmd { // ngram meta data
 struct ngp { // contains the prob, l10prob, ...
   double prob;
   double l10prob;
+  double l2prob;
 };
 
 #endif

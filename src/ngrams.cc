@@ -488,6 +488,7 @@ int ngram_test( Logfile& l, Config& c ) {
   long   freq;
   double prob;
   double l10prob;
+  double l2prob;
   size_t pos, pos1;
 
   l.log( "Reading ngrams..." );
@@ -585,7 +586,7 @@ int ngram_test( Logfile& l, Config& c ) {
       //l.log( lp+"/"+ngram+"/"+rp );
       l10prob = stod( lp );
       prob = pow( 10, l10prob ); 
-
+      l2prob = l10prob * 0.3010299957;
       sngi = srilm_ngrams.find( ngram );
       if ( (sngi == srilm_ngrams.end()) ) {
 	continue;
@@ -605,13 +606,32 @@ int ngram_test( Logfile& l, Config& c ) {
       //
       if ( log_base == 10 ) {
 	l10prob = stod( prob_str );
-	prob    = pow(10, l10prob );
+	if ( l10prob > 0 ) {
+	  l.log( a_line );
+	  l.log( "ERROR, not a valid log10." );
+	  file_ngl.close();
+	  return 1;
+	}
+	prob   = pow(10, l10prob );
+	l2prob = l10prob / 0.3010299957;
       } else if ( log_base == 2 ) {
-	l10prob = stod( prob_str ) * 0.3010299957;
-	prob    = pow(10, l10prob );
+	l2prob = stod( prob_str );
+	if ( l2prob > 0 ) {
+	  l.log( "ERROR, not a valid log2." );
+	  file_ngl.close();
+	  return 1;
+	}
+	l10prob = l2prob * 0.3010299957;
+	prob    = pow(2, l2prob );
       } else {
 	prob    = stod( prob_str );
+	if ( prob < 0 ) {
+	  l.log( "ERROR, not a valid probability." );
+	  file_ngl.close();
+	  return 1;
+	}
 	l10prob = log10( prob );
+	l2prob  = log2( prob );
       }
 
       pos1     = a_line.rfind(' ', pos-1);
@@ -636,6 +656,7 @@ int ngram_test( Logfile& l, Config& c ) {
     ngp the_ngp;
     the_ngp.prob    = prob;
     the_ngp.l10prob = l10prob;
+    the_ngp.l2prob  = l2prob;
     ngrams[ngram]   = the_ngp; // was prob;
 
     // foo
@@ -730,9 +751,11 @@ int ngram_test( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write .ngd output file." );
     return -1;
   }
-  // was log_base instead of 10, but always log10 output. log_base is for input.
-  ngd_out << "# target l" << 10 << "p n d.count d.sum rr [ top" << topn << " ]" << std::endl;
-
+  if ( log_base == 0 ) {
+    ngd_out << "# target p n d.count d.sum rr [ top" << topn << " ]" << std::endl;
+  } else {
+    ngd_out << "# target l" << log_base << "p n d.count d.sum rr [ top" << topn << " ]" << std::endl;
+  }
   // Just need a last-word-of-ngram to size/prob
   // First extract all possible ngrams, then go over input
   // sentence, and for each word, look at n-grams which end
@@ -791,6 +814,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	      ngram_elem ne;
 	      ne.p = (*gi).second.prob;
 	      ne.l10p = (*gi).second.l10prob;
+	      ne.l2p = (*gi).second.l2prob;
 	      ne.n = i;
 	      ne.ngram = matchgram;
 	      //l.log( matchgram+"/"+to_str(ne.p));
@@ -805,6 +829,7 @@ int ngram_test( Logfile& l, Config& c ) {
 		//l.log( "Replace "+ne.ngram+" with: "+matchgram+"/"+to_str(ne.p));
 		ne.p = (*gi).second.prob;
 		ne.l10p = (*gi).second.l10prob;
+		ne.l2p = (*gi).second.l2prob;
 		ne.n = i;
 		ne.ngram = matchgram;
 	      }
@@ -816,6 +841,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	      ngram_elem ne;
 	      ne.p = 0;
 	      ne.l10p = -99; // uhm
+	      ne.l2p = -99; // uhm
 	      ne.n = 0;
 	      best_ngrams.push_back(ne);
 	    }
@@ -837,12 +863,13 @@ int ngram_test( Logfile& l, Config& c ) {
     for( ni = best_ngrams.begin(); ni != best_ngrams.end(); ++ni ) {
       std::string target = results.at(wc);
       double p = (*ni).p;
-      double l10p = (*ni).l10p; //mylog( p ); // for SRILM unnecessary...store l10p there?
+      double l10p = (*ni).l10p;
+      double l2p = (*ni).l2p;
 
       // Before, we set p to p0 and continued like nothing happened, but
       if ( p == 0 ) { // OOV words are skipped in SRILM
 	file_out << "<unk> "
-		 << 0 << " "
+		 << 0 << " " // or -99? like srilm?
 		 << 0 << " "
 		 << "OOV"
 		 << std::endl;
@@ -854,7 +881,14 @@ int ngram_test( Logfile& l, Config& c ) {
 	// dist
 	std::string ngram = (*ni).ngram;
 	std::string left;
-	std::string out = target + " " + to_str(l10p); // "classification"
+	std::string out = target + " ";
+	if ( log_base == 10 ) {
+	  out = out + to_str(l10p);
+	} else if ( log_base == 2 ) {
+	  out = out + to_str(l2p);
+	} else {
+	  out = out + to_str(p);
+	}
 	but_last_word( ngram, left );
 	if ( ngram != left ) { // if equal, one word: is lexical
 	  std::vector<ngde> v = foo[left].distr;
@@ -924,13 +958,13 @@ int ngram_test( Logfile& l, Config& c ) {
 	ngd_out << out << std::endl;
 	// -- dist
 	file_out << results.at(wc) << " "
-		 << p << " "
+		 << p << " "  // These are aways probs, not log10/log2
 		 << (*ni).n << " "
 		 << (*ni).ngram
 		 << std::endl;
 	/*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
 	  + "   " + (*ni).ngram );*/
-	H += log2(p);
+	H += l2p;
 	sum_l10p += l10p;
 	++wc;
       }

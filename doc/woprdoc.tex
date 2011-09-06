@@ -1438,7 +1438,7 @@ from the specified lexicon.
 
 \section{Training}
 
-\subsection{\cmp{make\_ibase}}
+\subsection{\cmp{make\_ibase}s}
 
 \begin{varlist}{filename}
 \item[filename] Filename of the windowed data set.
@@ -1555,6 +1555,8 @@ perplexities. The final element in the output is a list with the
 \item[cth] Cache threshold: A distribution is not cached until it
   contains this many items.
 \item[is] Include the whole sentence in the output (pxs).
+\item[log] The base of the logarithm to do the calculations
+  in. Defaults to two, can be set to ten with \cmp{log:10}.
 \item[id] Identifier to append to the output filenames. If not
   specified, it defaults to the \pid{}.
 \end{varlist}
