@@ -1,3 +1,5 @@
+1.31.6	Fix for unigram top-n in ngd output. Fix for cache in smt server.
+	
 1.31.5	Choosable log2/log10/p in both ngl and ngt.
 	
 1.31.4	Configurable logs.
