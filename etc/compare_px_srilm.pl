@@ -17,20 +17,21 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_s $opt_v $opt_l $opt_r /;
+use vars qw/ $opt_f $opt_s $opt_v $opt_l $opt_r $opt_L /;
 
-getopts('f:s:vl:r:');
+getopts('f:s:vl:r:L:');
 
 my $wopr_file  = $opt_f || 0;
 my $srilm_file = $opt_s || 0;
 my $verbose    = $opt_v || 0;
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
+my $log_base   = $opt_L || 2;
 
 #------------------------------------------------------------------------------
 
 my %summary;
-my $log2prob_pos = $lc + $rc + 2;
+my $log2prob_pos = $lc + $rc + 2; #can contain log:10
 my $target_pos   = $lc + $rc + 0;
 my $unknown_pos  = $lc + $rc + 5;
 
@@ -43,10 +44,12 @@ while ( my $line = <FHS> ) {
 	#print $line;
 	
 	my $srilm_prob = 0;
+	my $srilm_l10prob = -99;
 	my $srilm_n    = "0";#OOV is 0
-	if ( $line =~ /\[(\d)gram\] (.*) \[/ ) {
+	if ( $line =~ /\[(\d)gram\] (.*) \[ (.*) \]/ ) {
 	    $srilm_n = $1;#substr($1, 0, 1);
 	    $srilm_prob = $2;
+	    $srilm_l10prob = $3;
 	}
 	#print "$srilm_prob\n";
 
@@ -68,13 +71,16 @@ while ( my $line = <FHS> ) {
 	  @parts  = split (/ /, $wline);
 	  $target        = $parts[ $target_pos ];
 	  $wopr_log2prob = $parts[ $log2prob_pos ];
-	  $wopr_prob     = 2 ** $wopr_log2prob;
+	  $wopr_prob     = $log_base ** $wopr_log2prob;
 	  $icu           = $parts[$unknown_pos];
 	}
 
-
-	printf( "%.8f ", $wopr_prob );
-	printf( "%.8f ", $srilm_prob );
+	# Print log or l10probs?
+	#
+	#printf( "%.8f ", $wopr_prob );
+	#printf( "%.8f ", $srilm_prob );
+	printf( "% .5f ", $wopr_log2prob );
+	printf( "% .5f ", $srilm_l10prob );
 	print "$srilm_n ";
 	my $indicators = 0;
 	if ( $srilm_prob > 0 ) {
