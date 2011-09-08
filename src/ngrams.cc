@@ -485,6 +485,8 @@ int ngram_test( Logfile& l, Config& c ) {
   std::map<std::string,double>::iterator li;
   std::map<long,int> lex_ranks; // map directly freq -> rank
   std::map<long,int>::iterator lri;
+  std::vector<ngde> sorted_lex; // for distrib. printing
+  std::vector<ngde>::iterator sli;
   long lex_count = 0;
   long lex_sumf  = 0;
 
@@ -719,6 +721,16 @@ int ngram_test( Logfile& l, Config& c ) {
     ++lfi;
     ++idx;
   }
+
+  // Prepare sorted lexicon so we can print top-n in output.
+  //
+  for ( li = lex.begin(); li != lex.end(); ++li ) {
+    ngde ngde_new;
+    ngde_new.token = (*li).first;
+    ngde_new.freq = (*li).second;
+    sorted_lex.push_back( ngde_new );
+  }
+  sort( sorted_lex.begin(), sorted_lex.end() );
 
   // Sort once, use forever. Although most won't be used...
   //
@@ -956,7 +968,21 @@ int ngram_test( Logfile& l, Config& c ) {
 	  if ( li != lex.end() ) {
 	    lri = lex_ranks.find( (*li).second );
 	    if ( lri != lex_ranks.end() ) {
-	      out = out + " 1 " +to_str(lex_count) + " " + to_str(lex_sumf) + " " + to_str(1/(float)(*lri).second) + " [ ]";
+	      out = out + " 1 " +to_str(lex_count) + " " + to_str(lex_sumf) + " " + to_str(1/(float)(*lri).second);
+	      out = out + " [ ]"; // sorted lexicon needed here.
+
+	      // Now the top-n
+	      int cnt = topn;
+	      sli = sorted_lex.begin();
+	      out = out + " [";
+	      while ( (sli != sorted_lex.end()) && (--cnt >= 0) ) {
+		long freq = (*sli).freq;
+		out = out + " " + (*sli).token+" "+to_str(freq); 
+		++sli;
+	      }
+	      out = out + " ]";
+
+
 	    }
 	  } else {
 	    out = out + " 1 0 0 0 [ ]";
