@@ -1388,9 +1388,17 @@ int smt(Logfile& l, Config& c) {
 	std::vector<double> probs;
 
 	// Local cache. Useful for pbmbmt which holds connection
-	// the whole time.
+	// the whole time. Seperate cache for instances and whole
+	// inputs (otherwise mixing!):
+	// 13:23:53.15: Check cache: [1 2 3]
+	// 13:23:53.25: Check instance cache: [1 2 3]
+	// 13:23:53.25: Add to cache: [1 2 3](-0.90309)   !!
+	// 13:23:53.25: result sum=-6.27877/5.26299e-07
+	// 13:23:53.25: result ave=-2.09292/0.00807379
+	// 13:23:53.25: Add to cache: [1 2 3](-2.09292)   !!
 	//
-	Cache *cache = new Cache( cachesize );
+	Cache *cache = new Cache( cachesize ); // whole input
+	Cache *icache = new Cache( cachesize ); // instances
 
 	while ( running & connection_open ) {
 
@@ -1407,19 +1415,23 @@ int smt(Logfile& l, Config& c) {
 	  
 	  // Check the cache
 	  //
+	  if ( verbose > 2 ) {
+	    l.log( "Check cache: ["+classify_line+"]" );
+	  }
 	  std::string cache_ans = cache->get( classify_line );
 	  if ( cache_ans != "" ) {
-	    if ( verbose > 0 ) {
+	    if ( verbose > 2 ) {
 	      l.log( "Found in cache." );
 	    }
 	    newSock->write(  cache_ans + '\n' ); //moses format?
 	    continue;
 	  }
 
+	  std::string full_string = classify_line; // needed for cache.
+
 	  // PBMBMT sends a sentence, window it.
 	  //
 	  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
-	  
 	  // Loop over all lines.
 	  //
 	  std::vector<std::string> words;
@@ -1440,6 +1452,19 @@ int smt(Logfile& l, Config& c) {
 		  l.log( "|" + classify_line + "| hpx" );
 		}
 	      }
+
+	      double res_pl10 = -99; // or zero, like SRILM when pplx-ing
+
+	      if ( verbose > 2 ) {
+		l.log( "Check instance cache: ["+classify_line+"]" );
+	      }
+	      std::string cache_ans = icache->get( classify_line );
+	      if ( cache_ans != "" ) {
+		if ( verbose > 2 ) {
+		  l.log( "Found in cache." );
+		}
+		res_pl10 = stod(cache_ans); // stod() slows it down?
+	      } else {
 	      
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
@@ -1487,7 +1512,6 @@ int smt(Logfile& l, Config& c) {
 		res_p = (double)target_freq / (double)distr_count;
 	      }
 	      
-	      double res_pl10 = -99; // or zero, like SRILM when pplx-ing
 	      if ( res_p > 0 ) {
 		res_pl10 = log10( res_p );
 	      } else {
@@ -1499,7 +1523,14 @@ int smt(Logfile& l, Config& c) {
 		}
 	      }
 
-	      probs.push_back( res_pl10 ); // store for later.
+	      if ( verbose > 2 ) {
+		l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
+	      }
+	      icache->add( classify_line, to_str(res_pl10) );
+	      
+	      } // end not in cache
+
+	      probs.push_back( res_pl10 ); // store for later calculation.
 
 	    } // i loop
 
@@ -1527,7 +1558,10 @@ int smt(Logfile& l, Config& c) {
 	    }
 
 	    std::string ans = to_str(ave_pl10);
-	    cache->add( classify_line, ans );
+	    if ( verbose > 2 ) {
+	      l.log( "Add to cache: ["+full_string+"]("+ans+")" );
+	    }
+	    cache->add( full_string, ans );
 	    newSock->write( ans + "\n" );
 	    connection_open = (keep == 1);
 	} // connection_open
@@ -1541,6 +1575,9 @@ int smt(Logfile& l, Config& c) {
 	size_t ccs = cache->get_size();
 	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
 	l.log( cache->stat() );
+	ccs = icache->get_size();
+	l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+	l.log( icache->stat() );
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed
