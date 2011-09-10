@@ -1029,6 +1029,7 @@ int server4(Logfile& l, Config& c) {
 	// the whole time.
 	//
 	Cache *cache = new Cache( cachesize );
+	Cache *icache = new Cache( cachesize );
 
 	while ( running & connection_open ) {
 
@@ -1073,6 +1074,7 @@ int server4(Logfile& l, Config& c) {
 	  cls.clear();
 	  
 	  std::string classify_line = tmp_buf;
+	  std::string full_string = classify_line; // needed for cache.
 	  
 	  // Check the cache
 	  //
@@ -1084,7 +1086,7 @@ int server4(Logfile& l, Config& c) {
 	    newSock->write(  cache_ans + '\n' ); //moses format?
 	    continue;
 	  }
-
+	  
 	  // Sentence based, window here, classify all, etc.
 	  //
 	  if ( mode == 1 ) {
@@ -1099,27 +1101,39 @@ int server4(Logfile& l, Config& c) {
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
 	    
-	      classify_line = cls.at(i);
-	      
-	      words.clear();
-	      Tokenize( classify_line, words, ' ' );
-
-	      if ( hapax > 0 ) {
-		int c = hapax_vector( words, hpxfreqs, hapax );
-		std::string t;
-		vector_to_string(words, t);
-		classify_line = t;
-		if ( verbose > 1 ) {
-		  l.log( "|" + classify_line + "| hpx" );
-		}
+	    classify_line = cls.at(i);
+	    
+	    words.clear();
+	    Tokenize( classify_line, words, ' ' );
+	    
+	    if ( hapax > 0 ) {
+	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      std::string t;
+	      vector_to_string(words, t);
+	      classify_line = t;
+	      if ( verbose > 1 ) {
+		l.log( "|" + classify_line + "| hpx" );
 	      }
+	    }
+	    
+	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
+	    if ( verbose > 2 ) {
+	      l.log( "Check instance cache: ["+classify_line+"]" );
+	    }
+	    std::string cache_ans = icache->get( classify_line );
+	    if ( cache_ans != "" ) {
+	      if ( verbose > 2 ) {
+		l.log( "Found in cache." );
+	      }
+	      res_pl10 = stod(cache_ans); // stod() slows it down?
+	    } else {
 	      
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
 	      // that for the instances-without-target
 	      //
 	      std::string target = words.at( words.size()-1 );
-
+	      
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
 	      if ( ! tv ) {
 		l.log( "ERROR: Timbl returned a classification error, aborting." );
@@ -1167,7 +1181,6 @@ int server4(Logfile& l, Config& c) {
 		res_p = (double)target_freq / (double)distr_count;
 	      }
 	      
-	      double res_pl10 = -99; // or zero, like SRILM when pplx-ing
 	      if ( resm == 2 ) {
 		res_pl10 = 0; // average w/o OOV words
 	      }
@@ -1184,55 +1197,61 @@ int server4(Logfile& l, Config& c) {
 		  }
 		}
 	      }
-
+	      
 	      if ( verbose > 1 ) {
 		l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	      }
-
-	      probs.push_back( res_pl10 ); // store for later.
-
-	    } // i loop
-
-	    //l.log( "Probs: "+ to_str(probs.size() ));
-
-	    double ave_pl10 = 0.0;
-	    for ( int p = 0; p < probs.size(); p++ ) {
-	      double prob = probs.at(p);
-	      ave_pl10 += prob;
-	    }
-	    if ( verbose > 0 ) {
-	      l.log( "result sum="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
-	    }
-	    if ( resm != 1 ) { // normally, average, but not for resm:1
-	      ave_pl10 /= probs.size();
-	    }
-	    // else resm == 1, we return the sum.
-
-	    if ( verbose > 0 ) {
-	      l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
-	    }
-
-	    if ( lb == 0 ) { // lb:0 is no logs
-	      ave_pl10 = pow(10, ave_pl10);
-	    }
-	    if ( moses == 0 ) {
-	      std::string ans = to_str(ave_pl10);
-	      cache->add( classify_line, ans );
-	      newSock->write( ans + "\n" );
-	    } else if ( moses == 1 ) { // 6 char output for moses
-	      char res_str[7];
-
-	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
-	      //std::cerr << "(" << res_str << ")" << std::endl;
-	      newSock->write( res_str );
-
-	      //cache->add( res_str );
-	    }
-	    connection_open = (keep == 1);
-	    //connection_open = false;
+	      
+	      if ( verbose > 2 ) {
+                l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
+              }
+              icache->add( classify_line, to_str(res_pl10) );
+              
+	    } // end not in cache
 	    
+	    probs.push_back( res_pl10 ); // store for later.
+	    
+	  } // i loop
+	  
+	  //l.log( "Probs: "+ to_str(probs.size() ));
+	  
+	  double ave_pl10 = 0.0;
+	  for ( int p = 0; p < probs.size(); p++ ) {
+	    double prob = probs.at(p);
+	    ave_pl10 += prob;
+	  }
+	  if ( verbose > 0 ) {
+	    l.log( "result sum="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	  }
+	  if ( resm != 1 ) { // normally, average, but not for resm:1
+	    ave_pl10 /= probs.size();
+	  }
+	  // else resm == 1, we return the sum.
+	  
+	  if ( verbose > 0 ) {
+	    l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	  }
+	  
+	  if ( lb == 0 ) { // lb:0 is no logs
+	    ave_pl10 = pow(10, ave_pl10);
+	  }
+	  if ( moses == 0 ) {
+	    std::string ans = to_str(ave_pl10);
+	    cache->add( full_string, ans );
+	    newSock->write( ans + "\n" );
+	  } else if ( moses == 1 ) { // 6 char output for moses
+	    char res_str[7];
+	    
+	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
+	    //std::cerr << "(" << res_str << ")" << std::endl;
+	    newSock->write( res_str );
+	    //cache->add( full_string, res_str );
+	  }
+	  connection_open = (keep == 1);
+	  //connection_open = false;
+	  
 	} // connection_open
-
+	
         l.log( "connection closed." );
 	if ( ! running ) {
 	  // Rather crude, children with connexion keep working
@@ -1242,6 +1261,9 @@ int server4(Logfile& l, Config& c) {
 	size_t ccs = cache->get_size();
 	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
 	l.log( cache->stat() );
+        ccs = icache->get_size();
+        l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+        l.log( icache->stat() );
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed
@@ -1269,22 +1291,22 @@ int server4( Logfile& l, Config& c ) {
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int smt(Logfile& l, Config& c) {
-  l.log( "server for (pbmb) machine translation. Returns a log10prob over sequence." );
+  l.log( "server for (pbmb) machine translation. Returns a (log10)prob over sequence." );
   
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const int mode = 1;
-  const int resm = 0;
+  const int mode = 1; // hardcoded 1 for PBMBMT
+  const int resm = 0; // hardcoded 0 for PBMBMT
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
-  const int keep = 1;
-  const int moses = 0;
+  const int keep = 1; // hardcoded 1 for PBMBMT
+  const int moses = 0; // hardcoded 0 for PBMBMT
   const int lb                  = stoi( c.get_value( "lb", "0" ));
   const int lc                  = stoi( c.get_value( "lc", "2" ));
   const int rc                  = stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const int hapax               = stoi( c.get_value( "hpx", "0" ));
-  const bool skip_sm = false;
+  const bool skip_sm = false;  // hardcoded for PBMBMT
   const long cachesize          = stoi( c.get_value( "cs", "1000000" ));
 
   l.inc_prefix();
@@ -1410,7 +1432,7 @@ int smt(Logfile& l, Config& c) {
 	    connection_open = false;
 	    break;
 	  }
-	  
+
 	  cls.clear();
 	  
 	  // Check the cache
@@ -1564,9 +1586,10 @@ int smt(Logfile& l, Config& c) {
 	    cache->add( full_string, ans );
 	    newSock->write( ans + "\n" );
 	    connection_open = (keep == 1);
-	} // connection_open
+	} // (while) connection_open
 
         l.log( "connection closed." );
+
 	if ( ! running ) {
 	  // Rather crude, children with connexion keep working
 	  // till exited/removed by system.
@@ -1593,7 +1616,7 @@ int smt(Logfile& l, Config& c) {
     l.log( "ERROR: exception caught." );
     return -1;
   }
-  
+
   return 0;
 }
 #else

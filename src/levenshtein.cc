@@ -831,7 +831,8 @@ int server_sc( Logfile& l, Config& c ) {
   double distance;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  
+  Cache *gcache = new Cache( cachesize );
+
   signal(SIGCHLD, SIG_IGN);
   volatile sig_atomic_t running = 1;
 
@@ -905,10 +906,11 @@ int server_sc( Logfile& l, Config& c ) {
 	  cls.clear();
 	  
 	  std::string classify_line = tmp_buf;
+	  std::string full_string = tmp_buf;
 
 	  // Check the cache
 	  //
-	  std::string cache_ans = cache->get( classify_line );
+	  std::string cache_ans = cache->get( full_string );
 	  if ( cache_ans != "" ) {
 	    if ( verbose > 0 ) {
 	      l.log( "Found in cache." );
@@ -1143,7 +1145,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      }
 	      answer = answer + (*fi)->name;
 	    }
-	    cache->add( classify_line, answer );
+	    gcache->add( full_string, answer ); // WAS classify_line
 	    answer = answer + '\n';
 	    newSock->write( answer );
 
@@ -1200,7 +1202,7 @@ int server_sc( Logfile& l, Config& c ) {
   }
   };*/
 int server_sc_nf( Logfile& l, Config& c ) {
-  l.log( "server spelling correction" );
+  l.log( "server spelling correction, non forking." );
   
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
@@ -1641,3 +1643,4 @@ int server_sc_nf( Logfile& l, Config& c ) {
   return -1;
 }
 #endif
+
