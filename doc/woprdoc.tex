@@ -1823,7 +1823,7 @@ classifier.
 \subsection{\cmp{server4}}
 
 %../wopr -r server4 -p ibasefile:rmt.1e5.l2r0_-a1+D.ibase,timbl:"-a1 +D",lexicon:rmt.1e5.lex,mode:0
-\begin{varlist}{cache\_size}
+\begin{varlist}{ibasefile}
 \item[ibasefile] The trained instance base.
 \item[timbl] The corresponding \Timbl{} settings.
 \item[lexicon] The corresponding lexicon.
@@ -1842,7 +1842,7 @@ classifier.
 \item[verbose] More output.
 \item[hpx] Hapax level.
 \item[skip\_sm] Remove sentence markers.
-\item[cache\_size] Size of the cache. Received elements are cached,
+\item[cs] Size of the cache. Received elements are cached,
   previous result is returned directly. Only useful when keep:1 is
   set. 
 \end{varlist}
