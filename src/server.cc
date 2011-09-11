@@ -1435,7 +1435,8 @@ int smt(Logfile& l, Config& c) {
 
 	  if ( classify_line == "PID" ) {
 	    newSock->write(  to_str(getppid()) + '\n' );
-	    continue;
+	    connection_open = false;
+	    break;
 	  }
 
 	  cls.clear();
