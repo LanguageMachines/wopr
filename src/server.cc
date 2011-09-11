@@ -1433,6 +1433,11 @@ int smt(Logfile& l, Config& c) {
 	    break;
 	  }
 
+	  if ( classify_line == "PID" ) {
+	    newSock->write(  to_str(getppid()) + '\n' );
+	    continue;
+	  }
+
 	  cls.clear();
 	  
 	  // Check the cache
