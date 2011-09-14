@@ -854,6 +854,11 @@ argument specifies that we will send an \emph{instance} to
 which will be windowed first. For this to work, the context size must
 be specified as well, with the parameters \cmp{lc} and \cmp{rc}.
 
+For \pbmbmt{}, a special version of the server has been created,
+called \cmp{mbmt}. It is similar to \cmp{server4}, but has several of
+the parameters hard-coded and doesn't \q{fork}, making it easier to
+run from scripts in combination with \pbmbmt{}.
+
 \chapter{Installation}
 
 \Timbl{} is required to run \wopr{}.
@@ -1356,6 +1361,20 @@ markers (labeled pplx1).
   \label{fig:NY_pplx_slirm.pdf}
 \end{figure*}
 
+\subsection{\wopr{} in an external task}
+
+We evaluate \wopr{} in a \mt{} task.  We run \wopr{} as the \lm{} in
+\pbmbmt{}, and compare the score (\bleu{}-score) with \srilm{} as the
+\lm{}.
+
+We run \pbmbmt{} on the included OpenSubtitles (Dutch to English)
+data. 
+
+The SRILM scores: 
+
+% SRILM & $0.2552$ & $0.4964389$ & $5.5436$ & $0.560487738046$ & $56.1885$ & $48.1559$ \\
+% Wopr & $0.2608$ & $0.4963775$ & $5.3051$ & $0.60364433484$ & $60.4016$ & $52.1591$ \\
+
 \chapter{Reference}
 
 \section{Data}
@@ -1842,6 +1861,23 @@ classifier.
 \item[verbose] More output.
 \item[hpx] Hapax level.
 \item[skip\_sm] Remove sentence markers.
+\item[cs] Size of the cache. Received elements are cached,
+  previous result is returned directly. Only useful when keep:1 is
+  set. 
+\end{varlist}
+
+subsection{\cmp{mbmt}}
+
+\begin{varlist}{ibasefile}
+\item[ibasefile] The trained instance base.
+\item[timbl] The corresponding \Timbl{} settings.
+\item[lexicon] The corresponding lexicon.
+\item[port] Port to listen on.
+\item[lb] Log base of the answer, \cmp{lb:0}, returns a straight
+  probability, \cmp{lb:10} returns the $log_{10}$.
+\item[lc] Left context size for windowing.
+\item[rc] Right context size for windowing.
+\item[verbose] More output.
 \item[cs] Size of the cache. Received elements are cached,
   previous result is returned directly. Only useful when keep:1 is
   set. 
