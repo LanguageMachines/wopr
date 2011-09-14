@@ -1036,6 +1036,11 @@ int server4(Logfile& l, Config& c) {
 	  std::string tmp_buf;
 	  newSock->read( tmp_buf );
 	  tmp_buf = trim( tmp_buf, " \n\r" );
+
+	  if ( tmp_buf.length() == 0 ) {
+	    connection_open = false;
+	    break;
+	  }
 	  
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
@@ -1046,10 +1051,15 @@ int server4(Logfile& l, Config& c) {
 	    connection_open = false;
 	    break;
 	  }
-	  if ( tmp_buf.length() == 0 ) {
+	  // So we can do: kill `echo "_PPID_" | nc localhost 8888`
+	  // from a script
+	  //
+	  if ( tmp_buf == "_PPID_" ) {
+	    newSock->write( to_str(getppid()) + '\n' );
 	    connection_open = false;
 	    break;
 	  }
+
 	  
 	  if ( verbose > 0 ) {
 	    l.log( "|" + tmp_buf + "|" );
@@ -1290,7 +1300,7 @@ int server4( Logfile& l, Config& c ) {
 #endif 
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
-int smt(Logfile& l, Config& c) {
+int mbmt(Logfile& l, Config& c) {
   l.log( "server for (pbmb) machine translation. Returns a (log10)prob over sequence." );
   
   const std::string& timbl      = c.get_value( "timbl" );
@@ -1400,58 +1410,63 @@ int smt(Logfile& l, Config& c) {
 	       + std::string(newSock->getClientName()) );
       }
 
-      //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
-      int cpid = fork();
-      if ( cpid == 0 ) { // child process
+      std::string buf;
+      bool connection_open = true;
+      std::vector<std::string> cls; // classify lines
+      std::vector<double> probs;
+      
+      // Local cache. Useful for pbmbmt which holds connection
+      // the whole time. Seperate cache for instances and whole
+      // inputs (otherwise mixing!):
+      // 13:23:53.15: Check cache: [1 2 3]
+      // 13:23:53.25: Check instance cache: [1 2 3]
+      // 13:23:53.25: Add to cache: [1 2 3](-0.90309)   !!
+      // 13:23:53.25: result sum=-6.27877/5.26299e-07
+      // 13:23:53.25: result ave=-2.09292/0.00807379
+      // 13:23:53.25: Add to cache: [1 2 3](-2.09292)   !!
+      //
+      Cache *cache = new Cache( cachesize ); // whole input
+      Cache *icache = new Cache( cachesize ); // instances
+      
+      while ( running & connection_open ) {
 	
-	std::string buf;
-      	bool connection_open = true;
-	std::vector<std::string> cls; // classify lines
-	std::vector<double> probs;
-
-	// Local cache. Useful for pbmbmt which holds connection
-	// the whole time. Seperate cache for instances and whole
-	// inputs (otherwise mixing!):
-	// 13:23:53.15: Check cache: [1 2 3]
-	// 13:23:53.25: Check instance cache: [1 2 3]
-	// 13:23:53.25: Add to cache: [1 2 3](-0.90309)   !!
-	// 13:23:53.25: result sum=-6.27877/5.26299e-07
-	// 13:23:53.25: result ave=-2.09292/0.00807379
-	// 13:23:53.25: Add to cache: [1 2 3](-2.09292)   !!
+	std::string classify_line;
+	newSock->read( classify_line );
+	classify_line = trim( classify_line, " \n\r" );
+	
+	if ( classify_line.length() == 0 ) {
+	  connection_open = false;
+	  break;
+	}
+	
+	// So we can do:
+	// kill `echo "_PPID_" | nc localhost 8888`
+	// from a script
 	//
-	Cache *cache = new Cache( cachesize ); // whole input
-	Cache *icache = new Cache( cachesize ); // instances
+	if ( classify_line == "_PID_" ) {
+	  newSock->write( to_str(getpid()) + '\n' );
+	  connection_open = false;
+	  break;
+	}
+	if ( classify_line == "_QUIT_" ) {
+	  connection_open = false;
+	  running = false;
+	  break;
+	}
 
-	while ( running & connection_open ) {
-
-	  std::string classify_line;
-	  newSock->read( classify_line );
-	  classify_line = trim( classify_line, " \n\r" );
-	  
-	  if ( classify_line.length() == 0 ) {
-	    connection_open = false;
-	    break;
-	  }
-
-	  if ( classify_line == "PID" ) {
-	    newSock->write(  to_str(getppid()) + '\n' );
-	    connection_open = false;
-	    break;
-	  }
-
-	  cls.clear();
-	  
-	  // Check the cache
-	  //
+	cls.clear();
+	
+	// Check the cache
+	//
+	if ( verbose > 2 ) {
+	  l.log( "Check cache: ["+classify_line+"]" );
+	}
+	std::string cache_ans = cache->get( classify_line );
+	if ( cache_ans != "" ) {
 	  if ( verbose > 2 ) {
-	    l.log( "Check cache: ["+classify_line+"]" );
+	    l.log( "Found in cache." );
 	  }
-	  std::string cache_ans = cache->get( classify_line );
-	  if ( cache_ans != "" ) {
-	    if ( verbose > 2 ) {
-	      l.log( "Found in cache." );
-	    }
-	    newSock->write(  cache_ans + '\n' ); //moses format?
+	  newSock->write(  cache_ans + '\n' ); //moses format?
 	    continue;
 	  }
 
@@ -1466,49 +1481,49 @@ int smt(Logfile& l, Config& c) {
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
 	    
-	      classify_line = cls.at(i);
-	      
-	      words.clear();
-	      Tokenize( classify_line, words, ' ' );
-
-	      if ( hapax > 0 ) {
-		int c = hapax_vector( words, hpxfreqs, hapax );
-		std::string t;
-		vector_to_string(words, t);
-		classify_line = t;
-		if ( verbose > 1 ) {
-		  l.log( "|" + classify_line + "| hpx" );
-		}
+	    classify_line = cls.at(i);
+	    
+	    words.clear();
+	    Tokenize( classify_line, words, ' ' );
+	    
+	    if ( hapax > 0 ) {
+	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      std::string t;
+	      vector_to_string(words, t);
+	      classify_line = t;
+	      if ( verbose > 1 ) {
+		l.log( "|" + classify_line + "| hpx" );
 	      }
-
-	      double res_pl10 = -99; // or zero, like SRILM when pplx-ing
-
+	    }
+	    
+	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
+	    
+	    if ( verbose > 2 ) {
+	      l.log( "Check instance cache: ["+classify_line+"]" );
+	    }
+	    std::string cache_ans = icache->get( classify_line );
+	    if ( cache_ans != "" ) {
 	      if ( verbose > 2 ) {
-		l.log( "Check instance cache: ["+classify_line+"]" );
+		l.log( "Found in cache." );
 	      }
-	      std::string cache_ans = icache->get( classify_line );
-	      if ( cache_ans != "" ) {
-		if ( verbose > 2 ) {
-		  l.log( "Found in cache." );
-		}
-		res_pl10 = stod(cache_ans); // stod() slows it down?
-	      } else {
+	      res_pl10 = stod(cache_ans); // stod() slows it down?
+	    } else {
 	      
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
 	      // that for the instances-without-target
 	      //
 	      std::string target = words.at( words.size()-1 );
-
+	      
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
 	      if ( ! tv ) {
 		l.log( "ERROR: Timbl returned a classification error, aborting." );
 		break;
 	      }
-
+	      
 	      result = tv->Name();		
 	      size_t res_freq = tv->ValFreq();
-
+	      
 	      double res_p = -1;
 	      bool target_in_dist = false;
 	      int target_freq = 0;
@@ -1576,15 +1591,15 @@ int smt(Logfile& l, Config& c) {
 	      ave_pl10 /= probs.size();
 	    }
 	    // else resm == 1, we return the sum.
-
+	    
 	    if ( verbose > 0 ) {
 	      l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	    }
-
+	    
 	    if ( lb == 0 ) { // lb:0 is no logs
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
-
+	    
 	    std::string ans = to_str(ave_pl10);
 	    if ( verbose > 2 ) {
 	      l.log( "Add to cache: ["+full_string+"]("+ans+")" );
@@ -1592,41 +1607,32 @@ int smt(Logfile& l, Config& c) {
 	    cache->add( full_string, ans );
 	    newSock->write( ans + "\n" );
 	    connection_open = (keep == 1);
-	} // (while) connection_open
+      } // while running & connection_open
+      
+      l.log( "connection closed." );
+      
+      size_t ccs = cache->get_size();
+      l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+      l.log( cache->stat() );
+      ccs = icache->get_size();
+      l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+      l.log( icache->stat() );
 
-        l.log( "connection closed." );
+    delete newSock;      
+    } // while running
 
-	if ( ! running ) {
-	  // Rather crude, children with connexion keep working
-	  // till exited/removed by system.
-	  kill( getppid(), SIGTERM );
-	}
-	size_t ccs = cache->get_size();
-	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-	l.log( cache->stat() );
-	ccs = icache->get_size();
-	l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-	l.log( icache->stat() );
-	_exit(0);
-
-      } else if ( cpid == -1 ) { // fork failed
-	l.log( "Error forking." );
-	perror("fork");
-	return(1);
-      }
-      delete newSock;
-
-    } // running
+    
   } // try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     return -1;
   }
+  l.log( "smt ended." );
 
   return 0;
 }
 #else
-int smt( Logfile& l, Config& c ) {
+int mbmt( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }

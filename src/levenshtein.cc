@@ -920,6 +920,7 @@ int server_sc( Logfile& l, Config& c ) {
 	  }
 	  
 	  // Sentence based, window here, classify all, etc.
+	  // mode is 0, hardcoded.
 	  //
 	  if ( mode == 1 ) {
 	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
