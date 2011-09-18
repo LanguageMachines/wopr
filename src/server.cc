@@ -1627,7 +1627,7 @@ int mbmt(Logfile& l, Config& c) {
     l.log( "ERROR: exception caught." );
     return -1;
   }
-  l.log( "smt ended." );
+  l.log( "mbmt ended." );
 
   return 0;
 }

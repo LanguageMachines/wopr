@@ -831,7 +831,6 @@ int server_sc( Logfile& l, Config& c ) {
   double distance;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  Cache *gcache = new Cache( cachesize );
 
   signal(SIGCHLD, SIG_IGN);
   volatile sig_atomic_t running = 1;
@@ -920,7 +919,7 @@ int server_sc( Logfile& l, Config& c ) {
 	  }
 	  
 	  // Sentence based, window here, classify all, etc.
-	  // mode is 0, hardcoded.
+	  // mode is 0, hardcoded. Valkuil uses mode:0
 	  //
 	  if ( mode == 1 ) {
 	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
@@ -1146,7 +1145,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      }
 	      answer = answer + (*fi)->name;
 	    }
-	    gcache->add( full_string, answer ); // WAS classify_line
+	    cache->add( full_string, answer );
 	    answer = answer + '\n';
 	    newSock->write( answer );
 
