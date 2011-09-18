@@ -819,7 +819,7 @@ Several implementations have been tried, the most recent and working
 function is called \cmp{server4}. It has a few obscure options to make
 it compatible with third party software like \cmp{moses} and
 \pbmbmt{}. The following command line shows an example of how it
-can be used with \pbmbmt{}.
+can be used.
 
 \begin{bash}{}
 %wopr -r server4 -p ibasefile:OpenSub-english.train.txt.l2r0_-a1+D.ibase,
@@ -858,6 +858,25 @@ For \pbmbmt{}, a special version of the server has been created,
 called \cmp{mbmt}. It is similar to \cmp{server4}, but has several of
 the parameters hard-coded and doesn't \q{fork}, making it easier to
 run from scripts in combination with \pbmbmt{}.
+
+The following snippet illustrates this. The \wopr{} \lm{} is started
+in the background, and then \pbmbmt{} is started. \Wopr{} is
+terminated after the translation is ready.
+
+\begin{bash}{}
+# Run mbmt server on port 8888
+nohup wopr -r mbmt -p ibasefile:file.ibase,timbl:"-a1 +D",lc:2,rc:0, \
+    port:8888 > lmlog.txt 2>&1 &
+
+# Wait a little for LM to become ready
+sleep 30
+
+# Run pbmbmt, point to LM server port 8888
+pbmbmt.py -DL8888 -- dutch english test exp1 > mtlog.txt 2>&1
+
+# Exit wopr by sending the _QUIT_ command 
+kill `echo "_QUIT_" | nc localhost 8888`
+\end{bash}
 
 \chapter{Installation}
 
