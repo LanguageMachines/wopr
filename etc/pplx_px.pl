@@ -14,9 +14,9 @@ use Getopt::Std;
 # words are "unknown".
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w $opt_L /;
+use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w $opt_L $opt_T /;
 
-getopts('f:g:il:r:R:t:wL:');
+getopts('f:g:il:r:R:t:wL:T');
 
 my $wopr_file  = $opt_f || 0;
 my $gcs        = $opt_g || 0; #for global context
@@ -27,6 +27,7 @@ my $gct        = $opt_t || 0; #global context type
 my $rfl        = $opt_R || 0; #RFL file for gct == 1 feature count
 my $wordscore  = $opt_w || 0;
 my $logbase    = $opt_L || 2;
+my $mrr_total  = $opt_T || 0;
 
 #------------------------------------------------------------------------------
 
@@ -215,7 +216,13 @@ if ( $wordscore == 0 ) {
 
   print "\n";
   foreach my $key (sort (keys(%rr_sum))) {
-    printf( "RR(%s): %8.3f, MRR: %8.3f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$rr_count{$key});
+    if ( $mrr_total ) {
+      # MRR over all the answers, 0 for wrong answers.
+      printf( "RR(%s): %8.3f, MRR: %8.3f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$tot);
+    } else {
+      # This calculates MRR over the correct/in-dist scores only.
+      printf( "RR(%s): %8.3f, MRR: %8.3f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$rr_count{$key});
+    }
   }
 }
 if ( $wordscore == 1 ) {
