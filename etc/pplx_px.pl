@@ -14,9 +14,9 @@ use Getopt::Std;
 # words are "unknown".
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w $opt_L $opt_T /;
+use vars qw/ $opt_f $opt_g $opt_i $opt_l $opt_r $opt_R $opt_t $opt_w $opt_L $opt_O $opt_T /;
 
-getopts('f:g:il:r:R:t:wL:T');
+getopts('f:g:il:r:R:t:wL:OT');
 
 my $wopr_file  = $opt_f || 0;
 my $gcs        = $opt_g || 0; #for global context
@@ -27,6 +27,7 @@ my $gct        = $opt_t || 0; #global context type
 my $rfl        = $opt_R || 0; #RFL file for gct == 1 feature count
 my $wordscore  = $opt_w || 0;
 my $logbase    = $opt_L || 2;
+my $oneliner   = $opt_O || 0;
 my $mrr_total  = $opt_T || 0;
 
 #------------------------------------------------------------------------------
@@ -185,13 +186,25 @@ if ( $wordscore == 0 ) {
     printf( "$f:%6i (%6.2f%%)\n", $key, $summary{$key},  $summary{$key}*100/$tot );
   }
 
+  my ($o_adc, $o_ads);
   printf ("dist_freq sum: %6i, ave: (%6.2f)\n", $dcnt_sum, $dcnt_sum/$tot);
   printf ("dist_sum sum: %6i, ave: (%6.2f)\n", $dsum_sum, $dsum_sum/$tot);
+  $o_adc = $dcnt_sum/$tot;
+  $o_ads = $dsum_sum/$tot;
 
+  my ($o_cg, $o_cd, $o_ic);
   for ( my $i = 0; $i < 5; $i++ ) {
     my $frmt = "%".($i+1)."i";
     if ( $tot != 0 ) {
       printf( "Column: %2i %6i (%6.2f%%) %s\n", $i, $vsum[$i],  $vsum[$i]*100/$tot, $vsum_txt[$i] );
+      # To add to the oneliner.
+      if ( $vsum_txt[$i] eq "cg" ) {
+	$o_cg = $vsum[$i]*100/$tot;
+      } elsif ( $vsum_txt[$i] eq "cd" ) {
+	$o_cd = $vsum[$i]*100/$tot;
+      } elsif ( $vsum_txt[$i] eq "ig" ) {
+	$o_ic = $vsum[$i]*100/$tot;
+      }
     }
   }
   printf( "Total: %6i\n", $tot );
@@ -204,26 +217,54 @@ if ( $wordscore == 0 ) {
   if ( $wordcount == $oovcount ) {
     $oovcount = 0;
   }
+  my ($o_pplx, $o_pplx1);
   if ( ! $ignore_oov ) {
     printf( "Wopr ppl:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount-$oovcount+$sentencecount)));
     printf( "Wopr ppl1:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount-$oovcount)));
     print " (No oov words.)\n";
+    $o_pplx  = 10 ** (-$wopr_sumlog10/($wordcount-$oovcount+$sentencecount));
+    $o_pplx1 = 10 ** (-$wopr_sumlog10/($wordcount-$oovcount));
   } else {
     printf( "Wopr ppl:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount+$sentencecount)));
     printf( "Wopr ppl1:  %8.2f ", 10 ** (-$wopr_sumlog10/($wordcount)));
     print " (With oov words.)\n";
+    $o_pplx  = 10 ** (-$wopr_sumlog10/($wordcount+$sentencecount));
+    $o_pplx1 = 10 ** (-$wopr_sumlog10/($wordcount));
   }
 
   print "\n";
+  my ($o_mrr_cg, $o_mrr_cd, $o_mrr_gd);
   foreach my $key (sort (keys(%rr_sum))) {
     if ( $mrr_total ) {
       # MRR over all the answers, 0 for wrong answers.
       printf( "RR(%s): %8.3f, MRR: %8.3f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$tot);
+      # To add to the oneliner.
+      if ( $key eq "cg" ) {
+	$o_mrr_cg = $rr_sum{$key}/$tot;
+      } elsif ( $key eq "cd" ) {
+	$o_mrr_cd = $rr_sum{$key}/$tot;
+      } elsif ( $key eq "gd" ) {
+	$o_mrr_gd = $rr_sum{$key}/$tot;
+      }
     } else {
       # This calculates MRR over the correct/in-dist scores only.
       printf( "RR(%s): %8.3f, MRR: %8.3f\n", $key, $rr_sum{$key}, $rr_sum{$key}/$rr_count{$key});
+      # To add to the oneliner.
+      if ( $key eq "cg" ) {
+	$o_mrr_cg = $rr_sum{$key}/$rr_count{$key};
+      } elsif ( $key eq "cd" ) {
+	$o_mrr_cd = $rr_sum{$key}/$rr_count{$key};
+      } elsif ( $key eq "gd" ) {
+	$o_mrr_gd = $rr_sum{$key}/$rr_count{$key};
+      }
     }
   }
+
+if ( $oneliner ) {
+  my $ctx = "l".$lc."r".$rc;
+  printf( "%i %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %s\n", $tot, $o_cg, $o_cd, $o_ic, $o_pplx, $o_pplx1, $o_mrr_cg, $o_mrr_cd, $o_mrr_gd, $o_adc, $o_ads, $ctx );
+}
+
 }
 if ( $wordscore == 1 ) {
   foreach my $key (sort (keys(%word_score))) {
@@ -241,7 +282,6 @@ if ( $wordscore == 1 ) {
     printf( "%s: cg:%s (%.2f%%) cd:%s (%.2f%%) ic:%s (%.2f%%)\n", $key, $word_score{$key}{"cg"}, $word_score{$key}{"cg"}/$tot*100, $word_score{$key}{"cd"}, $word_score{$key}{"cd"}/$tot*100, $word_score{$key}{"ic"}, $word_score{$key}{"ic"}/$tot*100);
   }
 }
-
 
 # NB, perl log is base e.
 #
