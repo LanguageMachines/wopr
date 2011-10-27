@@ -262,7 +262,7 @@ if ( $wordscore == 0 ) {
 
 if ( $oneliner ) {
   my $ctx = "l".$lc."r".$rc;
-  printf( "%i %.2f %.2f %.2f %.2f %.2f %.3f %.3f %.3f %.2f %.2f %s\n", $tot, $o_cg, $o_cd, $o_ic, $o_pplx, $o_pplx1, $o_mrr_cd, $o_mrr_cg, $o_mrr_gd, $o_adc, $o_ads, $ctx );
+  printf( "%s %i %.2f %.2f %.2f %.2f %.2f %.3f %.3f %.3f %.2f %.2f %s\n", $wopr_file, $tot, $o_cg, $o_cd, $o_ic, $o_pplx, $o_pplx1, $o_mrr_cd, $o_mrr_cg, $o_mrr_gd, $o_adc, $o_ads, $ctx );
 }
 
 }
