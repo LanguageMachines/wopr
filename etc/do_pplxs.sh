@@ -2,7 +2,13 @@
 #
 PXSCRIPT=~/uvt/wopr/etc/pplx_px.pl
 #
-for FILE in `ls *px`;
+FILERE="*.px"
+if test $# -eq 1
+then
+    FILERE=$1
+fi
+#
+for FILE in `ls ${FILERE}`;
 do
     # search for .l2r0_
     RX='.*l(.?)r(.?).*'
