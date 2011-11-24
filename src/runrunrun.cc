@@ -63,6 +63,7 @@
 #include "ngrams.h"
 #include "ngram_server.h"
 #include "wex.h"
+#include "prededit.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -511,6 +512,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &gen_test;
   } else if ( a_fname == "wopr" ) {
     return &test_wopr;
+  } else if ( a_fname == "pdt" ) { // from prededit.cc
+    return &pdt;
   }
   return &tst;
 }
