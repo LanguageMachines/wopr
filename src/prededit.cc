@@ -245,7 +245,7 @@ int pdt( Logfile& l, Config& c ) {
       ctx.push( token );
 
       if ( skip > 0 ) {
-	l.log( "Skipping: " + to_str(skip) );
+	//l.log( "Skipping: " + to_str(skip) );
 	// increment instance count? Log? E, edited, excluded
 	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
