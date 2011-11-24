@@ -212,6 +212,8 @@ int pdt( Logfile& l, Config& c ) {
   size_t instance_count = 0;
 
   int skip = 0;
+  double keypresses = 0;
+  double keyssaved = 0;
 
   while( std::getline( file_in, a_line ) ) { 
     if ( a_line == "" ) {
@@ -227,6 +229,8 @@ int pdt( Logfile& l, Config& c ) {
     file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
     file_out << a_line << " " << a_line.size() << std::endl;
 
+    keypresses += a_line.size();
+
     instance_count = 0;
 
     // each word in sentence
@@ -239,12 +243,11 @@ int pdt( Logfile& l, Config& c ) {
       // Add to context, and call wopr.
       //
       ctx.push( token );
-      std::cerr << ctx << std::endl;
 
       if ( skip > 0 ) {
 	l.log( "Skipping: " + to_str(skip) );
-	// increment instance count? Log?
-	file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	// increment instance count? Log? E, edited, excluded
+	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
 	file_out << ctx << std::endl;
 	++instance_count;
@@ -276,6 +279,7 @@ int pdt( Logfile& l, Config& c ) {
 
       std::vector<std::string>::iterator si = strs.begin();
       prediction_count = 0;
+      double savedhere = 0; // key presses saved in this prediction.
       while ( si != strs.end() ) {
 
 	// We should check if the prediction matches the original sentence.
@@ -300,7 +304,7 @@ int pdt( Logfile& l, Config& c ) {
 	while ( (pi != predictions.end()) && (wi != words.end()) && ( ! mismatched) ) {
 	  //l.log( (*pi) + "--" + (*wi) );
 	  if ( (*pi) == (*wi) ) {
-	    l.log( "MATCH: " + to_str(prediction_count) + " " + (*pi)  );
+	    //l.log( "MATCH: " + to_str(prediction_count) + " " + (*pi)  );
 	    matched = matched + (*pi) + " ";
 	    ++words_matched;
 	  } else {
@@ -310,8 +314,11 @@ int pdt( Logfile& l, Config& c ) {
 	  wi++;
 	}
 
+	// We could also take largest number of presses, not words.
+	//
 	if ( words_matched > skip ) {
 	  skip = words_matched;
+	  savedhere = matched.size()-1;
 	}
 
 	// P0000.0004.0004 his sake and
@@ -330,13 +337,17 @@ int pdt( Logfile& l, Config& c ) {
 	si++;
       }
       strs.clear();
-      
+
+      keyssaved += savedhere;
+
       ++instance_count;
     }
 
     ++sentence_count;
   }
 
+  l.log( "Keypresses: " + to_str(keypresses) );
+  l.log( "Saved     : " + to_str(keyssaved) );
   return 0;
 }  
 
