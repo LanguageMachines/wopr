@@ -45,8 +45,8 @@
 #include "Config.h"
 #include "runrunrun.h"
 #include "server.h"
-#include "prededit.h"
 #include "Context.h"
+#include "prededit.h"
 
 #include "MersenneTwister.h"
 
@@ -210,6 +210,9 @@ int pdt( Logfile& l, Config& c ) {
   size_t sentence_count = 0;
   size_t prediction_count = 0;
   size_t instance_count = 0;
+
+  int skip = 0;
+
   while( std::getline( file_in, a_line ) ) { 
     if ( a_line == "" ) {
       continue;
@@ -237,6 +240,17 @@ int pdt( Logfile& l, Config& c ) {
       //
       ctx.push( token );
       std::cerr << ctx << std::endl;
+
+      if ( skip > 0 ) {
+	l.log( "Skipping: " + to_str(skip) );
+	// increment instance count? Log?
+	file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
+	file_out << ctx << std::endl;
+	++instance_count;
+	--skip;
+	continue;
+      }
 
       // TEST
       //
@@ -271,6 +285,10 @@ int pdt( Logfile& l, Config& c ) {
 	// A matched word saves it length in number of keypresses. The space after
 	// the word is the "select" action, it is not saved.
 	//
+	// We could "simulate", and hop n words if we predict n words. advance(..)
+	// set a skip variable. If not 0, we decrement, and hop over a bit after
+	//  "ctx.push( token );" above. Skip the largest (could be more?).
+	//
 	predictions.clear();
 	Tokenize( (*si), predictions );
 	pi = predictions.begin(); //start at first word of predicted sequence
@@ -278,16 +296,22 @@ int pdt( Logfile& l, Config& c ) {
 	advance( wi, i+1 ); //advance to next word in sentence (PJB optimise)
 	bool mismatched = false;
 	std::string matched;
+	int words_matched = 0;
 	while ( (pi != predictions.end()) && (wi != words.end()) && ( ! mismatched) ) {
 	  //l.log( (*pi) + "--" + (*wi) );
 	  if ( (*pi) == (*wi) ) {
 	    l.log( "MATCH: " + to_str(prediction_count) + " " + (*pi)  );
 	    matched = matched + (*pi) + " ";
+	    ++words_matched;
 	  } else {
 	    mismatched = true;
 	  }
 	  pi++;
 	  wi++;
+	}
+
+	if ( words_matched > skip ) {
+	  skip = words_matched;
 	}
 
 	// P0000.0004.0004 his sake and

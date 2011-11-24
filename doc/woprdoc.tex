@@ -16,6 +16,7 @@
 % These three are together:
 \usepackage[latin1]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage[style=british]{csquotes}
 %
 \usepackage{color}
@@ -344,8 +345,7 @@ previous steps. This example also shows theproblem with this
 mechanism; we cannot generate the windowed test set in the same
 chain. That has to be done seperately. (To be clear, one would not run
 the example in real life. It was to show both the strength and
-weakness of the combined commands.) For complex \wopr{} usage,
-\emph{scripting} can (should) be used.
+weakness of the combined commands.) 
 
 For complex \wopr{} usage, \emph{scripting} can (should) be used.
 
@@ -1120,7 +1120,7 @@ a sentence.
 \end{wout}
 
 Some predictions show a similar logprob from both \wopr{} and
-\srilm{}. For examplme, both \lm{}s give the same likelyhood to the
+\srilm{}. For example, both \lm{}s give the same likelyhood to the
 second word in the sentence, \cmp{only}. Also the seventh word,
 \cmp{that} gets similar logprobs. 
 
@@ -1384,13 +1384,35 @@ markers (labeled pplx1).
 
 We evaluate \wopr{} in a \mt{} task.  We run \wopr{} as the \lm{} in
 \pbmbmt{}, and compare the score (\bleu{}-score) with \srilm{} as the
-\lm{}.
-
-We run \pbmbmt{} on the included OpenSubtitles (Dutch to English)
+\lm{}. We run \pbmbmt{} on the included OpenSubtitles (Dutch to English)
 data. 
 
-The SRILM scores: 
+The following table (Table~\ref{tab:pbmbmtscores}) shows the scores of the
+experiment, run with a third order \srilm{} model, a \cmp{l2r0} \wopr{}
+\igtree{} and a \wopr{} \triblt{} \lm{}. The second part of the table shows the
+scores with a larger context.
 
+% Taken from algos.tex
+\begin{table}[h!]\caption{\pbmbmt{} scores}
+\centering
+\vspace{\baselineskip}
+%\fit{%
+\begin{tabular}{ r r r r r r r r }
+\toprule
+lm & \bleu{} & mtr & \nist{} & \ter{} & \wer{} & \per{} & h:m \\
+\midrule
+\srilm{}  & \num{0.2552} & \num{0.4964} & \num{5.5436} & \num{0.5604} & \num{56.18} & \num{48.15} & 0:82 \\
+\igtree{} & \num{0.2608} & \num{0.4963} & \num{5.3051} & \num{0.6036} & \num{60.40} & \num{52.15} & 0:39 \\
+\triblt{} & \num{0.2603} & \num{0.4969} & \num{5.3080} & \num{0.6036} & \num{60.38} & \num{52.04} & 0:66 \\
+\midrule
+\igtree{} \cmp{l2r1} & \num{0.2592} & \num{0.4968} & \num{5.3056} & \num{0.6085} & \num{60.61} & \num{52.25} & 0:47 \\
+\triblt{} \cmp{l2r1} & \num{0.2609} & \num{0.4967} & \num{5.3051} & \num{0.6066} & \num{60.40} & \num{52.36} & 3:06 \\
+\triblt{} \cmp{l2r2} & \num{0.2609} & \num{0.4963} & \num{5.3046} & \num{0.6092} & \num{60.80} & \num{52.31} & 9:35 \\
+\bottomrule
+\end{tabular}
+\label{tab:pbmbmtscores} %}
+\end{table}
+%
 % SRILM & $0.2552$ & $0.4964389$ & $5.5436$ & $0.560487738046$ & $56.1885$ & $48.1559$ \\
 % Wopr & $0.2608$ & $0.4963775$ & $5.3051$ & $0.60364433484$ & $60.4016$ & $52.1591$ \\
 
@@ -1879,7 +1901,7 @@ classifier.
 \item[rc] Right context size for windowing.
 \item[verbose] More output.
 \item[hpx] Hapax level.
-\item[skip\_sm] Remove sentence markers.
+\item[skm] Remove sentence markers.
 \item[cs] Size of the cache. Received elements are cached,
   previous result is returned directly. Only useful when keep:1 is
   set. 
