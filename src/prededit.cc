@@ -108,14 +108,32 @@ int pdt( Logfile& l, Config& c ) {
   const std::string& timbl           = c.get_value( "timbl" );
   int                lc              = stoi( c.get_value( "lc", "2" ));
   int                rc              = stoi( c.get_value( "rc", "0" )); // should be 0
-  int                mode            = stoi( c.get_value( "mode", "1" ));
+  std::string        ped             = c.get_value( "ds", "" ); // depths
+  int                pel             = stoi( c.get_value( "n", "3" )); // length
   bool               show_counts     = stoi( c.get_value( "sc", "0" )) == 1;
-  std::string        output_filename = filename + ".pdt";
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   double             distance;
+
+  int length = pel; // length of each predicted string
+  std::vector<int> depths(length+1, 1);
+  if ( ped.size() > length ) {
+    ped = ped.substr(0, length );
+  }
+  for( int i = 0; i < ped.size(); i++) {
+    depths.at(length-i) = stoi( ped.substr(i, 1), 32 ); // V=31
+  }
+  std::string tmp = "n"+to_str(length)+"ds";
+  for ( int i = length; i > 0; i-- ) {
+    if ( (length-i) < ped.size() ) {
+      tmp = tmp + ped[length-i];
+    } else {
+      tmp = tmp + to_str(depths.at(i)); //this way to get right length/defaults base?
+    }
+  }
+  std::string output_filename = filename + "_" + tmp + ".pdt";
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -123,7 +141,7 @@ int pdt( Logfile& l, Config& c ) {
   l.log( "timbl:      "+timbl );
   l.log( "lc:         "+to_str(lc) );
   l.log( "rc:         "+to_str(rc) );
-  l.log( "mode:       "+to_str(mode) );
+  //l.log( "mode:       "+to_str(mode) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -183,23 +201,12 @@ int pdt( Logfile& l, Config& c ) {
     ectx = ectx + "_ ";
   }
 
-  int no_choice = 0;
-  int total_choices = 0;
-  // abf, average branching factor?
-
   int ctx_size = lc+rc;
   Context ctx(ctx_size);
   std::vector<distr_elem> res;
-  std::string prev_word = "";
 
   //std::vector<std::string>::iterator it_endm1 = ctx.begin();
   //advance(it_end,4);
-
-  int length = 4; // length of each predicted string
-  std::vector<int> depths(10, 1);
-  depths.at(length) = 5;
-  //depths.at(length-1) = 2;
-  //depths.at(1) = 3;
 
   file_out << "# l" << length;
   for ( int i = length; i > 0; i-- ) {
@@ -299,7 +306,7 @@ int pdt( Logfile& l, Config& c ) {
 	wi = words.begin(); // start at current word in sentence
 	advance( wi, i+1 ); //advance to next word in sentence (PJB optimise)
 	bool mismatched = false;
-	std::string matched;
+	std::string matched = "";
 	int words_matched = 0;
 	while ( (pi != predictions.end()) && (wi != words.end()) && ( ! mismatched) ) {
 	  //l.log( (*pi) + "--" + (*wi) );
@@ -314,9 +321,10 @@ int pdt( Logfile& l, Config& c ) {
 	  wi++;
 	}
 
-	// We could also take largest number of presses, not words.
-	//
-	if ( words_matched > skip ) {
+	// We take largest number of presses, not words.
+	// 
+	if ( matched.size() > savedhere+1 ) {
+	  //if ( words_matched > skip ) {
 	  skip = words_matched;
 	  savedhere = matched.size()-1;
 	}
