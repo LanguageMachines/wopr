@@ -251,6 +251,7 @@ int pdt( Logfile& l, Config& c ) {
 
     // each word in sentence
     //
+    double sentencesaved = 0; // key presses saved in this sentence
     for ( int i = 0; i < words.size(); i++ ) {
 
       token = words.at(i);
@@ -336,9 +337,13 @@ int pdt( Logfile& l, Config& c ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
 	  savedhere = matched.size()-1;
+	  sentencesaved = savedhere;
 	}
 
 	// P0000.0004.0004 his sake and
+	//
+	// (print only when a match, optional?)
+	//
 	file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		 << std::setfill('0') << std::setw(4) << instance_count << "." 
 		 << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
@@ -347,21 +352,30 @@ int pdt( Logfile& l, Config& c ) {
 	  file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		   << std::setfill('0') << std::setw(4) << instance_count << "." 
 		   << std::setfill('0') << std::setw(4) << prediction_count 
-		   << " " << matched << "-" << matched.size()-1 << std::endl; // -1 for trailing space
+		   << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space
 	}
-
+	
 	prediction_count++;
 	si++;
       }
       strs.clear();
-
+      
       keyssaved += savedhere;
-
+      
       ++instance_count;
-    }
+    } // i over words
+
+    // Output Result for this sentence.
+    //
+    file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << a_line << " " << sentencesaved << std::endl;
 
     ++sentence_count;
   }
+
+  // Output Totals
+  //
+  file_out << "T " << keypresses << " " << keyssaved << " " << ((float)keyssaved/keypresses)*100.0 << std::endl;
 
   l.log( "Keypresses: " + to_str(keypresses) );
   l.log( "Saved     : " + to_str(keyssaved) );
