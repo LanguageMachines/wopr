@@ -111,11 +111,18 @@ int pdt( Logfile& l, Config& c ) {
   std::string        ped             = c.get_value( "ds", "" ); // depths
   int                pel             = stoi( c.get_value( "n", "3" )); // length
   bool               show_counts     = stoi( c.get_value( "sc", "0" )) == 1;
+  std::string        id              = c.get_value( "id", to_str(getpid()) );
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   double             distance;
+
+  if ( contains_id(filename, id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
 
   int length = pel; // length of each predicted string
   std::vector<int> depths(length+1, 1);
@@ -133,7 +140,8 @@ int pdt( Logfile& l, Config& c ) {
       tmp = tmp + to_str(depths.at(i)); //this way to get right length/defaults base?
     }
   }
-  std::string output_filename = filename + "_" + tmp + ".pdt";
+
+  std::string output_filename = filename + "_" + tmp + id + ".pdt";
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -212,6 +220,7 @@ int pdt( Logfile& l, Config& c ) {
   for ( int i = length; i > 0; i-- ) {
     file_out << " " << depths.at(i); // choices per 'column'
   }
+  file_out << " " << ibasefile;
   file_out << std::endl;
 
   size_t sentence_count = 0;
@@ -321,7 +330,7 @@ int pdt( Logfile& l, Config& c ) {
 	  wi++;
 	}
 
-	// We take largest number of presses, not words.
+	// We take largest number of presses, not words. Same result.
 	// 
 	if ( matched.size() > savedhere+1 ) {
 	  //if ( words_matched > skip ) {
@@ -356,6 +365,10 @@ int pdt( Logfile& l, Config& c ) {
 
   l.log( "Keypresses: " + to_str(keypresses) );
   l.log( "Saved     : " + to_str(keyssaved) );
+
+  c.add_kv( "pdt_file", output_filename );
+  l.log( "SET gpdt_file to "+output_filename );
+
   return 0;
 }  
 
