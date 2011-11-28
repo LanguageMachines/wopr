@@ -17,6 +17,7 @@ class Context {
   Context( const Context& );
   void push(const std::string&);
   std::string toString();
+  void reset();
 };
 
 inline std::ostream& operator << ( std::ostream& os, const Context& ctx ) {
@@ -69,4 +70,11 @@ std::string Context::toString() {
   }
   tmp = tmp + data.at(i);
   return tmp;
+}
+
+void Context::reset() {
+  data.clear();
+  for ( size_t i = 0; i < size; i++ ) {
+    data.push_back("_");
+  }
 }
