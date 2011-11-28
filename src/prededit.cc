@@ -338,8 +338,8 @@ int pdt( Logfile& l, Config& c ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
 	  savedhere = matched.size()-1;
-	  sentenceksaved = savedhere;
-	  sentencewsaved = words_matched;
+	  sentenceksaved += savedhere;
+	  sentencewsaved += words_matched;
 	}
 
 	// P0000.0004.0004 his sake and
