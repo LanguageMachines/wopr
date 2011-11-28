@@ -368,7 +368,7 @@ int pdt( Logfile& l, Config& c ) {
     // Output Result for this sentence.
     //
     file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
-    file_out << a_line << " " << sentencesaved << std::endl;
+    file_out << /*a_line << " " <<*/ sentencesaved << std::endl;
 
     ++sentence_count;
   }
