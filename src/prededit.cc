@@ -251,7 +251,8 @@ int pdt( Logfile& l, Config& c ) {
 
     // each word in sentence
     //
-    double sentencesaved = 0; // key presses saved in this sentence
+    double sentenceksaved = 0; // key presses saved in this sentence
+    double sentencewsaved = 0; // words saved in this sentence
     for ( int i = 0; i < words.size(); i++ ) {
 
       token = words.at(i);
@@ -337,7 +338,8 @@ int pdt( Logfile& l, Config& c ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
 	  savedhere = matched.size()-1;
-	  sentencesaved = savedhere;
+	  sentenceksaved = savedhere;
+	  sentencewsaved = words_matched;
 	}
 
 	// P0000.0004.0004 his sake and
@@ -368,7 +370,7 @@ int pdt( Logfile& l, Config& c ) {
     // Output Result for this sentence.
     //
     file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
-    file_out << /*a_line << " " <<*/ sentencesaved << std::endl;
+    file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << std::endl;
 
     ++sentence_count;
   }
