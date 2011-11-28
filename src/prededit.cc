@@ -110,7 +110,7 @@ int pdt( Logfile& l, Config& c ) {
   int                rc              = stoi( c.get_value( "rc", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
   int                pel             = stoi( c.get_value( "n", "3" )); // length
-  bool               show_counts     = stoi( c.get_value( "sc", "0" )) == 1;
+  bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
   std::string        id              = c.get_value( "id", to_str(getpid()) );
 
   Timbl::TimblAPI   *My_Experiment;
@@ -149,7 +149,7 @@ int pdt( Logfile& l, Config& c ) {
   l.log( "timbl:      "+timbl );
   l.log( "lc:         "+to_str(lc) );
   l.log( "rc:         "+to_str(rc) );
-  //l.log( "mode:       "+to_str(mode) );
+  l.log( "mo:         "+to_str(matchesonly) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -228,8 +228,8 @@ int pdt( Logfile& l, Config& c ) {
   size_t instance_count = 0;
 
   int skip = 0;
-  double keypresses = 0;
-  double keyssaved = 0;
+  long keypresses = 0;
+  long keyssaved = 0;
 
   while( std::getline( file_in, a_line ) ) { 
     if ( a_line == "" ) {
@@ -251,8 +251,8 @@ int pdt( Logfile& l, Config& c ) {
 
     // each word in sentence
     //
-    double sentenceksaved = 0; // key presses saved in this sentence
-    double sentencewsaved = 0; // words saved in this sentence
+    long sentenceksaved = 0; // key presses saved in this sentence
+    long sentencewsaved = 0; // words saved in this sentence
     for ( int i = 0; i < words.size(); i++ ) {
 
       token = words.at(i);
@@ -297,7 +297,7 @@ int pdt( Logfile& l, Config& c ) {
 
       std::vector<std::string>::iterator si = strs.begin();
       prediction_count = 0;
-      double savedhere = 0; // key presses saved in this prediction.
+      long savedhere = 0; // key presses saved in this prediction.
       while ( si != strs.end() ) {
 
 	// We should check if the prediction matches the original sentence.
@@ -346,6 +346,7 @@ int pdt( Logfile& l, Config& c ) {
 	//
 	// (print only when a match, optional?)
 	//
+	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
 	file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		 << std::setfill('0') << std::setw(4) << instance_count << "." 
 		 << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
@@ -356,7 +357,7 @@ int pdt( Logfile& l, Config& c ) {
 		   << std::setfill('0') << std::setw(4) << prediction_count 
 		   << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space
 	}
-	
+	}
 	prediction_count++;
 	si++;
       }
@@ -379,7 +380,7 @@ int pdt( Logfile& l, Config& c ) {
 
   // Output Totals
   //
-  file_out << "T " << keypresses << " " << keyssaved << " " << ((float)keyssaved/keypresses)*100.0 << std::endl;
+  file_out << "T " << keypresses << " " << keyssaved << " " << ((double)keyssaved/keypresses)*100.0 << std::endl;
 
   l.log( "Keypresses: " + to_str(keypresses) );
   l.log( "Saved     : " + to_str(keyssaved) );
