@@ -1,3 +1,6 @@
+1.33.0	The *.pxs files with right context now correctly determine sentence
+	boundaries.
+	
 1.32.1	Working version of 'pdt'.
 	
 1.32.0	Started on 'pdt' code.

@@ -133,7 +133,7 @@ int make_ibase( Logfile& l, Config& c ) {
     if ( t_ext != "" ) {
       ibase_filename = ibase_filename+"_"+t_ext;
     }
-    
+
     /* DISABLED because of the t_ext string.
        if ( (id != "") && ( ! contains_id( filename, id)) ) {
        ibase_filename = ibase_filename + "_" + id;
@@ -3399,8 +3399,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       // averages, and reset the sum/counting variables.
       //
       // We also need this at the end of the loop!
+      // 
+      // For lc:0 we test at the end
       //
-      if ( (a_line.substr(0, ws*2) == bos) && ( sentence_wordcount > 0) ) {
+      if ( (lc != 0) && (a_line.substr(0, lc*2) == bos.substr(0, lc*2)) && ( sentence_wordcount > 0) ) {
 	double avg_ent  = sum_logprob / (double)sentence_wordcount;
 	double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
 	double avg_pplx = pow( log_base, -avg_ent ); 
@@ -3803,10 +3805,55 @@ int pplx_simple( Logfile& l, Config& c ) {
       }
 
       file_out << std::endl;
+      
+      // Test for sentence start for right context only settings.
+      //
+      if ( (lc == 0) && (a_line.substr(0, rc*2) == bos.substr(0, rc*2)) && ( sentence_wordcount > 0) ) {
+	double avg_ent  = sum_logprob / (double)sentence_wordcount;
+	double avg_wlp  = sum_wlp / (double)sentence_wordcount; 
+	double avg_pplx = pow( log_base, -avg_ent ); 
+	file_out1 << sentence_count << " "
+		  << sentence_wordcount << " "
+		  << sum_logprob << " "
+		  << avg_pplx << " "
+		  << avg_wlp << " "
+		  << sentence_noov_count << " "
+		  << sum_noov_logprob << " ";
+
+	double sum_avg_diff = 0;
+	std::string tmp_output;
+	std::vector<double>::iterator vi;
+	vi = w_pplx.begin();
+	//file_out1 << "[ ";
+	tmp_output = " [ ";
+	while ( vi != w_pplx.end() ) {
+	  //file_out1 << *vi << ' ';
+	  tmp_output = tmp_output + to_str(*vi) + " ";
+	  sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
+	  vi++;
+	}
+	tmp_output += "]";
+	//file_out1 << "] ";
+
+	double std_dev = sqrt( sum_avg_diff / sentence_wordcount );
+	//file_out1 << std_dev;
+	file_out1 << std_dev << tmp_output;
+	if ( inc_sen == true ) {
+	  file_out1 << sentence;
+	}
+	file_out1 << std::endl;
+	sentence.clear();
+	sum_logprob         = 0.0;
+	sentence_wordcount  = 0;
+	sum_noov_logprob    = 0.0;
+	sentence_noov_count = 0;
+	++sentence_count;
+	w_pplx.clear();
+      } // end bos
 
       // End of sentence (sort of)
       //
-      if ( (target == "</s>")
+      if ( (target == "</s>") 
 	   //|| (target == ".") || (target == "!") || (target == "?") 
 	   ) {
 	double avg_ent  = sum_logprob / (double)sentence_wordcount;
