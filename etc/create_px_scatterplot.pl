@@ -15,9 +15,9 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_F $opt_l $opt_L $opt_r $opt_R $opt_o /;
+use vars qw/ $opt_f $opt_F $opt_l $opt_L $opt_r $opt_R $opt_o $opt_i /;
 
-getopts('f:F:l:L:r:R:o:');
+getopts('f:F:l:L:r:R:o:i:');
 
 my $file0 = $opt_f || 0;
 my $file1 = $opt_F || 0;
@@ -29,14 +29,16 @@ my $rc1   = $opt_R || 0;
 
 my $out   = $opt_o || 0;
 
+my $idx   = $opt_i || 2; # index to variable to plot
+
 #------------------------------------------------------------------------------
 
 my $gcs = 0;
 
 # Here we can plot adc etc as well.
 #
-my $l2p_pos0 = $lc0 + $rc0 + $gcs + 2;
-my $l2p_pos1 = $lc1 + $rc1 + $gcs + 2;
+my $l2p_pos0 = $lc0 + $rc0 + $gcs + $idx;
+my $l2p_pos1 = $lc1 + $rc1 + $gcs + $idx;
 
 my $out_data = $out.".data";
 my $out_plot = $out.".plot";
@@ -85,10 +87,15 @@ close(FHF0);
 #
 open(OFHP, ">$out_plot") || die "Can't open plotfile.";
 
+my $rng = "";
+if ( $idx == 9 ) {
+  $rng = "0:5000";
+}
+
 print OFHP "# $file0\n";
 print OFHP "# $file1\n";
-print OFHP "set xrange []\n";
-print OFHP "set yrange []\n";
+print OFHP "set xrange [$rng]\n";
+print OFHP "set yrange [$rng]\n";
 print OFHP "set xlabel '$file0'\n";
 print OFHP "set ylabel '$file1'\n";
 print OFHP "set key bottom\n";
