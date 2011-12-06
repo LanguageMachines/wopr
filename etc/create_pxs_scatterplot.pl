@@ -85,8 +85,8 @@ open(OFHP, ">$out_plot") || die "Can't open plotfile.";
 
 print OFHP "# $file0\n";
 print OFHP "# $file1\n";
-print OFHP "set xrange []\n";
-print OFHP "set yrange []\n";
+print OFHP "set xrange [-250:0]\n";
+print OFHP "set yrange [-250:0]\n";
 print OFHP "set xlabel '$file0'\n";
 print OFHP "set ylabel '$file1'\n";
 print OFHP "set key bottom\n";
