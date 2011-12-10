@@ -386,7 +386,7 @@ int pdt( Logfile& l, Config& c ) {
   l.log( "Saved     : " + to_str(keyssaved) );
 
   c.add_kv( "pdt_file", output_filename );
-  l.log( "SET gpdt_file to "+output_filename );
+  l.log( "SET pdt_file to "+output_filename );
 
   return 0;
 }  
