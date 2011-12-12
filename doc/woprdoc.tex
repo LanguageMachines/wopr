@@ -483,6 +483,83 @@ The other 14 first list equities were unchanged in higher management
    ranks . 
 \end{wout}
 
+\section{Predictive Editing}
+%wopr 1.33.1 and up
+
+The text generation explained in the previous section can also be used to
+simulate \emph{predictive editing}. Predictive editing is a tool to help authors
+write texts by preparing possible continuations of their text which can be
+insterted with a single key press or button click. The predictive editing
+simulation in \wopr{} generates possible strings after each word in a test set,
+and calculates how may key presses could have been saved.
+
+The following example shows a typical run.
+
+\begin{bash}{Predictive editing}
+wopr -r pdt -p filename:nyt.tail1000,timbl:"-a1 +D",
+               ibasefile:nyt.3e7.1000000.l2r0_-a1+D.ibase,
+               lc:2,n:3,ds:511
+Reading Instance-Base from: nyt.3e7.1000000.l2r0_-a1+D.ibase
+...
+13:58:54.97: Keypresses: 136754
+13:58:54.97: Saved     : 29119
+...
+13:58:54.97: SET pdt_file to nyt.tail1000_n3ds511_25746.pdt
+13:58:54.97: Result = 0
+\end{bash}
+
+The \cmp{n} parameter specifies the length of the generated sequences. The
+\cmp{ds} parameter specifies the depth for each \cmp{n}. This works as
+follows. For each left context, there are a number of possible next words
+(predictions). These can be sorted by frequency, highest first. The depth
+parameter takes the \topn{n} of this distribution. For sequences longer than one
+word, each of the predictions is shifted into the context (the left most word is
+discarded), and a new prediction from the new context is made.
+
+The output is quite verbose, and rather mechanical. The suffix of the output
+files is \cmp{pdt}. The first line is a summary line containing the length and
+branching settings, and the instance base used to run the experiment.
+
+\begin{wout}{}
+# l3 3 2 1 ../nyt.3e7.100000.l2r0_-a1+D.ibase
+S0000 Instead , the stars were those whose congeniality put them at the
+heart of the informal communication networks that would spring up during
+times of crisis or innovation .  171
+I0000.0000 _ Instead
+P0000.0000.0000 , the former
+M0000.0000.0000 , the 5
+P0000.0000.0001 , he said
+M0000.0000.0001 , 1
+P0000.0000.0002 of continuing to
+P0000.0000.0003 of seeing everything
+P0000.0000.0004 he was a
+P0000.0000.0005 he submitted to
+E0000.0001 Instead ,
+E0000.0002 , the
+I0000.0003 the stars
+...
+R0000 5 14
+...
+T 136754 16222 11.8622
+\end{wout}
+
+This is followed by the first sentence in the test set (\cmp{S0000}) followed by
+the length of the sentence. For each sentence, the instances are printed
+(\cmp{I0000.0000}). Each instance is followed by a number of predictions
+(\cmp{P0000.0000.0000}). If the prediction (partly) matches what is to come
+next, a line starting with an \cmp{M} is printed (\cmp{M0000.0000.0000}),
+containing the words matched plus a number indicating the key presses saved by
+that sequence. The 4-digit numbers are sentence number, word number, and
+prediction number. In the above example, there are two matches,
+\cmp{M0000.0000.0000} and \cmp{M0000.0000.0001}. The former saves more keys
+(five) and is therefore chosen by the system. This means that two words are
+skipped, marked by the lines starting with an \cmp{E} (excluded). Then the
+system continues with the next word, \cmp{I0000.0003}.
+
+At the end of each sentence, a result is printed (\cmp{R0000}) with the number
+of words and keypresses saved. The last line in the file displays the total
+score; total number of keypresses, the total number of keypresses saved, and the
+score as a percentage.
 
 \section{Spelling Correction}
 
@@ -1878,6 +1955,18 @@ classifier.
 \item[len] The maximum length of each sentence if the end of sentence
   marker is not reached.
 \item[n] The number of sentences to generate.
+\end{varlist}
+
+\subsection{\cmp{pdt}}
+
+\begin{varlist}{ibasefile}
+\item[filename] File to run the simulation on, plain text.
+\item[ibasefile] The instance base.
+\item[timbl] The corresponding \Timbl{} settings.
+\item[n] The length of generated sequences.
+\item[ds] The depth for each \emph{n}.
+\item[mo] If set with \cmp{mo:1}, writes minimal output to the output file. Only
+  the predictions which have a match will be output.
 \end{varlist}
 
 \subsection{\cmp{server4}}
