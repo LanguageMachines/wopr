@@ -410,6 +410,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &count_lines;
   } else if ( a_fname == "lowercase" ) {
     return &lowercase;
+  } else if ( a_fname == "letters" ) {
+    return &letters;
   } else if ( a_fname == "make_ibase" ) {
     return &make_ibase;
   } else if ( a_fname == "window" ) {
@@ -514,6 +516,10 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &test_wopr;
   } else if ( a_fname == "pdt" ) { // from prededit.cc
     return &pdt;
+  } else if ( a_fname == "pdt2" ) { // from prededit.cc
+    return &pdt2;
+  } else if ( a_fname == "window_letters" ) { // from prededit.cc
+    return &window_letters;
   }
   return &tst;
 }
@@ -642,6 +648,56 @@ int lowercase(Logfile& l, Config& c) {
     std::transform(a_line.begin(),a_line.end(),a_line.begin(),tolower); 
     file_out << a_line << std::endl;
   }
+
+  file_out.close();
+  file_in.close();
+  
+  // Should we check if we got as many lines as we requested?
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// Not UTF8 safe
+//
+// _ t the
+// t h the
+// h e the
+//
+int letters(Logfile& l, Config& c) {
+  l.log( "letters" );
+  const std::string& filename = c.get_value( "filename" );
+  std::string output_filename = filename + ".lt";
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::string::iterator si;
+  while ( getline( file_in, a_line )) {
+    for ( si = a_line.begin(); si != a_line.end(); si++ ) {
+      if ( *si == ' ' ) { 
+	file_out << "_ ";
+      } else {
+	file_out << *si << ' ' ;
+      }
+    }
+    file_out << std::endl;
+  }
+  
   file_out.close();
   file_in.close();
   

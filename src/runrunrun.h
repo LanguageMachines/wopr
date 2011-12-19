@@ -46,6 +46,7 @@ int tst( Logfile&, Config& );
 int cut( Logfile&, Config& );
 int flatten( Logfile&, Config& );
 int lowercase( Logfile&, Config& );
+int letters( Logfile&, Config& );
 int window( Logfile&, Config& );
 int window_s( Logfile&, Config& );
 int ngram( Logfile&, Config& );

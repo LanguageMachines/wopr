@@ -29,6 +29,8 @@
 #endif
 
 int pdt( Logfile&, Config& );
+int pdt2( Logfile&, Config& );
 //void generate_next(  Timbl::TimblAPI*, Config&, std::string, int, std::vector<distr_elem>& );
+int window_letters( Logfile&, Config& );
 
 #endif

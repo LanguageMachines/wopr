@@ -99,6 +99,8 @@ struct salad_elem {
 };
 void generate_next( Timbl::TimblAPI*, Config&, std::string, std::vector<distr_elem>& );
 void generate_tree( Timbl::TimblAPI*, Config&, Context&, std::vector<std::string>&, int, std::vector<int>&, std::string );
+void window_word_letters(std::string, std::string, int, Context&, std::vector<std::string>&);
+void window_words_letters(std::string, int, Context&, std::vector<std::string>&);
 
 int pdt( Logfile& l, Config& c ) {
   l.log( "predictive editing" );
@@ -391,6 +393,338 @@ int pdt( Logfile& l, Config& c ) {
   return 0;
 }  
 
+// Two instance bases.
+//
+int pdt2( Logfile& l, Config& c ) {
+  l.log( "predictive editing2" );
+  const std::string& start           = c.get_value( "start", "" );
+  const std::string  filename        = c.get_value( "filename", to_str(getpid()) ); // "test"file
+  const std::string& ibasefile0      = c.get_value( "ibasefile0" );
+  const std::string& timbl0          = c.get_value( "timbl0" );
+  const std::string& ibasefile1      = c.get_value( "ibasefile1" );
+  const std::string& timbl1          = c.get_value( "timbl1" );
+  int                lc0             = stoi( c.get_value( "lc0", "2" ));
+  int                rc0             = stoi( c.get_value( "rc0", "0" )); // should be 0
+  int                lc1             = stoi( c.get_value( "lc1", "2" ));
+  int                rc1             = stoi( c.get_value( "rc1", "0" )); // should be 0
+  std::string        ped             = c.get_value( "ds", "" ); // depths
+  int                pel             = stoi( c.get_value( "n", "3" )); // length
+  bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
+  std::string        id              = c.get_value( "id", to_str(getpid()) );
+
+  Timbl::TimblAPI   *My_Experiment0;
+  Timbl::TimblAPI   *My_Experiment1;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  double             distance;
+
+  if ( contains_id(filename, id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+
+  int length0 = 1; // hardcoded
+  std::string ped0 = "5"; // hardcoded
+  std::vector<int> depths0(length0+1, 1);
+  for( int i = 0; i < ped0.size(); i++) {
+    depths0.at(length0-i) = stoi( ped0.substr(i, 1), 32 ); // V=31
+  }
+  //
+  int length = pel; // length of each predicted string
+  std::vector<int> depths(length+1, 1);
+  if ( ped.size() > length ) {
+    ped = ped.substr(0, length );
+  }
+  for( int i = 0; i < ped.size(); i++) {
+    depths.at(length-i) = stoi( ped.substr(i, 1), 32 ); // V=31
+  }
+
+  std::string tmp = "n"+to_str(length)+"ds";
+  for ( int i = length; i > 0; i-- ) {
+    if ( (length-i) < ped.size() ) {
+      tmp = tmp + ped[length-i];
+    } else {
+      tmp = tmp + to_str(depths.at(i)); //this way to get right length/defaults base?
+    }
+  }
+
+  std::string output_filename = filename + "_" + tmp + id + ".pdt2"; //pdt2?
+
+  l.inc_prefix();
+  l.log( "filename:   "+filename );
+  l.log( "ibasefile:  "+ibasefile0 );
+  l.log( "timbl:      "+timbl0 );
+  l.log( "lc:         "+to_str(lc0) );
+  l.log( "rc:         "+to_str(rc0) );
+  l.log( "ibasefile:  "+ibasefile1 );
+  l.log( "timbl:      "+timbl1 );
+  l.log( "lc:         "+to_str(lc1) );
+  l.log( "rc:         "+to_str(rc1) );
+  l.log( "mo:         "+to_str(matchesonly) );
+  l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  try {
+    My_Experiment0 = new Timbl::TimblAPI( timbl0 );
+    if ( ! My_Experiment0->Valid() ) {
+      l.log( "Timbl Experiment0 is not valid." );
+      return 1;      
+    }
+    (void)My_Experiment0->GetInstanceBase( ibasefile0 );
+    if ( ! My_Experiment0->Valid() ) {
+      l.log( "Timbl Experiment0 is not valid." );
+      return 1;
+    }
+    // My_Experiment->Classify( cl, result, distrib, distance );
+    My_Experiment1 = new Timbl::TimblAPI( timbl1 );
+    if ( ! My_Experiment1->Valid() ) {
+      l.log( "Timbl Experiment1 is not valid." );
+      return 1;      
+    }
+    (void)My_Experiment1->GetInstanceBase( ibasefile1 );
+    if ( ! My_Experiment1->Valid() ) {
+      l.log( "Timbl Experiment1 is not valid." );
+      return 1;
+    }
+  } catch (...) {
+    l.log( "Cannot create Timbl Experiments..." );
+    return 1;
+  }
+  l.log( "Instance bases loaded." );
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::string token;
+  std::string result;
+  std::vector<std::string> results;
+  std::vector<std::string> targets;
+  std::vector<std::string>::iterator ri;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  std::vector<std::string> words;
+  std::vector<std::string>::iterator wi;
+  std::vector<std::string> predictions;
+  std::vector<std::string>::iterator pi;
+  int correct = 0;
+  int wrong   = 0;
+  int correct_unknown = 0;
+  int correct_distr = 0;
+  Timbl::ValueDistribution::dist_iterator it;
+  int cnt;
+  int distr_count;
+
+  MTRand mtrand;
+
+  // TEST
+  //
+  int test_lc = 8;
+  Context test_ctx(test_lc);
+  std::string test_word = "Hoewel de politie en";
+  std::vector<std::string> test_res;
+  window_words_letters(test_word, test_lc, test_ctx, test_res);
+  return 0;
+  //
+  // END TEST
+
+  std::string ectx0; // empty context
+  for ( int i = 0; i < lc0+rc1; i++ ) {
+    ectx0 = ectx0 + "_ ";
+  }
+
+  int ctx_size0 = lc0+rc0;
+  Context ctx0(ctx_size0);
+  std::vector<distr_elem> res;
+
+  //std::vector<std::string>::iterator it_endm1 = ctx.begin();
+  //advance(it_end,4);
+
+  file_out << "# l" << length;
+  for ( int i = length; i > 0; i-- ) {
+    file_out << " " << depths.at(i); // choices per 'column'
+  }
+  file_out << " " << ibasefile0 << " " << ibasefile1;
+  file_out << std::endl;
+
+  size_t sentence_count = 0;
+  size_t prediction_count = 0;
+  size_t instance_count = 0;
+
+  int skip = 0;
+  long keypresses = 0;
+  long keyssaved = 0;
+
+  while( std::getline( file_in, a_line ) ) { 
+    if ( a_line == "" ) {
+      continue;
+    }
+    
+    words.clear();
+    Tokenize( a_line, words );
+
+    // Print the sentence, with counts, and length (keypresses):
+    // S0000 we sat and waited for the woman
+    //
+    file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << a_line << " " << a_line.size() << std::endl;
+
+    keypresses += a_line.size();
+
+    instance_count = 0;
+
+    // each word in sentence
+    //
+    long sentenceksaved = 0; // key presses saved in this sentence
+    long sentencewsaved = 0; // words saved in this sentence
+    for ( int i = 0; i < words.size(); i++ ) {
+
+      token = words.at(i);
+
+      // We got word 'token' (pretend we just pressed space).
+      // Add to context, and call wopr.
+      //
+      ctx0.push( token );
+
+      if ( skip > 0 ) {
+	//l.log( "Skipping: " + to_str(skip) );
+	// increment instance count? Log? E, edited, excluded
+	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
+	file_out << ctx0 << std::endl;
+	++instance_count;
+	--skip;
+	continue;
+      }
+
+      // _ t the
+      // t h the
+      // h e the
+      //
+      std::vector<std::string> strs; // should be a struct with more stuff
+      std::vector<std::string>::iterator si;
+      std::string t;
+      generate_tree( My_Experiment0, c, ctx0, strs, length0, depths0, t );
+
+      for ( si = strs.begin(); si != strs.end(); si++ ) {
+	l.log( *si );
+      }
+      
+      // Now generate from My_Experiment1
+
+      // Print the instance, with counts.
+      // I0000.0004 waited for
+      //
+      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	       << std::setfill('0') << std::setw(4) << instance_count << " "; 
+      file_out << ctx0 << std::endl;
+
+      si = strs.begin();
+      prediction_count = 0;
+      long savedhere = 0; // key presses saved in this prediction.
+      while ( si != strs.end() ) {
+
+	// We should check if the prediction matches the original sentence.
+	// We compare word by word in the sentence and the predicted sequence.
+	// keep matching until we mismatch, we don't match "over" mismatched
+	// words.
+	// A matched word saves it length in number of keypresses. The space after
+	// the word is the "select" action, it is not saved.
+	//
+	// We could "simulate", and hop n words if we predict n words. advance(..)
+	// set a skip variable. If not 0, we decrement, and hop over a bit after
+	//  "ctx.push( token );" above. Skip the largest (could be more?).
+	//
+	predictions.clear();
+	Tokenize( (*si), predictions );
+	pi = predictions.begin(); //start at first word of predicted sequence
+	wi = words.begin(); // start at current word in sentence
+	advance( wi, i+1 ); //advance to next word in sentence (PJB optimise)
+	bool mismatched = false;
+	std::string matched = "";
+	int words_matched = 0;
+	while ( (pi != predictions.end()) && (wi != words.end()) && ( ! mismatched) ) {
+	  //l.log( (*pi) + "--" + (*wi) );
+	  if ( (*pi) == (*wi) ) {
+	    //l.log( "MATCH: " + to_str(prediction_count) + " " + (*pi)  );
+	    matched = matched + (*pi) + " ";
+	    ++words_matched;
+	  } else {
+	    mismatched = true;
+	  }
+	  pi++;
+	  wi++;
+	}
+
+	// We take largest number of presses, not words. Same result.
+	// 
+	if ( matched.size() > savedhere+1 ) {
+	  //if ( words_matched > skip ) {
+	  skip = words_matched;
+	  savedhere = matched.size()-1;
+	  sentenceksaved += savedhere;
+	  sentencewsaved += words_matched;
+	}
+
+	// P0000.0004.0004 his sake and
+	//
+	// (print only when a match, optional?)
+	//
+	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
+	file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		 << std::setfill('0') << std::setw(4) << instance_count << "." 
+		 << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
+
+	if ( matched != "" ) {
+	  file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		   << std::setfill('0') << std::setw(4) << instance_count << "." 
+		   << std::setfill('0') << std::setw(4) << prediction_count 
+		   << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space
+	}
+	}
+	prediction_count++;
+	si++;
+      }
+      strs.clear();
+      
+      keyssaved += savedhere;
+      
+      ++instance_count;
+    } // i over words
+
+    // Output Result for this sentence.
+    //
+    file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << std::endl;
+
+    ctx0.reset();
+
+    ++sentence_count;
+  }
+
+  // Output Totals
+  //
+  file_out << "T " << keypresses << " " << keyssaved << " " << ((double)keyssaved/keypresses)*100.0 << std::endl;
+
+  l.log( "Keypresses: " + to_str(keypresses) );
+  l.log( "Saved     : " + to_str(keyssaved) );
+
+  c.add_kv( "pdt_file", output_filename );
+  l.log( "SET pdt_file to "+output_filename );
+
+  return 0;
+}  
+
+
 // Should implement caching? Threading, ...
 // Cache must be 'global', contained in c maybe, or a parameter.
 //
@@ -492,8 +826,167 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Config& c, Context& ctx, std
   }
   
 }
+
+// _ T The
+// T h The
+// h e The
+//
+void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx, std::vector<std::string>& res) {
+  int i;
+  for ( i = 0; i < a_word.length(); i++ ) {
+    std::string tmp = a_word.substr(i, 1);
+    ctx.push( tmp ); // next letter in context
+    res.push_back( ctx.toString() + " " + t );
+  }
+}
+
+// Loop over one sentence.
+//
+void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<std::string>& res) {
+  std::vector<std::string> words;
+  std::vector<std::string>::iterator wi;
+  Tokenize( a_line, words, ' ' );
+  int i;
+  for ( i = 0; i < words.size()-1; i++ ) { // each word
+    window_word_letters( words.at(i), words.at(i), lc, ctx, res );
+    //
+    // After a word we get a space, and predict the _next_ word.
+    // (but not if we are the last word.)
+    //
+    window_word_letters( "_", words.at(i+1), lc, ctx, res );
+  }
+  if ( words.at(i).size() > 0 ) { //not if one character, bcz already in words.at(i+1)? 
+    window_word_letters( words.at(i), words.at(i), lc, ctx, res );
+  }
+}
+
+// Process whole corpus.
+// Do this not per getline() but with >>next_word ?
+//
+int window_letters_off( Logfile& l, Config& c ) {
+  l.log( "window_letters" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                lc              = stoi( c.get_value( "lc", "2" ));
+  int                rc              = 0;
+  std::string        output_filename = filename + ".lt" + to_str(lc); // RC makes no sense (yet)
+
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "lc:        "+to_str(lc) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists( l, c, output_filename )) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+ 
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string                        a_line;
+  std::vector<std::string>           results;
+  std::vector<std::string>::iterator ri;
+  Context ctx(lc);
+
+  while( std::getline( file_in, a_line ) ) { 
+    if ( a_line == "" ) {
+      continue;
+    }
+
+    window_words_letters(a_line, lc, ctx, results);
+    for ( ri = results.begin(); ri != results.end(); ri++ ) {
+      file_out << *ri << "\n";
+    }
+    // Auto space after a line? Needs first word of next line
+    results.clear();
+  }
+  
+  file_out.close();
+  file_in.close();
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
+// Window a whoe text letter based. Treat text as one long stream of words
+// to be able to predict next word after a "." &c.
+//
+int window_letters( Logfile& l, Config& c ) {
+  l.log( "window_letters" );
+  const std::string& filename        = c.get_value( "filename" );
+  int                lc              = stoi( c.get_value( "lc", "2" ));
+  int                rc              = 0;
+  std::string        output_filename = filename + ".lt" + to_str(lc); // RC makes no sense (yet)
+
+  l.inc_prefix();
+  l.log( "filename:  "+filename );
+  l.log( "lc:        "+to_str(lc) );
+  l.log( "OUTPUT:    "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists( l, c, output_filename )) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+output_filename );
+    return 0;
+  }
+ 
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+
+  std::string                        a_word;
+  bool                               first = true;
+  std::vector<std::string>           results;
+  std::vector<std::string>::iterator ri;
+  Context ctx(lc);
+  
+  while ( file_in >> a_word ) { 
+
+    if ( ! first ) {
+      window_word_letters( "_", a_word, lc, ctx, results );
+    }
+    window_word_letters(a_word, a_word, lc, ctx, results);
+    for ( ri = results.begin(); ri != results.end(); ri++ ) {
+      file_out << *ri << "\n";
+    }
+    first =  false;
+    results.clear();
+  }
+  
+  file_out.close();
+  file_in.close();
+  
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+output_filename );
+  return 0;
+}
+
 #else
 int pdt( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}  
+int pdt2( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }  
