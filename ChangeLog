@@ -1,4 +1,7 @@
+1.33.2	Work on pdt2. Function window_letters added.
+	
 1.33.1	Spelling mistake fixed.
+	
 1.33.0	The *.pxs files with right context now correctly determine sentence
 	boundaries.
 	

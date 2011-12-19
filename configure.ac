@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(wopr, 1.33.1)
+AC_INIT(wopr, 1.33.2)
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
@@ -132,3 +132,4 @@ AC_DEFINE_UNQUOTED(WOPR_SIZE_T,$size_t_value, "size_t" )
 AC_DEFINE_UNQUOTED(HAVE_SIZE_T,$ac_cv_type_size_t, "have_size_t" )
 
 AC_OUTPUT(Makefile)
+
