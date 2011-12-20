@@ -679,6 +679,11 @@ int pdt2( Logfile& l, Config& c ) {
       
 	    lsaved = letters.size()-j; // NB, this includes the space after the word.
 
+	    // So, if it is the last word, we substract one.
+	    //
+	    if ( i == words.size()-1 ) {
+	      --lsaved; // could become 0 again?
+	    }
 	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		     << std::setfill('0') << std::setw(4) << instance_count << " "; 
 	    file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
@@ -784,20 +789,25 @@ int pdt2( Logfile& l, Config& c ) {
 	// The lsaved can be added here, or counted seperately.
 	//
 	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
-	file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		 << std::setfill('0') << std::setw(4) << instance_count << "." 
-		 << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
-
-	if ( matched != "" ) {
-	  file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		   << std::setfill('0') << std::setw(4) << instance_count << "." 
-		   << std::setfill('0') << std::setw(4) << prediction_count 
-		   << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space. 
-	}
+		   << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
+	  
+	  if ( matched != "" ) {
+	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		     << std::setfill('0') << std::setw(4) << instance_count << "." 
+		     << std::setfill('0') << std::setw(4) << prediction_count 
+		     << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space. 
+	    
+	    // We need to substract one from lsaved in this case, otherwise we count
+	    // the space after the word prediction from the letters, which it shouldn't be.
+	    // Or should it?
+	    //--lsaved;
+	  }
 	}
 	prediction_count++;
 	si++;
-      }
+      } //si over strs
       strs.clear();
       
       keyssaved += savedhere;
