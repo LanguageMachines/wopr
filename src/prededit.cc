@@ -644,6 +644,12 @@ int pdt2( Logfile& l, Config& c ) {
 	letter = letters.at(j);
 	ctx0.push( letter );
 
+	/*
+	file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
+	file_out << ctx0 << std::endl;
+	*/
+
 	// Predict 5 words we could be typing at the moment.
 	// From these 5, we predict more words with ibase1.
 	//
@@ -666,6 +672,7 @@ int pdt2( Logfile& l, Config& c ) {
 	    if ( i == words.size()-1 ) {
 	      --lsaved; // could become 0 again?
 	    }
+
 	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		     << std::setfill('0') << std::setw(4) << instance_count << " "; 
 	    //file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
@@ -681,6 +688,13 @@ int pdt2( Logfile& l, Config& c ) {
 	    //l.log( "ctx01="+ctx01.toString() );
 
 	    generate_tree( My_Experiment1, c, ctx01, strs, length, depths, t );
+
+	    // We need to shift our ctx0 with the predicted letters.
+	    //
+	    for ( int j1 = j+1; j1 < letters.size(); j1++ ) {
+	      letter = letters.at(j1);
+	      ctx0.push( letter );
+	    }
 
 	    // Break? We only need to predict our word once.
 	    // break outerloop also
@@ -948,9 +962,10 @@ int explode(std::string a_word, std::vector<std::string>& res) {
   return res.size();
 }
 
-// _ T The
-// T h The
-// h e The (or: h e _)
+// Generates letter instances. Example for lc:2, "The":
+// _ T  The
+// T h  The
+// h e  _
 //
 void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx, std::vector<std::string>& res) {
   int i;
@@ -960,24 +975,33 @@ void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx
     res.push_back( ctx.toString() + " " + t );
   }
   // After the last letter, predict a space instead.
-  // Do we want to predict spaces?
+  // Do we want to predict spaces? Just skip this instance?
   std::string tmp = a_word.substr(i, 1);
   ctx.push( tmp ); // next letter in context
   res.push_back( ctx.toString() + " " + "_" ); //instead of t
 }
 
 // Loop over one sentence.
-//
+// "The man", lc:2
+// _ T  The
+// T h  The
+// h e  _   <- from window_word_letters(...)
+// e _ man  <- from extra space inserted
+// _ m man
+// 
 void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<std::string>& res) {
   std::vector<std::string> words;
   std::vector<std::string>::iterator wi;
   Tokenize( a_line, words, ' ' );
   int i;
   for ( i = 0; i < words.size(); i++ ) { // each word
+    // If not the first word, insert a "space" before the words (or after the previous).
+    // Also, redict the "current" word after the space.
     if ( i > 0 ) {
       ctx.push( "_" );
       res.push_back( ctx.toString() + " " + words.at(i)); 
     }
+    // Continue with the individual letters of the word.
     window_word_letters( words.at(i), words.at(i), lc, ctx, res );
   }
 }
