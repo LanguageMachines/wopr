@@ -471,26 +471,6 @@ int pdt2( Logfile& l, Config& c ) {
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
-  // TEST
-  //
-  /*
-  int test_lc = 8;
-  Context test_ctx(test_lc);
-  std::string test_word = "Hoewel de politie .";
-  std::vector<std::string> test_words;
-  Tokenize( test_word, test_words );
-  std::vector<std::string> test_res;
-  std::vector<std::string>::iterator tri;
-  window_words_letters(test_word, test_lc, test_ctx, test_res);
-  for ( tri = test_res.begin(); tri != test_res.end(); tri++ ) {
-    l.log(*tri);
-  }
-  return 0;
-  */
-  //
-  // END TEST
-
-
   try {
     My_Experiment0 = new Timbl::TimblAPI( timbl0 );
     if ( ! My_Experiment0->Valid() ) {
@@ -584,10 +564,6 @@ int pdt2( Logfile& l, Config& c ) {
   long keyssaved = 0;
   long letterssaved = 0;
 
-
-
-
-
   while( std::getline( file_in, a_line ) ) { 
     if ( a_line == "" ) {
       continue;
@@ -642,6 +618,12 @@ int pdt2( Logfile& l, Config& c ) {
 	continue;
       }
 
+      // Moved up from below.
+      //
+      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	       << std::setfill('0') << std::setw(4) << instance_count << " "; 
+      file_out << ctx1 << std::endl;
+
       std::vector<std::string> strs; // should be a struct with more stuff
       std::string t;
 
@@ -686,7 +668,8 @@ int pdt2( Logfile& l, Config& c ) {
 	    }
 	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		     << std::setfill('0') << std::setw(4) << instance_count << " "; 
-	    file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
+	    //file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
+	    file_out << ctx0 << " " << lpred << " " << lsaved << std::endl;
 
 	    // The pred. should be insterted in this context here, if match inside word.
 	    // actually, the lpred is what is already in ctx1, because if we match it is
@@ -731,9 +714,11 @@ int pdt2( Logfile& l, Config& c ) {
       // Print the instance, with counts.
       // I0000.0004 waited for
       //
+      /*
       file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 	       << std::setfill('0') << std::setw(4) << instance_count << " "; 
       file_out << ctx1 << std::endl;
+      */
 
       std::vector<std::string>::iterator si = strs.begin();
       prediction_count = 0;
@@ -822,13 +807,11 @@ int pdt2( Logfile& l, Config& c ) {
     file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << " ";
     file_out << letterssaved << std::endl;
 
+    ctx0.reset(); // leave out to leave previous sentence in context
     ctx1.reset();
 
     ++sentence_count;
   }
-
-
-
 
   // Output Totals
   //
