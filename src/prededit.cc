@@ -646,7 +646,8 @@ int pdt2( Logfile& l, Config& c ) {
 
 	/*
 	file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
+		 << std::setfill('0') << std::setw(4) << instance_count << "."
+		 << std::setfill('0') << std::setw(4) << j << " "; 
 	file_out << ctx0 << std::endl;
 	*/
 
@@ -674,7 +675,8 @@ int pdt2( Logfile& l, Config& c ) {
 	    }
 
 	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		     << std::setfill('0') << std::setw(4) << instance_count << " "; 
+		     << std::setfill('0') << std::setw(4) << instance_count << " "
+		     << std::setfill('0') << std::setw(4) << j << " "; 
 	    //file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
 	    file_out << ctx0 << " " << lpred << " " << lsaved << std::endl;
 
@@ -700,15 +702,15 @@ int pdt2( Logfile& l, Config& c ) {
 	    // break outerloop also
 	    //
 	    break;
-	  }
+	  } // lpred == token
 	  if ( lsaved > 0 ) {
 	    break;
 	  }
-	} // s
+	} // s over strs0
 	if ( lsaved > 0 ) {
 	  break;
 	}
-      } //letters
+      } // j over letters
       // End of word.
       letters.clear();
       ctx0.push( "_" );
