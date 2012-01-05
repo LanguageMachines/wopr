@@ -1,4 +1,7 @@
-1.33.4	Bux fixing pdt2.
+1.34.0	Fixed counting bug in pdt2. Output is still uncorrected, total
+	values are OK.
+	
+1.33.4	Bug fixing pdt2.
 	
 1.33.3	More work on pdt2.
 	
