@@ -39,7 +39,9 @@ while ( my $line = <FH> ) {
 # GC28000 10000 l2r0 11.41 22.21 66.38 1 200 -a4+D 1-500 0 449.33 449.33 0.265 0.515
 #   or
 # ALG10001 1000 13.57 28.25 58.18 182.10 182.10 0.187 1.000 0.451 1205.31 5797.41 l2r1_-a1+D
-
+#   or
+# PDTT10008 10000 1000 136754 60301 44.0945 51031 37.3159 9270 6.7786 3 3 511 l12_-a1+D l2_-a1+D
+#
   chomp $line;
 
   my @parts  = split (/ /, $line);
@@ -53,6 +55,9 @@ while ( my $line = <FH> ) {
   }
   if ( substr($parts[0], 0, 3) eq "ALG" ) {
     $cg = 2; #ALG format
+  }
+  if ( substr($parts[0], 0, 4) eq "PDTT" ) {
+    $cg = 2; #PDT2 format
   }
 
   if ( $parts[$cg] > 100 ) { # converto to % first
