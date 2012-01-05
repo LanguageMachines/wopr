@@ -457,6 +457,13 @@ int pdt2( Logfile& l, Config& c ) {
 
   std::string output_filename = filename + "_" + tmp + id + ".pdt2"; //pdt2?
 
+  if ( file_exists(l, c, output_filename) ) {
+    l.log( "OUTPUT exists, not overwriting." );
+    c.add_kv( "pdt2_file", output_filename );
+    l.log( "SET pdt2_file to "+output_filename );
+    return 0;
+  }
+
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile0 );
@@ -586,6 +593,7 @@ int pdt2( Logfile& l, Config& c ) {
     //
     long sentenceksaved = 0; // key presses saved in this sentence
     long sentencewsaved = 0; // words saved in this sentence
+    std::string lout;
 
     for ( int i = 0; i < words.size(); i++ ) {
 
@@ -675,11 +683,14 @@ int pdt2( Logfile& l, Config& c ) {
 	    }
 
 	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		     << std::setfill('0') << std::setw(4) << instance_count << " "
+		     << std::setfill('0') << std::setw(4) << instance_count << "."
 		     << std::setfill('0') << std::setw(4) << j << " "; 
 	    //file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
 	    file_out << ctx0 << " " << lpred << " " << lsaved << std::endl;
-
+	    
+	    /*lout = "L" + to_str((double)sentence_count, 4) + "." + to_str((double)instance_count, 4) + "."
+	      + to_str(j, 4) + " " + ctx0.toString() + " " + lpred + " ";*/
+	      
 	    // The pred. should be insterted in this context here, if match inside word.
 	    // actually, the lpred is what is already in ctx1, because if we match it is
 	    // the current word.
@@ -715,11 +726,14 @@ int pdt2( Logfile& l, Config& c ) {
       letters.clear();
       ctx0.push( "_" );
 
+      // We have lsaved, "including" a space. This is ok if the word predictor
+      // finds more matches, otherwise we should subtract one.
+
       //l.log( "IBASE1 predictions: "+to_str(strs.size()) );
 
-      // If lsaves == 0, we call 
+      // If lsaved == 0, we call 
       // generate_tree( My_Experiment1, c, ctx01, strs, length, depths, t );
-      // again?
+      // again? 
       if ( lsaved == 0 ) {
 	//l.log( "Adding predictions." );
 	//l.log( "ctx1="+ctx1.toString() );
@@ -809,6 +823,16 @@ int pdt2( Logfile& l, Config& c ) {
 	prediction_count++;
 	si++;
       } //si over strs
+
+      // If we had no word matches, but we did have letter matches, we need to substract one
+      // from the letter saved count.
+      if ( savedhere == 0 ) {
+	if ( lsaved > 0 ) {
+	  --lsaved;
+	  //l.log( "Adjusted "+to_str(sentence_count) ); // but already printed!
+	}
+      }
+
       strs.clear();
       
       keyssaved += savedhere;
@@ -821,7 +845,7 @@ int pdt2( Logfile& l, Config& c ) {
     //
     file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
     file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << " ";
-    file_out << letterssaved << std::endl;
+    file_out << letterssaved << std::endl; // letterssaved is running total
 
     ctx0.reset(); // leave out to leave previous sentence in context
     ctx1.reset();
