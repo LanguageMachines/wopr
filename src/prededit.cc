@@ -593,7 +593,7 @@ int pdt2( Logfile& l, Config& c ) {
     //
     long sentenceksaved = 0; // key presses saved in this sentence
     long sentencewsaved = 0; // words saved in this sentence
-    std::string lout;
+    long sletterssaved  = 0; // letter keys saved in this sentence
 
     for ( int i = 0; i < words.size(); i++ ) {
 
@@ -674,7 +674,7 @@ int pdt2( Logfile& l, Config& c ) {
 	  if ( lpred == token ) { //NB these spaces in the beginning
 	    //l.log( "MATCH INSIDE WORD" );
       
-	    lsaved = letters.size()-j; // NB, this includes the space after the word.
+	    lsaved = letters.size() - j - 1; // NB, we subtract the space also
 
 	    // So, if it is the last word, we substract one.
 	    //
@@ -753,6 +753,7 @@ int pdt2( Logfile& l, Config& c ) {
       std::vector<std::string>::iterator si = strs.begin();
       prediction_count = 0;
       long savedhere = 0; // key presses saved in this prediction.
+      int adjust = 0; // Adjust the keys saved if we find word predictor matches.
       while ( si != strs.end() ) {
 
 	// We should check if the prediction matches the original sentence.
@@ -792,7 +793,7 @@ int pdt2( Logfile& l, Config& c ) {
 	if ( matched.size() > savedhere+1 ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
-	  savedhere = matched.size()-1; // PLUS lsaved?
+	  savedhere = matched.size()-1; // -1 for space.
 	  sentenceksaved += savedhere;
 	  sentencewsaved += words_matched;
 	}
@@ -814,29 +815,28 @@ int pdt2( Logfile& l, Config& c ) {
 		     << std::setfill('0') << std::setw(4) << prediction_count 
 		     << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space. 
 	    
-	    // We need to substract one from lsaved in this case, otherwise we count
-	    // the space after the word prediction from the letters, which it shouldn't be.
-	    // Or should it?
-	    //--lsaved;
+	    // We need to add one for the space after the letter predictor, that
+	    // is already subtracted.
+	    //
+	    adjust = 1;
 	  }
 	}
 	prediction_count++;
 	si++;
       } //si over strs
 
-      // If we had no word matches, but we did have letter matches, we need to substract one
-      // from the letter saved count.
-      if ( savedhere == 0 ) {
-	if ( lsaved > 0 ) {
-	  --lsaved;
-	  //l.log( "Adjusted "+to_str(sentence_count) ); // but already printed!
-	}
-      }
-
       strs.clear();
+      
+      // If we had word matches, we win the space after the letter 
+      // classifier.
+      //
+      if ( (lsaved > 0) && (adjust > 0) ) {
+	lsaved = lsaved + adjust;
+      }
       
       keyssaved += savedhere;
       letterssaved += lsaved;
+      sletterssaved += lsaved;
       
       ++instance_count;
     } // i over words
@@ -845,7 +845,7 @@ int pdt2( Logfile& l, Config& c ) {
     //
     file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
     file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << " ";
-    file_out << letterssaved << std::endl; // letterssaved is running total
+    file_out << sletterssaved << std::endl;
 
     ctx0.reset(); // leave out to leave previous sentence in context
     ctx1.reset();
