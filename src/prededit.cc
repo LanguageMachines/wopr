@@ -651,6 +651,7 @@ int pdt2( Logfile& l, Config& c ) {
 	//
 	letter = letters.at(j);
 	ctx0.push( letter );
+	//l.log( "ctx0="+ctx0.toString() );
 
 	/*
 	file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
@@ -682,10 +683,11 @@ int pdt2( Logfile& l, Config& c ) {
 	      --lsaved; // could become 0 again?
 	    }
 
+	    // L0000.0000.0004 o m m u communication 8
+	    //
 	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		     << std::setfill('0') << std::setw(4) << instance_count << "."
 		     << std::setfill('0') << std::setw(4) << j << " "; 
-	    //file_out << ctx0 << " " << lpred << " " << j << "/" << letters.size() << "=" << lsaved << std::endl;
 	    file_out << ctx0 << " " << lpred << " " << lsaved << std::endl;
 	    
 	    /*lout = "L" + to_str((double)sentence_count, 4) + "." + to_str((double)instance_count, 4) + "."
@@ -700,6 +702,9 @@ int pdt2( Logfile& l, Config& c ) {
 	    //l.log( "ctx1="+ctx1.toString() );
 	    //l.log( "ctx01="+ctx01.toString() );
 
+	    // Continue with words based on correctly guessed 
+	    // letter continuation.
+	    //
 	    generate_tree( My_Experiment1, c, ctx01, strs, length, depths, t );
 
 	    // We need to shift our ctx0 with the predicted letters.
@@ -726,14 +731,13 @@ int pdt2( Logfile& l, Config& c ) {
       letters.clear();
       ctx0.push( "_" );
 
-      // We have lsaved, "including" a space. This is ok if the word predictor
-      // finds more matches, otherwise we should subtract one.
-
       //l.log( "IBASE1 predictions: "+to_str(strs.size()) );
 
       // If lsaved == 0, we call 
       // generate_tree( My_Experiment1, c, ctx01, strs, length, depths, t );
-      // again? 
+      // again. It means we never completed the word correctly, and are now
+      // at a " ". At this point, we run the word predictor.
+      //
       if ( lsaved == 0 ) {
 	//l.log( "Adding predictions." );
 	//l.log( "ctx1="+ctx1.toString() );
@@ -1018,7 +1022,7 @@ void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx
 void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<std::string>& res) {
   std::vector<std::string> words;
   std::vector<std::string>::iterator wi;
-  Tokenize( a_line, words, ' ' );
+  Tokenize( a_line, words );
   int i;
   for ( i = 0; i < words.size(); i++ ) { // each word
     // If not the first word, insert a "space" before the words (or after the previous).
@@ -1032,7 +1036,7 @@ void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<
   }
 }
 
-// Window a whoe text letter based. Treat text as one long stream of words
+// Window a whole text letter based. Treat text as one long stream of words
 // to be able to predict next word after a "." &c.
 //
 int window_letters( Logfile& l, Config& c ) {
@@ -1040,11 +1044,18 @@ int window_letters( Logfile& l, Config& c ) {
   const std::string& filename        = c.get_value( "filename" );
   int                lc              = stoi( c.get_value( "lc", "2" ));
   int                rc              = 0;
-  std::string        output_filename = filename + ".lt" + to_str(lc); // RC makes no sense (yet)
+  int                mode            = stoi( c.get_value( "lm", "o" )); // lettering mode 0=shift, 1=empty for new sentence
+
+  if ( (mode < 0) || (mode > 1) ) {
+    l.log( "NOTICE: wrong lm parameter, setting to 0." );
+    mode = 0;
+  }
+  std::string        output_filename = filename + ".lt" + to_str(lc)+"m"+to_str(mode); // RC makes no sense (yet)
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "lc:        "+to_str(lc) );
+  l.log( "lm:        "+to_str(mode) );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
@@ -1067,30 +1078,48 @@ int window_letters( Logfile& l, Config& c ) {
   }
 
   std::string                        a_word;
+  std::string                        a_line;
   bool                               first = true; //false to get first line with empty context
   std::vector<std::string>           results;
   std::vector<std::string>::iterator ri;
   Context ctx(lc);
   
-  while ( file_in >> a_word ) { 
+  if ( mode == 0 ) {
+    while ( file_in >> a_word ) { 
 
-    if ( ! first ) {
-      //window_word_letters( "_", a_word, lc, ctx, results );
-      // We start by pushin a _ in the context and predicting the current
-      // word. We continue by windowing the rest of the current word
-      // normally. The last windowed prediction of each word predicts
-      // a _, therefore we need to push it in here.
-      ctx.push( "_" );
-      results.push_back( ctx.toString() + " " + a_word ); 
+      if ( ! first ) {
+	//window_word_letters( "_", a_word, lc, ctx, results );
+	// We start by pushin a _ in the context and predicting the current
+	// word. We continue by windowing the rest of the current word
+	// normally. The last windowed prediction of each word predicts
+	// a _, therefore we need to push it in here.
+	ctx.push( "_" );
+	results.push_back( ctx.toString() + " " + a_word ); 
+      }
+      window_word_letters(a_word, a_word, lc, ctx, results);
+      for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	file_out << *ri << "\n";
+      }
+      first =  false;
+      results.clear();
     }
-    window_word_letters(a_word, a_word, lc, ctx, results);
-    for ( ri = results.begin(); ri != results.end(); ri++ ) {
-      file_out << *ri << "\n";
-    }
-    first =  false;
-    results.clear();
+  } else if ( mode == 1 ) {
+
+    while( std::getline( file_in, a_line ) ) { 
+      if ( a_line == "" ) {
+	continue;
+      }
+      window_words_letters(a_line, lc, ctx, results);
+      for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	file_out << *ri << "\n";
+      }
+      results.clear();
+      ctx.reset();
+
+    } // while
   }
-  
+
+
   file_out.close();
   file_in.close();
   
