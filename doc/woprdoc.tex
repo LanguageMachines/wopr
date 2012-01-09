@@ -493,6 +493,13 @@ insterted with a single key press or button click. The predictive editing
 simulation in \wopr{} generates possible strings after each word in a test set,
 and calculates how may key presses could have been saved.
 
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\pdfwidth]{predit_w0w1.pdf}
+\caption{Predictions after \cmp{w0w1} (\cmp{n2ds22})}
+\label{fig:predit_w0w1.pdf}
+\end{figure}
+
 The following example shows a typical run.
 
 \begin{bash}{Predictive editing}
@@ -560,6 +567,82 @@ At the end of each sentence, a result is printed (\cmp{R0000}) with the number
 of words and keypresses saved. The last line in the file displays the total
 score; total number of keypresses, the total number of keypresses saved, and the
 score as a percentage.
+
+\section{Combined Predictive Editing}
+
+The predictive editing system described in the previous section can be extended
+with a second classifier; one that is letter-based, and tries to predict the
+\q{rest of the word being typed}. If the prediction matches, a further number of
+words are predicted with the word classifier, in the same way as explained in
+the previous paragraph. This way, we simulate a system that predicts a possible
+string of words after every letter being typed. This will save an additional
+number of keypresses over the first system. The following figure tries to show
+the system.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\pdfwidth]{predit_w0l0l1.pdf}
+\caption{Predictions after \cmp{w0} and two letters}
+\label{fig:predit_w0l0l1.pdf}
+\end{figure}
+
+In figure~\ref{fig:predit_w0l0l1.pdf}, we show what happens after a word,
+\cmp{w0}, and two letters, \cmp{l0 l1}, have been typed. The letter classifier
+predicts predicts some words, including \cmp{w1} which is the correct word in
+the string that follows. At that point, the word predictor is called with
+\cmp{w1} plus some preceding words (\cmp{w0}) to predict a number of words to
+come after \cmp{w1}.
+
+This variant is called \cmp{pdt2}, and a typical run could look like as shown in
+the following example. Note that there are two groups of parameters, one for
+each classifier. The parameters suffixed \cmp{0} are for the letter classifier,
+the ones suffixed with a \cmp{1} are for the word classifier.
+
+\begin{bash}{Predictive editing}
+wopr -l -r pdt2 -p filename:austen.txt.l10,lc0:4,rc0:0,timbl0:'-a1 +D',
+                   ibasefile0:austen.txt.1e4.lt4m0c_-a1+D.ibase,
+                   lc1:2,rc1:0,timbl1:'-a1 +D',
+                   ibasefile1:austen.txt.1e4.l2r0_-a1+D.ibase,
+                   n:3,ds:5
+\end{bash}
+
+The output produces is similar to the \cmp{pdt} output, but lines starting with
+\cmp{L} are added to show the predictions from the letter classifier. Line
+number 5 in the output example shows the letter classifier finding the word
+\cmp{communication} after the letters \cmp{commu} have been typed. It uses the
+last four letters typed as input, hence ony \cmp{ommu} is shown in the
+output. The user can save eight keypresses by selecting the classifiers output
+at this point. But that is not all. In line seven, the system also predicts the
+string \cmp{of Mrs Elton} (which happens to be what the user wanted to write),
+saving another 12 letters. Combined, this will give a 21 letter saving (8 plus
+12, plus the space after \cmp{communication}).
+
+The last three lines of the file give a summary, \cmp{T0} for the letter
+classifier, \cmp{T1} for the word classifier, and a combined figure marked
+\cmp{T}. 
+
+\begin{wout}{Edited output}
+# l3 5 1 1
+# austen.txt.1e4.lt4m0_-a1+D.ibase austen.txt.1e4.l2r0_-a1+D.ibase
+S0000 communication of Mrs Elton and me 33
+I0000.0000 _ communication
+L0000.0000.0004 o m m u communication 8
+P0000.0000.0001 of Mrs Elton
+M0000.0000.0001 of Mrs Elton 12
+E0000.0001 communication of
+E0000.0002 of Mrs
+E0000.0003 Mrs Elton
+I0000.0004 Elton and
+L0000.0004.0000 o n _ a and 2
+P0000.0004.0004 now you have
+I0000.0005 and me
+L0000.0005.0000 n d _ m me 0
+P0000.0005.0003 is quite a
+R0000 3 12 11
+T0 33 11 33.3333
+T1 33 12 36.3636
+T 33 23 69.697
+\end{wout}
 
 \section{Spelling Correction}
 
@@ -1017,7 +1100,8 @@ durian:doc pberck\$ scp -P223 pberck@portal.ticc.uvt.nl:doorgeefluik/303* .
 
 // ---- 2011-06-13 15:55:26 Mon -----------------------------------------------
 
-pberck@ceto:/exp2/pberck\$ wc -l nyt.3e7.1000000.l3r0                            22855429 nyt.3e7.1000000.l3r0
+pberck@ceto:/exp2/pberck\$ wc -l nyt.3e7.1000000.l3r0
+22855429 nyt.3e7.1000000.l3r0
 
 /exp/pberck/wopr/wopr -l -r make_ibase -p filename:nyt.3e7.1000000.l3r0,timbl:"-a1 +D"
 bash watch_wopr.sh 32376 88G 10 1
@@ -1521,6 +1605,24 @@ for \cmp{to} is 0 so it can be left out if so desired.
 
 The output filename will have the context appended to it, in the form
 \cmp{l3r0}. The \cmp{to} parameter will be appended if non-zero.
+
+\subsection{\cmp{window\_letters}}
+
+Creates instances for a letter based classifier (for e.g word completion). Takes
+a normal text file as input. The input data can be treated as a continuous
+stream of words, or per line. In the latter case, the letter context is reset at
+the start of every new sentence. The target is the \q{current} word at each
+point.
+
+\begin{varlist}{filename}
+\item[filename] The file to window.
+\item[lc] Left context. Number of letters on the left side of the target.
+\item[lm] Lettering mode, 0 will treat the data as a continuous stream of
+  words. 1 will reset every sentence.
+\end{varlist}
+
+The output filename will have the context appended to it, in the form
+\cmp{l3}. The \cmp{lm} parameter will be appended after the context.
 
 \subsection{\cmp{hapax}}
 
