@@ -57,7 +57,10 @@ while ( my $line = <FH> ) {
     $cg = 2; #ALG format
   }
   if ( substr($parts[0], 0, 4) eq "PDTT" ) {
-    $cg = 2; #PDT2 format
+    $cg = 5; #PDT2 format
+  }
+  if ( substr($parts[0], 0, 3) eq "PRE" ) {
+    $cg = 4; #PDT format
   }
 
   if ( $parts[$cg] > 100 ) { # converto to % first
@@ -75,11 +78,16 @@ while ( my $line = <FH> ) {
   print "%".$line."\n";
 
   my $pdiff = 0;
-  if ( $parts[$cg] > 0 ) {
-    $pdiff = sprintf( "%.2f", ($parts[$cg+4]-$parts[$cg])*100/$parts[$cg] );
+  if ( ($cg != 3) && ($cg != 4) ) {
+    if ( $parts[$cg] > 0 ) {
+      $pdiff = sprintf( "%.2f", ($parts[$cg+4]-$parts[$cg])*100/$parts[$cg] );
+    }
   }
 
   print "\\num{".$parts[1]."} ";     #lines
+  if ( $cg == 5 ) {
+    print "& \\num{".$parts[2]."} ";     #lines WRD, 1 is LTR
+  }
   #print "& \\cmp{".$parts[2]."} ";   #context
 
   if ( $cg == 6 ) {
@@ -116,6 +124,35 @@ while ( my $line = <FH> ) {
     (my $timbl = $parts[$cg+10]) =~ tr/_/ /;
     print "& \\cmp{".sprintf( "%s", $timbl)."} ";  #timbl
   }
+  if ( $cg == 5 ) {  #PDT2
+    #PDTT10211 10000 10000000 136754 65095 47.6001 30340 22.1858 34755 25.4142 3 3 521 c8_-a4+D l2_-a1+D
+    print "& \\num{".sprintf( "%.1f", $parts[$cg])."} ";     #CMB
+    print "& \\num{".sprintf( "%.1f", $parts[$cg+2])."} ";   #LTR
+    print "& \\num{".sprintf( "%.1f", $parts[$cg+4])."} ";   #WRD
+    print "& \\num{".sprintf( "%i", $parts[$cg+5])."} ";     #LTR depth
+    print "& \\num{".sprintf( "%i", $parts[$cg+6])."} ";     #N
+    print "& \\cmp{".sprintf( "%s", $parts[$cg+7])."} ";     #DS
+    (my $ctx0 = $parts[$cg+8]) =~ tr/_/ /;
+    $ctx0 =~ s/\-a1\+D/IG/g;
+    $ctx0 =~ s/\-a4\+D/T2/g;
+    print "& \\cmp{".sprintf( "%s", $ctx0)."} ";     #CTX0
+    (my $ctx1 = $parts[$cg+9]) =~ tr/_/ /;
+    $ctx1 =~ s/\-a1\+D/IG/g;
+    $ctx1 =~ s/\-a4\+D/T2/g;
+    print "& \\cmp{".sprintf( "%s", $ctx1)."} ";     #CTX1
+  }
+  if ( $cg == 4 ) {  #PDT
+    #PRE10624 10000000 136754 32890 24.0505 3 511 l2r0_-a1+D
+    print "& \\num{".sprintf( "%.1f", $parts[$cg])."} ";     #CMB
+    print "& \\num{".sprintf( "%i", $parts[$cg+1])."} ";     #N
+    print "& \\cmp{".sprintf( "%s", $parts[$cg+2])."} ";     #DS
+    (my $ctx0 = $parts[$cg+3]) =~ tr/_/ /;
+    $ctx0 =~ s/r0//g;
+    $ctx0 =~ s/\-a1\+D/IG/g;
+    $ctx0 =~ s/\-a4\+D/T2/g;
+    print "& \\cmp{".sprintf( "%s", $ctx0)."} ";     #CTX0
+  }
+
   print "\\\\ \n"; #% ".$parts[0]."\n";
 
 }
