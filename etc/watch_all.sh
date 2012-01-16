@@ -9,16 +9,27 @@
 #
 MAILTO="P.J.Berck@UvT.nl"
 #
-LIMIT=64000000
+LIMIT=99000000 
 SLEEP=10
+#
+if test $# -lt 1
+then
+  echo "Supply LIMIT as argument."
+  exit
+fi
+#
+LIMIT=$1 # kB
+#
 DATE_CMD="date '+%s'"
 ECHO="-e"
-PS_MEM="ps -eo rss,comm,user | grep e | grep pberck | awk '{ SUM += $1} END { print SUM/1024/1024 }'"
+#
+# Greps my woprs
+PS_MEM="ps -eo rss,comm,user | grep wopr | grep pberck | awk '{ SUM += $1} END { print SUM/1024/1024 }'"
 #
 while true;
   do
   #ps --no-header -p $PID -o etime,pid,rss,vsize,pcpu
-  MEM=`eval ps -eo rss,comm,user | grep e | grep pberck | awk '{ SUM += $1} END { print SUM }'`
+  MEM=`eval ps -eo rss,comm,user | grep wopr | grep pberck | awk '{ SUM += $1} END { print SUM }'`
   #
   echo $ECHO "\r                       \c"
   echo $ECHO "\rWoprs: $MEM \c"
@@ -27,9 +38,11 @@ while true;
     echo $ECHO "\n$MEM > $LIMIT"
     if test $MAILTO != ""
     then
-      echo "Warning memory" | mail -s "Too many woprs" $MAILTO
+      echo "Warning memory: ${MEM}" | mail -s "Too many woprs" $MAILTO
     fi
-    exit
+    #exit
+    LIMIT=`echo "$LIMIT + 1024000" | bc`
+    echo "Limit now: ${LIMIT}"
   fi
   #
   sleep $SLEEP
