@@ -520,6 +520,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &pdt2;
   } else if ( a_fname == "window_letters" ) { // from prededit.cc
     return &window_letters;
+  } else if ( a_fname == "pdt2web" ) { // from prededit.cc
+    return &pdt2web;
   }
   return &tst;
 }

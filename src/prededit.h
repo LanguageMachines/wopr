@@ -24,13 +24,20 @@
 #ifndef _PREDEDIT_H
 #define _PREDEDIT_H
 
-#ifdef TIMBL
-# include "timbl/TimblAPI.h"
-#endif
+#include "Context.h"
+
+struct distr_elem;
+
+void generate_next( Timbl::TimblAPI*, std::string, std::vector<distr_elem>& );
+void generate_tree( Timbl::TimblAPI*, Context&, std::vector<std::string>&, int, std::vector<int>&, std::string );
+int explode(std::string, std::vector<std::string>&);
+void window_word_letters(std::string, std::string, int, Context&, std::vector<std::string>&);
+void window_words_letters(std::string, int, Context&, std::vector<std::string>&);
 
 int pdt( Logfile&, Config& );
 int pdt2( Logfile&, Config& );
 //void generate_next(  Timbl::TimblAPI*, Config&, std::string, int, std::vector<distr_elem>& );
 int window_letters( Logfile&, Config& );
+int pdt2web( Logfile&, Config& );
 
 #endif

@@ -47,6 +47,7 @@
 #include "server.h"
 #include "Context.h"
 #include "prededit.h"
+#include "PDT.h"
 
 #include "MersenneTwister.h"
 
@@ -97,11 +98,11 @@ struct salad_elem {
   std::string str;
   // array with the words? frequency? distr_elems?
 };
-void generate_next( Timbl::TimblAPI*, Config&, std::string, std::vector<distr_elem>& );
+/*void generate_next( Timbl::TimblAPI*, Config&, std::string, std::vector<distr_elem>& );
 void generate_tree( Timbl::TimblAPI*, Config&, Context&, std::vector<std::string>&, int, std::vector<int>&, std::string );
 int explode(std::string, std::vector<std::string>&);
 void window_word_letters(std::string, std::string, int, Context&, std::vector<std::string>&);
-void window_words_letters(std::string, int, Context&, std::vector<std::string>&);
+void window_words_letters(std::string, int, Context&, std::vector<std::string>&);*/
 
 int pdt( Logfile& l, Config& c ) {
   l.log( "predictive editing" );
@@ -292,7 +293,7 @@ int pdt( Logfile& l, Config& c ) {
       //
       std::vector<std::string> strs; // should be a struct with more stuff
       std::string t;
-      generate_tree( My_Experiment, c, ctx, strs, length, depths, t );
+      generate_tree( My_Experiment, ctx, strs, length, depths, t );
 
       // Print the instance, with counts.
       // I0000.0004 waited for
@@ -416,6 +417,7 @@ int pdt2( Logfile& l, Config& c ) {
   std::string        dl              = c.get_value( "dl", "3" ); // letter depth 
   bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
   std::string        id              = c.get_value( "id", to_str(getpid()) );
+  int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
 
   Timbl::TimblAPI   *My_Experiment0;
   Timbl::TimblAPI   *My_Experiment1;
@@ -666,7 +668,7 @@ int pdt2( Logfile& l, Config& c ) {
 	std::vector<std::string> strs0;
 	std::string t0;
 
-	generate_tree( My_Experiment0, c, ctx0, strs0, length0, depths0, t0 );
+	generate_tree( My_Experiment0, ctx0, strs0, length0, depths0, t0 );
 
 	for ( int s = 0; s < strs0.size(); s++ ) {
 	  std::string lpred = strs0.at(s).substr(1, strs0.at(s).length()-1);
@@ -705,7 +707,7 @@ int pdt2( Logfile& l, Config& c ) {
 	    // Continue with words based on correctly guessed 
 	    // letter continuation.
 	    //
-	    generate_tree( My_Experiment1, c, ctx01, strs, length, depths, t );
+	    generate_tree( My_Experiment1, ctx01, strs, length, depths, t );
 
 	    // We need to shift our ctx0 with the predicted letters.
 	    //
@@ -741,7 +743,7 @@ int pdt2( Logfile& l, Config& c ) {
       if ( lsaved == 0 ) {
 	//l.log( "Adding predictions." );
 	//l.log( "ctx1="+ctx1.toString() );
-	generate_tree( My_Experiment1, c, ctx1, strs, length, depths, t );
+	generate_tree( My_Experiment1, ctx1, strs, length, depths, t );
 	//l.log( "IBASE1 predictions: "+to_str(strs.size()) );
       }
 
@@ -877,7 +879,7 @@ int pdt2( Logfile& l, Config& c ) {
 // Should implement caching? Threading, ...
 // Cache must be 'global', contained in c maybe, or a parameter.
 //
-void generate_next( Timbl::TimblAPI* My_Experiment, Config& c, std::string instance, std::vector<distr_elem>& distr_vec ) {
+void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::vector<distr_elem>& distr_vec ) {
 
   std::string distrib;
   std::vector<std::string> distribution;
@@ -926,7 +928,7 @@ void generate_next( Timbl::TimblAPI* My_Experiment, Config& c, std::string insta
 
 // Recursive?
 //
-void generate_tree( Timbl::TimblAPI* My_Experiment, Config& c, Context& ctx, std::vector<std::string>& strs, int length, std::vector<int>& depths, std::string t ) {
+void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<std::string>& strs, int length, std::vector<int>& depths, std::string t ) {
 
   if ( length == 0 ) {
     // here we should save/print the whole "string" (?)
@@ -948,9 +950,9 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Config& c, Context& ctx, std
   //
   std::string instance = ctx.toString() + " ?";
   std::vector<distr_elem> res;
-  generate_next( My_Experiment, c, instance, res );
+  generate_next( My_Experiment, instance, res );
 
-  // std::cerr << "RESSIZE=" << res.size() << std::endl;
+  //std::cerr << "RESSIZE=" << res.size() << std::endl;
   // Should have a limit on res.size(), default distr. is crap, no use
   // to continue with that. default happens not often, self generated instances.
   //
@@ -959,12 +961,13 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Config& c, Context& ctx, std
     }*/
 
   sort( res.begin(), res.end() );
+
   std::vector<distr_elem>::iterator fi = res.begin();
   int cnt = depths.at( length );
   while ( (fi != res.end()) && (--cnt >= 0) ) { 
     
     //for ( int i = 5-length; i > 0; i--) { std::cout << "  ";}
-    // std::cerr << length << ":" << cnt  << " " << ctx << " -> " << (*fi).name /* << ' ' << (*fi).freq */ << std::endl;
+    //std::cerr << length << ":" << cnt  << " " << ctx << " -> " << (*fi).name /* << ' ' << (*fi).freq */ << std::endl;
 
     // Make new context, recurse
     //
@@ -973,7 +976,12 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Config& c, Context& ctx, std
 
     // NB the extra space in the beginning.
     //
-    generate_tree( My_Experiment, c, new_ctx, strs, length-1, depths, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
+    generate_tree( My_Experiment, new_ctx, strs, length-1, depths, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
+    /*if ( t.length() > 0 ) {
+      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
+    } else {
+      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, (*fi).name );//+"/"+to_str(res.size()) );
+      }*/
     
     fi++;
   }
@@ -1139,3 +1147,321 @@ int pdt2( Logfile& l, Config& c ) {
 }  
 #endif
 
+/*
+  Server/web demo
+  
+  implement the following:
+  1) init (inits the contexts till empty).
+  2) type:x (adds ('types') letter x, add it to the letter context)
+     (this should trigger completion &c. Should it return it?)
+  3) get (get latest completion (stored in 2)
+  4) select:n (select one of the completions presented. "skip:n,m")
+
+  *) global server data structure. 2 contexts, settings, timbl classifiers.
+*/
+
+// code to make a PDT
+
+int pe_init( PDT& pdt ) {
+  //pdt.reset(); //resets contexts
+}
+
+int pe_type( PDT& pdt, std::string& l ) {
+  //pdt.ltr_ctx.push( l );
+}
+
+int pe_complete( PDT& pdt ) {
+  // like pdt2, maybe delegate to PDT.complete()
+  //generate_tree( My_Experiment0, c, ctx0, strs0, length0, depths0, t0 );
+}
+
+#include "tinyxml.h"
+
+int pdt2web( Logfile& l, Config& c ) {
+  l.log( "work in progress pdt2web" );
+
+  const std::string port        = c.get_value( "port", "1984" );
+  const int verbose             = stoi( c.get_value( "verbose", "1" ));
+  const int keep                = stoi( c.get_value( "keep", "0" ));
+
+  const std::string& ibasefile0      = c.get_value( "ibasefile0" );
+  const std::string& timbl0          = c.get_value( "timbl0" );
+  const std::string& ibasefile1      = c.get_value( "ibasefile1" );
+  const std::string& timbl1          = c.get_value( "timbl1" );
+  int                lc0             = stoi( c.get_value( "lc0", "2" ));
+  int                rc0             = stoi( c.get_value( "rc0", "0" )); // should be 0
+  int                lc1             = stoi( c.get_value( "lc1", "2" ));
+  int                rc1             = stoi( c.get_value( "rc1", "0" )); // should be 0
+  std::string        ped             = c.get_value( "ds", "" ); // depths
+  int                pel             = stoi( c.get_value( "n", "3" )); // length. implicit in ds!
+  std::string        dl              = c.get_value( "dl", "3" ); // letter depth 
+  int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
+
+  PDTC pdtc0;
+  pdtc0.init( ibasefile0, timbl0, lc0 );
+  l.log( "pdtc0.status = "+to_str( pdtc0.status ) );
+
+  PDTC pdtc1;
+  pdtc1.init( ibasefile1, timbl1, lc1 );
+  l.log( "pdtc1.status = "+to_str( pdtc1.status ) );
+
+  PDT pdt;
+  pdt.set_ltr_c( &pdtc0 );
+  pdt.set_wrd_c( &pdtc1 );
+
+  pdt.set_wrd_ds( ped );
+  pdt.set_ltr_dl( dl );
+
+  // --
+
+
+  std::vector<std::string> strs;
+  std::vector<std::string>::iterator si = strs.begin();
+  std::vector<std::string> letters;
+  std::vector<std::string>::iterator li;
+  letters.clear();
+
+  /*
+  std::string token = "hallo";
+  std::string foo;
+  (void)explode( token, letters );
+  for ( int j = 0; j < letters.size(); j++ ) {
+
+    // spaces special treatment.
+
+    pdt.add_ltr( letters.at(j) );
+    strs.clear();
+    pdt.ltr_generate( strs );
+    si = strs.begin();
+    while ( si != strs.end() ) {
+      std::string s = *si;
+      s = s.substr( 1, s.length()-1);
+      std::cerr << "(" << s << ")" << std::endl;
+      Context *old = new Context(pdt.wrd_ctx); //save
+      pdt.add_wrd( s );
+      std::vector<std::string> strs_wrd;
+      std::vector<std::string>::iterator si_wrd;
+      pdt.wrd_generate( strs_wrd );
+      si_wrd = strs_wrd.begin();
+      while ( si_wrd != strs_wrd.end() ) {
+	std::cerr << *si_wrd << std::endl;
+	++si_wrd;
+      }
+      delete pdt.wrd_ctx;
+      pdt.wrd_ctx = old; // restore.
+      ++si;
+    }
+    std::cerr << std::endl;
+  }
+
+  foo = "o";
+  pdt.add_ltr( foo );
+  strs.clear();
+  pdt.ltr_generate( strs );
+  si = strs.begin();
+  while ( si != strs.end() ) {
+    std::string s = *si;
+    s = s.substr( 1, s.length()-1);
+    std::cerr << "(" << s << ")" << std::endl;
+    Context *old = new Context(pdt.wrd_ctx); //save
+    pdt.add_wrd( s );
+    std::vector<std::string> strs_wrd;
+    std::vector<std::string>::iterator si_wrd;
+    pdt.wrd_generate( strs_wrd );
+    si_wrd = strs_wrd.begin();
+    while ( si_wrd != strs_wrd.end() ) {
+      std::cerr << *si_wrd << std::endl;
+      ++si_wrd;
+    }
+    delete pdt.wrd_ctx;
+    pdt.wrd_ctx = old; // restore.
+    ++si;
+  }
+  */
+
+  /*
+  strs.clear();
+  pdt.wrd_generate( strs );
+  si = strs.begin();
+  while ( si != strs.end() ) {
+    std::cerr << *si << std::endl;
+    ++si;
+    }*/
+
+
+  Sockets::ServerSocket server;
+  
+  if ( ! server.connect( port )) {
+    l.log( "ERROR: cannot start server: "+server.getMessage() );
+    return 1;
+  }
+  if ( ! server.listen(  ) < 0 ) {
+    l.log( "ERROR: cannot listen. ");
+    return 1;
+  };
+    
+  bool run = true;
+  std::vector<std::string> buf_tokens;
+  while ( run ) {  // main accept() loop
+
+    l.log( "Listening..." );  
+    
+    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+    if ( !server.accept( *newSock ) ) {
+      if( errno == EINTR ) {
+	continue;
+      } else {
+	l.log( "ERROR: " + server.getMessage() );
+	return 1;
+      }
+    }
+    if ( verbose > 0 ) {
+      l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	     + std::string(newSock->getClientName()) );
+    }
+
+    std::string buf;
+    newSock->read( buf );
+    buf = trim( buf, " \n\r" );
+    l.log( "("+buf+")" );
+
+    if ( buf == "QUIT" ) {
+      //
+      // Quit...
+      //
+      run = false;
+    } else if ( buf == "GEN" ) { 
+      //
+      // Generate from the contexts. First complete with the letter predictor,
+      // then follow up with the word predictor.
+      //
+      TiXmlDocument doc;
+      TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+      TiXmlElement * element = new TiXmlElement( "result" );
+      doc.LinkEndChild( decl );
+      doc.LinkEndChild( element );
+
+      strs.clear();
+      pdt.ltr_generate( strs );
+      si = strs.begin();
+      int cnt = 0;
+      while ( si != strs.end() ) {
+	std::string s = *si;
+	s = s.substr( 1, s.length()-1);
+	Context *old = new Context(pdt.wrd_ctx); //save
+	pdt.add_wrd( s );
+	std::vector<std::string> strs_wrd;
+	std::vector<std::string>::iterator si_wrd;
+	pdt.wrd_generate( strs_wrd );
+	si_wrd = strs_wrd.begin();
+	while ( si_wrd != strs_wrd.end() ) {
+
+	  TiXmlElement * element0 = new TiXmlElement( "gen" );
+	  element0->SetAttribute("idx", cnt++);
+	  TiXmlText * text0 = new TiXmlText( s + *si_wrd );
+	  element0->LinkEndChild( text0 );
+	  element->LinkEndChild( element0 );
+
+	  //l.log( s + *si_wrd );
+	  ++si_wrd;
+	}
+	delete pdt.wrd_ctx;
+	pdt.wrd_ctx = old; // restore.
+	++si;
+      }
+      std::ostringstream ostr;
+      ostr << doc;
+      newSock->write( ostr.str() );
+      l.log( ostr.str() );
+    } else if ( buf == "CTX" ) {
+      //
+      // Returns the two contexts.
+      //
+      l.log( pdt.ltr_ctx->toString() );
+      l.log( pdt.wrd_ctx->toString() );
+
+      TiXmlDocument doc;
+      TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+
+      TiXmlElement * element0 = new TiXmlElement( "ltr" );
+      TiXmlText * text0 = new TiXmlText( pdt.ltr_ctx->toString() );
+      element0->LinkEndChild( text0 );
+      TiXmlElement * element1 = new TiXmlElement( "wrd" );
+      TiXmlText * text1 = new TiXmlText( pdt.wrd_ctx->toString() );
+      element1->LinkEndChild( text1 );
+
+      TiXmlElement * element = new TiXmlElement( "result" );
+      element->LinkEndChild( element0 );
+      element->LinkEndChild( element1 );
+      doc.LinkEndChild( decl );
+      doc.LinkEndChild( element );
+
+      std::ostringstream ostr;
+      ostr << doc;
+
+      std::string answer = pdt.wrd_ctx->toString() + '\n';
+      newSock->write( ostr.str() );
+      l.log( ostr.str() );
+    } else if ( buf == "SPC" ) {
+      pdt.add_spc();      
+    }
+
+    buf_tokens.clear();
+    Tokenize( buf, buf_tokens, ' ' );
+
+    if ( buf_tokens.size() > 1 ) {
+
+      if ( buf_tokens.at(0) == "LTR" ) {
+	//
+	// Add one letter to the letter context.
+	//
+	pdt.add_ltr( buf_tokens.at(1) );      
+      } else if ( buf_tokens.at(0) == "WRD" ) {
+	//
+	// Add a word to the word context. Explode the word,
+	// and add each letter to the letter context as well.
+	//
+	pdt.add_wrd( buf_tokens.at(1) );
+
+	std::vector<std::string> letters;
+	std::vector<std::string>::iterator li;
+	(void)explode( buf_tokens.at(1), letters );
+	// need a space before?
+	for ( int j = 0; j < letters.size(); j++ ) {
+	  pdt.add_ltr( letters.at(j) );
+	}
+      } else if ( buf_tokens.at(0) == "GEN" ) {
+	//
+	// Seperate generators for words and letters.
+	//
+	if ( buf_tokens.at(1) == "WRD" ) {
+	  strs.clear();
+	  std::vector<std::string> strs_wrd;
+	  std::vector<std::string>::iterator si_wrd;
+	  pdt.wrd_generate( strs_wrd );
+	  si_wrd = strs_wrd.begin();
+	  while ( si_wrd != strs_wrd.end() ) {
+	    l.log( *si_wrd );
+	    ++si_wrd;
+	  }
+	} else if ( buf_tokens.at(1) == "LTR" ) {
+	  strs.clear();
+	  pdt.ltr_generate( strs );
+	  si = strs.begin();
+	  while ( si != strs.end() ) {
+	    l.log( *si );
+	    ++si;
+	  }
+	}
+	
+      }
+
+    }
+
+    l.log( "connection closed." );
+    delete newSock;
+    
+  } // while true
+
+  return 0;
+}
