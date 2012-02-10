@@ -51,6 +51,16 @@
 
 #include "MersenneTwister.h"
 
+#ifdef HAVE_ICU
+#define U_CHARSET_IS_UTF8 1
+#include "unicode/utypes.h"
+#include "unicode/uchar.h"
+#include "unicode/locid.h"
+#include "unicode/ustring.h"
+#include "unicode/ucnv.h"
+#include "unicode/unistr.h"
+#endif
+
 // Socket stuff
 
 #include <stdio.h>
@@ -618,7 +628,7 @@ int pdt2( Logfile& l, Config& c ) {
 
 	// We need to skip the letter context as well now.
 	//
-	(void)explode( token, letters );
+	(void)explode( token, letters ); // PJB: TODO, ICUify
 	for ( int j = 0; j < letters.size(); j++ ) {
 	  letter = letters.at(j);
 	  ctx0.push( letter );
@@ -992,6 +1002,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
 
 // foo -> f o o
 //
+#ifndef HAVE_ICU
 int explode(std::string a_word, std::vector<std::string>& res) {
   for ( int i = 0; i < a_word.length(); i++ ) {
     std::string tmp = a_word.substr(i, 1);
@@ -999,12 +1010,25 @@ int explode(std::string a_word, std::vector<std::string>& res) {
   }
   return res.size();
 }
+#else
+int explode(std::string a_word, std::vector<std::string>& res) {
+  UnicodeString ustr = UnicodeString::fromUTF8(a_word);
+  for ( int i = 0; i < ustr.length(); i++ ) {
+    UnicodeString tmp = ustr.charAt(i);
+    std::string tmp_res;
+    tmp.toUTF8String(tmp_res);
+    res.push_back( tmp_res );
+  }
+  return res.size();
+}
+#endif
 
 // Generates letter instances. Example for lc:2, "The":
 // _ T  The
 // T h  The
 // h e  _
 //
+#ifndef HAVE_ICU
 void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx, std::vector<std::string>& res) {
   int i;
   for ( i = 0; i < a_word.length()-1; i++ ) { //NB ()-1
@@ -1018,6 +1042,27 @@ void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx
   ctx.push( tmp ); // next letter in context
   res.push_back( ctx.toString() + " " + "_" ); //instead of t
 }
+#else
+void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx, std::vector<std::string>& res) {
+  int i;
+  //UnicodeString ustr = UnicodeString::fromUTF8(StringPiece(a_word.c_str()));
+  UnicodeString ustr = UnicodeString::fromUTF8(a_word);
+  for ( i = 0; i < ustr.length()-1; i++ ) { //NB ()-1
+    UnicodeString tmp = ustr.charAt(i);
+    std::string tmp_res;
+    tmp.toUTF8String(tmp_res);
+    ctx.push( tmp_res ); // next letter in context
+    res.push_back( ctx.toString() + " " + t );
+  }
+  // After the last letter, predict a space instead.
+  // Do we want to predict spaces? Just skip this instance?
+  UnicodeString tmp = ustr.charAt(i);
+  std::string tmp_res;
+  tmp.toUTF8String(tmp_res);
+  ctx.push( tmp_res ); // next letter in context
+  res.push_back( ctx.toString() + " " + "_" ); //instead of t
+}
+#endif
 
 // Loop over one sentence.
 // "The man", lc:2
@@ -1177,8 +1222,96 @@ int pe_complete( PDT& pdt ) {
 
 #include "tinyxml.h"
 
+void add_element(TiXmlElement* ele, const std::string& t, const std::string& v) {
+  TiXmlElement *e  = new TiXmlElement( t );
+  TiXmlText    *te = new TiXmlText( v );
+  e->LinkEndChild( te );
+  ele->LinkEndChild( e );
+}
+
 int pdt2web( Logfile& l, Config& c ) {
   l.log( "work in progress pdt2web" );
+
+#ifdef HAVE_ICU
+  l.log( "Using ICU with U_CHARSET_IS_UTF8" );
+  UnicodeString us1("Öäå and so");
+  std::string us0 = "Öäå and so";
+  UChar uc1 = us1.charAt(1);
+  std::cerr << "-------->" << uc1 << std::endl;
+  //std::cerr << "-------->" << us1 << std::endl;
+  std::cerr << "-------->" << us0.at(1) << std::endl;
+  std::cerr << "-------->" << us0 << std::endl;
+  std::cerr << "-length->" << us1.length() << std::endl;
+  std::cerr << "-length->" << us0.length() << std::endl;
+
+
+  UnicodeString ustr = "Öäå foo åäö.";
+  const UChar* source = ustr.getBuffer();
+  char target[1000];
+  UErrorCode status = U_ZERO_ERROR;
+  UConverter *conv;
+  int32_t     len;
+  
+  // set up the converter
+  //conv = ucnv_open("iso-8859-6", &status);
+  conv = ucnv_open("utf-8", &status);
+  assert(U_SUCCESS(status));
+  
+  // convert 
+  len = ucnv_fromUChars(conv, target, 100, source, -1, &status);
+  assert(U_SUCCESS(status));
+  
+  // close the converter
+  ucnv_close(conv);
+  
+  std::string s(target);
+  std::cerr << "-------->" << s << std::endl;
+
+  // ---
+  
+  static char const* const cp = "utf-8";
+  ustr = "This öäå is rubbish Wye エイ ひ.く T1 ひき びき {pull} {tug} {jerk}.";
+  std::string a_str = "This öäå is rubbish Wye エイ ひ.く T1 ひき びき {pull} {tug} {jerk}.";
+  std::cerr << "--a_str->" << a_str << std::endl;
+  std::cerr << a_str.length() << "/" << ustr.length()  << std::endl;
+
+  std::vector<char> buf(ustr.length() + 1);
+  len = ustr.extract(0, ustr.length(), &buf[0], buf.size(), cp);
+  if (len >= buf.size()) {
+    buf.resize(len + 1);
+    len = ustr.extract(0, ustr.length(), &buf[0], buf.size(), cp);
+  }
+  std::string ret;
+  if (len) {
+    ret.assign( buf.begin(), buf.begin() + len );
+    std::cerr << "-------->" << ret << std::endl;
+  }
+  //
+  len = ustr.extract(0, ustr.length(), &buf[0], buf.size(), NULL);
+  if (len >= buf.size()) {
+    buf.resize(len + 1);
+    len = ustr.extract(0, ustr.length(), &buf[0], buf.size(), NULL);
+  }
+  ret;
+  if (len) {
+    ret.assign( buf.begin(), buf.begin() + len );
+    std::cerr << "-------->" << ret << std::endl;
+  }
+  
+  for ( int i = 0; i < ustr.length(); i++ ) {
+    UnicodeString uc = ustr.charAt(i);
+    std::string us;
+    uc.toUTF8String(us);
+    std::cerr << us;
+  }
+  std::cerr << std::endl;
+
+  // Easiest...
+  std::string res;
+  ustr.toUTF8String(res);
+  std::cerr << "---res-->" << res << std::endl;
+
+#endif
 
   const std::string port        = c.get_value( "port", "1984" );
   const int verbose             = stoi( c.get_value( "verbose", "1" ));
@@ -1196,15 +1329,32 @@ int pdt2web( Logfile& l, Config& c ) {
   int                pel             = stoi( c.get_value( "n", "3" )); // length. implicit in ds!
   std::string        dl              = c.get_value( "dl", "3" ); // letter depth 
   int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
+  int                users           = stoi( c.get_value( "users", "5" )); // number of users/connections
+
+  if ( (users < 1) || (users > 10) ) {
+    users = 5;
+  }
+  time_t max_idle = 1800;
 
   PDTC pdtc0;
   pdtc0.init( ibasefile0, timbl0, lc0 );
   l.log( "pdtc0.status = "+to_str( pdtc0.status ) );
+  if ( pdtc0.status == PDTC_INVALID ) {
+    l.log( "ERROR: invalid predictor." );
+    return 1;
+  }
 
   PDTC pdtc1;
   pdtc1.init( ibasefile1, timbl1, lc1 );
   l.log( "pdtc1.status = "+to_str( pdtc1.status ) );
+  if ( pdtc1.status == PDTC_INVALID ) {
+    l.log( "ERROR: invalid predictor." );
+    return 1;
+  }
 
+  // We need more of those, for multiple users, and some kind
+  // of ID (to prefix commands...?) Plus handshake protocol.
+  //
   PDT pdt;
   pdt.set_ltr_c( &pdtc0 );
   pdt.set_wrd_c( &pdtc1 );
@@ -1212,8 +1362,14 @@ int pdt2web( Logfile& l, Config& c ) {
   pdt.set_wrd_ds( ped );
   pdt.set_ltr_dl( dl );
 
-  // --
+  std::vector<PDT*> pdts;
+  int max_pdts = users;
+  pdts.clear();
+  for ( int i = 0; i < max_pdts; i++ ) {
+    pdts.push_back( NULL );
+  }
 
+  // --
 
   std::vector<std::string> strs;
   std::vector<std::string>::iterator si = strs.begin();
@@ -1302,6 +1458,29 @@ int pdt2web( Logfile& l, Config& c ) {
     
   bool run = true;
   std::vector<std::string> buf_tokens;
+
+  TiXmlDocument ok_doc;
+  TiXmlDeclaration *decl = new TiXmlDeclaration( "1.0", "", "" );
+  ok_doc.LinkEndChild( decl );
+  TiXmlElement     *element = new TiXmlElement( "result" );
+  TiXmlText        *text = new TiXmlText( "ok" );
+  element->LinkEndChild( text );
+  ok_doc.LinkEndChild( element );
+  std::ostringstream ostr;
+  ostr << ok_doc;
+  std::string ok_doc_str = ostr.str();
+
+  TiXmlDocument err_doc;
+  decl = new TiXmlDeclaration( "1.0", "", "" );
+  err_doc.LinkEndChild( decl );
+  element = new TiXmlElement( "result" );
+  text = new TiXmlText( "error" );
+  element->LinkEndChild( text );
+  err_doc.LinkEndChild( element );
+  ostr.str("");
+  ostr << err_doc;
+  std::string err_doc_str = ostr.str();
+
   while ( run ) {  // main accept() loop
 
     l.log( "Listening..." );  
@@ -1325,12 +1504,113 @@ int pdt2web( Logfile& l, Config& c ) {
     buf = trim( buf, " \n\r" );
     l.log( "("+buf+")" );
 
+    // Weed out timed-out sessions.
+    //
+    for ( int i = 0; i < max_pdts; i++ ) {
+      if ( pdts.at(i) != NULL ) {
+	time_t idle = pdts.at(i)->idle();
+	if ( idle > max_idle ) {
+	  l.log( "Session "+to_str(i)+" has timed out ("+to_str(idle)+")." );
+	  delete pdts.at(i);
+	  pdts.at(i) = NULL;
+	}
+      }
+    }
+
     if ( buf == "QUIT" ) {
       //
       // Quit...
       //
+      newSock->write( ok_doc_str );
       run = false;
-    } else if ( buf == "GEN" ) { 
+    } else if ( buf == "START" ) {
+      //
+      // Be assigned an ID och en PDT.
+      //
+      int num = -1;
+      for ( int i = 0; i < max_pdts; i++ ) {
+	if ( pdts.at(i) == NULL ) { // check for old/timed out ones?
+	  //
+	  // Empty spot, use it.
+	  //
+	  num = i;
+	  PDT *new_pdt = new PDT();
+	  new_pdt->set_ltr_c( &pdtc0 );
+	  new_pdt->set_wrd_c( &pdtc1 );
+	  new_pdt->set_wrd_ds( ped );
+	  new_pdt->set_ltr_dl( dl );
+	  pdts.at(i) = new_pdt;
+	  break;
+	}
+      }
+      l.log( "Assinging "+to_str(num)+" to request." );
+      TiXmlDocument res_doc;
+      TiXmlDeclaration *decl = new TiXmlDeclaration( "1.0", "", "" );
+      TiXmlElement     *element = new TiXmlElement( "result" );
+      res_doc.LinkEndChild( decl );
+      res_doc.LinkEndChild( element );
+      add_element( element, "pdt_idx", to_str(num) );
+      std::ostringstream ostr;
+      ostr << res_doc;
+      newSock->write( ostr.str() );
+    } else if ( buf == "INFO" ) {
+      TiXmlDocument res_doc;
+      TiXmlDeclaration *decl = new TiXmlDeclaration( "1.0", "", "" );
+      TiXmlElement     *element = new TiXmlElement( "result" );
+      res_doc.LinkEndChild( decl );
+      res_doc.LinkEndChild( element );
+      
+      // These/this should be taken from PDT.
+      //
+      add_element( element, "ltr_ibasefile", ibasefile0 );
+      add_element( element, "wrd_ibasefile", ibasefile1 );
+      std::ostringstream ostr;
+      ostr << res_doc;
+      newSock->write( ostr.str() );
+    }
+
+    // Commands on PDTs ------------------------
+
+    /*
+      Loop over pdts and check idle time?
+      if ( idle > 1800 ) {
+      // half hour?
+      }
+
+    */
+
+    buf_tokens.clear();
+    Tokenize( buf, buf_tokens, ' ' );
+
+    // LTR 2 a
+    // CTX 0
+    // 
+    if ( buf_tokens.size() > 1 ) {
+
+      std::string cmd = buf_tokens.at(0);
+      int pdt_idx = stoi(buf_tokens.at(1));
+      PDT *pdt = NULL;
+      if ( pdt_idx < 0 ) {
+	l.log( "-2 index requested at "+buf_tokens.at(1) );
+	newSock->write( err_doc_str );// error doc
+	cmd = "__IGNORE__";
+      } else {
+	pdt = pdts.at( pdt_idx );
+	if ( pdt == NULL ) {
+	  l.log( "NULL index requested at "+buf_tokens.at(1) );
+	  newSock->write( err_doc_str );// error doc
+	  cmd = "__IGNORE__";
+	} else {
+	  time_t idle = pdt->idle();
+	  l.log( "idle="+to_str(idle));
+	}
+      }
+
+      if ( cmd == "STOP" ) {
+	delete pdt;
+	pdts.at( pdt_idx ) = NULL;
+	newSock->write( ok_doc_str );
+      } else if ( cmd == "GEN" ) { 
       //
       // Generate from the contexts. First complete with the letter predictor,
       // then follow up with the word predictor.
@@ -1342,17 +1622,18 @@ int pdt2web( Logfile& l, Config& c ) {
       doc.LinkEndChild( element );
 
       strs.clear();
-      pdt.ltr_generate( strs );
+      pdt->ltr_generate( strs );
       si = strs.begin();
+      long time0 = clock_m_secs();
       int cnt = 0;
       while ( si != strs.end() ) {
 	std::string s = *si;
 	s = s.substr( 1, s.length()-1);
-	Context *old = new Context(pdt.wrd_ctx); //save
-	pdt.add_wrd( s );
+	Context *old = new Context(pdt->wrd_ctx); //save
+	pdt->add_wrd( s );
 	std::vector<std::string> strs_wrd;
 	std::vector<std::string>::iterator si_wrd;
-	pdt.wrd_generate( strs_wrd );
+	pdt->wrd_generate( strs_wrd );
 	si_wrd = strs_wrd.begin();
 	while ( si_wrd != strs_wrd.end() ) {
 
@@ -1365,93 +1646,113 @@ int pdt2web( Logfile& l, Config& c ) {
 	  //l.log( s + *si_wrd );
 	  ++si_wrd;
 	}
-	delete pdt.wrd_ctx;
-	pdt.wrd_ctx = old; // restore.
+	delete pdt->wrd_ctx;
+	pdt->wrd_ctx = old; // restore.
 	++si;
       }
+      long time_ms = clock_m_secs()-time0;
+      add_element( element, "time_ms", to_str(time_ms) );
+
       std::ostringstream ostr;
       ostr << doc;
       newSock->write( ostr.str() );
       l.log( ostr.str() );
-    } else if ( buf == "CTX" ) {
+    } else if ( cmd == "CTX" ) {
       //
       // Returns the two contexts.
       //
-      l.log( pdt.ltr_ctx->toString() );
-      l.log( pdt.wrd_ctx->toString() );
+      l.log( pdt->ltr_ctx->toString() );
+      l.log( pdt->wrd_ctx->toString() );
+      l.log( pdt->wip+"/"+pdt->pwip );
 
       TiXmlDocument doc;
       TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
 
-      TiXmlElement * element0 = new TiXmlElement( "ltr" );
-      TiXmlText * text0 = new TiXmlText( pdt.ltr_ctx->toString() );
+      TiXmlElement * element0 = new TiXmlElement( "ctx_ltr" );
+      TiXmlText * text0 = new TiXmlText( pdt->ltr_ctx->toString() );
       element0->LinkEndChild( text0 );
-      TiXmlElement * element1 = new TiXmlElement( "wrd" );
-      TiXmlText * text1 = new TiXmlText( pdt.wrd_ctx->toString() );
+      TiXmlElement * element1 = new TiXmlElement( "ctx_wrd" );
+      TiXmlText * text1 = new TiXmlText( pdt->wrd_ctx->toString() );
       element1->LinkEndChild( text1 );
+
+      TiXmlElement * element2 = new TiXmlElement( "ds" );
+      TiXmlText * text2 = new TiXmlText( pdt->ds );
+      element2->LinkEndChild( text2 );
+      TiXmlElement * element3 = new TiXmlElement( "dl" );
+      TiXmlText * text3 = new TiXmlText( to_str(pdt->dl) );
+      element3->LinkEndChild( text3 );
 
       TiXmlElement * element = new TiXmlElement( "result" );
       element->LinkEndChild( element0 );
       element->LinkEndChild( element1 );
+      element->LinkEndChild( element2 );
+      element->LinkEndChild( element3 );
+
+      add_element( element, "ltr_his", to_str(pdt->get_ltr_his()) );
+
       doc.LinkEndChild( decl );
       doc.LinkEndChild( element );
 
       std::ostringstream ostr;
       ostr << doc;
 
-      std::string answer = pdt.wrd_ctx->toString() + '\n';
+      std::string answer = pdt->wrd_ctx->toString() + '\n';
       newSock->write( ostr.str() );
       l.log( ostr.str() );
-    } else if ( buf == "SPC" ) {
-      pdt.add_spc();      
-    }
-
-    buf_tokens.clear();
-    Tokenize( buf, buf_tokens, ' ' );
-
-    if ( buf_tokens.size() > 1 ) {
-
-      if ( buf_tokens.at(0) == "LTR" ) {
+    } else if ( cmd == "SPC" ) {
+      pdt->add_spc();
+      newSock->write( ok_doc_str );
+    } else if ( cmd == "CLR" ) {
+      pdt->clear();
+      newSock->write( ok_doc_str );
+    } else if ( cmd == "DEL" ) {
+      pdt->del_ltr();
+      newSock->write( ok_doc_str );
+    } else if ( cmd == "LTR" ) {
 	//
 	// Add one letter to the letter context.
 	//
-	pdt.add_ltr( buf_tokens.at(1) );      
-      } else if ( buf_tokens.at(0) == "WRD" ) {
+	pdt->add_ltr( buf_tokens.at(2) );
+	newSock->write( ok_doc_str );
+      } else if ( cmd == "WRD" ) {
 	//
 	// Add a word to the word context. Explode the word,
 	// and add each letter to the letter context as well.
 	//
-	pdt.add_wrd( buf_tokens.at(1) );
+	pdt->add_wrd( buf_tokens.at(2) );
 
 	std::vector<std::string> letters;
 	std::vector<std::string>::iterator li;
-	(void)explode( buf_tokens.at(1), letters );
+	(void)explode( buf_tokens.at(2), letters );
 	// need a space before?
 	for ( int j = 0; j < letters.size(); j++ ) {
-	  pdt.add_ltr( letters.at(j) );
+	  pdt->add_ltr( letters.at(j) );
 	}
-      } else if ( buf_tokens.at(0) == "GEN" ) {
+	newSock->write( ok_doc_str );
+      } else if ( cmd == "GENWRD" ) {
 	//
 	// Seperate generators for words and letters.
 	//
-	if ( buf_tokens.at(1) == "WRD" ) {
+	if ( buf_tokens.at(2) == "WRD" ) {
 	  strs.clear();
 	  std::vector<std::string> strs_wrd;
 	  std::vector<std::string>::iterator si_wrd;
-	  pdt.wrd_generate( strs_wrd );
+	  pdt->wrd_generate( strs_wrd );
 	  si_wrd = strs_wrd.begin();
 	  while ( si_wrd != strs_wrd.end() ) {
 	    l.log( *si_wrd );
 	    ++si_wrd;
 	  }
-	} else if ( buf_tokens.at(1) == "LTR" ) {
+	  newSock->write( ok_doc_str );// should be answer
+	} else if ( buf_tokens.at(2) == "LTR" ) {
 	  strs.clear();
-	  pdt.ltr_generate( strs );
+	  pdt->ltr_generate( strs );
 	  si = strs.begin();
 	  while ( si != strs.end() ) {
 	    l.log( *si );
 	    ++si;
 	  }
+	  newSock->write( ok_doc_str );// should be answer
 	}
 	
       }

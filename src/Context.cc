@@ -61,6 +61,22 @@ void Context::push(const std::string& s) {
   }
 }
 
+void Context::cp( const Context* old_ctx) {
+  size = old_ctx->size;
+  data.resize( size );
+  data.clear();
+  for ( size_t i = 0; i < size; i++ ) {
+    data.push_back( old_ctx->data[i] );
+  }
+}
+
+const std::string& Context::last_letter() {
+  if ( size > 0 ) {
+    return data.at(size-1);
+  }
+  return "";
+}
+
 std::string Context::toString() {
   std::string tmp = "";
   size_t i;

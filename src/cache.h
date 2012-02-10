@@ -99,7 +99,6 @@ class Cache {
       //
       cache_elem *ce = contains( a );
       if ( ce != NULL ) {
-	++reinserts;
 	cli = ce->listpos;                  // pos of element in list
 	cache_list.erase( cli );            // erase from list
 	cache_list.push_back( a );          // reinsert at the back

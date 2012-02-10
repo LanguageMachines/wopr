@@ -476,6 +476,10 @@ namespace Sockets {
     return isValid();
   }
   
+  int ClientSocket::close() {
+    return shutdown( sock, 2 );
+  }
+
   bool ServerSocket::connect( const string& port ){
     sock = -1;
     sock = socket( AF_INET, SOCK_STREAM, 0 );

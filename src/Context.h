@@ -21,6 +21,8 @@ class Context {
   Context( const Context& );
   Context( const Context* );
   void push(const std::string&);
+  void cp( const Context* );
+  const std::string& last_letter();
   std::string toString();
   void reset();
   size_t get_size();

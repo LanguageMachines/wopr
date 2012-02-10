@@ -63,6 +63,7 @@ namespace Sockets {
   class ClientSocket: public Socket {
   public:
     bool connect( const std::string&, const std::string& );
+    int close();
   };
   
   class ServerSocket: public Socket {

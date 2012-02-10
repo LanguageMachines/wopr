@@ -50,6 +50,17 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#ifdef HAVE_ICU
+#define U_CHARSET_IS_UTF8 1
+#include "unicode/utypes.h"
+#include "unicode/uchar.h"
+#include "unicode/locid.h"
+#include "unicode/ustring.h"
+#include "unicode/ucnv.h"
+#include "unicode/unistr.h"
+#include "unicode/ucol.h"
+#endif
+
 #include "qlog.h"
 #include "util.h"
 #include "Config.h"
@@ -85,7 +96,7 @@ int min3( int a, int b, int c ) {
   return mi;  
 }
 
-
+#ifndef HAVE_ICU
 int lev_distance(const std::string source, const std::string target) {
 
   // Step 1
@@ -158,14 +169,16 @@ int lev_distance(const std::string source, const std::string target) {
       if ( i>2 && j>2 ) {
         int trans = matrix[i-2][j-2] + 1;
 
-	// Code was /* ... */, bet that gave LD:2 to a
-	// transposition.
-        /*if ( source[i-2] != t_j ) {
+	// Code gives LD:2 to a transposition. If TRANSPLD2
+	// is not defined, a transposition is LD:1
+#ifdef TRANSPLD2
+        if ( source[i-2] != t_j ) {
 	  trans++;
 	}
         if ( s_i != target[j-2] ) {
 	  trans++;
-	  }*/
+	}
+#endif
 	if ( source[i-2] != t_j ) {
 	  if ( s_i != target[j-2] ) {
 	    trans++;
@@ -185,6 +198,116 @@ int lev_distance(const std::string source, const std::string target) {
 
   return matrix[n][m];
 }
+#else
+int lev_distance(const std::string source, const std::string target) {
+
+  UnicodeString u_source = UnicodeString::fromUTF8(source);
+  UnicodeString u_target = UnicodeString::fromUTF8(target);
+
+  // Step 1
+
+  const int n = u_source.length();
+  const int m = u_target.length();
+
+  if (n == 0) {
+    return m;
+  }
+  if (m == 0) {
+    return n;
+  }
+
+  typedef std::vector< std::vector<int> > Tmatrix; 
+  Tmatrix matrix(n+1);
+
+  // Size the vectors in the 2.nd dimension. Unfortunately C++ doesn't
+  // allow for allocation on declaration of 2.nd dimension of vec of vec
+
+  for (int i = 0; i <= n; i++) {
+    matrix[i].resize(m+1);
+  }
+
+  // Step 2
+
+  for (int i = 0; i <= n; i++) {
+    matrix[i][0]=i;
+  }
+
+  for (int j = 0; j <= m; j++) {
+    matrix[0][j]=j;
+  }
+
+  // Step 3
+
+  for (int i = 1; i <= n; i++) {
+
+    const UChar s_i = u_source.charAt(i-1);
+
+    // Step 4
+
+    for (int j = 1; j <= m; j++) {
+
+      const UChar t_j = u_target.charAt(j-1);
+
+      // Step 5
+
+      int cost;
+      if (s_i == t_j) {
+        cost = 0;
+      } else {
+        cost = 1;
+      }
+
+      // Step 6
+
+      int above = matrix[i-1][j];
+      int left  = matrix[i][j-1];
+      int diag  = matrix[i-1][j-1];
+
+      //const int cell  = min( above + 1, min(left + 1, diag + cost));
+      int cell  = min3( above + 1, left + 1, diag + cost );
+
+      // Step 6A: Cover transposition, in addition to deletion,
+      // insertion and substitution. This step is taken from:
+      // Berghel, Hal ; Roach, David : "An Extension of Ukkonen's 
+      // Enhanced Dynamic Programming ASM Algorithm"
+      // (http://www.acm.org/~hlb/publications/asm/asm.html)
+
+#ifndef TRANSPLD2
+      if ( i>2 && j>2 ) {
+        int trans = matrix[i-2][j-2] + 1;
+
+	// Code gives LD:2 to a transposition. If TRANSPLD2
+	// is not defined, a transposition is LD:1
+
+	if ( u_source.charAt(i-2) != t_j ) {
+	  //std::cerr << char(t_j) << char(u_source.charAt(i-2)) << std::endl;
+	  trans++;
+	} 
+	if ( s_i != u_target.charAt(j-2) ) {
+	  trans++;
+	}
+
+	if ( u_source.charAt(i-2) != t_j ) {
+	  if ( s_i != u_target.charAt(j-2) ) {
+	    trans++;
+	  }
+	}
+
+        if ( cell > trans ) {
+	  cell = trans;
+	}
+      }
+#endif
+
+      matrix[i][j] = cell;
+    }
+  }
+
+  // Step 7
+
+  return matrix[n][m];
+}
+#endif
 
 int levenshtein( Logfile& l, Config& c ) {
 
@@ -200,7 +323,9 @@ int levenshtein( Logfile& l, Config& c ) {
   l.log( "aaaabbbb-aaababbb: "+to_str( lev_distance( "aaaabbbb", "aaababbb" )));
   l.log( "aaaabbbb-aabababb: "+to_str( lev_distance( "aaaabbbb", "aabababb" )));
   l.log( "aaaabbbb-bbbbaaaa: "+to_str( lev_distance( "aaaabbbb", "bbbbaaaa" )));
-
+  l.log( "sor-sör: "+to_str( lev_distance( "sor", "sör" )));
+  l.log( "transpåöx-transpöåx: "+to_str( lev_distance( "transpåöx", "transpöåx" )));
+  l.log( "källardörrhål-källardörrhål: "+to_str( lev_distance( "källardörrhål", "källardörhål" )));
   return 0;
 }
 
@@ -898,7 +1023,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    connection_open = false;
 	    break;
 	  }
-	  if ( verbose > 0 ) {
+	  if ( verbose > 1 ) {
 	    l.log( "|" + tmp_buf + "|" );
 	  }
 	  
@@ -911,7 +1036,7 @@ int server_sc( Logfile& l, Config& c ) {
 	  //
 	  std::string cache_ans = cache->get( full_string );
 	  if ( cache_ans != "" ) {
-	    if ( verbose > 0 ) {
+	    if ( verbose > 2 ) {
 	      l.log( "Found in cache." );
 	    }
 	    newSock->write(  cache_ans + '\n' );
@@ -976,7 +1101,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    
 	    size_t      res_freq = tv->ValFreq();	    
 	    std::string answer   = tv->Name();
-	    if ( verbose > 0 ) {
+	    if ( verbose > 1 ) {
 	      l.log( "timbl("+classify_line+")="+answer );
 	    }
 
@@ -1360,7 +1485,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  c.set_status(0);
 	  break;
 	}
-	if ( verbose > 0 ) {
+	if ( verbose > 1 ) {
 	  l.log( "|" + tmp_buf + "|" );
 	}
 
@@ -1388,7 +1513,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  //
 	  std::string cache_ans = cache->get( classify_line );
 	  if ( cache_ans != "" ) {
-	    if ( verbose > 0 ) {
+	    if ( verbose > 2 ) {
 	      l.log( "Found in cache." );
 	    }
 	    newSock->write(  cache_ans + '\n' );
@@ -1436,7 +1561,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    
 	  size_t      res_freq = tv->ValFreq();	    
 	  std::string answer   = tv->Name();
-	  if ( verbose > 0 ) {
+	  if ( verbose > 1 ) {
 	    l.log( "timbl("+classify_line+")="+answer );
 	  }
 

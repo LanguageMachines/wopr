@@ -116,6 +116,9 @@ int main( int argc, char* argv[] ) {
     l.log( TIMBL );
   }
 #endif
+#ifdef HAVE_ICU
+  l.log( "Compiled with ICU support." );
+#endif
   l.log( blurb );
   l.log( "PID: "+to_str(getpid(),6,' ')+" PPID: "+to_str(getppid(),6,' ') );
 

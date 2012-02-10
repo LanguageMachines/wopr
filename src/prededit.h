@@ -33,7 +33,6 @@ void generate_tree( Timbl::TimblAPI*, Context&, std::vector<std::string>&, int, 
 int explode(std::string, std::vector<std::string>&);
 void window_word_letters(std::string, std::string, int, Context&, std::vector<std::string>&);
 void window_words_letters(std::string, int, Context&, std::vector<std::string>&);
-
 int pdt( Logfile&, Config& );
 int pdt2( Logfile&, Config& );
 //void generate_next(  Timbl::TimblAPI*, Config&, std::string, int, std::vector<distr_elem>& );

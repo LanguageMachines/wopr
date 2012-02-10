@@ -43,6 +43,7 @@
 int run_file( Logfile&, const std::string&,
 	      const std::string&, const std::string& );
 int run_cache( Logfile&, const std::string& );
+int run_ping( Logfile& , const std::string& , const std::string& );
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -121,18 +122,30 @@ int main( int argc, char* argv[] ) {
     }
   } // while
 
+  l.log("new Cache( 10 )");
   Cache *cache = new Cache( 10 );
 
+  l.log("add( '1 b c', 'one' )");
   cache->add( "1 b c", "one" );
   cache->print();
+
+  l.log("add( '1 b c', 'one' )");
   cache->add( "1 b c", "one" );
   cache->print();
+
+  l.log("add( '2 b d', 'two' )");
   cache->add( "2 b d", "two" );
   cache->print();
+
+  l.log("add( '3 b c', 'three' )");
   cache->add( "3 b c", "three" );
   cache->print();
+
+  l.log("add( '1 b c', 'one' )");
   cache->add( "1 b c", "one" );
   cache->print();
+
+  l.log("add( '4 b c', 'four' )");
   cache->add( "4 b c", "four" );
   cache->print();
   l.log( cache->stat() );
@@ -142,9 +155,53 @@ int main( int argc, char* argv[] ) {
   std::cout << "cache get:" << cache->get( "3 b c" ) << std::endl;
   std::cout << "cache get:" << cache->get( "4 b c" ) << std::endl;
 
-  run_file( l, filename, host, port );
-  //run_cache( l, filename );
+  l.log("new Cache( 2 )");
+  cache = new Cache( 2 );
+  l.log( cache->stat() );
 
+  l.log("add( '1 b c', 'one' )");
+  cache->add( "1 b c", "one" );
+  cache->print();
+  l.log( cache->stat() );
+
+  l.log("add( '1 b c', 'one' )");
+  cache->add( "1 b c", "one" );
+  cache->print();
+  l.log( cache->stat() );
+
+  l.log("add( '2 b d', 'two' )");
+  cache->add( "2 b d", "two" );
+  cache->print();
+  l.log( cache->stat() );
+
+  l.log("add( '3 b c', 'three' )");
+  cache->add( "3 b c", "three" );
+  cache->print();
+  l.log( cache->stat() );
+
+  l.log("add( '1 b c', 'one' )");
+  cache->add( "1 b c", "one" );
+  cache->print();
+  l.log( cache->stat() );
+
+  l.log("add( '4 b c', 'four' )");
+  cache->add( "4 b c", "four" );
+  cache->print();
+  l.log( cache->stat() );
+
+  std::cout << "cache get:" << cache->get( "1 b c" ) << std::endl;
+  std::cout << "cache get:" << cache->get( "2 b d" ) << std::endl;
+  std::cout << "cache get:" << cache->get( "3 b c" ) << std::endl;
+  std::cout << "cache get:" << cache->get( "4 b c" ) << std::endl;
+
+
+  if ( filename != "" ) {
+    run_file( l, filename, host, port );
+  } else {
+    run_ping( l, host, port );
+  }
+
+  //run_cache( l, filename );
   return 0;
 }
 
@@ -342,6 +399,7 @@ int run_file( Logfile& l, const std::string& filename,
       l.log( a_line + "/" + answer );
     }
     ++lines;
+    delay(100);
   }
   u_secs1 = clock_u_secs();
   std::cout << u_secs1 << std::endl;
@@ -411,4 +469,37 @@ int run_cache( Logfile& l, const std::string& filename ) {
   l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
 
   infile2.close();
+}
+
+// Preted te be a load balancer
+//
+int run_ping( Logfile& l, const std::string& host, const std::string& port) {
+
+  l.log( "Running ping. " );
+
+  long u_secs0;
+  long u_secs1;
+  int count = 10000;
+
+  u_secs0 = clock_u_secs();
+  std::cout << u_secs0 << std::endl;
+  while( --count != 0 ) {    
+
+    l.log( "ping" );
+    Sockets::ClientSocket cs;
+    try {
+      bool res = cs.connect( host.c_str(), port.c_str() );
+      l.log( "res="+to_str(res) );
+      delay(1000);
+    } catch ( const std::exception& e ) {
+      l.log( "ERROR: exception caught." );
+      return -1;
+    }
+    cs.close();
+    delay(10000000); // 10 secs
+  }
+  u_secs1 = clock_u_secs();
+  std::cout << u_secs1 << std::endl;
+  l.log( "End test..." );
+  l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
 }
