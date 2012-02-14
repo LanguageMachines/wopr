@@ -913,18 +913,26 @@ int multi_gated( Logfile& l, Config& c ) {
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   int                fco              = stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
+  int                mode             = stoi( c.get_value( "mode", "0" ));
+  
+  // mode=1 for spelcorr, plus other spelcorr variables. Adjust focus to optimise on
+  // spelcorr as well?
 
   std::string output_filename;
+  std::string mode_str = "";
+  if ( mode == 1 ) {
+    mode_str = "_sc";
+  }
   if ( (id != "") && ( ! contains_id( filename, id)) ) { //was kvs_filename
-    output_filename  = filename + "_" + id + ".mg";
+    output_filename  = filename + "_" + id + mode_str +".mg";
   } else {
-    output_filename  = filename + ".mg";
+    output_filename  = filename + mode_str + ".mg";
   }
   std::string stat_filename;
   if ( (id != "") && ( ! contains_id( filename, id)) ) {
-    stat_filename  = filename + "_" + id + ".stat";
+    stat_filename  = filename + "_" + id + mode_str + ".stat";
   } else {
-    stat_filename  = filename + ".stat";
+    stat_filename  = filename + mode_str + ".stat";
   }
 
   if ( file_exists( l, c, output_filename ) ) {
@@ -948,6 +956,7 @@ int multi_gated( Logfile& l, Config& c ) {
   l.log( "fco:        "+to_str(fco) ); 
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
+  l.log( "mode:       "+to_str(mode) );
   l.log( "OUTPUT:     "+output_filename );
   l.log( "OUTPUT:     "+stat_filename );
   l.dec_prefix();
@@ -1148,6 +1157,7 @@ int multi_gated( Logfile& l, Config& c ) {
     file_out << multidist.mrr << " ";
 
     // Loop over sorted vector, take top-n.
+    // TODO: incorporate spelcorr modus here.
     //
     sort( multidist.distr.begin(), multidist.distr.end() );
     int cntr = topn;

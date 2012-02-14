@@ -1233,7 +1233,7 @@ int pdt2web( Logfile& l, Config& c ) {
   l.log( "work in progress pdt2web" );
 
 #ifdef HAVE_ICU
-  l.log( "Using ICU with U_CHARSET_IS_UTF8" );
+  /*
   UnicodeString us1("Öäå and so");
   std::string us0 = "Öäå and so";
   UChar uc1 = us1.charAt(1);
@@ -1310,7 +1310,7 @@ int pdt2web( Logfile& l, Config& c ) {
   std::string res;
   ustr.toUTF8String(res);
   std::cerr << "---res-->" << res << std::endl;
-
+  */
 #endif
 
   const std::string port        = c.get_value( "port", "1984" );
@@ -1712,7 +1712,9 @@ int pdt2web( Logfile& l, Config& c ) {
 	//
 	// Add one letter to the letter context.
 	//
-	pdt->add_ltr( buf_tokens.at(2) );
+	if ( buf_tokens.size() > 2 ) {
+	  pdt->add_ltr( buf_tokens.at(2) );
+	}
 	newSock->write( ok_doc_str );
       } else if ( cmd == "WRD" ) {
 	//
