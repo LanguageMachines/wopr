@@ -48,7 +48,9 @@
 #include "runrunrun.h"
 #include "Multi.h"
 #include "ngrams.h"
+#include "elements.h"
 #include "wex.h"
+#include "levenshtein.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -913,11 +915,20 @@ int multi_gated( Logfile& l, Config& c ) {
   int                topn             = stoi( c.get_value( "topn", "1" ) );
   int                fco              = stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  int                mode             = stoi( c.get_value( "mode", "0" ));
-  
-  // mode=1 for spelcorr, plus other spelcorr variables. Adjust focus to optimise on
-  // spelcorr as well?
 
+  // Spell corr, see levenshtein.cc
+  int                mode             = stoi( c.get_value( "mode", "0" ));
+  // minimum word length (guess added if > mwl)
+  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  // maximum levenshtein distance (guess added if <= mld)
+  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  // max entropy (guess added if <= max_entropy)
+  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  // maximum distributie (guess added if <= max_distr)
+  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  // ratio target_lexfreq:tvs_lexfreq
+  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  
   std::string output_filename;
   std::string mode_str = "";
   if ( mode == 1 ) {
@@ -1103,9 +1114,14 @@ int multi_gated( Logfile& l, Config& c ) {
     
     //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
-    // Print the instance plus classification
+    // Print the instance plus classification. We keep the .sc format
+    // similar to the levenshtein/correct format.
     //
-    file_out << a_line << " " << multidist.answer << " ";
+    if ( mode == 1 ) {
+      file_out << a_line << " (" << multidist.answer << ") ";
+    } else {
+      file_out << a_line << " " << multidist.answer << " ";
+    }
 
     // If the prob == 0, we could do a backoff to lexical probs if
     // we supplied a lexicon.
@@ -1120,60 +1136,96 @@ int multi_gated( Logfile& l, Config& c ) {
 	known = "k";
       }
     }
-    if ( multidist.prob == 0 ) {
-      file_out << "0 ";
+    if ( mode == 1 ) {
+      double word_lp = 0.0;
+      if ( multidist.prob == 0 ) {
+	file_out << "0 ";
+      } else {
+	file_out << log2( multidist.prob ) << " ";
+	word_lp = pow(2, -log2(multidist.prob));
+      }
+      file_out << multidist.entropy << " " << word_lp << " ";
     } else {
-      file_out << log2( multidist.prob ) << " ";
+      if ( multidist.prob == 0 ) {
+	file_out << "0 ";
+      } else {
+	file_out << log2( multidist.prob ) << " ";
+      }
     }
 
-    //file_out << "entropy" << " " << "word_lp" << " ";
-    
     // Indicator if it was correct or not.
     // We have gated:correct/indist/wrong, and idem for default.
     //
-    if ( cl->get_type() == 4 ) {
-      file_out << "D ";
-    } else {
-      file_out << "G ";
+    if ( mode != 1 ) {
+      if ( cl->get_type() == 4 ) {
+	file_out << "D ";
+      } else {
+	file_out << "G ";
+      }
+      file_out << cl->id << " ";
+      
+      if ( multidist.info == INFO_WRONG ) {
+	file_out << "ic ";
+      } else if ( multidist.info == INFO_CORRECT ) {
+	file_out << "cg ";
+      } else { // INFO_INDISTR is left
+	file_out << "cd ";
+      }
+      file_out << known << " ";
+      
+      file_out << multidist.md << " " << multidist.mal << " ";
     }
-    file_out << cl->id << " ";
+    
+    // sc format prints only cnt, we want to be the same
+    //
+    file_out << multidist.cnt << " ";
 
-    if ( multidist.info == INFO_WRONG ) {
-      file_out << "ic ";
-    } else if ( multidist.info == INFO_CORRECT ) {
-      file_out << "cg ";
-    } else { // INFO_INDISTR is left
-      file_out << "cd ";
+    if ( mode != 1 ) {
+      file_out << multidist.distr_count << " ";
     }
-
-    file_out << known << " ";
-
-    file_out << multidist.md << " " << multidist.mal << " ";
-
-    file_out << multidist.cnt << " " << multidist.distr_count << " ";
 
     // For MRR, this makes output format different from px output again.
     //
-    file_out << multidist.mrr << " ";
+    if ( mode != 1 ) {
+      file_out << multidist.mrr << " ";
+    }
 
     // Loop over sorted vector, take top-n.
-    // TODO: incorporate spelcorr modus here.
+    // TODO: incorporate spelcorr modus here (or higher up?).
     //
-    sort( multidist.distr.begin(), multidist.distr.end() );
-    int cntr = topn;
-    dei = multidist.distr.begin();
-    file_out << "[";
-    while ( dei != multidist.distr.end() ) { 
-      if ( --cntr >= 0 ) {
-	//l.log( (*dei).name + ' ' + to_str((*dei).prob) );
-	file_out << " " << (*dei).token << " " << (*dei).freq;
+    if ( mode == 1 ) {
+      int cnt = multidist.cnt;
+      std::string tmp;
+      if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) { 
+	std::vector<distr_elem*> distr_vec;
+	distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio);
+	sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+	std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	int cntr = 0;
+	while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+	  tmp = tmp + " " + (*fi)->name + " " + to_str((double)((*fi)->freq));
+	  delete *fi;
+	  fi++;
+	}
+	distr_vec.clear();
       }
-      dei++;
+      file_out << "[" << tmp << " ]";
+    } else { // normal topn distribution output
+      sort( multidist.distr.begin(), multidist.distr.end() );
+      int cntr = topn;
+      dei = multidist.distr.begin();
+      file_out << "[";
+      while ( dei != multidist.distr.end() ) { 
+	if ( --cntr >= 0 ) {
+	  //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
+	  file_out << " " << (*dei).token << " " << (*dei).freq;
+	}
+	dei++;
+      }
+      file_out << " ]";
     }
-    file_out << " ]";
 
     file_out << std::endl;
-
   }
   file_in.close();
 

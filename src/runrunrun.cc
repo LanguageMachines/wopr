@@ -3092,21 +3092,22 @@ int pplx( Logfile& l, Config& c ) {
 // wopr -r pplxs -p filename:test1.ws3.hpx5,ibasefile:ep_sv_cl.ws3.hpx5_de.ibase,timbl:'-a1 +D',lexicon:ep_sv_cl.lex,hpx:5
 //
 #ifdef TIMBL
-struct distr_elem {
+// should use the elements.h one
+struct distr_elpplx {
   std::string name;
   double      freq;
   double      s_freq;
-  bool operator<(const distr_elem& rhs) const {
+  bool operator<(const distr_elpplx& rhs) const {
     return freq > rhs.freq;
   }
-};
+  };
 struct cached_distr {
   int cnt;
   long sum_freqs;
   double entropy;
   std::string first;
   std::map<std::string,int> freqs; // word->frequency
-  std::vector<distr_elem> distr_vec; // top-n to print
+  std::vector<distr_elpplx> distr_vec; // top-n to print
   bool operator<(const cached_distr& rhs) const {
     return cnt > rhs.cnt;
   }
@@ -3573,7 +3574,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       double entropy         = 0.0;
       int    rank            = 1;
       double class_mrr       = 0.0;
-      std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+      std::vector<distr_elpplx> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
 
@@ -3682,7 +3683,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	  dfreqs[wght] += 1;
 
 	  if ( topn > 0 ) { // only save if we want to sort/print them later.
-	    distr_elem  d;
+	    distr_elpplx  d;
 	    d.name   = tvs;
 	    d.freq   = wght;
 	    d.s_freq = wght;
@@ -3818,7 +3819,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       /* Sort and print and determine rank in one fell swoop?
 	 int cntr = topn;
 	 sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-	 std::vector<distr_elem>::iterator fi;
+	 std::vector<distr_elpplx>::iterator fi;
 	 fi = distr_vec.begin();
 	 if ( topn > 0 ) {
 	 file_out << cnt << " [ ";
@@ -3828,7 +3829,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 	 file_out << (*fi).name << ' ' << (*fi).freq << ' ';
 	 }
 	 if ( cache_level == 1 ) {
-	 distr_elem d;
+	 distr_elpplx d;
 	 d.name = (*fi).name;
 	 d.freq = (*fi).freq;
 	 (cd->distr_vec).push_back( d );
@@ -3846,13 +3847,13 @@ int pplx_simple( Logfile& l, Config& c ) {
       if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
 	int cntr = topn;
 	sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-	std::vector<distr_elem>::iterator fi;
+	std::vector<distr_elpplx>::iterator fi;
 	fi = distr_vec.begin();
 	file_out <<  " [ ";
 	while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
 	  file_out << (*fi).name << ' ' << (*fi).freq << ' ';
 	  if ( cache_level == 1 ) {
-	    distr_elem d;
+	    distr_elpplx d;
 	    d.name = (*fi).name;
 	    d.freq = (*fi).freq;
 	    (cd->distr_vec).push_back( d );
