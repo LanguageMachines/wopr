@@ -37,9 +37,11 @@ struct md2 {
   std::string target;
   long        cnt;
   long        distr_count;
+  double      entropy;
   size_t      md;
   bool        mal;
   int         info; // 0:no info, 1:in distr, 2:correct
+  bool        in_distr; // needed for spelcorr without changing old functionality
   long        idx; // index in distribution
   double      mrr; 
   std::vector<md2_elem> distr;
@@ -301,7 +303,8 @@ class Classifier {
       return false;
     }
 
-    classification.info = INFO_WRONG; // unless proven wrong :)
+    classification.info     = INFO_WRONG; // unless proven wrong :)
+    classification.in_distr = false;
 
     classification.answer = tv->Name();
 
@@ -311,7 +314,8 @@ class Classifier {
     ++classification_count;
     classification.cnt = vd->size(); // size of distr.
     classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
-    
+    classification.entropy = 0.0;
+
     // Timbl distr is unsorted...
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
     long classification_freq;
@@ -325,6 +329,8 @@ class Classifier {
       100->3
        80->1
     */
+    // Should calc entropy and other stuff relevant for spel corr here.
+    //
     while ( it != vd->end() ) {
       std::string tvs  = it->second->Value()->Name();
       long        wght = it->second->Weight(); // absolute frequency.
@@ -338,9 +344,11 @@ class Classifier {
       if ( tvs == classification.target ) {
 	classification.prob = p; // in the distr.
 	classification.info = INFO_INDISTR;
+	classification.in_distr = true;
 	classification_freq = wght;
 	//break
       }
+      classification.entropy -= ( p * log2(p) );
       ++it;
     }
     
@@ -359,6 +367,8 @@ class Classifier {
       ++idx;
     }
 
+    // count correct not as in_distr...
+    //
     if ( classification.answer == classification.target ) {
       ++correct;
       classification.info = INFO_CORRECT;
