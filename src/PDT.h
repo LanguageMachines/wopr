@@ -159,6 +159,7 @@ class PDT {
   std::string pwip; // previous word in progress
   time_t start_t;
   time_t last_t;
+  int lpos; // counts letters after space
 
   PDTC *ltr_c;
   PDTC *wrd_c;
@@ -178,6 +179,7 @@ class PDT {
   PDT() {
     start_t = utc();
     last_t = utc();
+    lpos = 0;
   };
 
   //! Destructor.
@@ -248,6 +250,7 @@ class PDT {
     ltr_his->clear();
     wrd_his->clear();
     wip.clear();
+    lpos = 0;
     touch();
   }
 
@@ -274,6 +277,7 @@ class PDT {
     ltr_ctx->push( s );
     //std::cerr << ltr_ctx->toString() << std::endl;
     wip = wip + s;
+    ++lpos;
     touch();
   }
 
@@ -294,6 +298,7 @@ class PDT {
     add_wrd( wip );
     pwip = wip; // for "backspace" &c?
     wip.clear();
+    lpos = 0;
     touch();
   }
 
@@ -316,6 +321,7 @@ class PDT {
       if ( wip.length() > 0 ) {
 	wip = wip.substr(0, wip.length()-1);
       }
+      --lpos;
     }
     Context *pc = ltr_his->get(); //removes also
     if ( pc != NULL ) {

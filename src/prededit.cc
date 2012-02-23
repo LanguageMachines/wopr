@@ -1716,6 +1716,33 @@ int pdt2web( Logfile& l, Config& c ) {
 	  pdt->add_ltr( buf_tokens.at(2) );
 	}
 	newSock->write( ok_doc_str );
+      } else if ( cmd == "FEED" ) {
+	//
+	// First attempt to feed selected text into
+	// the system. Need to skip the first few letters
+	// which have already been typed: we use lpos for
+	// this, it is reset after the first word has been added.
+	//
+	l.log("LPOS: "+ to_str(pdt->lpos));
+	int lpos = pdt->lpos;
+	std::vector<std::string> letters;
+	for ( int i = 2; i < buf_tokens.size(); i++ ) {
+	  l.log("FEED: "+ buf_tokens.at(i));
+	  (void)explode( buf_tokens.at(i), letters );
+	  
+	  for ( int j = lpos; j < letters.size(); j++ ) {
+	    if ( letters.at(j) == " " ) {
+	      pdt->add_spc();
+	    } else {
+	      l.log("FEED: "+ letters.at(j));
+	      pdt->add_ltr( letters.at(j) );
+	    }
+	  }
+	  lpos = 0;
+	  letters.clear();
+	  pdt->add_spc();
+	}
+	newSock->write( ok_doc_str );
       } else if ( cmd == "WRD" ) {
 	//
 	// Add a word to the word context. Explode the word,
