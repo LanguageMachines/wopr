@@ -303,7 +303,7 @@ int pdt( Logfile& l, Config& c ) {
       //
       std::vector<std::string> strs; // should be a struct with more stuff
       std::string t;
-      generate_tree( My_Experiment, ctx, strs, length, depths, t );
+      generate_tree( My_Experiment, ctx, strs, length, depths, length, t );
 
       // Print the instance, with counts.
       // I0000.0004 waited for
@@ -678,7 +678,7 @@ int pdt2( Logfile& l, Config& c ) {
 	std::vector<std::string> strs0;
 	std::string t0;
 
-	generate_tree( My_Experiment0, ctx0, strs0, length0, depths0, t0 );
+	generate_tree( My_Experiment0, ctx0, strs0, length0, depths0, length0, t0 );
 
 	for ( int s = 0; s < strs0.size(); s++ ) {
 	  std::string lpred = strs0.at(s).substr(1, strs0.at(s).length()-1);
@@ -717,7 +717,7 @@ int pdt2( Logfile& l, Config& c ) {
 	    // Continue with words based on correctly guessed 
 	    // letter continuation.
 	    //
-	    generate_tree( My_Experiment1, ctx01, strs, length, depths, t );
+	    generate_tree( My_Experiment1, ctx01, strs, length, depths, length, t );
 
 	    // We need to shift our ctx0 with the predicted letters.
 	    //
@@ -753,7 +753,7 @@ int pdt2( Logfile& l, Config& c ) {
       if ( lsaved == 0 ) {
 	//l.log( "Adding predictions." );
 	//l.log( "ctx1="+ctx1.toString() );
-	generate_tree( My_Experiment1, ctx1, strs, length, depths, t );
+	generate_tree( My_Experiment1, ctx1, strs, length, depths, length, t );
 	//l.log( "IBASE1 predictions: "+to_str(strs.size()) );
       }
 
@@ -936,11 +936,11 @@ void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::v
   
 }
 
-// Recursive?
+// Recursive. How to do variable length? Use dc parameter instead of lenth?
 //
-void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<std::string>& strs, int length, std::vector<int>& depths, std::string t ) {
+void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<std::string>& strs, int length, std::vector<int>& depths, int dc, std::string t ) {
 
-  if ( length == 0 ) {
+  if ( dc == 0 ) {
     // here we should save/print the whole "string" (?)
     //std::cout << "STRING: [" << t << "]" << std::endl;
     strs.push_back( t );
@@ -958,7 +958,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
   // Need a different res in generate_next, and keep another (kind of) res
   // in this generate_tree.
   //
-  std::string instance = ctx.toString() + " ?";
+  std::string instance = ctx.toString() + " ?"; // where context length?
   std::vector<distr_elem> res;
   generate_next( My_Experiment, instance, res );
 
@@ -973,7 +973,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
   sort( res.begin(), res.end() );
 
   std::vector<distr_elem>::iterator fi = res.begin();
-  int cnt = depths.at( length );
+  int cnt = depths.at( dc ); // was length
   while ( (fi != res.end()) && (--cnt >= 0) ) { 
     
     //for ( int i = 5-length; i > 0; i--) { std::cout << "  ";}
@@ -983,15 +983,15 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
     //
     Context new_ctx = Context(ctx);
     new_ctx.push(  (*fi).name );
+    //std::cerr << "gen_tree: ctx=" << ctx.toString() << " / new_ctx=" << new_ctx.toString() << std::endl;
 
     // NB the extra space in the beginning.
     //
-    generate_tree( My_Experiment, new_ctx, strs, length-1, depths, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
-    /*if ( t.length() > 0 ) {
-      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
+    if ( res.size() == 1 ) { // not for non-web PDT ?
+      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );
     } else {
-      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, (*fi).name );//+"/"+to_str(res.size()) );
-      }*/
+      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
+    }
     
     fi++;
   }
@@ -1229,6 +1229,11 @@ void add_element(TiXmlElement* ele, const std::string& t, const std::string& v) 
   ele->LinkEndChild( e );
 }
 
+/*
+Letter only, with a dummy wrd ibase, and no "ds" parameter:
+../../wopr -l -r pdt2web -p lc0:8,timbl0:'-a1 +D',ibasefile0:nyt.3e7.10000.lt8m1_-a1+D.ibase,lc1:2,
+                            timbl1:'-a1 +D',ibasefile1:dummy.l2r0_-a1+D.ibase,dl:5,users:10
+*/
 int pdt2web( Logfile& l, Config& c ) {
   l.log( "work in progress pdt2web" );
 

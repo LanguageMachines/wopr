@@ -87,6 +87,16 @@ std::string Context::toString() {
   return tmp;
 }
 
+std::string Context::toString(int s) {
+  std::string tmp = "";
+  size_t i;
+  for ( i = s; i < size-1; i++ ) {
+    tmp = tmp + data.at(i) + " ";
+  }
+  tmp = tmp + data.at(i);
+  return tmp;
+}
+
 void Context::reset() {
   data.clear();
   for ( size_t i = 0; i < size; i++ ) {

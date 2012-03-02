@@ -24,6 +24,7 @@ class Context {
   void cp( const Context* );
   const std::string& last_letter();
   std::string toString();
+  std::string toString(int);
   void reset();
   size_t get_size();
 };

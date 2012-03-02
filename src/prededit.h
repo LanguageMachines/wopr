@@ -29,7 +29,7 @@
 struct distr_elem;
 
 void generate_next( Timbl::TimblAPI*, std::string, std::vector<distr_elem>& );
-void generate_tree( Timbl::TimblAPI*, Context&, std::vector<std::string>&, int, std::vector<int>&, std::string );
+void generate_tree( Timbl::TimblAPI*, Context&, std::vector<std::string>&, int, std::vector<int>&,int, std::string );
 int explode(std::string, std::vector<std::string>&);
 void window_word_letters(std::string, std::string, int, Context&, std::vector<std::string>&);
 void window_words_letters(std::string, int, Context&, std::vector<std::string>&);

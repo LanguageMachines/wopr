@@ -340,13 +340,13 @@ class PDT {
 
   void ltr_generate( std::vector<std::string>& res ) {
     std::string t;
-    generate_tree( ltr_c->My_Experiment, (Context&)(*ltr_ctx), res, 1, ltr_depths, t );
+    generate_tree( ltr_c->My_Experiment, (Context&)(*ltr_ctx), res, 1, ltr_depths, 1, t );
     touch();
   }
 
   void wrd_generate( std::vector<std::string>& res ) {
     std::string t;
-    generate_tree( wrd_c->My_Experiment, (Context&)(*wrd_ctx), res, n, wrd_depths, t );
+    generate_tree( wrd_c->My_Experiment, (Context&)(*wrd_ctx), res, n, wrd_depths, n, t );
     touch();
   }
 
