@@ -97,7 +97,7 @@ int min3( int a, int b, int c ) {
 }
 
 #ifndef HAVE_ICU
-int lev_distance(const std::string source, const std::string target) {
+int lev_distance(const std::string& source, const std::string& target) {
 
   // Step 1
 
@@ -199,7 +199,7 @@ int lev_distance(const std::string source, const std::string target) {
   return matrix[n][m];
 }
 #else
-int lev_distance(const std::string source, const std::string target) {
+int lev_distance(const std::string& source, const std::string& target) {
 
   UnicodeString u_source = UnicodeString::fromUTF8(source);
   UnicodeString u_target = UnicodeString::fromUTF8(target);
