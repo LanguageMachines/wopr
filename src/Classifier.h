@@ -100,7 +100,7 @@ class Classifier {
   //!
   ~Classifier();
 
-  void set_ibasefile( const std::string f ) {
+  void set_ibasefile( const std::string& f ) {
     ibasefile = f;
   }
 
@@ -111,18 +111,18 @@ class Classifier {
     return ws;
   }
 
-  void set_timbl( const std::string t ) {
+  void set_timbl( const std::string& t ) {
     timbl = t;
   }
 
-  void set_testfile( const std::string t ) {
+  void set_testfile( const std::string& t ) {
     testfile = t;
   }
   const std::string& get_testfile() {
     return testfile;
   }
 
-  void set_distfile( const std::string t ) {
+  void set_distfile( const std::string& t ) {
     distfile = t;
   }
   const std::string& get_distfile() {
@@ -157,7 +157,7 @@ class Classifier {
     return subtype;
   }
 
-  void set_gatetrigger( const std::string t ) {
+  void set_gatetrigger( const std::string& t ) {
     gatetrigger = t;
   }
   const std::string& get_gatetrigger() {
@@ -289,7 +289,7 @@ class Classifier {
 
   // For the gated classifiers.
   //
-  bool classify_one( std::string a_line ) {
+  bool classify_one( const std::string& a_line ) {
     
     classification.cl = a_line;
     last_word( classification.cl, classification.target );

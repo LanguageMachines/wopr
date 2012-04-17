@@ -269,7 +269,7 @@ int generate( Logfile& l, Config& c ) {
 // returns one sentence of length len.
 //
 std::string generate_one( Config& c, std::string& a_line, int len, int ws,
-			  std::string end,
+			  const std::string& end,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   std::string result = "";
@@ -334,7 +334,7 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
 // returns one sentence of length len.
 //
 std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
-			  std::string end, std::string id,
+			  const std::string& end, std::string id,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   std::vector<std::string>::iterator ri;
