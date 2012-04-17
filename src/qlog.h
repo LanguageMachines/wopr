@@ -53,14 +53,14 @@ class Logfile {
   Logfile(std::string);
   ~Logfile();
 
-  void append(std::string);
-  void log(std::string);
-  void log(std::string, const std::string&);
-  void log(std::string, int);
-  void log_raw(std::string);
-  void log_begin(std::string);
-  void log_end(std::string);
-  void set_prefix(std::string);
+  void append( const std::string& );
+  void log( const std::string& );
+  void log( const std::string&, const std::string&);
+  void log( const std::string&, int);
+  void log_raw( const std::string& );
+  void log_begin( const std::string& );
+  void log_end( const std::string& );
+  void set_prefix( const std::string& );
   std::string get_prefix();
   void inc_prefix();
   void dec_prefix();
@@ -68,7 +68,7 @@ class Logfile {
   void unlock();
   void get_raw( timeval& );
   void set_mark();
-  void DBG(std::string);
+  void DBG( const std::string& );
 
   long clock_start();
   long clock_elapsed();

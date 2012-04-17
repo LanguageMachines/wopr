@@ -99,7 +99,7 @@ void Logfile::init() {
 
   \todo Fix fixed length of maximum temporary buffer for strftime().
 */
-void Logfile::append(std::string s) {
+void Logfile::append( const std::string& s) {
   char      timestring[32];
   timeval   tv;
   struct tm *t;
@@ -125,7 +125,7 @@ void Logfile::append(std::string s) {
 /*!
   \brief Print to cout only, no flush.
 */
-void Logfile::log( std::string s ) {
+void Logfile::log( const std::string& s ) {
   char      timestring[32];
   timeval   tv;
   struct tm *t;
@@ -150,7 +150,7 @@ void Logfile::log( std::string s ) {
   pthread_mutex_unlock( &mtx );
 }
 
-void Logfile::log( std::string s, const std::string& esc_code  ) {
+void Logfile::log( const std::string& s, const std::string& esc_code  ) {
   char      timestring[32];
   timeval   tv;
   struct tm *t;
@@ -178,14 +178,14 @@ void Logfile::log( std::string s, const std::string& esc_code  ) {
 /*!
   Log to syslog.
 */
-void Logfile::log( std::string s, int sl ) {
+void Logfile::log( const std::string& s, int sl ) {
   log( s );
   if ( sl != 0 ) {
-    syslog( LOG_INFO, &(s[0]) );
+    syslog( LOG_INFO, "%s", s.c_str() );
   }
 }
 
-void Logfile::log_raw( std::string s ) {
+void Logfile::log_raw( const std::string& s ) {
   char      timestring[32];
   timeval   tv;
   struct tm *t;
@@ -209,7 +209,7 @@ void Logfile::log_raw( std::string s ) {
 /*!
   \brief Print to cout only, no flush.
 */
-void Logfile::log_begin( std::string s ) {
+void Logfile::log_begin( const std::string& s ) {
   char      timestring[32];
   timeval   tv;
   struct tm *t;
@@ -228,7 +228,7 @@ void Logfile::log_begin( std::string s ) {
   std::cout << s;
 }
 
-void Logfile::log_end( std::string s ) {
+void Logfile::log_end( const std::string& s ) {
   std::cout << s << std::endl;
 }
 
@@ -241,7 +241,7 @@ void Logfile::log_end( std::string s ) {
 
   \param prefix The name of the new prefix string.
  */
-void Logfile::set_prefix(std::string a_prefix) {
+void Logfile::set_prefix( const std::string& a_prefix) {
   prefix = a_prefix;
 }
 
@@ -281,7 +281,7 @@ void Logfile::get_raw( timeval& tv ) {
   //return tv;
 }
 
-void Logfile::DBG( std::string s ) {
+void Logfile::DBG( const std::string& s ) {
   char      timestring[32];
   timeval   tv;
   struct tm *t;
