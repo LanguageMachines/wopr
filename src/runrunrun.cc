@@ -65,6 +65,16 @@
 #include "wex.h"
 #include "prededit.h"
 
+#ifdef HAVE_ICU
+#define U_CHARSET_IS_UTF8 1
+#include "unicode/utypes.h"
+#include "unicode/uchar.h"
+#include "unicode/locid.h"
+#include "unicode/ustring.h"
+#include "unicode/ucnv.h"
+#include "unicode/unistr.h"
+#endif
+
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
 #endif
@@ -1537,7 +1547,7 @@ int window_lr( Logfile& l, Config& c ) {
       if ( a_line == "" ) {
 	continue;
       }
-      window( a_line, a_line, lc, rc, false, results );//line1238
+      window( a_line, a_line, lc, rc, false, results ); // line 1303
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	file_out << *ri << "\n";
       }
@@ -1999,9 +2009,16 @@ int load_lexicon(Logfile& l, Config& c)  {
 unsigned long long anahash( std::string& s ) {
   unsigned long long res = 0;
 
+#ifndef HAVE_ICU
   for ( int i = 0; i < s.length(); i++ ) {
     res += (unsigned long long)pow((unsigned long long)s[i],5);
   }
+#else
+  UnicodeString ustr = UnicodeString::fromUTF8(s);
+  for ( int i = 0; i < ustr.length(); i++ ) {
+    res += (unsigned long long)pow(ustr.charAt(i),5);
+  }
+#endif
   return res;
 }
 
@@ -4080,24 +4097,78 @@ bool contains_id( const std::string& str, const std::string& id  ) {
   return false;
 }
 
+void print_all_permutations(const std::string& s) {
+  std::string s1 = s;
+  std::sort( s1.begin(), s1.end() ); 
+  do {
+    std::cout << s1 << std::endl;
+  } while ( std::next_permutation( s1.begin(), s1.end() ));
+}
+
+void permutate(const std::string& s, int l, std::map<std::string,int>& w) {
+  std::map<std::string,int>::iterator wfi;
+  std::string s1 = s;
+  std::sort( s1.begin(), s1.end() ); 
+  do {
+#ifndef HAVE_ICU
+    //std::cout << s1 << std::endl;
+    std::string aw = s1.substr(0, l);
+    wfi = w.find( aw );
+    if ( (wfi == w.end()) ) {
+      w[aw] = 1;
+    }
+#else
+    UnicodeString ustr = UnicodeString::fromUTF8(s1);
+    UnicodeString aw = UnicodeString(ustr, 0, l);
+    std::string aw1;
+    aw.toUTF8String(aw1);
+    wfi = w.find( aw1 );
+    if ( (wfi == w.end()) ) {
+      w[aw1] = 1;
+    }
+#endif
+  } while ( std::next_permutation( s1.begin(), s1.end() ));
+}
+
+
 int test_wopr( Logfile& l, Config& c ) {
-  std::string                        a_word = "wöåd and エイ ひ.";
+
+  std::string a_word = c.get_value( "w" );
+  std::string cmd = c.get_value( "c" );
+  int n = stoi(c.get_value( "n", "0" ));
+
+  //std::string                        a_word = "wöåd and エイ ひ.";
   std::vector<std::string>           results;
   std::vector<std::string>::iterator ri;
-  int lc = 4;
-  Context ctx(lc);
 
-  for ( long i = 0; i < 1000; i++ ) {
-    results.clear();
-    window_words_letters(a_word, lc, ctx, results);
+  if ( cmd == "utf8" ) {
+    int lc = 4;
+    Context ctx(lc);
+    
+    for ( long i = 0; i < 1000; i++ ) {
+      results.clear();
+      window_words_letters(a_word, lc, ctx, results);
+    }
+    for ( ri = results.begin(); ri != results.end(); ri++ ) {
+      l.log(*ri);
+    }
+  } else if ( cmd == "ld" ) {
+    for ( long i = 0; i < 1; i++ ) {
+      levenshtein(l, c);
+    }
+  } else if ( cmd == "av" ) {
+    print_all_permutations(a_word);
+    //l.log( to_str(anahash( a_word )) );
+    std::cout << anahash( a_word ) << std::endl;
+  } else if ( cmd == "comb" ) {
+    std::map<std::string,int> w;
+    permutate(a_word, n, w);
+    std::map<std::string,int>::iterator wfi;
+    for ( wfi = w.begin(); wfi != w.end(); wfi++ ) {
+      std::cout << (*wfi).first << std::endl;
+    }
   }
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log(*ri);
-  }
-
-  for ( long i = 0; i < 1; i++ ) {
-    levenshtein(l, c);
-  }
+    
     return 0;
 }  
 

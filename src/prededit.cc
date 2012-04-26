@@ -1097,7 +1097,7 @@ int window_letters( Logfile& l, Config& c ) {
   const std::string& filename        = c.get_value( "filename" );
   int                lc              = stoi( c.get_value( "lc", "2" ));
   int                rc              = 0;
-  int                mode            = stoi( c.get_value( "lm", "o" )); // lettering mode 0=shift, 1=empty for new sentence
+  int                mode            = stoi( c.get_value( "lm", "0" )); // lettering mode 0=shift, 1=empty for new sentence
 
   if ( (mode < 0) || (mode > 1) ) {
     l.log( "NOTICE: wrong lm parameter, setting to 0." );
