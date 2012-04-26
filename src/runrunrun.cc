@@ -1577,12 +1577,12 @@ int window_lr( Logfile& l, Config& c ) {
 //
 // This is called from server2 and server4 - do not use otherwise.
 //
-int hapax_line( const std::string& a_line, std::map<std::string,int> wfreqs,
+int hapax_line( const std::string& a_line, const std::map<std::string,int>& wfreqs,
 		int hpx, int hpx_t, std::string& res ) {
   std::vector<std::string> words;
   Tokenize( a_line, words, ' ' );
   std::vector<std::string>::iterator wi;
-  std::map<std::string, int>::iterator wfi;
+  std::map<std::string, int>::const_iterator wfi;
   std::string hpx_sym = "<unk>"; //c.get_value("hpx_sym", "<unk>");
 
   //  replace_if with bind2nd( .. )
