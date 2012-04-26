@@ -1640,10 +1640,10 @@ int mbmt( Logfile& l, Config& c ) {
 
 // In place hapaxing. For server4. uses full lexicon and hpx freq.
 //
-int hapax_vector( std::vector<std::string>& words, std::map<std::string,int> wfreqs, int hpx ) {
+int hapax_vector( std::vector<std::string>& words, const std::map<std::string,int>& wfreqs, int hpx ) {
 
   std::vector<std::string>::iterator wi;
-  std::map<std::string, int>::iterator wfi;
+  std::map<std::string, int>::const_iterator wfi;
   std::string hpx_sym = "<unk>"; //c.get_value("hpx_sym", "<unk>");
   int changes = 0;
 
