@@ -27,6 +27,14 @@ AC_ARG_WITH([timbl],
 	    with_timbl=yes
 	    ])
 
+AC_ARG_WITH(ticcutils,
+       [  --with-ticcutils=DIR       use ticcutils installed in <DIR>],
+       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"],
+       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$prefix/lib/pkgconfig"])
+PKG_CHECK_MODULES([ticcutils], [ticcutils >= 0.1] )
+CXXFLAGS="$CXXFLAGS $ticcutils_CFLAGS"
+LIBS="$ticcutils_LIBS $LIBS"
+
 AS_IF([test "x$with_timbl" != xno],
 	    [
 	    AC_MSG_NOTICE([Checking for Timbl])
