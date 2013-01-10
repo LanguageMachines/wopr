@@ -33,12 +33,17 @@ my $idx   = $opt_i || 2; # index to variable to plot
 
 #------------------------------------------------------------------------------
 
+# Put the cg/ic/... in a column
+
 my $gcs = 0;
+my $cdi = 3; #correct/dist/incorrect
 
 # Here we can plot adc etc as well.
 #
 my $l2p_pos0 = $lc0 + $rc0 + $gcs + $idx;
 my $l2p_pos1 = $lc1 + $rc1 + $gcs + $idx;
+my $cdi_pos0 = $lc0 + $rc0 + $cdi + $idx;
+my $cdi_pos1 = $lc1 + $rc1 + $cdi + $idx;
 
 my $out_data = $out.".data";
 my $out_plot = $out.".plot";
@@ -58,6 +63,8 @@ while ( my $line0 = get_next(*FHF0) ) {
 
   my $l2p0;
   my $l2p1;
+  my $cdi0;
+  my $cdi1;
   my @parts0;
   my @parts1;
 
@@ -69,11 +76,13 @@ while ( my $line0 = get_next(*FHF0) ) {
 
     @parts0 = split ( / /, $line0 );
     $l2p0 = $parts0[$l2p_pos0];
+    $cdi0 = $parts0[$cdi_pos0];
 
     @parts1 = split ( / /, $line1 );
     $l2p1 = $parts1[$l2p_pos1];
+    $cdi1 = $parts1[$cdi_pos1];
 
-    print OFHD "$cnt $l2p0 $l2p1\n";
+    print OFHD "$cnt $l2p0 $l2p1 $cdi0$cdi1\n";
     ++$cnt;
     
   }
@@ -100,7 +109,9 @@ print OFHP "set xlabel '$file0'\n";
 print OFHP "set ylabel '$file1'\n";
 print OFHP "set key bottom\n";
 print OFHP "set grid\n";
-print OFHP "plot \"$out_data\" using 2:3\n";
+print OFHP "plot \"<grep ' cg' $out_data\" using 2:3,\\\n";
+print OFHP "\"<grep ' cd' $out_data\" using 2:3,\\\n";
+print OFHP "\"<grep ' ic' $out_data\" using 2:3\n";
 print OFHP "set terminal push\n";
 print OFHP "set terminal postscript eps color lw 2 \"Helvetica\" 10\n";
 print OFHP "set out \"$out.ps\"\n";
