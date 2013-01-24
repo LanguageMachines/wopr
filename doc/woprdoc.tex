@@ -1012,11 +1012,11 @@ wopr -r server4 -p ibasefile:rmt.5e5.l2r0_-a4+D.ibase,lexicon:rmt.5e5.lex,
 16:48:26.77: result ave=-2.32702/0.00470958
 \end{wout}
 
-The esoteric options are \cmp{mode}, and \cmp{keep}. The \cmp{mode:1}
-argument specifies that we will send an \emph{instance} to
-\wopr{}. The default, \cmp{mode:0} indicates we send a whole sentence
-which will be windowed first. For this to work, the context size must
-be specified as well, with the parameters \cmp{lc} and \cmp{rc}.
+The esoteric options are \cmp{mode}, and \cmp{keep}. The \cmp{mode:1} argument
+specifies that we will send a whole sentence which will be windowed first by
+\wopr{}. The default, \cmp{mode:0} indicates we send an \emph{instance} to
+\wopr{}. For windowing to work, the context size must be specified as well, with
+the parameters \cmp{lc} and \cmp{rc}.
 
 For \pbmbmt{}, a special version of the server has been created,
 called \cmp{mbmt}. It is similar to \cmp{server4}, but has several of
