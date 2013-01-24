@@ -969,7 +969,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	    lri = lex_ranks.find( (*li).second );
 	    if ( lri != lex_ranks.end() ) {
 	      out = out + " 1 " +to_str(lex_count) + " " + to_str(lex_sumf) + " " + to_str(1/(float)(*lri).second);
-	      out = out + " [ ]"; // sorted lexicon needed here.
+	      //out = out + " [ ]"; // sorted lexicon needed here.
 
 	      // Now the top-n
 	      int cnt = topn;
