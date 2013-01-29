@@ -11,6 +11,10 @@ AM_INIT_AUTOMAKE
 AC_PROG_CXX
 AC_PROG_INSTALL
 
+AC_PROG_LIBTOOL
+AC_SUBST([LIBTOOL_DEPS])
+
+
 # This "magic" seems to be necessary...
 if test "x$PKG_CONFIG_PATH" = x; then
      export PKG_CONFIG_PATH=""
