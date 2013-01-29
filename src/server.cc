@@ -1114,19 +1114,6 @@ int server4(Logfile& l, Config& c) {
 	  //
 	  std::vector<std::string> words;
 
-#ifdef HAVE_FOLIA
-	  folia::Document doc( "id='wopr'" );
-	  doc.declare( folia::AnnotationType::METRIC, 
-		       "metricset", 
-		       "annotator='wopr'" );
-	  folia::Text *text = new folia::Text( &doc, "id='wopr.t'" );
-	  doc.append( text );
-	  folia::Paragraph *p = new folia::Paragraph( &doc, "id='wopr.t.p'" );
-	  text->append( p );
-	  folia::Sentence *s = new folia::Sentence( &doc, "id='wopr.t.p.s'" );
-	  p->append( s );
-	  l.log( "folia document created." );
-#endif
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
 	    
@@ -1227,7 +1214,416 @@ int server4(Logfile& l, Config& c) {
 		}
 	      }
 
-#ifdef HAVE_FOLIA
+	      if ( verbose > 1 ) {
+		l.log( "lprob10("+target+")="+to_str(res_pl10) );
+	      }
+	      
+	      if ( verbose > 2 ) {
+                l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
+              }
+              icache->add( classify_line, to_str(res_pl10) );
+              
+	    } // end not in cache
+	    
+	    probs.push_back( res_pl10 ); // store for later.
+	    
+	  } // i loop
+	  
+	  //l.log( "Probs: "+ to_str(probs.size() ));
+	  
+	  double ave_pl10 = 0.0;
+	  for ( int p = 0; p < probs.size(); p++ ) {
+	    double prob = probs.at(p);
+	    ave_pl10 += prob;
+	  }
+	  if ( verbose > 0 ) {
+	    l.log( "result sum="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	  }
+	  if ( resm != 1 ) { // normally, average, but not for resm:1
+	    ave_pl10 /= probs.size();
+	  }
+	  // else resm == 1, we return the sum.
+	  
+	  if ( verbose > 0 ) {
+	    l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
+	  }
+	  
+	  if ( lb == 0 ) { // lb:0 is no logs
+	    ave_pl10 = pow(10, ave_pl10);
+	  }
+	  if ( moses == 0 ) {
+	    std::string ans = to_str(ave_pl10);
+	    cache->add( full_string, ans );
+	    newSock->write( ans + "\n" );
+	  } else if ( moses == 1 ) { // 6 char output for moses
+	    char res_str[7];
+	    
+	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
+	    //std::cerr << "(" << res_str << ")" << std::endl;
+	    newSock->write( res_str );
+	    //cache->add( full_string, res_str );
+	  }
+	  connection_open = (keep == 1);
+	  //connection_open = false;
+	  
+	} // connection_open
+	
+        l.log( "connection closed." );
+	if ( ! running ) {
+	  // Rather crude, children with connexion keep working
+	  // till exited/removed by system.
+	  kill( getppid(), SIGTERM );
+	}
+	size_t ccs = cache->get_size();
+	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+	l.log( cache->stat() );
+        ccs = icache->get_size();
+        l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+        l.log( icache->stat() );
+	_exit(0);
+
+      } else if ( cpid == -1 ) { // fork failed
+	l.log( "Error forking." );
+	perror("fork");
+	return(1);
+      }
+      delete newSock;
+
+    } // running
+  } // try
+  catch ( const std::exception& e ) {
+    l.log( std::string("ERROR: exception caught: ") + e.what() );
+    return -1;
+  }
+  
+  return 0;
+}
+#else
+int server4( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif 
+
+#if defined(TIMBLSERVER) && defined(TIMBL) && defined(HAVE_FOLIA)
+/*
+...
+*/
+int xmlserver(Logfile& l, Config& c) {
+  l.log( "xmlserver. Returns a FoLiA document over a sequence." );
+  
+  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& ibasefile  = c.get_value( "ibasefile" );
+  const std::string port        = c.get_value( "port", "1984" );
+  const int mode                = stoi( c.get_value( "mode", "0" ));
+  const int resm                = stoi( c.get_value( "resm", "0" ));
+  const int verbose             = stoi( c.get_value( "verbose", "0" ));
+  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int moses               = stoi( c.get_value( "moses", "0" ));
+  const int lb                  = stoi( c.get_value( "lb", "0" ));
+  const int lc                  = stoi( c.get_value( "lc", "2" ));
+  const int rc                  = stoi( c.get_value( "rc", "0" ));
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const int hapax               = stoi( c.get_value( "hpx", "0" ));
+  const bool skip_sm            = stoi( c.get_value( "skm", "0" )) == 1;
+  const long cachesize          = stoi( c.get_value( "cs", "100000" ));
+
+  l.inc_prefix();
+  l.log( "ibasefile: "+ibasefile );
+  l.log( "port:      "+port );
+  l.log( "mode:      "+to_str(mode) ); // mode:0=input is instance, mode:1=window
+  l.log( "resm:      "+to_str(resm) ); // result mode, resm=0=average, resm=1=sum, resm:2=averge, no OOV words
+  l.log( "keep:      "+to_str(keep) ); // keep connection open after sending result,
+                                       // close by sending _CLOSE_
+  l.log( "moses:     "+to_str(moses) );// Send 6 char moses output
+  l.log( "lb:        "+to_str(lb) );// log base of answer, 0=straight prob, 10=log10
+  l.log( "lc:        "+to_str(lc) ); // left context size for windowing
+  l.log( "rc:        "+to_str(rc) ); // right context size for windowing
+  l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
+  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "lexicon    "+lexicon_filename ); // the lexicon...
+  l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
+  l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
+  l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
+  l.dec_prefix();
+
+  // Load lexicon. 
+  //
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load lexicon file." );
+    return -1;
+  }
+  // Read the lexicon with word frequencies, freq > hapax.
+  //
+  l.log( "Reading lexicon." );
+  std::string a_word;
+  int wfreq;
+  unsigned long total_count     = 0;
+  unsigned long lex_entries     = 0;
+  unsigned long hpx_entries     = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::map<std::string,int> hpxfreqs; // hapaxed list
+  while( file_lexicon >> a_word >> wfreq ) {
+    ++lex_entries;
+    total_count += wfreq;
+    wfreqs[a_word] = wfreq;
+    if ( wfreq > hapax ) {
+      hpxfreqs[a_word] = wfreq;
+      ++hpx_entries;
+    }
+  }
+  file_lexicon.close();
+  l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
+
+  std::string distrib;
+  std::vector<std::string> distribution;
+  std::string result;
+  double distance;
+  double total_prplx = 0.0;
+  const Timbl::ValueDistribution *vd;
+  const Timbl::TargetValue *tv;
+  
+  signal(SIGCHLD, SIG_IGN);
+  volatile sig_atomic_t running = 1;
+
+  try {
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
+
+    Sockets::ServerSocket server;
+    
+    if ( ! server.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server.getMessage() );
+      return 1;
+    }
+    if ( ! server.listen(  ) < 0 ) {
+      l.log( "ERROR: cannot listen. ");
+      return 1;
+    };
+    
+    while ( running ) {  // main accept() loop
+      l.log( "Listening..." );  
+
+      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      if ( !server.accept( *newSock ) ) {
+	if( errno == EINTR ) {
+	  continue;
+	} else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  return 1;
+	}
+      }
+      if ( verbose > 0 ) {
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+      }
+
+      //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
+      int cpid = fork();
+      if ( cpid == 0 ) { // child process
+	
+	std::string buf;
+      	bool connection_open = true;
+	std::vector<std::string> cls; // classify lines
+	std::vector<double> probs;
+
+	// Local cache. Useful for pbmbmt which holds connection
+	// the whole time.
+	//
+	Cache *cache = new Cache( cachesize );
+	Cache *icache = new Cache( cachesize );
+
+	while ( running & connection_open ) {
+
+	  std::string tmp_buf;
+	  newSock->read( tmp_buf );
+	  tmp_buf = trim( tmp_buf, " \n\r" );
+
+	  if ( tmp_buf.length() == 0 ) {
+	    connection_open = false;
+	    break;
+	  }
+	  
+	  if ( tmp_buf == "_EXIT_" ) {
+	    connection_open = false;
+	    running = 0;
+	    break;
+	  }
+	  if ( tmp_buf == "_CLOSE_" ) {
+	    connection_open = false;
+	    break;
+	  }
+	  // So we can do: kill `echo "_PPID_" | nc localhost 8888`
+	  // from a script
+	  //
+	  if ( tmp_buf == "_PPID_" ) {
+	    newSock->write( to_str(getppid()) + '\n' );
+	    connection_open = false;
+	    break;
+	  }
+
+	  
+	  if ( verbose > 0 ) {
+	    l.log( "|" + tmp_buf + "|" );
+	  }
+	  
+	  // Remove <s> </s> if so requested.
+	  //
+	  if ( skip_sm == true ) {
+	    if ( tmp_buf.substr(0, 4) == "<s> " ) {
+	      tmp_buf = tmp_buf.substr(4);
+	    }
+	    size_t bl =  tmp_buf.length();
+	    if ( tmp_buf.substr(bl-5, 5) == " </s>" ) {
+	      tmp_buf = tmp_buf.substr(0, bl-5);
+	    }
+	    if ( verbose > 1 ) {
+	      l.log( "|" + tmp_buf + "| skm" );
+	    }	      
+	    
+	  }
+	  
+	  cls.clear();
+	  
+	  std::string classify_line = tmp_buf;
+	  std::string full_string = classify_line; // needed for cache.
+	  
+	  // Check the cache
+	  //
+	  std::string cache_ans = cache->get( classify_line );
+	  if ( cache_ans != "" ) {
+	    if ( verbose > 0 ) {
+	      l.log( "Found in cache." );
+	    }
+	    newSock->write(  cache_ans + '\n' ); //moses format?
+	    continue;
+	  }
+	  
+	  // Sentence based, window here, classify all, etc.
+	  //
+	  if ( mode == 1 ) {
+	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	  } else {
+	    cls.push_back( classify_line );
+	  }
+	  
+	  // Loop over all lines.
+	  //
+	  std::vector<std::string> words;
+
+	  folia::Document doc( "id='wopr'" );
+	  doc.declare( folia::AnnotationType::METRIC, 
+		       "metricset", 
+		       "annotator='wopr'" );
+	  folia::Text *text = new folia::Text( &doc, "id='wopr.t'" );
+	  doc.append( text );
+	  folia::Paragraph *p = new folia::Paragraph( &doc, "id='wopr.t.p'" );
+	  text->append( p );
+	  folia::Sentence *s = new folia::Sentence( &doc, "id='wopr.t.p.s'" );
+	  p->append( s );
+	  l.log( "folia document created." );
+
+	  probs.clear();
+	  for ( int i = 0; i < cls.size(); i++ ) {
+	    
+	    classify_line = cls.at(i);
+	    
+	    words.clear();
+	    Tokenize( classify_line, words, ' ' );
+
+	    if ( hapax > 0 ) {
+	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      std::string t;
+	      vector_to_string(words, t);
+	      classify_line = t;
+	      if ( verbose > 1 ) {
+		l.log( "|" + classify_line + "| hpx" );
+	      }
+	    }
+	    
+	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
+	    if ( verbose > 2 ) {
+	      l.log( "Check instance cache: ["+classify_line+"]" );
+	    }
+	    std::string cache_ans = icache->get( classify_line );
+	    if ( cache_ans != "" ) {
+	      if ( verbose > 2 ) {
+		l.log( "Found in cache." );
+	      }
+	      res_pl10 = stod(cache_ans); // stod() slows it down?
+	    } else {
+	      
+	      // if we take target from a pre-non-hapaxed vector, we
+	      // can hapax the whole sentence in the beginning and use
+	      // that for the instances-without-target
+	      //
+	      std::string target = words.at( words.size()-1 );
+	      
+	      tv = My_Experiment->Classify( classify_line, vd, distance );
+	      if ( ! tv ) {
+		l.log( "ERROR: Timbl returned a classification error, aborting." );
+		break;
+	      }
+
+	      result = tv->Name();		
+	      size_t res_freq = tv->ValFreq();
+
+	      if ( verbose > 1 ) {
+		l.log( "timbl("+classify_line+")="+result );
+	      }
+
+	      double res_p = -1;
+	      bool target_in_dist = false;
+	      int target_freq = 0;
+	      int cnt = vd->size();
+	      int distr_count = vd->totalSize();
+	      
+	      if ( result == target ) {
+		res_p = res_freq / distr_count;
+	      } 
+	      //
+	      // Grok the distribution returned by Timbl.
+	      //
+	      std::map<std::string, double> res;
+	      Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+	      while ( it != vd->end() ) {
+		
+		std::string tvs  = it->second->Value()->Name();
+		double      wght = it->second->Weight(); // absolute frequency.
+		
+		if ( tvs == target ) { // The correct answer was in the distribution!
+		  target_freq = wght;
+		  target_in_dist = true;
+		  if ( verbose > 1 ) {
+		    l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
+		  }
+		}
+		
+		++it;
+	      } // end loop distribution
+	      
+	      if ( target_freq > 0 ) { //distr_count allways > 0.
+		res_p = (double)target_freq / (double)distr_count;
+	      }
+	      
+	      if ( resm == 2 ) {
+		res_pl10 = 0; // average w/o OOV words
+	      }
+	      if ( res_p > 0 ) {
+		res_pl10 = log10( res_p );
+	      } else {
+		// fall back to lex freq. of correct answer.
+		std::map<std::string,int>::iterator wfi = wfreqs.find(target);
+		if  (wfi != wfreqs.end()) {
+		  res_p = (int)(*wfi).second / (double)total_count ;
+		  res_pl10 = log10( res_p );
+		  if ( verbose > 1 ) {
+		    l.log( "Fall back to lex freq of Timbl answer." );
+		  }
+		}
+	      }
+
 	      folia::KWargs args;
 	      args["generate_id"] = "wopr.t.p.s";
 	      folia::FoliaElement *w = new folia::Word( &doc, args );
@@ -1236,7 +1632,6 @@ int server4(Logfile& l, Config& c) {
 	      folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
 									"class='lprob10', value='" + to_str(res_pl10) + "'" );
 	      w->append( m );
-#endif
 
 	      if ( verbose > 1 ) {
 		l.log( "lprob10("+target+")="+to_str(res_pl10) );
@@ -1278,33 +1673,22 @@ int server4(Logfile& l, Config& c) {
 	  if ( moses == 0 ) {
 	    std::string ans = to_str(ave_pl10);
 	    cache->add( full_string, ans );
-#ifdef HAVE_FOLIA
 	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
 								      "class='ave_prob10', value='" + ans + "'" );
 	    s->append( m );
-	    
-#else
-	    newSock->write( ans + "\n" );
-#endif
 	  } else if ( moses == 1 ) { // 6 char output for moses
 	    char res_str[7];
 	    
 	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
 	    //std::cerr << "(" << res_str << ")" << std::endl;
-#ifdef HAVE_FOLIA
 	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
 								      "class='ave_prob10', value='" + std::string(res_str) + "'" );
 	    s->append( m );
-#else
-	    newSock->write( res_str );
-#endif
 	    //cache->add( full_string, res_str );
 	  }
-#ifdef HAVE_FOLIA
 	  std::ostringstream os;
 	  os << doc << std::endl;
 	  newSock->write( os.str() );
-#endif
 	  connection_open = (keep == 1);
 	  //connection_open = false;
 	  
@@ -1341,8 +1725,8 @@ int server4(Logfile& l, Config& c) {
   return 0;
 }
 #else
-int server4( Logfile& l, Config& c ) {
-  l.log( "No TIMBL support." );
+int xmlserver( Logfile& l, Config& c ) {
+  l.log( "No TIMBL or FoLiA support." );
   return -1;
 }
 #endif 

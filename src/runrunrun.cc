@@ -474,6 +474,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &server3;
   } else if ( a_fname == "server4" ) {
     return &server4;
+  } else if ( a_fname == "xmlserver" ) {
+    return &xmlserver;
   } else if ( a_fname == "mbmt" ) {
     return &mbmt;
   } else if ( a_fname == "server_mg" ) {

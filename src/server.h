@@ -50,6 +50,7 @@ int dist_to_xml( const Timbl::ValueDistribution*, std::string&, std::string );
 
 int server3( Logfile&, Config& );
 int server4( Logfile&, Config& );
+int xmlserver( Logfile&, Config& );
 int mbmt( Logfile&, Config& );
 int webdemo( Logfile&, Config& );
 int one( Logfile&, Config& );
