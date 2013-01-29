@@ -39,6 +39,21 @@ PKG_CHECK_MODULES([ticcutils], [ticcutils >= 0.1] )
 CXXFLAGS="$CXXFLAGS $ticcutils_CFLAGS"
 LIBS="$ticcutils_LIBS $LIBS"
 
+PKG_CHECK_MODULES([XML2], [libxml-2.0 >= 2.6.16] )
+CXXFLAGS="$CXXFLAGS $XML2_CFLAGS"
+LIBS="$LIBS $XML2_LIBS"
+
+AC_ARG_WITH(folia,
+       [  --with-folia=DIR       use libfolia installed in <DIR>; 
+               note that you can install folia in a non-default directory with
+               ./configure --prefix=<DIR> in the folia installation directory],
+       [PKG_CONFIG_PATH="$withval/lib/pkgconfig:$PKG_CONFIG_PATH"],
+       [PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$PKG_CONFIG_PATH"])
+AC_MSG_NOTICE( [pkg-config search path: $PKG_CONFIG_PATH] )
+PKG_CHECK_MODULES([folia], [folia >= 0.9] )
+CXXFLAGS="$folia_CFLAGS $CXXFLAGS"
+LIBS="$folia_LIBS $LIBS"
+
 AS_IF([test "x$with_timbl" != xno],
 	    [
 	    AC_MSG_NOTICE([Checking for Timbl])
@@ -159,7 +174,7 @@ AC_ARG_WITH(icu,
 if test "$useICU" = "1"; then
   AX_ICU_CHECK( [3.6],
                 [CXXFLAGS="$CXXFLAGS $ICU_CPPSEARCHPATH"
-                LIBS="$ICU_LIBPATH $ICU_LIBS $ICU_IOLIBS $LIBS"],
+                LIBS="$LIBS $ICU_LIBPATH $ICU_LIBS $ICU_IOLIBS"],
                 [AC_MSG_FAILURE( "No ICU development environment found. Please check if libicu-dev or the like is installed" )] )
   AC_DEFINE(HAVE_ICU, 1, we want to use ICU )
 else
