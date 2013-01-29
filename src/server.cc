@@ -53,6 +53,12 @@
 
 #include <sys/msg.h>
 
+//#define XML_OUT
+#ifdef XML_OUT
+#include "libfolia/document.h"
+#include "libfolia/folia.h"
+#endif
+
 #include "qlog.h"
 #include "util.h"
 #include "Config.h"
@@ -1108,6 +1114,20 @@ int server4(Logfile& l, Config& c) {
 	  // Loop over all lines.
 	  //
 	  std::vector<std::string> words;
+
+#ifdef XML_OUT
+	  folia::Document doc( "id='wopr'" );
+	  doc.declare( folia::AnnotationType::METRIC, 
+		       "metricset", 
+		       "annotator='wopr'" );
+	  folia::Text *text = new folia::Text( &doc, "id='wopr.t'" );
+	  doc.append( text );
+	  folia::Paragraph *p = new folia::Paragraph( &doc, "id='wopr.t.p'" );
+	  text->append( p );
+	  folia::Sentence *s = new folia::Sentence( &doc, "id='wopr.t.p.s'" );
+	  p->append( s );
+	  l.log( "folia document created." );
+#endif
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
 	    
@@ -1115,7 +1135,7 @@ int server4(Logfile& l, Config& c) {
 	    
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
-	    
+
 	    if ( hapax > 0 ) {
 	      int c = hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
@@ -1207,7 +1227,18 @@ int server4(Logfile& l, Config& c) {
 		  }
 		}
 	      }
-	      
+
+#ifdef XML_OUT
+	      folia::KWargs args;
+	      args["generate_id"] = "wopr.t.p.s";
+	      folia::FoliaElement *w = new folia::Word( &doc, args );
+	      s->append( w );
+	      w->settext( target );
+	      folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
+									"class='lprob10', value='" + to_str(res_pl10) + "'" );
+	      w->append( m );
+#endif
+
 	      if ( verbose > 1 ) {
 		l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	      }
@@ -1248,15 +1279,33 @@ int server4(Logfile& l, Config& c) {
 	  if ( moses == 0 ) {
 	    std::string ans = to_str(ave_pl10);
 	    cache->add( full_string, ans );
+#ifdef XML_OUT
+	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
+								      "class='ave_prob10', value='" + ans + "'" );
+	    s->append( m );
+	    
+#else
 	    newSock->write( ans + "\n" );
+#endif
 	  } else if ( moses == 1 ) { // 6 char output for moses
 	    char res_str[7];
 	    
 	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
 	    //std::cerr << "(" << res_str << ")" << std::endl;
+#ifdef XML_OUT
+	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
+								      "class='ave_prob10', value='" + std::string(res_str) + "'" );
+	    s->append( m );
+#else
 	    newSock->write( res_str );
+#endif
 	    //cache->add( full_string, res_str );
 	  }
+#ifdef XML_OUT
+	  std::ostringstream os;
+	  os << doc << std::endl;
+	  newSock->write( os.str() );
+#endif
 	  connection_open = (keep == 1);
 	  //connection_open = false;
 	  
@@ -1286,7 +1335,7 @@ int server4(Logfile& l, Config& c) {
     } // running
   } // try
   catch ( const std::exception& e ) {
-    l.log( "ERROR: exception caught." );
+    l.log( std::string("ERROR: exception caught: ") + e.what() );
     return -1;
   }
   
