@@ -53,8 +53,7 @@
 
 #include <sys/msg.h>
 
-//#define XML_OUT
-#ifdef XML_OUT
+#ifdef HAVE_FOLIA
 #include "libfolia/document.h"
 #include "libfolia/folia.h"
 #endif
@@ -1115,7 +1114,7 @@ int server4(Logfile& l, Config& c) {
 	  //
 	  std::vector<std::string> words;
 
-#ifdef XML_OUT
+#ifdef HAVE_FOLIA
 	  folia::Document doc( "id='wopr'" );
 	  doc.declare( folia::AnnotationType::METRIC, 
 		       "metricset", 
@@ -1228,7 +1227,7 @@ int server4(Logfile& l, Config& c) {
 		}
 	      }
 
-#ifdef XML_OUT
+#ifdef HAVE_FOLIA
 	      folia::KWargs args;
 	      args["generate_id"] = "wopr.t.p.s";
 	      folia::FoliaElement *w = new folia::Word( &doc, args );
@@ -1279,7 +1278,7 @@ int server4(Logfile& l, Config& c) {
 	  if ( moses == 0 ) {
 	    std::string ans = to_str(ave_pl10);
 	    cache->add( full_string, ans );
-#ifdef XML_OUT
+#ifdef HAVE_FOLIA
 	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
 								      "class='ave_prob10', value='" + ans + "'" );
 	    s->append( m );
@@ -1292,7 +1291,7 @@ int server4(Logfile& l, Config& c) {
 	    
 	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
 	    //std::cerr << "(" << res_str << ")" << std::endl;
-#ifdef XML_OUT
+#ifdef HAVE_FOLIA
 	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
 								      "class='ave_prob10', value='" + std::string(res_str) + "'" );
 	    s->append( m );
@@ -1301,7 +1300,7 @@ int server4(Logfile& l, Config& c) {
 #endif
 	    //cache->add( full_string, res_str );
 	  }
-#ifdef XML_OUT
+#ifdef HAVE_FOLIA
 	  std::ostringstream os;
 	  os << doc << std::endl;
 	  newSock->write( os.str() );
