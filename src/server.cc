@@ -1380,7 +1380,7 @@ int xmlserver(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
+  double entropy = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   
@@ -1623,7 +1623,7 @@ int xmlserver(Logfile& l, Config& c) {
 		  }
 		}
 	      }
-
+	      entropy += res_p * log2(res_p);
 	      folia::KWargs args;
 	      args["generate_id"] = "wopr.t.p.s";
 	      folia::FoliaElement *w = new folia::Word( &doc, args );
@@ -1673,8 +1673,10 @@ int xmlserver(Logfile& l, Config& c) {
 	  if ( moses == 0 ) {
 	    std::string ans = to_str(ave_pl10);
 	    cache->add( full_string, ans );
-	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
-								      "class='ave_prob10', value='" + ans + "'" );
+	    folia::MetricAnnotation *m 
+	      = new folia::MetricAnnotation( &doc,
+					     "class='avg_prob10', value='" 
+					     + ans + "'" );
 	    s->append( m );
 	  } else if ( moses == 1 ) { // 6 char output for moses
 	    char res_str[7];
@@ -1682,10 +1684,21 @@ int xmlserver(Logfile& l, Config& c) {
 	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
 	    //std::cerr << "(" << res_str << ")" << std::endl;
 	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
-								      "class='ave_prob10', value='" + std::string(res_str) + "'" );
+								      "class='avg_prob10', value='" + std::string(res_str) + "'" );
 	    s->append( m );
 	    //cache->add( full_string, res_str );
 	  }
+	  entropy = fabs(entropy);
+	  double perplexity = pow( 2, entropy );
+	  folia::MetricAnnotation *m 
+	    = new folia::MetricAnnotation( &doc,
+					   "class='entropy', value='" + 
+					   to_str(entropy) + "'" );
+	  s->append( m );
+	  m = new folia::MetricAnnotation( &doc,
+					   "class='perplexity', value='" + 
+					   to_str(perplexity) + "'" );
+	  s->append( m );
 	  std::ostringstream os;
 	  os << doc << std::endl;
 	  newSock->write( os.str() );
