@@ -1326,7 +1326,6 @@ int xmlserver(Logfile& l, Config& c) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const int hapax               = stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm            = stoi( c.get_value( "skm", "0" )) == 1;
-  const long cachesize          = stoi( c.get_value( "cs", "100000" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -1344,7 +1343,6 @@ int xmlserver(Logfile& l, Config& c) {
   l.log( "lexicon    "+lexicon_filename ); // the lexicon...
   l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
   l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
-  l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
   l.dec_prefix();
 
   // Load lexicon. 
@@ -1380,7 +1378,6 @@ int xmlserver(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double entropy = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   
@@ -1428,14 +1425,8 @@ int xmlserver(Logfile& l, Config& c) {
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
 
-	// Local cache. Useful for pbmbmt which holds connection
-	// the whole time.
-	//
-	Cache *cache = new Cache( cachesize );
-	Cache *icache = new Cache( cachesize );
-
 	while ( running & connection_open ) {
-
+	  double entropy = 0.0;
 	  std::string tmp_buf;
 	  newSock->read( tmp_buf );
 	  tmp_buf = trim( tmp_buf, " \n\r" );
@@ -1489,17 +1480,6 @@ int xmlserver(Logfile& l, Config& c) {
 	  std::string classify_line = tmp_buf;
 	  std::string full_string = classify_line; // needed for cache.
 	  
-	  // Check the cache
-	  //
-	  std::string cache_ans = cache->get( classify_line );
-	  if ( cache_ans != "" ) {
-	    if ( verbose > 0 ) {
-	      l.log( "Found in cache." );
-	    }
-	    newSock->write(  cache_ans + '\n' ); //moses format?
-	    continue;
-	  }
-	  
 	  // Sentence based, window here, classify all, etc.
 	  //
 	  if ( mode == 1 ) {
@@ -1543,107 +1523,90 @@ int xmlserver(Logfile& l, Config& c) {
 	    }
 	    
 	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
-	    if ( verbose > 2 ) {
-	      l.log( "Check instance cache: ["+classify_line+"]" );
+	      
+	    // if we take target from a pre-non-hapaxed vector, we
+	    // can hapax the whole sentence in the beginning and use
+	    // that for the instances-without-target
+	    //
+	    std::string target = words.at( words.size()-1 );
+	      
+	    tv = My_Experiment->Classify( classify_line, vd, distance );
+	    if ( ! tv ) {
+	      l.log( "ERROR: Timbl returned a classification error, aborting." );
+	      break;
 	    }
-	    std::string cache_ans = icache->get( classify_line );
-	    if ( cache_ans != "" ) {
-	      if ( verbose > 2 ) {
-		l.log( "Found in cache." );
+
+	    result = tv->Name();		
+	    size_t res_freq = tv->ValFreq();
+
+	    if ( verbose > 1 ) {
+	      l.log( "timbl("+classify_line+")="+result );
+	    }
+
+	    double res_p = -1;
+	    bool target_in_dist = false;
+	    int target_freq = 0;
+	    int cnt = vd->size();
+	    int distr_count = vd->totalSize();
+	      
+	    if ( result == target ) {
+	      res_p = res_freq / distr_count;
+	    } 
+	    //
+	    // Grok the distribution returned by Timbl.
+	    //
+	    std::map<std::string, double> res;
+	    Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+	    while ( it != vd->end() ) {
+		
+	      std::string tvs  = it->second->Value()->Name();
+	      double      wght = it->second->Weight(); // absolute frequency.
+		
+	      if ( tvs == target ) { // The correct answer was in the distribution!
+		target_freq = wght;
+		target_in_dist = true;
+		if ( verbose > 1 ) {
+		  l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
+		}
 	      }
-	      res_pl10 = stod(cache_ans); // stod() slows it down?
+		
+	      ++it;
+	    } // end loop distribution
+	      
+	    if ( target_freq > 0 ) { //distr_count allways > 0.
+	      res_p = (double)target_freq / (double)distr_count;
+	    }
+	      
+	    if ( resm == 2 ) {
+	      res_pl10 = 0; // average w/o OOV words
+	    }
+	    if ( res_p > 0 ) {
+	      res_pl10 = log10( res_p );
 	    } else {
-	      
-	      // if we take target from a pre-non-hapaxed vector, we
-	      // can hapax the whole sentence in the beginning and use
-	      // that for the instances-without-target
-	      //
-	      std::string target = words.at( words.size()-1 );
-	      
-	      tv = My_Experiment->Classify( classify_line, vd, distance );
-	      if ( ! tv ) {
-		l.log( "ERROR: Timbl returned a classification error, aborting." );
-		break;
-	      }
-
-	      result = tv->Name();		
-	      size_t res_freq = tv->ValFreq();
-
-	      if ( verbose > 1 ) {
-		l.log( "timbl("+classify_line+")="+result );
-	      }
-
-	      double res_p = -1;
-	      bool target_in_dist = false;
-	      int target_freq = 0;
-	      int cnt = vd->size();
-	      int distr_count = vd->totalSize();
-	      
-	      if ( result == target ) {
-		res_p = res_freq / distr_count;
-	      } 
-	      //
-	      // Grok the distribution returned by Timbl.
-	      //
-	      std::map<std::string, double> res;
-	      Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
-	      while ( it != vd->end() ) {
-		
-		std::string tvs  = it->second->Value()->Name();
-		double      wght = it->second->Weight(); // absolute frequency.
-		
-		if ( tvs == target ) { // The correct answer was in the distribution!
-		  target_freq = wght;
-		  target_in_dist = true;
-		  if ( verbose > 1 ) {
-		    l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
-		  }
-		}
-		
-		++it;
-	      } // end loop distribution
-	      
-	      if ( target_freq > 0 ) { //distr_count allways > 0.
-		res_p = (double)target_freq / (double)distr_count;
-	      }
-	      
-	      if ( resm == 2 ) {
-		res_pl10 = 0; // average w/o OOV words
-	      }
-	      if ( res_p > 0 ) {
+	      // fall back to lex freq. of correct answer.
+	      std::map<std::string,int>::iterator wfi = wfreqs.find(target);
+	      if  (wfi != wfreqs.end()) {
+		res_p = (int)(*wfi).second / (double)total_count ;
 		res_pl10 = log10( res_p );
-	      } else {
-		// fall back to lex freq. of correct answer.
-		std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-		if  (wfi != wfreqs.end()) {
-		  res_p = (int)(*wfi).second / (double)total_count ;
-		  res_pl10 = log10( res_p );
-		  if ( verbose > 1 ) {
-		    l.log( "Fall back to lex freq of Timbl answer." );
-		  }
+		if ( verbose > 1 ) {
+		  l.log( "Fall back to lex freq of Timbl answer." );
 		}
 	      }
-	      entropy += res_p * log2(res_p);
-	      folia::KWargs args;
-	      args["generate_id"] = "wopr.t.p.s";
-	      folia::FoliaElement *w = new folia::Word( &doc, args );
-	      s->append( w );
-	      w->settext( target );
-	      folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
-									"class='lprob10', value='" + to_str(res_pl10) + "'" );
-	      w->append( m );
+	    }
+	    entropy += res_p * log2(res_p);
+	    folia::KWargs args;
+	    args["generate_id"] = "wopr.t.p.s";
+	    folia::FoliaElement *w = new folia::Word( &doc, args );
+	    s->append( w );
+	    w->settext( target );
+	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
+								      "class='lprob10', value='" + to_str(res_pl10) + "'" );
+	    w->append( m );
 
-	      if ( verbose > 1 ) {
-		l.log( "lprob10("+target+")="+to_str(res_pl10) );
-	      }
+	    if ( verbose > 1 ) {
+	      l.log( "lprob10("+target+")="+to_str(res_pl10) );
+	    }
 	      
-	      if ( verbose > 2 ) {
-                l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
-              }
-              icache->add( classify_line, to_str(res_pl10) );
-              
-	    } // end not in cache
-	    
 	    probs.push_back( res_pl10 ); // store for later.
 	    
 	  } // i loop
@@ -1672,7 +1635,6 @@ int xmlserver(Logfile& l, Config& c) {
 	  }
 	  if ( moses == 0 ) {
 	    std::string ans = to_str(ave_pl10);
-	    cache->add( full_string, ans );
 	    folia::MetricAnnotation *m 
 	      = new folia::MetricAnnotation( &doc,
 					     "class='avg_prob10', value='" 
@@ -1686,7 +1648,6 @@ int xmlserver(Logfile& l, Config& c) {
 	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
 								      "class='avg_prob10', value='" + std::string(res_str) + "'" );
 	    s->append( m );
-	    //cache->add( full_string, res_str );
 	  }
 	  entropy = fabs(entropy);
 	  double perplexity = pow( 2, entropy );
@@ -1713,12 +1674,6 @@ int xmlserver(Logfile& l, Config& c) {
 	  // till exited/removed by system.
 	  kill( getppid(), SIGTERM );
 	}
-	size_t ccs = cache->get_size();
-	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-	l.log( cache->stat() );
-        ccs = icache->get_size();
-        l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-        l.log( icache->stat() );
 	_exit(0);
 
       } else if ( cpid == -1 ) { // fork failed
