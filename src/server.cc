@@ -1375,11 +1375,6 @@ int xmlserver(Logfile& l, Config& c) {
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
   std::string distrib;
-  std::vector<std::string> distribution;
-  std::string result;
-  double distance;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   
   signal(SIGCHLD, SIG_IGN);
   volatile sig_atomic_t running = 1;
@@ -1505,7 +1500,7 @@ int xmlserver(Logfile& l, Config& c) {
 	  l.log( "folia document created." );
 
 	  probs.clear();
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 	    
 	    classify_line = cls.at(i);
 	    
@@ -1513,7 +1508,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    Tokenize( classify_line, words, ' ' );
 
 	    if ( hapax > 0 ) {
-	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
@@ -1529,14 +1524,16 @@ int xmlserver(Logfile& l, Config& c) {
 	    // that for the instances-without-target
 	    //
 	    std::string target = words.at( words.size()-1 );
-	      
+	    const Timbl::ValueDistribution *vd;
+	    const Timbl::TargetValue *tv;
+	    double distance;
 	    tv = My_Experiment->Classify( classify_line, vd, distance );
 	    if ( ! tv ) {
 	      l.log( "ERROR: Timbl returned a classification error, aborting." );
 	      break;
 	    }
 
-	    result = tv->Name();		
+	    std::string result = tv->Name();		
 	    size_t res_freq = tv->ValFreq();
 
 	    if ( verbose > 1 ) {
@@ -1544,9 +1541,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    }
 
 	    double res_p = DBL_EPSILON;
-	    bool target_in_dist = false;
 	    int target_freq = 0;
-	    int cnt = vd->size();
 	    int distr_count = vd->totalSize();
 	      
 	    if ( result == target ) {
@@ -1560,19 +1555,17 @@ int xmlserver(Logfile& l, Config& c) {
 	    while ( it != vd->end() ) {
 		
 	      std::string tvs  = it->second->Value()->Name();
-	      double      wght = it->second->Weight(); // absolute frequency.
-		
 	      if ( tvs == target ) { // The correct answer was in the distribution!
+		double wght = it->second->Weight(); // absolute frequency.
 		target_freq = wght;
-		target_in_dist = true;
 		if ( verbose > 1 ) {
 		  l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
 		}
+		break; //while
 	      }
-		
 	      ++it;
 	    } // end loop distribution
-	      
+	    
 	    if ( target_freq > 0 ) { //distr_count allways > 0.
 	      res_p = (double)target_freq / (double)distr_count;
 	    }
@@ -1617,7 +1610,7 @@ int xmlserver(Logfile& l, Config& c) {
 	  //l.log( "Probs: "+ to_str(probs.size() ));
 	  
 	  double ave_pl10 = 0.0;
-	  for ( int p = 0; p < probs.size(); p++ ) {
+	  for ( size_t p = 0; p < probs.size(); p++ ) {
 	    double prob = probs.at(p);
 	    ave_pl10 += prob;
 	  }
@@ -2506,16 +2499,10 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
 #endif
 
 int vector_to_string( std::vector<std::string>& words, std::string& res ) {
-
-  std::vector<std::string>::iterator wi;
-
   res.clear();
-  std::string wrd;
-  for ( int i = 0; i < words.size(); i++ ) {
-    wrd = words.at( i );
-    res = res + wrd + " ";
+  for ( size_t i = 0; i < words.size(); i++ ) {
+    res = res + words[i] + " ";
   }
-
   return 0;
 }
 
