@@ -1315,11 +1315,11 @@ int xmlserver(Logfile& l, Config& c) {
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const int mode                = stoi( c.get_value( "mode", "0" ));
-  const int resm                = stoi( c.get_value( "resm", "0" ));
+  const int mode                = 1; // hard coded
+  const int resm                = 0; // hard coded
   const int verbose             = stoi( c.get_value( "verbose", "0" ));
   const int keep                = stoi( c.get_value( "keep", "0" ));
-  const int moses               = stoi( c.get_value( "moses", "0" ));
+  const int moses               = 0; // hardcoded
   const int lb                  = stoi( c.get_value( "lb", "0" ));
   const int lc                  = stoi( c.get_value( "lc", "2" ));
   const int rc                  = stoi( c.get_value( "rc", "0" ));
@@ -1374,8 +1374,6 @@ int xmlserver(Logfile& l, Config& c) {
   file_lexicon.close();
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
-  std::string distrib;
-  
   signal(SIGCHLD, SIG_IGN);
   volatile sig_atomic_t running = 1;
 
@@ -1417,8 +1415,6 @@ int xmlserver(Logfile& l, Config& c) {
 	
 	std::string buf;
       	bool connection_open = true;
-	std::vector<std::string> cls; // classify lines
-	std::vector<double> probs;
 
 	while ( running & connection_open ) {
 	  double entropy = 0.0;
@@ -1470,10 +1466,8 @@ int xmlserver(Logfile& l, Config& c) {
 	    
 	  }
 	  
-	  cls.clear();
-	  
 	  std::string classify_line = tmp_buf;
-	  std::string full_string = classify_line; // needed for cache.
+	  std::vector<std::string> cls; // classify lines
 	  
 	  // Sentence based, window here, classify all, etc.
 	  //
@@ -1482,11 +1476,8 @@ int xmlserver(Logfile& l, Config& c) {
 	  } else {
 	    cls.push_back( classify_line );
 	  }
-	  
-	  // Loop over all lines.
-	  //
-	  std::vector<std::string> words;
 
+	  // init a new FoLiA XML document
 	  folia::Document doc( "id='wopr'" );
 	  doc.declare( folia::AnnotationType::METRIC, 
 		       "metricset", 
@@ -1499,12 +1490,14 @@ int xmlserver(Logfile& l, Config& c) {
 	  p->append( s );
 	  l.log( "folia document created." );
 
-	  probs.clear();
+	  std::vector<double> probs;
+	  // Loop over all lines.
+	  //
+
 	  for ( size_t i = 0; i < cls.size(); i++ ) {
 	    
 	    classify_line = cls.at(i);
-	    
-	    words.clear();
+	    std::vector<std::string> words;
 	    Tokenize( classify_line, words, ' ' );
 
 	    if ( hapax > 0 ) {
@@ -1525,9 +1518,9 @@ int xmlserver(Logfile& l, Config& c) {
 	    //
 	    std::string target = words.at( words.size()-1 );
 	    const Timbl::ValueDistribution *vd;
-	    const Timbl::TargetValue *tv;
 	    double distance;
-	    tv = My_Experiment->Classify( classify_line, vd, distance );
+	    const Timbl::TargetValue *tv
+	      = My_Experiment->Classify( classify_line, vd, distance );
 	    if ( ! tv ) {
 	      l.log( "ERROR: Timbl returned a classification error, aborting." );
 	      break;
@@ -1541,7 +1534,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    }
 
 	    double res_p = DBL_EPSILON;
-	    int target_freq = 0;
+	    double target_freq = 0.0;
 	    int distr_count = vd->totalSize();
 	      
 	    if ( result == target ) {
@@ -1550,16 +1543,14 @@ int xmlserver(Logfile& l, Config& c) {
 	    //
 	    // Grok the distribution returned by Timbl.
 	    //
-	    std::map<std::string, double> res;
 	    Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
 	    while ( it != vd->end() ) {
 		
 	      std::string tvs  = it->second->Value()->Name();
 	      if ( tvs == target ) { // The correct answer was in the distribution!
-		double wght = it->second->Weight(); // absolute frequency.
-		target_freq = wght;
+		target_freq = it->second->Weight(); // absolute frequency.
 		if ( verbose > 1 ) {
-		  l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
+		  l.log( "Timbl answer in distr. "+ to_str(target_freq)+"/"+to_str(distr_count) );
 		}
 		break; //while
 	      }
@@ -1570,9 +1561,6 @@ int xmlserver(Logfile& l, Config& c) {
 	      res_p = (double)target_freq / (double)distr_count;
 	    }
 	      
-	    if ( resm == 2 ) {
-	      res_pl10 = 0; // average w/o OOV words
-	    }
 	    if ( res_p > DBL_EPSILON ) {
 	      res_pl10 = log10( res_p );
 	    } else {
@@ -1617,10 +1605,8 @@ int xmlserver(Logfile& l, Config& c) {
 	  if ( verbose > 0 ) {
 	    l.log( "result sum="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	  }
-	  if ( resm != 1 ) { // normally, average, but not for resm:1
-	    ave_pl10 /= probs.size();
-	  }
-	  // else resm == 1, we return the sum.
+
+	  ave_pl10 /= probs.size();
 	  
 	  if ( verbose > 0 ) {
 	    l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
@@ -1629,32 +1615,24 @@ int xmlserver(Logfile& l, Config& c) {
 	  if ( lb == 0 ) { // lb:0 is no logs
 	    ave_pl10 = pow(10, ave_pl10);
 	  }
-	  if ( moses == 0 ) {
-	    std::string ans = to_str(ave_pl10);
-	    folia::MetricAnnotation *m 
-	      = new folia::MetricAnnotation( &doc,
-					     "class='avg_prob10', value='" 
-					     + ans + "'" );
-	    s->append( m );
-	  } else if ( moses == 1 ) { // 6 char output for moses
-	    char res_str[7];
-	    
-	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
-	    //std::cerr << "(" << res_str << ")" << std::endl;
-	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
-								      "class='avg_prob10', value='" + std::string(res_str) + "'" );
-	    s->append( m );
-	  }
+
 	  entropy = fabs(entropy);
 	  double perplexity = pow( 2, entropy );
+	  std::string avg10 = to_str(ave_pl10);
+	  std::string entro = to_str(entropy);
+	  std::string perpl = to_str(perplexity);
 	  folia::MetricAnnotation *m 
 	    = new folia::MetricAnnotation( &doc,
+					   "class='avg_prob10', value='" 
+					   + avg10 + "'" );
+	  s->append( m );
+	  m = new folia::MetricAnnotation( &doc,
 					   "class='entropy', value='" + 
-					   to_str(entropy) + "'" );
+					   entro + "'" );
 	  s->append( m );
 	  m = new folia::MetricAnnotation( &doc,
 					   "class='perplexity', value='" + 
-					   to_str(perplexity) + "'" );
+					   perpl + "'" );
 	  s->append( m );
 	  std::ostringstream os;
 	  os << doc << std::endl;
