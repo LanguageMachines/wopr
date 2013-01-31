@@ -1543,7 +1543,7 @@ int xmlserver(Logfile& l, Config& c) {
 	      l.log( "timbl("+classify_line+")="+result );
 	    }
 
-	    double res_p = -1;
+	    double res_p = DBL_EPSILON;
 	    bool target_in_dist = false;
 	    int target_freq = 0;
 	    int cnt = vd->size();
@@ -1580,7 +1580,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    if ( resm == 2 ) {
 	      res_pl10 = 0; // average w/o OOV words
 	    }
-	    if ( res_p > 0 ) {
+	    if ( res_p > DBL_EPSILON ) {
 	      res_pl10 = log10( res_p );
 	    } else {
 	      // fall back to lex freq. of correct answer.
@@ -1593,6 +1593,9 @@ int xmlserver(Logfile& l, Config& c) {
 		}
 	      }
 	    }
+	    // l.log( "res_P= " + to_str(res_p) );
+	    // l.log( "log2() = " + to_str(log2(res_p)) );
+	    // l.log( "local ent = " + to_str(res_p*log2(res_p)) );
 	    entropy += res_p * log2(res_p);
 	    folia::KWargs args;
 	    args["generate_id"] = "wopr.t.p.s";
