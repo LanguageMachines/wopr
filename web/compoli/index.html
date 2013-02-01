@@ -1,0 +1,373 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+<!-- 
+  ___   _____     __  __                         _             _   _   ____
+ |_ _| |_   _|   |  \/  |   __ _   ___    __ _  | |   __ _    | | | | | __ )
+  | |    | |     | |\/| |  / _` | / __|  / _` | | |  / _` |   | |_| | |  _ \
+  | |    | |     | |  | | | (_| | \__ \ | (_| | | | | (_| |   |  _  | | |_) |
+ |___|   |_|     |_|  |_|  \__,_| |___/  \__,_| |_|  \__,_|   |_| |_| |____/
+
+-->
+<!-- 
+durian:compoli$ python process14.py -c pdt.ini
+-->
+<style type="text/css">
+#page {
+	font-size: 14px;
+	font-family: "Lucida Grande", Verdana, Arial;
+  padding:24px;
+}
+#whichkey {
+	height: 1em;
+	width: 1em;
+	font-family: "Courier New", Courier, Monaco, monospace;
+	font-size: 14px;
+}
+#txt {
+	height: 200px;
+	width: 500px;
+}
+#info {
+  /* Switch off display of info */
+  display:none;
+}
+#gen_tms {
+  /* Switch off display of time info */
+  display:none;
+}
+.txt_on {
+	background-color: #e6e6e6;
+	color: #ff8000;
+	font-size: 18px;
+}
+.txt_off {
+	background-color: #e6e6e6;
+	color: #666666;
+	font-size: 18px;
+}
+.button {
+	width: 10em;
+	padding: 2px;
+	border-width: 1px;
+	cursor: pointer;
+}
+.button_answer {
+	font-size: 10px;
+	font-family: sans-serif;
+}
+</style>
+<!-- -->
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js"></script>-->
+<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+<!-- -->
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="author" content="Peter Berck, IT Masala HB" />
+<meta name="copyright" content="Peter Berck, IT Masala HB" />
+<meta name="description" content="Predictive Editing" />
+<meta name="keywords" content="Predictive Editing, Wopr" />
+<!-- -->
+<title>Webdemo</title>
+<!-- -->
+<script type="text/javascript">
+
+var can_del    =  0;
+var kbd_status =  0;
+var pdt_idx    = -1;
+var lpos       =  0;
+
+function pad(a,b) { 
+  return(1e15+a+"").slice(-b)
+}
+function get_pdt_idx() {
+  $.post('./wopr.php', {c:"START"},
+      function(data) {
+        console.log(data);
+        xml_doc = $.parseXML( data );
+        xml = $( xml_doc );
+        if ( has_error(data) ) {
+          return;
+        }
+        pdt_idx = parseInt(xml.find("pdt_idx").text());
+        //alert( pdt_idx );
+        if ( pdt_idx == -1 ) {
+          alert( "Server overloaded." );
+          return;
+        } else {
+          ctx();
+          // enable:
+          $("#txt").on("click", function(event){
+            toggle_kbd();
+          });
+        }
+      }
+  );
+}
+function has_error(data) {
+  xml_doc = $.parseXML( data );
+  xml = $( xml_doc ); 
+  if ( xml.find("error").text() == "time out" ) { // from php
+    alert( "Server timed out." );
+    return true;
+  } else if ( xml.find("error").text() == "no socket" ) { // from php
+    alert( "Server cannot be contacted." );
+    return true;
+  } else if ( xml.find("result").text() == "error" ) { // from server
+    alert( "Server returned an error, probably timed out. Reload to restart." );
+    return true;
+  }
+  return false;
+}
+
+function get_info() {
+  $.post('./wopr.php', { c:"INFO" },
+      function(data) {
+        console.log(data);
+        xml_doc = $.parseXML( data );
+        xml = $( xml_doc );
+        if ( xml.find("result").text() == "error" ) {
+          alert( "Session probably timed out. Reload to restart." );
+          return;
+        }
+        ltr_ibase = xml.find( "ltr_ibasefile" );
+        console.log("lre_ibase="+ltr_ibase.text());
+        $("#ltr_ibase").html( ltr_ibase.text() );
+        wrd_ibase = xml.find( "wrd_ibasefile" );
+        $("#wrd_ibase").html( wrd_ibase.text() );
+      }
+  );
+}
+function ctx() {
+  $.post('./wopr.php', {c:"CTX "+pdt_idx},
+      function(data) {
+        console.log(data);
+        xml_doc = $.parseXML( data );
+        xml = $( xml_doc );
+        if ( xml.find("result").text() == "error" ) {
+          alert( "Session probably timed out. Reload to restart." );
+          return;
+        }
+        ctx_ltr = xml.find( "ctx_ltr" );
+        $("#ctx_ltr").html( ctx_ltr.text() );
+        ctx_wrd = xml.find( "ctx_wrd" );
+        $("#ctx_wrd").html( ctx_wrd.text() );
+
+        ltr_dl = xml.find( "dl" );
+        $("#ltr_dl").html( ltr_dl.text() );
+        wrd_ds = xml.find( "ds" );
+        $("#wrd_ds").html( wrd_ds.text() );
+        
+        ltr_his = xml.find( "ltr_his" );
+        if ( ltr_his.text() != "0" ) {
+          can_del = 1;
+        } else {
+          can_del = 0;
+        }
+      }
+  );
+}
+function key(ltr) {
+  $.post('./wopr.php', { c:"LTR "+pdt_idx+" "+ltr },
+    function(data) {
+      console.log("data="+data);
+      xml_doc = $.parseXML( data );
+      xml = $( xml_doc );
+      $("#txt").text( $("#txt").text()+ltr );
+      ++lpos;
+      gen();
+      ctx();
+    }
+  );
+}
+function key_spc() {
+  $.post('./wopr.php', { c:"SPC "+pdt_idx },
+    function(data) {
+      console.log("data="+data);
+      xml_doc = $.parseXML( data );
+      xml = $( xml_doc );
+      $("#txt").text( $("#txt").text()+" " );
+      lpos = 0;
+      ctx();
+      gen();
+    }
+  );
+}
+function key_del() {
+  $.post('./wopr.php', { c:"DEL "+pdt_idx },
+    function(data) {
+      console.log("data="+data);
+      xml_doc = $.parseXML( data );
+      $xml = $( xml_doc );
+      // if we delete a space, we need to take the last word
+      // out of the word context (could be done in PDT)
+      var the_txt = jQuery('#txt').text();
+      the_txt = the_txt.substring(0, the_txt.length-1);
+      --lpos;
+      console.log(the_txt);
+      $("#txt").text( the_txt );
+      ctx();
+      gen();
+    }
+  );
+}
+function feed(txt) {
+  $.post('./wopr.php', { c:"FEED "+pdt_idx+" "+txt },
+    function(data) {
+      console.log("data="+data);
+      txt = txt.substring(lpos, txt.length);
+      $("#txt").text( $("#txt").text()+txt+' ' ); // skip a few...
+      lpos = 0;
+      ctx();
+      gen();
+    }
+  ); //.complete(function() { ctx(); })
+}
+function gen() {
+  $.post('./wopr.php', { c:"GEN "+pdt_idx },
+      function(data) {
+        console.log(data);
+        xml_doc = $.parseXML( data );
+        $xml = $( xml_doc );
+        $gen = $xml.find( "gen" );
+        console.log( $gen.text() );
+        $("#gen_res").text("");
+        n = 0;
+        $xml.find( "gen" ).each( function() {
+          $a_gen = $(this);
+          console.log($a_gen.text());
+          
+          idx = 'idx'+pad(n,2);
+          
+          // Create the button
+          $('<button/>', {
+            type: 'button',
+            id: idx,
+            class: 'button_answer',
+            label: $a_gen.text(),
+            text: $a_gen.text()
+          }).appendTo('#gen_res');
+
+          // Add the onclick function
+          $("#"+idx).on("click", function( event ) {
+          	//alert($(this).text()); 
+          	feed($(this).text());
+          });
+          
+          // Make the ui-button
+          $("#"+idx).button();
+
+          //$("#gen_res").append( $a_gen.text()+"<br/>" );
+          
+          ++n;
+          
+        });
+        //$(".button_answer").button( "option", "label", $a_gen.text() );
+        $gen_tms = $xml.find( "time_ms" );
+        $("#gen_tms").html( $gen_tms.text()+" ms" );
+      }
+  );
+}
+function clr() {
+  $.post('./wopr.php', { c:"CLR "+pdt_idx },
+    function(data) {
+      console.log("data="+data);
+      $("#whichkey").val("");
+      $("#gen_res").text("");
+      $("#txt").text("");
+      ctx();
+    }
+  );
+}
+function enable_kbd() {
+  $(document).on({
+    keydown: function(){
+      if ( (can_del > 0) && (event.which == 8) ) {
+        key_del();
+        event.stopPropagation();
+        event.preventDefault();
+      } else {
+        event.stopPropagation();
+      }
+    },
+    keypress: function(){
+      if ( event.charCode == 32 ) {
+        key_spc();
+      } else if ( event.charCode != 8 ) {
+        key(String.fromCharCode(event.charCode));
+      }
+    }
+  });
+}
+function disable_kbd() {
+  $(document).off("keydown");
+  $(document).off("keypress");
+}
+function toggle_kbd() {
+  if ( kbd_status == 0 ) {
+    kbd_status = 1;
+    //$("#toggle_kbd").text( "KEYBD ON" );
+    $("#toggle_kbd").button( "option", "label", "KEYBD IS ON" );
+    enable_kbd();
+    $("#txt").removeClass("txt_off");
+    $("#txt").addClass("txt_on");
+  } else {
+    disable_kbd();
+    kbd_status = 0;
+    //$("#toggle_kbd").text( "KEYBD OFF" );
+    $("#toggle_kbd").button( "option", "label", "KEYBD IS OFF" );
+    $("#txt").removeClass("txt_on");
+    $("#txt").addClass("txt_off");
+  }
+}
+function submit_txt() {
+  // New functionality for ComPoli demo.
+  var the_txt = $("#txt").text();
+  alert(the_txt);
+  // Concurrency problem. Via a sqlite DB?
+  $.post('./add_txt.php', { txt:the_txt, ip:"0.0.0.0" },
+    function(data) {
+      console.log("data="+data);
+    }
+  );
+}
+
+$(window).load(function () {
+  $(".button_ui").button();
+  get_info();
+  get_pdt_idx();
+});
+</script>
+<!-- -->
+</head>
+<!-- -->
+<body>
+<div id="page">
+
+<div id="info">
+<p>Letter ibase: <span id="ltr_ibase">????</span>&nbsp;&nbsp;Word ibase: <span id="wrd_ibase">????</span></p>
+<p>Letter Context: <span id="ctx_ltr">????</span>&nbsp;&nbsp;Depth: <span id="ltr_dl">?</span></p>
+<p>Word Context: <span id="ctx_wrd">????</span>&nbsp;&nbsp;Depths: <span id="wrd_ds">?</span></p>
+</div>
+
+<!--<span class="key" onclick="key('a');">a</span>
+<span class="key" onclick="key('b');">b</span>
+<span class="key" onclick="key('c');">c</span>-->
+
+<div class="button_ui" id="gen" onclick="gen();">GENERATE</div>
+<div class="button_ui" id="clr" onclick="clr();">CLEAR</div>
+<div class="button_ui" id="toggle_kbd" onclick="toggle_kbd();">KEYBD IS OFF</div>
+<div class="button_ui" id="submit_txt" onclick="submit_txt();">Submit</div>
+<br/>
+<!--<input id="whichkey" value="">-->
+<br/>
+<br/>
+<div id="txt" class="txt_off"></div>
+<br/>
+<div id="gen_res">&nbsp;</div>
+<div id="gen_tms">0</div>
+<br/>
+</div>
+</body>
+</html>
