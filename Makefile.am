@@ -94,6 +94,17 @@ EXTRA_DIST = \
 	web/generator/index.html \
 	web/generator/js/generator.js \
 	web/generator/js/mootools-1.2.1-core.js \
+	web/pdt/index.html \
+	web/pdt/jquery-1.7.1.min.js \
+	web/pdt/wopr.php \
+	web/compoli/README.txt \
+	web/compoli/add_txt.php \
+	web/compoli/db.php \
+	web/compoli/index.html \
+	web/compoli/initdb.php \
+	web/compoli/jquery-1.7.1.min.js \
+	web/compoli/submitted.sqll \
+	web/compoli/wopr.php \
 	doc/woprdoc.tex \
 	doc/acronyms.tex \
 	doc/defs.tex \

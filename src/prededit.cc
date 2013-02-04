@@ -1548,7 +1548,7 @@ int pdt2web( Logfile& l, Config& c ) {
 	  break;
 	}
       }
-      l.log( "Assinging "+to_str(num)+" to request." );
+      l.log( "Assigning "+to_str(num)+" to request." );
       TiXmlDocument res_doc;
       TiXmlDeclaration *decl = new TiXmlDeclaration( "1.0", "", "" );
       TiXmlElement     *element = new TiXmlElement( "result" );
