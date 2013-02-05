@@ -101,6 +101,15 @@ if ( $idx == 9 ) {
   $rng = "0:5000";
 }
 
+# format for the dots/points
+# use pointsize 0 to make temporarily invisible
+my $dot0 = "with points pointtype 7 pointsize 0.5";
+my $dot1 = "with points pointtype 7 pointsize 0.5";
+my $dot2 = "with points pointtype 7 pointsize 0";
+my $t0 = "correct guess";
+my $t1 = "correct distr";
+my $t2 = ""; #"incorrect";
+
 print OFHP "# $file0\n";
 print OFHP "# $file1\n";
 print OFHP "set xrange [$rng]\n";
@@ -109,9 +118,9 @@ print OFHP "set xlabel '$file0'\n";
 print OFHP "set ylabel '$file1'\n";
 print OFHP "set key bottom\n";
 print OFHP "set grid\n";
-print OFHP "plot \"<grep ' cg' $out_data\" using 2:3,\\\n";
-print OFHP "\"<grep ' cd' $out_data\" using 2:3,\\\n";
-print OFHP "\"<grep ' ic' $out_data\" using 2:3\n";
+print OFHP "plot \"<grep ' cg' $out_data\" using 2:3 $dot0 t \"$t0\",\\\n";
+print OFHP "\"<grep ' cd' $out_data\" using 2:3 $dot1 t \"$t1\",\\\n";
+print OFHP "\"<grep ' ic' $out_data\" using 2:3 $dot2 t \"$t2\"\n";
 print OFHP "set terminal push\n";
 print OFHP "set terminal postscript eps color lw 2 \"Helvetica\" 10\n";
 print OFHP "set out \"$out.ps\"\n";
