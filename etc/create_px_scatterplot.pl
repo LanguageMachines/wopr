@@ -6,8 +6,10 @@ use Getopt::Std;
 
 #------------------------------------------------------------------------------
 # 
-# Generates a file for gnuplot with three columns:
-#   index log2prob-file0 log2prob-file1
+# Generates a file for gnuplot with four columns:
+#   index log2prob-file0 log2prob-file1 (cdcgic..)
+#   0 -2.98053 -2.98051 cgcg
+#   1 -8.3812 -8.3812 cdcd
 #
 # test/asr:
 # perl ../../etc/create_px_scatterplot.pl -f en-es.es.t1000.l3r0_IGTREE.px -F en-es.es.t1000.l3r1_IGTREE.px -l3 -r0 -L3 -R1 -o px_ig_l3r0_vs_ig_l3r1
@@ -106,6 +108,7 @@ if ( $idx == 9 ) {
 my $dot0 = "with points pointtype 7 pointsize 0.5";
 my $dot1 = "with points pointtype 7 pointsize 0.5";
 my $dot2 = "with points pointtype 7 pointsize 0";
+# labels
 my $t0 = "correct guess";
 my $t1 = "correct distr";
 my $t2 = ""; #"incorrect";
