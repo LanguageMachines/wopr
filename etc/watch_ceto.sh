@@ -71,6 +71,7 @@ DISKWARNED=0
 PREV=`ps -eo pid,ppid,rss,vsize,pmem | awk '{ rss += $3; vsize += $4; pmem += $5;} ; END { print  pmem }'`
 PREV=${PREV/,/.}  
 PREV=${PREV/.*}  
+PREV=`echo "$PREV * 1024 * 1024" | bc` #why is this necessary now?
 #
 echo "Watching; warn:$WARN, limit:$LIMIT"
 #
@@ -80,6 +81,7 @@ while true;
   MEM=`ps -eo pid,ppid,rss,vsize,pmem | awk '{ rss += $3; vsize += $4; pmem += $5;} ; END { print  pmem }'`
   MEM=${MEM/,/.}
   MEM=${MEM/.*}
+  MEM=`echo "$MEM * 1024 * 1024" | bc` #why is this necessary now?
   PERC=$(echo "scale=0; $MEM * 100 / $LIMIT" | bc) #percentage of limit
   DIFF=$(echo "scale=0; $MEM - $PREV" | bc)
   PREV=$MEM
@@ -109,8 +111,8 @@ while true;
       fi
   done
   #
-  echo $ECHO "\r                                                           \c"
-  echo $ECHO "\r $MEM/$LIMIT [$DIFF]  ($PERC %) $DSTR $NOW\c"
+  echo $ECHO "\r\033[K    \c"
+  echo $ECHO "\r $MEM/$LIMIT [$DIFF]  ($PERC %) $DSTR $NOW \c"
   if [[ $WARNED -eq 0 ]]
   then
       if [[ $MEM -gt $WARN ]]
