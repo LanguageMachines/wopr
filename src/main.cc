@@ -50,6 +50,14 @@
 #include <stdlib.h>  
 #include <string.h>  
 
+#ifdef HAVE_FOLIA
+#include "libfolia/folia.h"
+#endif
+
+#ifdef HAVE_ICU
+#include "unicode/uversion.h"
+#endif
+
 #include "qlog.h"
 #include "util.h"
 #include "Config.h"
@@ -111,15 +119,19 @@ int main( int argc, char* argv[] ) {
   std::string blurb = "Starting " + std::string(PACKAGE) + " " +
                       std::string(VERSION);
   l.log( blurb );
-  l.log( "PID: "+to_str(getpid(),6,' ')+" PPID: "+to_str(getppid(),6,' ') );
 #ifdef TIMBL
   l.log( "Timbl support built in." );
   if ( TIMBL != "yes" ) {
     l.log( TIMBL );
   }
+  l.log( "Based on "+Timbl::VersionName() );
+#endif
+#ifdef HAVE_FOLIA
+  l.log( "Based on "+folia::VersionName() );
 #endif
 #ifdef HAVE_ICU
-  l.log( "Compiled with ICU support." );
+  l.log_begin( "ICU support, " );
+  printf("version %s\n", U_ICU_VERSION);
 #endif
 
   Config co;
@@ -283,7 +295,7 @@ int main( int argc, char* argv[] ) {
     wopr_log.close();
   }
 
-  l.log( "Starting." );
+  l.log( "PID: "+to_str(getpid(),6,' ')+" PPID: "+to_str(getppid(),6,' ') );
 
   timeval tv;
   l.get_raw(tv);
