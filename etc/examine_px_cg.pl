@@ -83,24 +83,13 @@ while ( my $line = <FH> ) {
     }
 
   if ( $correct eq "cg" ) {
-    if ( defined $cg{$trgt} ) {
-      $cg{$trgt} += 1;
-    } else {
-      $cg{$trgt} = 1;
-    }
+    $cg{$trgt} += 1;
   } elsif ( $correct eq "cd" ) {
-    if ( defined $cd{$trgt} ) {
-      $cd{$trgt} += 1;
-    } else {
-      $cd{$trgt} = 1;
-    }
+    $cd{$trgt} += 1;
   } elsif ( $correct eq "ic" ) {
-    if ( defined $ic{$trgt} ) {
-      $ic{$trgt} += 1;
-    } else {
-      $ic{$trgt} = 1;
-    }
+    $ic{$trgt} += 1;
   }
+
 }
 
 #foreach my $key (sort { $cg{$a} <=> $cg{$b}} keys %cg ) {
