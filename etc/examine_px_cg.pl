@@ -88,11 +88,11 @@ while ( my $line = <FH> ) {
     $cd{$trgt} += 1;
   } elsif ( $correct eq "ic" ) {
     $ic{$trgt} += 1;
-  }
+  } 
 
 }
 
 #foreach my $key (sort { $cg{$a} <=> $cg{$b}} keys %cg ) {
 foreach my $key (sort { $lex{$a} <=> $lex{$b}} keys %lex ) {
-    printf( "%-20s %6i %6i %6i %6i %6.2f\n", decode("utf8", $key), $cg{$key}, $cd{$key}, $ic{$key}, $lex{$key}, $cg{$key}*100/$lex{$key} );
+    printf( "%-20s %6i %6i %6i %6i %6.2f %6.2f %6.2f\n", decode("utf8", $key), $cg{$key}, $cd{$key}, $ic{$key}, $lex{$key}, $cg{$key}*100/$lex{$key}, $cd{$key}*100/$lex{$key}, $ic{$key}*100/$lex{$key} );
 }
