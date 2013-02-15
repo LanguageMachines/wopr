@@ -105,7 +105,7 @@ while true;
 	      fi
 	      DISKWARNED=1
 	  fi
-	  DSTR="${DSTR} !! ${MP}:${USE}% !! "
+	  DSTR="${DSTR} *${MP}:${USE}%* "
       else
 	  DSTR="${DSTR}${MP}:${USE}% "
       fi

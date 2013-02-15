@@ -13,6 +13,7 @@ binmode(STDOUT, ":encoding(UTF-8)");
 # User options
 #
 # examine_px_cg.pl -f testset.txt.ws3.hpx5.ib_1e6.px -l2 -r0
+# TODO: also cg and maybe ic
 #
 #------------------------------------------------------------------------------
 
@@ -70,7 +71,7 @@ while ( my $line = <FH> ) {
   #
   $correct = $parts[$ws+5];
 
-  if ( $correct eq "cg" ) {
+  if ( $correct eq $var ) {
     if ( defined $cg{$trgt} ) {
       $cg{$trgt} += 1;
     } else {
