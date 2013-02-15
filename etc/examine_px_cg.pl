@@ -12,8 +12,7 @@ binmode(STDOUT, ":encoding(UTF-8)");
 #------------------------------------------------------------------------------
 # User options
 #
-# examine_px_cg.pl -f testset.txt.ws3.hpx5.ib_1e6.px -l2 -r0
-# TODO: also cg and maybe ic
+# perl ../../etc/examine_px_cg.pl -f en-es.es.t1000.l2r2_IGTREE.px -l2 -r2 | sort -n -k2
 #
 #------------------------------------------------------------------------------
 
@@ -35,6 +34,8 @@ my $ws = $lc + $rc + $gcs;
 my $correct = "";
 my $cgcnt = 0;
 my %cg;
+my %cd;
+my %ic;
 my %lex;
 
 #--
@@ -54,8 +55,6 @@ while ( my $line = <FH> ) {
     next;
   }
 
-  my $trgt = $parts[$ws];
-
   #  0,1,2   : context
   #  3 ws    : target
   #  4 ws+1  : prediction
@@ -70,24 +69,41 @@ while ( my $line = <FH> ) {
   # 13 ws+10 : sumfreq distro
   # 14 ws+11 : MRR if file is .mg (compatible with .px)
   #
-  $correct = $parts[$ws+5];
+  my $trgt = $parts[$ws];
+  my $correct = $parts[$ws+5];
 
-  if ( $correct eq $var ) {
-    if ( defined $cg{$trgt} ) {
-      $cg{$trgt} += 1;
-    } else {
-      $cg{$trgt} = 1;
-    }
-    #print $trgt;
-  }
   # Count frequencies in test set
   if ( defined $lex{$trgt} ) {
       $lex{$trgt} += 1;
     } else {
       $lex{$trgt} = 1;
+      $cg{$trgt} = 0;
+      $cd{$trgt} = 0;
+      $ic{$trgt} = 0;
     }
+
+  if ( $correct eq "cg" ) {
+    if ( defined $cg{$trgt} ) {
+      $cg{$trgt} += 1;
+    } else {
+      $cg{$trgt} = 1;
+    }
+  } elsif ( $correct eq "cd" ) {
+    if ( defined $cd{$trgt} ) {
+      $cd{$trgt} += 1;
+    } else {
+      $cd{$trgt} = 1;
+    }
+  } elsif ( $correct eq "ic" ) {
+    if ( defined $ic{$trgt} ) {
+      $ic{$trgt} += 1;
+    } else {
+      $ic{$trgt} = 1;
+    }
+  }
 }
 
-foreach my $key (sort { $cg{$a} <=> $cg{$b}} keys %cg ) {
-    printf( "%-20s %6i %6i %6.2f\n", decode("utf8", $key), $cg{$key}, $lex{$key},  $cg{$key}*100/$lex{$key} );
+#foreach my $key (sort { $cg{$a} <=> $cg{$b}} keys %cg ) {
+foreach my $key (sort { $lex{$a} <=> $lex{$b}} keys %lex ) {
+    printf( "%-20s %6i %6i %6i %6i %6.2f\n", decode("utf8", $key), $cg{$key}, $cd{$key}, $ic{$key}, $lex{$key}, $cg{$key}*100/$lex{$key} );
 }
