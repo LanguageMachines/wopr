@@ -35,6 +35,7 @@ my $ws = $lc + $rc + $gcs;
 my $correct = "";
 my $cgcnt = 0;
 my %cg;
+my %lex;
 
 #--
 
@@ -79,9 +80,14 @@ while ( my $line = <FH> ) {
     }
     #print $trgt;
   }
-
+  # Count frequencies in test set
+  if ( defined $lex{$trgt} ) {
+      $lex{$trgt} += 1;
+    } else {
+      $lex{$trgt} = 1;
+    }
 }
 
 foreach my $key (sort { $cg{$a} <=> $cg{$b}} keys %cg ) {
-    printf( "%-20s:%6i\n", decode("utf8", $key), $cg{$key} );
+    printf( "%-20s %6i %6i %6.2f\n", decode("utf8", $key), $cg{$key}, $lex{$key},  $cg{$key}*100/$lex{$key} );
 }
