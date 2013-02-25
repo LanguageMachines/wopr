@@ -6,7 +6,7 @@
 # first create dataset in right format, e.g l2r2:
 # wopr -r window_lr -p filename:austen.txt,lc:2,rc:2
 #
-# make a list with cunfusables, clist
+# make a list with confusables, clist
 # create confusible sets from the resulting windowed data:
 # python confusedata.py -c clist -f austen.test.l2r2 >wopr.script
 #

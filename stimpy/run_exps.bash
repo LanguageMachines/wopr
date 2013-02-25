@@ -118,3 +118,4 @@ ${WOPR} -s ${WSCRIPT} -p timbl:"${TIMBL}" >> output.${ID}
 #
 echo "bash dir_to_tspy.bash"
 bash dir_to_tspy.bash 
+
