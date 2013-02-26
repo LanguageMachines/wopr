@@ -37,7 +37,7 @@ do
 	then
 	    BASE=${BASH_REMATCH[1]}
 	    #echo '{print $NF}' ${BASE} |sort -u
-	    CS=`awk '{print $NF}' ${BASE} |sort -u|sed 'N;s/\n/ /;'`
+	    CS=`awk '{print $NF}' ${BASE} |sort -u|tr '\n' ' '`
 	    echo "#${BASE}:${CS}" >> ${PYFILE}
 	fi
 	#
