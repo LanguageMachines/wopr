@@ -136,17 +136,25 @@ class TServers():
         self.target = tokens[-1]
         #what do we return? Own class for ib?
         self.combined = []
+        c.error = False
         try:
             self.s.sendall("b "+c.name+"\n")
             self.readline()
             self.s.sendall("c "+i+"\n")
             self.readline()
+            m = re.search( r'ERROR {', self.data )
+            if m:
+                #print self.data
+                c.ans = []
+                c.error = True
+                return
             self.grok( self.data )
             c.ans = self.ans
             self.combined += self.distr[0:self.topn]
         except:
             print "Unexpected error:", sys.exc_info()[0]
-            sys.exit(8)
+            c.error = True
+            return
         self.combined.sort(key=lambda tup: tup[1], reverse=True)
         dbg( self.combined )
 
@@ -159,10 +167,11 @@ class TServers():
         # error checking
         m = re.search( r'ERROR {', tso )
         if m:
-            print "ERROR"
             print tso
             print self.i
-            sys.exit(8)
+            self.data = ""
+            self.ans = []
+            self.distr = []
         m = re.search( r'CATEGORY {(.*)} DISTRIBUTION { (.*) } DISTANCE {(.*)}', tso )
         #print m.group(1) #concerned
         self.classification = m.group(1)
@@ -247,6 +256,7 @@ class Classifier():
         self.to = 0
         self.ts = ts #Timblserver
         self.ans = None  #one instance answer
+        self.error = False
     def window_lr(self, s):
         if self.to == 0:
             res = window_lr(s, self.lc, self.rc)
@@ -287,4 +297,4 @@ def topn_str(tns):
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print "Python interface for timblserver."
+    print "Python interface for timblsercer."

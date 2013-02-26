@@ -77,9 +77,10 @@ if afile != None:
 
 if instance != None:
     for c in allc:
-        print c
+        #print c
         c.classify_i(instance)
-        print c.name,":",ans_str(c.ans)
+        if not c.error:
+            print c.name,":",ans_str(c.ans)
 
 if sentence != None:
     all_res = dict()
