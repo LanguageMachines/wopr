@@ -39,10 +39,20 @@ do
 	    #echo '{print $NF}' ${BASE} |sort -u
 	    CS=`awk '{print $NF}' ${BASE} |sort -u|tr '\n' ' '`
 	    echo "#${BASE}:${CS}" >> ${PYFILE}
+	    # create triggerlist from ${CS}
+	    TSTR="ts${C}.set_triggers(["
+	    for w in ${CS}
+	    do
+		TSTR="${TSTR}\"${w}\","
+	    done
+	    TSTR="${TSTR%%?}" #remove last char
+	    TSTR="${TSTR} ]);" # add ]);
+	    #echo ${TSTR}
 	fi
 	#
 	echo ${TS} >> ${TSFILE}
 	echo ${PY} >> ${PYFILE}
+	echo ${TSTR} >> ${PYFILE}
 	ALLC="${ALLC}ts${C}, "
     fi
     #

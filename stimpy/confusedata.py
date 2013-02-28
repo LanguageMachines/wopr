@@ -6,7 +6,7 @@
 # first create dataset in right format, e.g l2r2:
 # wopr -r window_lr -p filename:austen.txt,lc:2,rc:2
 #
-# make a list with confusables, clist
+# make a list with cunfusables, clist
 # create confusible sets from the resulting windowed data:
 # python confusedata.py -c clist -f austen.test.l2r2 >wopr.script
 #
@@ -60,6 +60,21 @@ class CObj():
             self.fh.write(l)
             self.hits += 1
             self.classcount[t] += 1
+    def wopr(self):
+        #print "set filename:"+self.filename
+        #print "run: make_ibase"
+        #print "filename:"+self.filename
+        return "wopr -l -r make_ibase -p filename:"+self.filename+",timbl:\"${TIMBL}\""
+    def woprscript_ini(self, srv, prt):
+        # note the unset:ibase : otherwise wopr remembers the name of the first one,
+        #      and will refuse to make more (file exists).
+        res = "unset:ibasefile"+"\n"+"set:filename:"+self.filename+"\n"
+        res += "run: make_ibase"+"\n"
+        #res += "extern: echo $timbl $ibasefile \n"
+        res += "extern: echo \"# Added by script.\" >> $kvs\n"
+        res += "extern: echo [ts"+srv+"] >> $kvs\n"
+        res += "extern: echo cmd=/Users/pberck/work/local/bin/timblserver -i $ibasefile $timbl +vdb+di -S"+prt+" --daemonize=no >> $kvs\n"
+        return res
     def woprscript_ts(self, srv):
         # note the unset:ibase : otherwise wopr remembers the name of the first one,
         #      and will refuse to make more (file exists).
@@ -100,6 +115,38 @@ def work(tfile, cfile, c):
 
 def ans_str(ans):
     return '{0} {1} {2:.4f} {3:.4f} {4:.4f} {5} {6} _ _ {7:d} {8:.0f} _'.format(*ans) + topn_str(ans[9])
+
+"""
+port=7000
+maxconn=10
+dimin0="-aIB1 +vdi+db+n -f dimin.train"
+dimin1="-aIGTREE +vdi+db +D -f dimin.train"
+dimin2="-aTRIBL +vdi+db+n -q3 -f dimin.train"
+
+port=2000
+maxconn=2
+ts0="-i austen.train.l2r2.c0003_-a4+D.ibase -a4 +D +vdb+di"
+ts1="-i austen.train.l2r2.c0002_-a4+D.ibase -a4 +D +vdb+di"
+
+Welcome to the Timbl server.
+available bases: ts0000 ts0001 ts0002 ts0003
+b ts0000
+selected base: 'ts0000'
+c it was house or _
+CATEGORY {to} DISTRIBUTION { to 28.0000, too 10.0000 } DISTANCE {0.0658311}
+b ts0001
+selected base: 'ts0001'
+c it was house or _
+CATEGORY {then} DISTRIBUTION { then 2.00000 } DISTANCE {0.105978}
+b ts0002
+selected base: 'ts0002'
+c it was house or _
+CATEGORY {their} DISTRIBUTION { their 5.00000 } DISTANCE {0}
+b ts0003
+selected base: 'ts0003'
+c it was house or _
+CATEGORY {one} DISTRIBUTION { one 26.0000 } DISTANCE {0.0139275}
+"""
 
 # -----------------------------------------------------------------------------
 # ----- MAIN starts here
@@ -163,6 +210,7 @@ if __name__ == "__main__":
         # count the number of classes with 0 instances
         zeroes = len( [ w for w in c.classcount if c.classcount[w] == 0 ] )
         # if there is a class with 0, we skip this classifier
+        # (maybe a low % should also be skipped)
         if zeroes == 0:
             print c.woprscript_ts(tsrvs.getinc())
     
