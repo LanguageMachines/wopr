@@ -77,6 +77,7 @@ class TServers():
         self.file = None
         self.lex = {}
         self.topn = 3
+        self.triggers = {}
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.connect((self.host, self.port))
@@ -84,8 +85,8 @@ class TServers():
             #self.s.settimeout(1)
             #print self.s.gettimeout()
         except:
-            print "error"
-            return
+            print "Error, no timblserver"
+            sys.exit(8)
         self.readline() #available bases
                         #print "1",self.data
         self.readline() #available bases
@@ -93,16 +94,11 @@ class TServers():
         #self.readline() #available bases
         #print "3",self.data
 
-    def read(self, maxbytes = None):
-        "Read data from server."
-        if maxbytes is None:
-            return self.file.read()
-        else:
-            return self.file.read(maxbytes)
-
     def readline(self):
         "Read a line from the server.  Strip trailing CR and/or LF."
         CRLF = "\r\n"
+        if not self.file:
+            return
         s = self.file.readline()
         if not s:
             raise EOFError
@@ -111,22 +107,13 @@ class TServers():
         elif s[-1:] in CRLF:
             s = s[:-1]
         self.data = s
-    
-    def recv_data(self):
-        self.data = ""
-        recv_data = ""
-        while 0:
-            try:
-                recv_data = self.s.recv(4096)
-                dbg(recv_data)
-                self.data = self.data+recv_data
-            except:
-                break
-                pass
-            if not recv_data:
-                break
-                pass
 
+    def sendline(self,l):
+        try:
+            self.s.sendall(l)
+        except socket.error:
+            print "Socket kapot."
+        
     # classify one instance, classifier c
     def classify( self, c, i ):
         if not self.s:
@@ -137,27 +124,55 @@ class TServers():
         #what do we return? Own class for ib?
         self.combined = []
         c.error = False
-        try:
-            self.s.sendall("b "+c.name+"\n")
-            self.readline()
-            self.s.sendall("c "+i+"\n")
-            self.readline()
-            m = re.search( r'ERROR {', self.data )
-            if m:
-                #print self.data
-                c.ans = []
-                c.error = True
-                return
-            self.grok( self.data )
-            c.ans = self.ans
-            self.combined += self.distr[0:self.topn]
-        except:
+        #try:
+        self.sendline("b "+c.name+"\n")
+        self.readline()
+        # check result!
+        m = re.search( r'ERROR {', self.data )
+        if m:
+            #print self.data
+            c.ans = []
+            c.error = True
+            return
+        self.sendline("c "+i+"\n")
+        self.readline()
+        m = re.search( r'ERROR {', self.data )
+        if m:
+            #print self.data
+            c.ans = []
+            c.error = True
+            return
+        self.grok( self.data )
+        c.ans = self.ans
+        self.combined += self.distr[0:self.topn]
+        '''except:
             print "Unexpected error:", sys.exc_info()[0]
             c.error = True
             return
+        '''
         self.combined.sort(key=lambda tup: tup[1], reverse=True)
         dbg( self.combined )
 
+        # classify with triggers.
+    def classify_tr(self, i):
+        if not self.s:
+            return
+        self.i = i
+        tokens = self.i.split()
+        self.target = tokens[-1]
+        if self.target in self.triggers:
+            c = self.triggers[self.target]
+            return self.classify(c,i)
+        return []
+
+    def get_trigger(self, i):
+        tokens = i.split()
+        target = tokens[-1]
+        if target in self.triggers:
+            c = self.triggers[target]
+            return c
+        return None
+    
     def grok( self, tso ):
         '''
         Parse the TimblServer output
@@ -246,7 +261,10 @@ class TServers():
             return self.lex[w]
         except KeyError:
             return 0
-
+    def add_triggers(self, c, t):
+        for trigger in t:
+            self.triggers[trigger] = c
+    
 # Classifier should talk to timblserver
 class Classifier():
     def __init__(self, name, lc, rc, ts):
@@ -257,12 +275,16 @@ class Classifier():
         self.ts = ts #Timblserver
         self.ans = None  #one instance answer
         self.error = False
+        self.triggers = []
     def window_lr(self, s):
         if self.to == 0:
             res = window_lr(s, self.lc, self.rc)
         else:
             res = window_to(s, self.lc, self.to)
         return res
+    def set_triggers(self, t):
+        self.triggers = t
+        self.ts.add_triggers(self, t)
     def classify_i(self, i):
         self.ts.classify(self, i)
         return self.ans
@@ -277,7 +299,9 @@ class Classifier():
 # (i, classification, log2p, entropy, wlpx, indicator, ku, distr_count, sum_freqs, topn)
 
 def ans_str(ans):
-    return '{0} {1} {2:.4f} {3:.4f} {4:.4f} {5} {6} _ _ {7:d} {8:.0f} _'.format(*ans) + topn_str(ans[9])
+    if ans and len(ans) == 10:
+        return '{0} {1} {2:.4f} {3:.4f} {4:.4f} {5} {6} _ _ {7:d} {8:.0f} _'.format(*ans) + topn_str(ans[9])
+    return None
 
 def topn_str(tns):
     if len(tns) == 0:

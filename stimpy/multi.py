@@ -60,11 +60,24 @@ else:
 
 # --
 
+#s1=TServers("localhost",2000)
+#s1.topn=1
+##dflt0=Classifier("dflt0", 2, 0, s1)
+#dflt1=Classifier("dflt1", 3, 0, s1)
+#allc=[ dflt0, dflt1 ]
+
 s1=TServers("localhost",2000)
-s1.topn=1
+#austen.train.l2r0.c0000:to too two
+ts0000=Classifier("ts0000", 2, 0, s1)
+ts0000.set_triggers(["to","too","two" ]);
+#austen.train.l2r0.c0001:than then
+ts0001=Classifier("ts0001", 2, 0, s1)
+ts0001.set_triggers(["than","then" ]);
+#austen.train.l2r0.c0002:their there
+ts0002=Classifier("ts0002", 2, 0, s1)
+ts0002.set_triggers(["their","there" ]);
 dflt0=Classifier("dflt0", 2, 0, s1)
-dflt1=Classifier("dflt1", 3, 0, s1)
-allc=[ dflt0, dflt1 ]
+allc=[ ts0000, ts0001, ts0002, dflt0 ]
 
 if lexfile != None:
     s1.read_lex(lexfile)
@@ -76,6 +89,12 @@ if afile != None:
         print ans_str(rr)
 
 if instance != None:
+    c = s1.get_trigger(instance)
+    if c:
+        c.classify_i(instance)
+        if not c.error:
+            print c.name,":",ans_str(c.ans)
+    print "----"
     for c in allc:
         #print c
         c.classify_i(instance)
