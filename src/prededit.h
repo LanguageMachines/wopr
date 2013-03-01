@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2008 - 2011 Peter Berck                                         *
+ * Copyright 2008 - 2013 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -36,6 +36,7 @@ void window_words_letters(std::string, int, Context&, std::vector<std::string>&)
 int pdt( Logfile&, Config& );
 int pdt2( Logfile&, Config& );
 //void generate_next(  Timbl::TimblAPI*, Config&, std::string, int, std::vector<distr_elem>& );
+size_t count_keys(std::string&);
 int window_letters( Logfile&, Config& );
 int pdt2web( Logfile&, Config& );
 

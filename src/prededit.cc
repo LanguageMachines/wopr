@@ -167,9 +167,6 @@ int pdt( Logfile& l, Config& c ) {
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
-
-  
-
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
@@ -260,9 +257,9 @@ int pdt( Logfile& l, Config& c ) {
     // S0000 we sat and waited for the woman
     //
     file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
-    file_out << a_line << " " << a_line.size() << std::endl;
+    file_out << a_line << " " << count_keys(a_line) << std::endl;
 
-    keypresses += a_line.size();
+    keypresses += count_keys(a_line);
 
     instance_count = 0;
 
@@ -351,10 +348,10 @@ int pdt( Logfile& l, Config& c ) {
 
 	// We take largest number of presses, not words. Same result.
 	// 
-	if ( matched.size() > savedhere+1 ) {
+	if ( count_keys(matched) > savedhere+1 ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
-	  savedhere = matched.size()-1;
+	  savedhere = count_keys(matched)-1;
 	  sentenceksaved += savedhere;
 	  sentencewsaved += words_matched;
 	}
@@ -372,7 +369,7 @@ int pdt( Logfile& l, Config& c ) {
 	  file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		   << std::setfill('0') << std::setw(4) << instance_count << "." 
 		   << std::setfill('0') << std::setw(4) << prediction_count 
-		   << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space
+		   << " " << matched << count_keys(matched)-1 << std::endl; // -1 for trailing space
 	}
 	}
 	prediction_count++;
@@ -628,7 +625,7 @@ int pdt2( Logfile& l, Config& c ) {
 
 	// We need to skip the letter context as well now.
 	//
-	(void)explode( token, letters ); // PJB: TODO, ICUify
+	(void)explode( token, letters );
 	for ( int j = 0; j < letters.size(); j++ ) {
 	  letter = letters.at(j);
 	  ctx0.push( letter );
@@ -999,6 +996,20 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
 }
 
 // --
+
+// Count UTF-8 letters.
+// Quick&dirty hack, pdt should be re-written (some day).
+//
+#ifndef HAVE_ICU
+size_t count_keys(std::string& line) {
+  return line.size();
+}
+#else
+size_t count_keys(std::string& line) {
+  UnicodeString ustr = UnicodeString::fromUTF8(line);
+  return ustr.length();
+}
+#endif
 
 // foo -> f o o
 //
