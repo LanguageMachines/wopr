@@ -125,6 +125,7 @@ int pdt( Logfile& l, Config& c ) {
   std::string        ped             = c.get_value( "ds", "" ); // depths
   int                pel             = stoi( c.get_value( "n", "3" )); // length
   bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
+  int                minmatch        = stoi( c.get_value( "mm", "0" )); // minimum saving to count as useful
   std::string        id              = c.get_value( "id", to_str(getpid()) );
 
   Timbl::TimblAPI   *My_Experiment;
@@ -346,8 +347,14 @@ int pdt( Logfile& l, Config& c ) {
 	  wi++;
 	}
 
+	// Skip if not > minmatch (to skip silly matches like comma's)
+	//
+	if ( count_keys(matched)-1 < minmatch ) {
+	  matched = "";
+	}
+
 	// We take largest number of presses, not words. Same result.
-	// 
+	//
 	if ( count_keys(matched) > savedhere+1 ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
@@ -361,16 +368,16 @@ int pdt( Logfile& l, Config& c ) {
 	// (print only when a match, optional?)
 	//
 	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
-	file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		 << std::setfill('0') << std::setw(4) << instance_count << "." 
-		 << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
-
-	if ( matched != "" ) {
-	  file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
 		   << std::setfill('0') << std::setw(4) << instance_count << "." 
-		   << std::setfill('0') << std::setw(4) << prediction_count 
-		   << " " << matched << count_keys(matched)-1 << std::endl; // -1 for trailing space
-	}
+		   << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
+	  
+	  if ( matched != "" )  {
+	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+		     << std::setfill('0') << std::setw(4) << instance_count << "." 
+		     << std::setfill('0') << std::setw(4) << prediction_count 
+		     << " " << matched << count_keys(matched)-1 << std::endl; // -1 for trailing space
+	  }
 	}
 	prediction_count++;
 	si++;
