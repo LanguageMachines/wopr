@@ -164,9 +164,7 @@ EXTRA_DIST = \
 	doc/NY_pplx_-a1+D.pdf \
 	doc/NY_pplx_slirm.pdf \
 	stimpy/confusedata.py \
-	stimpy/dir_to_tspy \
+	stimpy/dir_to_tspy.bash \
 	stimpy/multi.py \
 	stimpy/run_exps.bash \
-	stimpy/stimpy.py \
-
-
+	stimpy/stimpy.py
