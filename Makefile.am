@@ -75,18 +75,68 @@ man_MANS = man/wopr.1
 
 EXTRA_DIST = \
 	$(man_MANS) \
-	etc/nscript \
-	etc/nscript1 \
-	etc/generator.script \
-	etc/graph_wplex.pl \
-	etc/examine_px.pl \
-	etc/examine_pxs.pl \
-	etc/compare_px_srilm.pl \
-	etc/compare_ngt_srilm.pl \
+	etc/acc_gt.pl \
+	etc/check_spelerr.pl \
+	etc/combine2.pl \
+	etc/compare_mg_px.pl \
 	etc/compare_ngp_srilm.pl \
-	etc/examine_md.pl \
+	etc/compare_ngt_srilm.pl \
+	etc/compare_ngt_srilm_m.pl \
+	etc/compare_px_srilm.pl \
+	etc/compare_px_srilm_m.pl \
+	etc/compare_pxs_srilm.pl \
+	etc/confusion.pl \
+	etc/create_cg_f_scatterplot.pl \
+	etc/create_px_scatterplot.pl \
+	etc/create_pxs_scatterplot.pl \
+	etc/cstats.pl \
+	etc/data2latex.pl \
+	etc/data_pdt2_2latex.pl \
+	etc/data_pdt2_extract.pl \
+	etc/data_pdt_2latex.pl \
+	etc/dti_spelerr.pl \
 	etc/examine_mc.pl \
+	etc/examine_md.pl \
+	etc/examine_mg.pl \
+	etc/examine_px.pl \
+	etc/examine_px_cg.pl \
+	etc/examine_pxs.pl \
+	etc/examine_srilm.pl \
+	etc/extract_mg_px.pl \
+	etc/extract_px_px.pl \
+	etc/filter_kvs.pl \
+	etc/fix_pdt2.pl \
+	etc/graph_wplex.pl \
+	etc/make_spelerr.pl \
+	etc/pplx_ngt.pl \
 	etc/pplx_px.pl \
+	etc/pxs2svg.pl \
+	etc/create_algo_plots.sh \
+	etc/create_plots.sh \
+	etc/create_wex_plots.sh \
+	etc/do_algos.sh \
+	etc/do_all_mg.sh \
+	etc/do_pplxs.sh \
+	etc/do_weps.sh \
+	etc/watch_all.sh \
+	etc/watch_ceto.sh \
+	etc/watch_wopr.sh \
+	etc/ld.py \
+	etc/post_correct.py \
+	etc/ps_wopr.py \
+	etc/tok.py \
+	etc/tree2graph.py \
+	etc/do_algos.wopr_script \
+	etc/do_compare_mg_px.script \
+	etc/do_lcontext.wopr_script \
+	etc/do_pdt2.wopr_script \
+	etc/do_pplxs.wopr_script \
+	etc/generator.script \
+	etc/make_data.script \
+	etc/make_ibase.script \
+	etc/nscript \
+	etc/script \
+	etc/wep.wopr_script \
 	bootstrap \
 	web/generator/generator.css \
 	web/generator/generator.php \
@@ -112,5 +162,11 @@ EXTRA_DIST = \
 	doc/32376_mem.pdf \
 	doc/26251_mem.pdf \
 	doc/NY_pplx_-a1+D.pdf \
-	doc/NY_pplx_slirm.pdf
+	doc/NY_pplx_slirm.pdf \
+	stimpy/confusedata.py \
+	stimpy/dir_to_tspy \
+	stimpy/multi.py \
+	stimpy/run_exps.bash \
+	stimpy/stimpy.py \
+
 
