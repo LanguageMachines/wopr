@@ -14,23 +14,24 @@ binmode(STDOUT, ":encoding(UTF-8)");
 #
 # take nrs 2 in the distro's, see which are the number 1s. Are
 # they 50/50 or so confusable?
+# -c creates a space-seperated list which can be read
+# into run_exps.bash.
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_f $opt_g $opt_l $opt_r $opt_v $opt_w /;
+use vars qw/ $opt_c $opt_f $opt_l $opt_r $opt_v  /;
 
-getopts('b:f:g:l:r:v:w:');
+getopts('cf:l:r:v:');
 
-my $basename   = $opt_b || "out";
+my $clist      = $opt_c || 0;
 my $file       = $opt_f || 0;
 my $var        = $opt_v || "cg"; #wlp, dp, lp, sz, md
 my $lc         = $opt_l || 0;
 my $rc         = $opt_r || 0;
-my $gcs        = $opt_g || 0; #for global context
 
 #------------------------------------------------------------------------------
 
-my $ws = $lc + $rc + $gcs;
+my $ws = $lc + $rc;
 my $correct = "";
 my $cgcnt = 0;
 my %cg;
@@ -107,20 +108,42 @@ while ( my $line = <FH> ) {
 
 }
 
-for my $key1 (sort keys %cd) {
-  my $cnt = 0;
-  for my $key2 (keys %{$cd{$key1}}) {
-    $cnt += $cd{$key1}{$key2},;
-  }
-  if ( $cnt > 0 ) {
-    my $nrs = 3;
-    print $key1, " should be";
-    for my $key2 (sort {$cd{$key1}{$b} <=> $cd{$key1}{$a}} keys %{$cd{$key1}}) {
-      print " ", $key2, " (", $cd{$key1}{$key2}, ") ";
-      if ( --$nrs <= 0 ) {
-	last;
-      }
+if ( $clist ) {
+  # List for clist
+  for my $key1 (sort keys %cd) {
+    my $cnt = 0;
+    for my $key2 (keys %{$cd{$key1}}) {
+      $cnt += $cd{$key1}{$key2},;
     }
-    print "\n";
+    if ( $cnt > 0 ) {
+      my $nrs = 2;
+      print $key1; 
+      for my $key2 (sort {$cd{$key1}{$b} <=> $cd{$key1}{$a}} keys %{$cd{$key1}}) {
+	print " ", $key2;
+	if ( --$nrs <= 0 ) {
+	  last;
+	}
+      }
+      print "\n";
+    }
+  }
+} else {
+  for my $key1 (sort keys %cd) {
+    my $cnt = 0;
+    for my $key2 (keys %{$cd{$key1}}) {
+      $cnt += $cd{$key1}{$key2},;
+    }
+    if ( $cnt > 0 ) {
+      my $nrs = 3;
+      print $key1, " should be";
+      for my $key2 (sort {$cd{$key1}{$b} <=> $cd{$key1}{$a}} keys %{$cd{$key1}}) {
+	print " ", $key2, " (", $cd{$key1}{$key2}, ") ";
+	if ( --$nrs <= 0 ) {
+	  last;
+	}
+      }
+      print "\n";
+    }
   }
 }
+
