@@ -25,7 +25,7 @@
 # ---- PARAMETERS TO CHANGE ----------------------------------------
 #
 MAILTO="P.J.Berck@UvT.nl"  # Better change me
-DISKS="/exp /exp2"         # Disks to watch
+DISKS=". /exp /exp2"       # Disks to watch
 MINFREE=95                 # Warn when disusage over 95%
 ME=`whoami`                # Her processes will be killed
 KILLIM=99                  # We quit after having killed 3 processes
