@@ -25,6 +25,12 @@ durian:lm pberck$ python ../../../etc/roc.py -f rmt.t1e2b.l2r0_67990.px >tmp
 plot [0:1][0:1] "tmp" using 6:7:1 with labels, "tmp" using 6:7 with points 
 or
 plot [0:1][0:1] "tmp" using 6:7 with points
+or
+plot [0:.01][0:1] "nyt.t10000.l5r0_ROC30038.px.roc" using 6:7:1 with labels
+or
+set arrow from 0,0 to 1,1 nohead lc rgb 'black'
+plot [0:.01][0:1] "nyt.t10000.l5r0_ROC30038.px.roc" using 6:7:1 with labels tc rgb 'green' t 'l5r0',\
+"nyt.t10000.l2r0_ROC30035.px.roc" using 6:7:1 with labels tc rgb 'red' t 'l2r0'
 
 Processes all *.px files in a directory with the -d option. In that case
 it parses the filename for the context, so it will only work with wopr
@@ -48,8 +54,8 @@ class Matrix():
         return self.word+":"+str(self.TP)+" "+str(self.FP)+" "\
             +str(self.FN)+" "+str(self.TN)+" "\
             +repr(self.classfp)+" "+repr(self.classfn)
-    def add_classification(self, classf):
-        if self.word == classf:
+    def add_classification(self, classf, indicator="cg"):
+        if self.word == classf: # or indicator == "cd":
             self.TP += 1
             self.classfp[0][1] += 1
         else:
@@ -102,7 +108,8 @@ def process_px(pxfile, lc, rc):
     target_pos = lc + rc
     word_pos   = target_pos
     classf_pos = lc + rc + 1
-
+    indicator_pos = lc + rc + 5
+    
     # Pass one, read targets for a word list.
     #
     words = []
@@ -117,6 +124,7 @@ def process_px(pxfile, lc, rc):
         bits = line.split()
         word = bits[target_pos]
         classf = bits[classf_pos]
+        indicator = bits[indicator_pos]
         #gl.info(bits[target_pos]+"/"+bits[classf_pos])
         if word not in words:
             words.append(word)
@@ -124,7 +132,7 @@ def process_px(pxfile, lc, rc):
             matrices.append(wordm)
         else:
             wordm = [m for m in matrices if m.word == word][0]
-        wordm.add_classification(classf)
+        wordm.add_classification(classf, indicator)
     f.close()
 
     gl.info("Number of classifications: "+str(classifications))
