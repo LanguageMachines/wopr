@@ -100,7 +100,7 @@ def process_roc(rocfile, word, x_min, y_min, of):
             continue
         bits = line.split()
         if bits[0] == word or word == None:
-            if float(bits[5]) > x_min and float(bits[6]) > y_min:
+            if float(bits[5]) > x_min and float(bits[6]) > y_min and float(bits[10]) > fscore_min:
                 gl.info(line[:-1])
                 of.write(line[:-1]+" "+pa_info+" "+tr_info+" "+rocfile+"\n")
                 seg_word = bits[0] #works for both supplied word or None
@@ -119,12 +119,13 @@ roc_str = "(.*)roc$"
 out = "out"
 x_min = 0
 y_min = 0
+fscore_min = 0
 segments = dict()
 x_rng = "[0:1]"
 y_rng = "[0:1]"
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "o:w:r:x:y:", ["xr=","yr=","word="])
+    opts, args = getopt.getopt(sys.argv[1:], "f:o:w:r:x:y:", ["xr=","yr=","word="])
 except getopt.GetoptError, err:
     # print help information and exit:
     gl.error(str(err))
@@ -136,6 +137,8 @@ for o, a in opts:
         roc_str = a
     elif o in ("-r"):
         rc = int(a)
+    elif o in ("-f"):
+        fscore_min = float(a)
     elif o in ("-x"):
         x_min = float(a)
     elif o in ("-y"):
@@ -234,6 +237,11 @@ out_gnuplot_file.write("!epstopdf \""+out_segments_name+".ps\"\n")
 out_gnuplot_file.write("set term pop\n")
 #set xtics border rotate by 270 offset 0,0
 #plot "out.roc.sel.segments" using ($0):8:xtic(1) with lines
+#
+#gnuplot> set boxwidth 0.5
+#gnuplot> set style fill solid
+#gnuplot> plot "out.roc.sel.labels" using ($0):8:xtic(1) with boxes
+#
 out_gnuplot_file.close()
 
 '''
