@@ -184,12 +184,26 @@ out_segments_file = open(out_segments_name, 'w')
 out_labels_file = open(out_labels_name, 'w')
 #plot [0:1][0:1]"out.roc.sel.segments" using 2:3 with lines,\
 # "out.roc.sel.labels" using 2:3:1 with labels
+# Fscores:
+# plot "out.roc.sel.segments" using ($0):8:xtic(1) with lines
+# ($0) is line number, xtic(1) takes 1 as x label (short for xticlabels(1))
+# (plot 'datafile' u 1:2:( xticlabels( stringcolumn(1).stringcolumn(2) ) ) )
+#set xtics border rotate by 90 offset 0,-2
+#set xtics border rotate by 270 offset 0,0 is better
+
+# word pt0 pt1 rocfile accuracy precision recall Fscore
 for sw in segments:
     s = segments[sw]
-    out_labels_file.write(s.word+" "+str(s.points[0][0])+" "+str(s.points[0][1])+" "+s.points[0][2]+"\n")
+    out_labels_file.write(s.word) #write only the first pt in labels file, the ROC label will be printed at pt
+    for i in xrange(0,7):
+        out_labels_file.write(" "+str(s.points[0][i]))
+    out_labels_file.write("\n")
     for pt in s.points:
-        out_segments_file.write(s.word+" "+str(pt[0])+" "+str(pt[1])+" "+pt[2]+" "+str(pt[3])+" "+str(pt[4])+" "+str(pt[5])+" "+str(pt[6])+"\n")
-    out_segments_file.write("\n")
+        out_segments_file.write(s.word)
+        for i in xrange(0,7):
+            out_segments_file.write(" "+str(pt[i]))
+        out_segments_file.write("\n")
+    out_segments_file.write("\n") #blank line between to start new line segment
 out_labels_file.close()
 out_segments_file.close()
 
@@ -218,6 +232,8 @@ out_gnuplot_file.write("set out \""+out_segments_name+".ps\"\n")
 out_gnuplot_file.write("replot\n")
 out_gnuplot_file.write("!epstopdf \""+out_segments_name+".ps\"\n")
 out_gnuplot_file.write("set term pop\n")
+#set xtics border rotate by 270 offset 0,0
+#plot "out.roc.sel.segments" using ($0):8:xtic(1) with lines
 out_gnuplot_file.close()
 
 '''
