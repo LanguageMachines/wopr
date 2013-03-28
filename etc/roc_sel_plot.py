@@ -29,8 +29,9 @@ python roc_sel_plot.py -x 0.01
 Selected words (the, have and has):
 python roc_sel_plot.py -w the_have_has -x 0.01 -y 0.5
 
-pberck@cheerilee:/scratch/pberck/2013/roc$ python roc_sel_plot.py -w in -r ".*ROC3.*roc" >in.roc
-gnuplot:
+Choose plot range:
+python roc_sel_plot.py  -y 0.5 --xr="[0:0.1]"
+
 #accuracy over training lines:
 plot [][] "< grep l2r0 in.roc" using 13:11
 """
@@ -106,7 +107,7 @@ def process_roc(rocfile, word, x_min, y_min, of):
                 if seg_word not in segments.keys():
                     gl.info("New Segment("+seg_word+")")
                     segments[seg_word] = Segment(seg_word)
-                segments[seg_word].add_point( (float(bits[5]),float(bits[6]),rocfile) )
+                segments[seg_word].add_point( (float(bits[5]),float(bits[6]),rocfile,float(bits[7]),float(bits[8]),float(bits[9]),float(bits[10])) )
     f.close()
 
     gl.info("Ready")
@@ -119,9 +120,11 @@ out = "out"
 x_min = 0
 y_min = 0
 segments = dict()
+x_rng = "[0:1]"
+y_rng = "[0:1]"
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "o:w:r:x:y:", ["word="])
+    opts, args = getopt.getopt(sys.argv[1:], "o:w:r:x:y:", ["xr=","yr=","word="])
 except getopt.GetoptError, err:
     # print help information and exit:
     gl.error(str(err))
@@ -137,6 +140,10 @@ for o, a in opts:
         x_min = float(a)
     elif o in ("-y"):
         y_min = float(a)
+    elif o in ("--xr"):
+        x_rng = a
+    elif o in ("--yr"):
+        y_rng = a
     else:
         gl.error("Unhandled option")
         assert False, "unhandled option"
@@ -181,7 +188,7 @@ for sw in segments:
     s = segments[sw]
     out_labels_file.write(s.word+" "+str(s.points[0][0])+" "+str(s.points[0][1])+" "+s.points[0][2]+"\n")
     for pt in s.points:
-        out_segments_file.write(s.word+" "+str(pt[0])+" "+str(pt[1])+" "+pt[2]+"\n")
+        out_segments_file.write(s.word+" "+str(pt[0])+" "+str(pt[1])+" "+pt[2]+" "+str(pt[3])+" "+str(pt[4])+" "+str(pt[5])+" "+str(pt[6])+"\n")
     out_segments_file.write("\n")
 out_labels_file.close()
 out_segments_file.close()
@@ -194,7 +201,7 @@ out_gnuplot_file.write("set xlabel \"FPR\"\n")
 out_gnuplot_file.write("set key bottom\n")
 out_gnuplot_file.write("set ylabel \"TPR\"\n")
 out_gnuplot_file.write("set grid\n")
-out_gnuplot_file.write("plot [0:1][0:1] \""+out_data_name+"\" using 6:7 with points,\\\n")
+out_gnuplot_file.write("plot "+x_rng+y_rng+" \""+out_data_name+"\" using 6:7 with points,\\\n")
 out_gnuplot_file.write("\""+out_data_name+"\" using 6:7:1 with labels offset 1.5,0.5 notitle\n")
 out_gnuplot_file.write("set terminal push\n")
 out_gnuplot_file.write("set terminal postscript eps enhanced color solid rounded lw 2 'Helvetica' 10\n")
@@ -203,7 +210,7 @@ out_gnuplot_file.write("replot\n")
 out_gnuplot_file.write("!epstopdf \""+out_data_name+".ps\"\n")
 out_gnuplot_file.write("set term pop\n")
 out_gnuplot_file.write("# plot with segments\n")
-out_gnuplot_file.write("plot [0:1][0:1] \""+out_segments_name+"\" using 2:3 with lines,\\\n")
+out_gnuplot_file.write("plot "+x_rng+y_rng+" \""+out_segments_name+"\" using 2:3 with lines,\\\n")
 out_gnuplot_file.write("\""+out_labels_name+"\" using 2:3:1 with labels\n")
 out_gnuplot_file.write("set terminal push\n")
 out_gnuplot_file.write("set terminal postscript eps enhanced color solid rounded lw 2 'Helvetica' 10\n")
