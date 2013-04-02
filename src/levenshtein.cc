@@ -68,6 +68,7 @@
 #include "tag.h"
 #include "Classifier.h"
 #include "Multi.h"
+#include "server.h"
 #include "levenshtein.h"
 #include "elements.h"
 #include "cache.h"
@@ -986,14 +987,16 @@ int server_sc( Logfile& l, Config& c ) {
   // ratio target_lexfreq:tvs_lexfreq
   double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
   const std::string empty        = c.get_value( "empty", "__EMPTY__" );
+  const int hapax                   = stoi( c.get_value( "hpx", "0" ));
 
   l.inc_prefix();
   l.log( "ibasefile:  "+ibasefile );
   l.log( "port:       "+port );
   l.log( "keep:       "+to_str(keep) ); // keep conn. open after sending result
   l.log( "verbose:    "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "timbl:      "+timbl ); // timbl settings
   l.log( "lexicon     "+lexicon_filename ); // the lexicon
+  l.log( "hapax:      "+to_str(hapax) );
   l.log( "cache_size: "+to_str(cachesize) ); // size of the cache
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
@@ -1005,7 +1008,6 @@ int server_sc( Logfile& l, Config& c ) {
 
   // To be implemented later (maybe)
   //
-  int hapax = 0;
   int mode  = 0;
   int lc    = 0;
   int rc    = 0;
@@ -1163,15 +1165,15 @@ int server_sc( Logfile& l, Config& c ) {
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
 	    
-	    /*if ( hapax > 0 ) {
+	    if ( hapax > 0 ) {
 	      int c = hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
 	      if ( verbose > 1 ) {
-	      l.log( "|" + classify_line + "| hpx" );
+		l.log( "|" + classify_line + "| hpx" );
 	      }
-	      }*/
+	    }
 	    
 	    // if we take target from a pre-non-hapaxed vector, we
 	    // can hapax the whole sentence in the beginning and use
