@@ -51,7 +51,7 @@
 #include <string.h>  
 
 #ifdef HAVE_FOLIA
-#include "libfolia/folia.h"
+#include "folia/folia.h"
 #endif
 
 #ifdef HAVE_ICU

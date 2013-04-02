@@ -54,8 +54,8 @@
 #include <sys/msg.h>
 
 #ifdef HAVE_FOLIA
-#include "libfolia/document.h"
-#include "libfolia/folia.h"
+#include "folia/document.h"
+#include "folia/folia.h"
 #endif
 
 #include "qlog.h"
