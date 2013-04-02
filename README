@@ -3,6 +3,10 @@ Info
 
 Run 'sh bootstrap' first if starting with a fresh checkout.
 
+Dependencies
+============
+
+Wopr needs libticcutils, timbl, and optionally, libfolia.
 
 General
 =======
