@@ -238,9 +238,39 @@ out_gnuplot_file.write("set term pop\n")
 #set xtics border rotate by 270 offset 0,0
 #plot "out.roc.sel.segments" using ($0):8:xtic(1) with lines
 #
-#gnuplot> set boxwidth 0.5
-#gnuplot> set style fill solid
-#gnuplot> plot "out.roc.sel.labels" using ($0):8:xtic(1) with boxes
+#set xtics border rotate by 270 offset 0,0
+#set boxwidth 0.5
+#set style fill solid
+#plot "out.roc.sel.labels" using ($0):8:xtic(1) with boxes
+#
+# Make the x axis labels easier to read.
+#set xtics rotate out
+# Select histogram data
+#set style data histogram
+# Give the bars a plain fill pattern, and draw a solid line around them.
+#set style fill solid border
+#set style histogram clustered
+#plot for [COL=2:4] 'date_mins.tsv' using COL:xticlabels(1) title columnheader
+#
+out_gnuplot_file.write("# histogram\n")
+out_gnuplot_file.write("reset\n")
+out_gnuplot_file.write("A = \"#99ffff\"; B = \"#4671d5\"; C = \"#ff0000\"; D = \"#f36e00\"\n")
+out_gnuplot_file.write("set style data histogram\n")
+out_gnuplot_file.write("set style histogram cluster gap 1\n")
+out_gnuplot_file.write("set style fill solid border -1\n")
+out_gnuplot_file.write("set xtics border rotate by 270 offset 0,0\n")
+out_gnuplot_file.write("set boxwidth 0.9\n")
+out_gnuplot_file.write("plot [][0:1] \\\n")
+out_gnuplot_file.write(" \""+out_labels_name+"\" using 5:xtic(1) ti 'accuracy'\\\n")
+out_gnuplot_file.write(",\""+out_labels_name+"\" using 6 ti \"precision\"\\\n")
+out_gnuplot_file.write(",\""+out_labels_name+"\" using 7 ti \"recall\"\\\n")
+out_gnuplot_file.write(",\""+out_labels_name+"\" using 8 ti \"Fscore\"\n")
+out_gnuplot_file.write("set terminal push\n")
+out_gnuplot_file.write("set terminal postscript eps enhanced color solid rounded lw 2 'Helvetica' 10\n")
+out_gnuplot_file.write("set out \""+out_labels_name+".hist.ps\"\n")
+out_gnuplot_file.write("replot\n")
+out_gnuplot_file.write("!epstopdf \""+out_labels_name+".hist.ps\"\n")
+out_gnuplot_file.write("set term pop\n")
 #
 out_gnuplot_file.close()
 
