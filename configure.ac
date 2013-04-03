@@ -52,7 +52,7 @@ AS_IF([test "x$with_folia" != xno],
                ./configure --prefix=<DIR> in the folia installation directory],
        [PKG_CONFIG_PATH="$withval/lib/pkgconfig:$PKG_CONFIG_PATH"],
        [PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$PKG_CONFIG_PATH"])
-       PKG_CHECK_MODULES([folia], [folia >= 0.9] )
+       PKG_CHECK_MODULES([folia], [folia >= 0.10] )
        CXXFLAGS="$folia_CFLAGS $CXXFLAGS"
        LIBS="$folia_LIBS $LIBS"
        AC_DEFINE(HAVE_FOLIA,1,[ We Have libfolia ])
@@ -71,7 +71,7 @@ AS_IF([test "x$with_timbl" != xno],
        PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$prefix/lib/pkgconfig"
        AC_DEFINE_UNQUOTED(TIMBL,"$prefix",[ Have Timbl ])
        ])
-  PKG_CHECK_MODULES([timbl], [timbl >= 6.2.1] )
+  PKG_CHECK_MODULES([timbl], [timbl >= 6.4.4] )
   CXXFLAGS="$CXXFLAGS $timbl_CFLAGS"
   LIBS="$LIBS $timbl_LIBS"
             ]
