@@ -61,7 +61,8 @@ while ( my $mline = get_next(*FHM) ) {
       my $px2_log2prob = $px2_parts[ $px_prob_pos ];
       my $c_name       = "?"; #$mg_parts[ $mg_c_name_pos ];
 
-      my $icu_str = $px2_icu.$px_icu;
+      #             -p file -m file
+      my $icu_str = $px_icu.$px2_icu;
       if ( ($c_name eq $fword) || ($fword eq "") ) {
 	if ( ($confine eq "") || ($confine eq $icu_str) ) {
 	  print "$pline\n$mline\n\n";
