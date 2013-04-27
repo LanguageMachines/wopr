@@ -3150,6 +3150,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
   bool               inc_sen          = stoi( c.get_value( "is", "0" )) == 1;
   int                skip             = 0;
+  int                bl               = stoi( c.get_value( "bl", "0" )); //baseline
   int                log_base         = stoi( c.get_value( "log", "2" ) ); // default like log2 before
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -3181,6 +3182,16 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   ws = lc + rc;
 
+  std::string bl_str = "";
+  if ( bl == 1 ) {
+    // create baseline "instance" which will return default
+    // instance
+    for( int i = 0; i < ws; i++ ) {
+      bl_str += "BHDHE735gGVDE625 "; //just hope this doesn't occur in text
+    }
+    bl_str += "_";
+  }
+
   // Sanity check.
   //
   if ( cache_size < 0 ) {
@@ -3205,6 +3216,9 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "cache:          "+to_str(cache_size) );
   l.log( "cache threshold:"+to_str(cache_threshold) );
   l.log( "incl. sentence: "+to_str(inc_sen) );
+  if ( bl > 0 ) {  
+    l.log( "baseline:       "+to_str(bl) );
+  }
   l.log( "id:             "+id );
   l.log( "log:            "+to_str(log_base) );
   //l.log( "OUTPUT:         "+output_filename );
@@ -3554,7 +3568,11 @@ int pplx_simple( Logfile& l, Config& c ) {
       //
       //
       long us0 = clock_u_secs();
-      tv = My_Experiment->Classify( a_line, vd );
+      if ( bl == 0 ) {
+	tv = My_Experiment->Classify( a_line, vd );
+      } else {
+	tv = My_Experiment->Classify( bl_str, vd );
+      }
       long us1 = clock_u_secs();
       timbl_time += (us1-us0);
       if ( ! tv ) {

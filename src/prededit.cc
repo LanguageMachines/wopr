@@ -1251,6 +1251,11 @@ void add_element(TiXmlElement* ele, const std::string& t, const std::string& v) 
 Letter only, with a dummy wrd ibase, and no "ds" parameter:
 ../../wopr -l -r pdt2web -p lc0:8,timbl0:'-a1 +D',ibasefile0:nyt.3e7.10000.lt8m1_-a1+D.ibase,lc1:2,
                             timbl1:'-a1 +D',ibasefile1:dummy.l2r0_-a1+D.ibase,dl:5,users:10
+other terminal:
+echo "START" | nc localhost 1984 
+echo "FEED 0 T" | nc localhost 1984 
+echo "FEED 0 h" | nc localhost 1984 
+echo "GEN 0" | nc localhost 1984 
 */
 int pdt2web( Logfile& l, Config& c ) {
   l.log( "work in progress pdt2web" );
