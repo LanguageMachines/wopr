@@ -2,6 +2,9 @@
 #
 # NB: difference in wopr transpose treatment.
 
+import time
+
+
 def levenshtein(a,b):
     "Calculates the Levenshtein distance between a and b."
     n, m = len(a), len(b)
@@ -37,6 +40,7 @@ def levenshtein_wp(s1, s2):
             deletions = current_row[j] + 1       # than s2
             substitutions = previous_row[j] + (c1 != c2)
             current_row.append(min(insertions, deletions, substitutions))
+
         previous_row = current_row
  
     return previous_row[-1]
@@ -44,6 +48,16 @@ def levenshtein_wp(s1, s2):
 
 if __name__=="__main__":
     from sys import argv
-    print levenshtein(argv[1],argv[2])
-    print levenshtein_wp(argv[1],argv[2])
+    t0 = time.time()
+    for i in xrange(0,10000):
+        x = levenshtein(argv[1],argv[2])
+    print x
+    t1 = time.time()
+    print t1-t0
+    t0 = time.time()
+    for i in xrange(0,10000):
+        x =  levenshtein_wp(argv[1],argv[2])
+    print x
+    t1 = time.time()
+    print t1-t0
 
