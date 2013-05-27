@@ -59,4 +59,11 @@ class distr_elem_cmp_ptr {
   } 
 }; 
 
+class distr_elem_cmprev_ptr {
+ public:
+  bool operator() (const distr_elem* de1, const distr_elem* de2) const {
+    return de2->freq < de1->freq;
+  } 
+}; 
+
 #endif

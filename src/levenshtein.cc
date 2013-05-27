@@ -900,14 +900,14 @@ int correct( Logfile& l, Config& c ) {
 	       << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
       file_out << word_lp << ' ';
       int cntr = 0;
-      sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+      sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
       std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
       file_out << cnt << " [ ";
       while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
 		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
 		delete *fi;
 		fi++;
-      }
+	  }
       distr_vec.clear();
       file_out << "]";
       file_out << std::endl;
