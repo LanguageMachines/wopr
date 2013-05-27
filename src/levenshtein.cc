@@ -865,7 +865,7 @@ int correct( Logfile& l, Config& c ) {
 			  //
 			  distr_elem* d = new distr_elem(); 
 			  d->name = tvs;
-			  d->freq = ld;
+			  d->freq = wght;
 			  d->ld = ld;
 			  tvsfi = wfreqs.find( tvs );
 			  if ( tvsfi == wfreqs.end() ) {
