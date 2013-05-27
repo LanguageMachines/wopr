@@ -432,7 +432,8 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 		//
 		distr_elem* d = new distr_elem(); 
 		d->name = tvs;
-		d->freq = ld;  //NB, we store levenshtein distance, not frequency
+		d->freq = wght; //was ld;  //NB, we store levenshtein distance, not frequency
+		d->ld = ld;
 		tvsfi = wfreqs.find( tvs );
 		if ( tvsfi == wfreqs.end() ) {
 		  d->lexfreq = 0;
@@ -865,6 +866,7 @@ int correct( Logfile& l, Config& c ) {
 			  distr_elem* d = new distr_elem(); 
 			  d->name = tvs;
 			  d->freq = ld;
+			  d->ld = ld;
 			  tvsfi = wfreqs.find( tvs );
 			  if ( tvsfi == wfreqs.end() ) {
 				d->lexfreq = 0;
@@ -902,7 +904,7 @@ int correct( Logfile& l, Config& c ) {
       std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
       file_out << cnt << " [ ";
       while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
 		delete *fi;
 		fi++;
       }

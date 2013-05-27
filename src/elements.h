@@ -42,6 +42,7 @@ class distr_elem {
   std::string name; 
   double      freq;
   double      lexfreq;
+  int         ld;
 
   distr_elem();
   ~distr_elem();
