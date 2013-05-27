@@ -1132,44 +1132,44 @@ int multi_gated( Logfile& l, Config& c ) {
       known = "u";
       wfi = wfreqs.find(target);
       if ( wfi != wfreqs.end() ) {
-	multidist.prob = (int)(*wfi).second / (double)total_count;
-	known = "k";
+		multidist.prob = (int)(*wfi).second / (double)total_count;
+		known = "k";
       }
     }
     if ( mode == 1 ) {
       double word_lp = 0.0;
       if ( multidist.prob == 0 ) {
-	file_out << "0 ";
+		file_out << "0 ";
       } else {
-	file_out << log2( multidist.prob ) << " ";
-	word_lp = pow(2, -log2(multidist.prob));
+		file_out << log2( multidist.prob ) << " ";
+		word_lp = pow(2, -log2(multidist.prob));
       }
       file_out << multidist.entropy << " " << word_lp << " ";
     } else {
       if ( multidist.prob == 0 ) {
-	file_out << "0 ";
+		file_out << "0 ";
       } else {
-	file_out << log2( multidist.prob ) << " ";
+		file_out << log2( multidist.prob ) << " ";
       }
     }
-
+	
     // Indicator if it was correct or not.
     // We have gated:correct/indist/wrong, and idem for default.
     //
     if ( mode != 1 ) {
       if ( cl->get_type() == 4 ) {
-	file_out << "D ";
+		file_out << "D ";
       } else {
-	file_out << "G ";
+		file_out << "G ";
       }
       file_out << cl->id << " ";
       
       if ( multidist.info == INFO_WRONG ) {
-	file_out << "ic ";
+		file_out << "ic ";
       } else if ( multidist.info == INFO_CORRECT ) {
-	file_out << "cg ";
+		file_out << "cg ";
       } else { // INFO_INDISTR is left
-	file_out << "cd ";
+		file_out << "cd ";
       }
       file_out << known << " ";
       
@@ -1179,11 +1179,11 @@ int multi_gated( Logfile& l, Config& c ) {
     // sc format prints only cnt, we want to be the same
     //
     file_out << multidist.cnt << " ";
-
+	
     if ( mode != 1 ) {
       file_out << multidist.distr_count << " ";
     }
-
+	
     // For MRR, this makes output format different from px output again.
     //
     if ( mode != 1 ) {
@@ -1197,17 +1197,17 @@ int multi_gated( Logfile& l, Config& c ) {
       int cnt = multidist.cnt;
       std::string tmp;
       if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) { 
-	std::vector<distr_elem*> distr_vec;
-	distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio);
-	sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
-	std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
-	int cntr = 0;
-	while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-	  tmp = tmp + " " + (*fi)->name + " " + to_str((double)((*fi)->freq));
-	  delete *fi;
-	  fi++;
-	}
-	distr_vec.clear();
+		std::vector<distr_elem*> distr_vec;
+		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0);
+		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+		std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+		int cntr = 0;
+		while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+		  tmp = tmp + " " + (*fi)->name + " " + to_str((double)((*fi)->freq));
+		  delete *fi;
+		  fi++;
+		}
+		distr_vec.clear();
       }
       file_out << "[" << tmp << " ]";
     } else { // normal topn distribution output
@@ -1216,15 +1216,15 @@ int multi_gated( Logfile& l, Config& c ) {
       dei = multidist.distr.begin();
       file_out << "[";
       while ( dei != multidist.distr.end() ) { 
-	if ( --cntr >= 0 ) {
-	  //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
-	  file_out << " " << (*dei).token << " " << (*dei).freq;
-	}
-	dei++;
+		if ( --cntr >= 0 ) {
+		  //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
+		  file_out << " " << (*dei).token << " " << (*dei).freq;
+		}
+		dei++;
       }
       file_out << " ]";
     }
-
+	
     file_out << std::endl;
   }
   file_in.close();
