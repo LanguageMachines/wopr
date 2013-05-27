@@ -422,10 +422,11 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 		factor = tvs_lf / target_lexfreq;
       }
       //
-      //std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
+      // std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
       // If the target is not found (unknown words), we have no
-      // ratio, and we only use the other parameters, ie. this
-      // test falls through.
+      // ratio, we store the ditribution element (possible correction).
+	  // IF we have a ratio, and it is >= min_ratio, we also store
+	  // this possible correction.
       //
       if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
 		//
@@ -440,7 +441,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 		}
 		
 		distr_vec.push_back( d );
-      } // factor>min_ratio
+      } // factor>=min_ratio
     }
     
     ++it;
