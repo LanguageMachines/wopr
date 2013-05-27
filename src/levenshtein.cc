@@ -373,7 +373,7 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
 //
 void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
 		     std::vector<distr_elem*>& distr_vec,
-		     int mld, double min_ratio) {
+					 int mld, double min_ratio, double target_lexfreq) {
 
   int    cnt             = 0;
   int    distr_count     = 0;
@@ -382,7 +382,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
   double prob            = 0.0;
   double target_distprob = 0.0;
   double answer_prob     = 0.0;
-  double target_lexfreq  = 0.0;
+  //double target_lexfreq  = 0.0; // now parameter
 
   cnt = vd->size();
   distr_count = vd->totalSize();
@@ -393,13 +393,13 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
   double factor = 0.0;
   
   // NB some of the test are outside this loop (max_distr, in_distr)
-  while ( it != vd->end() ) {
+  while ( it != vd->end() ) { // loop over distribution
     
-    std::string tvs  = it->second->Value()->Name();
-    double      wght = it->second->Weight();
-    int ld = lev_distance( target, tvs );
+    std::string tvs  = it->second->Value()->Name(); // element in distribution
+    double      wght = it->second->Weight(); // frequency of distr. element
+    int         ld   = lev_distance( target, tvs ); // LD with target (word in text)
     
-    // If the ld of the word is less than the minimum,
+    // If the ld of the word is less than the maximum ld (mld parameter),
     // we include the result in our output.
     //
     if (
@@ -407,12 +407,16 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 		( ld <= mld )
 		) { 
       //
-      // So here we check frequency of tvs from the distr. with
+      // So here we check frequency of element from the distr. with
       // frequency of the target. As parameter, we prolly already know it?
-      // 
+      // This is to determine if, even if target is a dictionary word,
+	  // it could be a misspelt word. Calculate the ratio between the
+	  // element from the distribution and the frequency of the target.
+	  // (PJB: should we not check target DISTR frequency?)
       int    tvs_lf = 0;
       double factor = 0.0;
       wfi = wfreqs.find( tvs );
+	  // if we find distr. element in lexicon, and target is in lexicon
       if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
 		tvs_lf =  (int)(*wfi).second;
 		factor = tvs_lf / target_lexfreq;
@@ -427,7 +431,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 		//
 		distr_elem* d = new distr_elem(); 
 		d->name = tvs;
-		d->freq = ld;
+		d->freq = ld;  //NB, we store levenshtein distance, not frequency
 		tvsfi = wfreqs.find( tvs );
 		if ( tvsfi == wfreqs.end() ) {
 		  d->lexfreq = 0;
@@ -595,7 +599,7 @@ int correct( Logfile& l, Config& c ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
       if ( wfreq == 1 ) {
-	++N_1;
+		++N_1;
       }
     }
     file_lexicon.close();
@@ -633,8 +637,6 @@ int correct( Logfile& l, Config& c ) {
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
   //l.log( "P(new_particular) = " + to_str(p0) );
-
-  // Timbl was here
 
   for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
     std::string a_file = *fi;
@@ -878,7 +880,7 @@ int correct( Logfile& l, Config& c ) {
       }
 #else
       if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
-		distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio);
+		distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq);
       }
 #endif
 	  
