@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2008 - 2011 Peter Berck                                         *
+ * Copyright 2008 - 2013 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -31,7 +31,7 @@ int levenshtein( Logfile&, Config& );
 void distr_spelcorr( const Timbl::ValueDistribution *, const std::string&, std::map<std::string,int>&,
 					 std::vector<distr_elem*>&,int, double, double);
 int correct( Logfile&, Config& );
-int lev_distance(const std::string&, const std::string&);
+int lev_distance(const std::string&, const std::string&, int);
 int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
 

@@ -166,6 +166,8 @@ if ($oneliner) {
   if ($errors != 0) {
 	my $out = sprintf("%.2f %.2f %.2f %.2f", ($good_sugg/$errors*100),($bad_sugg/$errors*100),($wrong_sugg/$errors*100),($no_sugg/$errors*100));
 	print "$out\n";
+  } else {
+	print "\n";
   }
 } else {
   print "lines:      $lines\n";
