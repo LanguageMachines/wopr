@@ -119,6 +119,9 @@ int main( int argc, char* argv[] ) {
   std::string blurb = "Starting " + std::string(PACKAGE) + " " +
                       std::string(VERSION);
   l.log( blurb );
+#ifndef TRANSPLD2
+  l.log( "Transpose is atomic." );
+#endif
 #ifdef TIMBL
   l.log( "Timbl support built in." );
   if ( TIMBL != "yes" ) {

@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2013 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -334,6 +334,7 @@ int levenshtein( Logfile& l, Config& c ) {
   l.log( "12-123: "+to_str( lev_distance( "12", "123", mld )));
   l.log( "123-12: "+to_str( lev_distance( "123", "12", mld )));
   l.log( "aaaa-aaaaa: "+to_str( lev_distance( "aaaa", "aaaaa", mld )));
+  l.log( "aaaaa-aaaa: "+to_str( lev_distance( "aaaaa", "aaaa", mld )));
   l.log( "aaaabbbb-aaaabbbb: "+to_str( lev_distance( "aaaabbbb", "aaaabbbb", mld )));
   l.log( "aaaabbbb-aaababbb: "+to_str( lev_distance( "aaaabbbb", "aaababbb", mld )));
   l.log( "aaaabbbb-aabababb: "+to_str( lev_distance( "aaaabbbb", "aabababb", mld )));
@@ -341,6 +342,7 @@ int levenshtein( Logfile& l, Config& c ) {
   l.log( "sor-sör: "+to_str( lev_distance( "sor", "sör", mld )));
   l.log( "transpåöx-transpöåx: "+to_str( lev_distance( "transpåöx", "transpöåx", mld )));
   l.log( "källardörrhål-källardörrhål: "+to_str( lev_distance( "källardörrhål", "källardörhål", mld )));
+  l.log( "至高-高至"+to_str( lev_distance( "至高", "高至", mld )));
   return 0;
 }
 
