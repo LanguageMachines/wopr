@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007, 2011 Peter Berck                                          *
+ * Copyright 2007, 2013 Peter Berck                                          *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -226,221 +226,221 @@ int server2(Logfile& l, Config& c) {
       // Measure processing time.
       //
       long f1 = l.clock_mu_secs();
-
-      if ( c.get_status() && ( ! fork() )) { // this is the child process
-
-	bool connection_open = true;
-	while ( connection_open ) {
-
-	long f000 = l.clock_mu_secs();
-	
-	std::string tmp_buf;
-	newSock->read( tmp_buf );
-	tmp_buf = trim( tmp_buf, " \n\r" );
-
-	long f001 = l.clock_mu_secs();
-	long diff001 = f001 - f000;
-	l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
-
-	if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
-	  connection_open = false;
-	  break;
-	}
-
-	// ----
-	// here we got a line to test. Now what if this were a filename?
-	// Start looping over file here.
-	// ----
-
-	if ( tmp_buf.substr( 0, 5 ) == "file:" ) {
-
-	  l.log( "NOTICE: file mode in socket!" );
-	  int pos = tmp_buf.find( ':', 0 );
-	  if ( pos != std::string::npos ) {
-	    std::string lhs = trim(tmp_buf.substr( 0, pos ));
-	    std::string rhs = trim(tmp_buf.substr( pos+1 ));
-	    l.log( "Filename: " + rhs );
-	    socket_file( l, c, My_Experiment, rhs, wfreqs, total_count);
-	    std::string p = "ready.";
-	    newSock->write( p );
-	  } else {
-	    l.log( "ERROR: cannot parse filename." );
-	  }
-	}
-
-	//
-	// ----
-
-	// Hapax.
-	//
-	std::string classify_line;
-	if ( hapax > 0 ) {
-	  hapax_line( tmp_buf, wfreqs, hapax, 1, classify_line );
-	} else {
-	  classify_line = tmp_buf;
-	}
-
-	// Start & end symbols. Set sentence:0 to enable.
-	//
-	std::string ssym = "<s>";
-	std::string esym = "</s>";
-	if ( sentence == 1 ) {
-	  classify_line = ssym + " " + classify_line + " " + esym; 
-	}
-	l.log( "|" + classify_line + "|" );
-
-	std::vector<std::string> results;
-	std::vector<std::string> targets;
-	std::vector<std::string>::iterator ri;
-
-	// The targets are in a seperate array, which is (in this case)
-	// the same as the input line.
-	//
-	std::string t;
-	if ( (hapax > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
-	  hapax_line( tmp_buf, wfreqs, hapax, 1, t );
-	} else {
-	  t = tmp_buf;
-	}
-	if ( sentence == 1 ) {
-	  t = ssym + " " + t + " " + esym; 
-	}
-	Tokenize( t, targets, ' ' );
-	std::vector<std::string>::iterator ti = targets.begin();
-
-	double total_logprob = 0.0; // Sum of log2(p)
-
-	// The JSON reply to the client (nc or timbl.php).
-	//
-	std::string q;
-	std::string json;
-	std::string js_cl;
-	std::string js_p;
-	if ( output == 1 ) { // 1 is JSON output
-	  q     = "\'";
-	  json  = "{"+q+"results"+q+":[";
-	  js_cl = q+"classifications"+q+":[";
-	  js_p  = q+"probs"+q+":["; // what kind op probabilities
-	}
-
-	// results is an array with the line windowed.
-	// The targets are in another array.
-	//
-	// WHERE DO WE HAPAX? After, or before we window?
-	//
-	window( classify_line, t, ws, 0, false, results );
-	for ( ri = results.begin(); ri != results.end(); ri++ ) {
-
-	  std::string cl = *ri;
 	  
-	  //l.log( cl ); // debug output
-
-	  // Classify this buf.
-	  //
-	  // Update: If the last word in the context (the word before the
-	  // target is unknown, we skip Timbl, and take the a priori
-	  // word probability from the lexicon. This avoids Timbl
-	  // failing on the top-node and returning a distribution
-	  // containing everything.
-	  //
-	  std::string target = *ti; // was *ri
-
-	  // Determine word before target. Look it up.
-	  // If unknow, skip classification because it will only
-	  // return the default distro (big).
-	  //
-	  std::vector<std::string> lcs; // left context, last word.
-	  Tokenize( cl, lcs, ' ' );
-	  std::string lc = lcs.at(ws-1);
-	  std::map<std::string,int>::iterator wfi = wfreqs.find(lc);
-	  bool lc_unknown = false;
-	  /*
-	  if ( ( lc != "_") && (wfi == wfreqs.end()) ) {
-	    lc_unknown = true;
-	  }
-	  */
-
-	  if ( lc_unknown == false ) {
-	    //My_Experiment->Classify( cl, result, distrib, distance );
-	    tv = My_Experiment->Classify( cl, vd, distance );
-	    if ( ! tv ) {
-	      l.log("ERROR: Timbl returned a classification error, aborting.");
-	      break;
-	    }
-	    result = tv->Name();
-	  } else {
-	    //
-	    // Set some dummy values so we can fall through the rest
-	    // of the code.
-	    //
-	    //l.log( "Skipping Timbl for unknown context word:" + lc );
-	    result   = "__SKIPPED__"; // make sure this is not in lexicon...
-	    distrib  = "{}";
-	    distance = 10.0;
-	  }
-
-	  // Grok the distribution returned by Timbl.
-	  //
-	  std::map<std::string, double> res;
-	  parse_distribution2( vd, res ); // was parse_distribution(...)
-
-	  // Start calculating.
-	  //
-	  double prob = 0.0;
-	  if ( target == result ) {
-	    // we got it, no confusion.
-	    // Count right answers?
-	  }
-	  //
-	  // Look for the target word in the distribution returned by Timbl.
-	  // If it wasn't, look it up in the lexicon.
-	  //   If in lexicon, take lexicon prob.
-	  //   If not in lexicon, unknown, take default low prob. SMOOTHING!
-	  // If it was in distribution
-	  //    Take prob. in distribution.
-	  //
-	  std::map<std::string,double>::iterator foo = res.find(target);
-	  if ( foo == res.end() ) { // not found. Problem for log.
-	    //
-	    // Fall back 1: look up in dictionary.
-	    //
-	    std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-	    if ( wfi == wfreqs.end() ) { // not found.
-	      if ( output == 1) {
-		js_p = js_p + "{" + q + json_safe(target) + q + ":" 
-		  + q + "unk" + q + "}";
-	      }
-	    } else {
-	      // Found, take p(word in lexicon)
-	      //
-	      prob = (int)(*wfi).second / (double)total_count ;
-	      if ( output == 1) {
-		js_p = js_p + "{" + q + json_safe(target) + q + ":" 
-		  + q + "lex" + q + "}";
-	      }
-	    }
-	  } else {
-	    //
-	    // Our target was in the distribution returned by Timbl.
-	    // Take the probability of word in distribution.
-	    //
-	    prob = (*foo).second;
-	    if ( output == 1 ) {
-	      js_p = js_p + "{" + q + json_safe(target) + q + ":" 
-		+ q + "dist" + q + "}";
-	    }
-	  }
-
-	  // Good Turing smoothing oid. implementeren :)
-	  //
-	  if ( prob == 0.0 ) {
-	    prob = unk_prob; // KLUDGE!!! for testing.
-	  }
-	  total_logprob += log2( prob );
-
-	  if ( verbose == 1 ) {
-	    l.log( "[" + cl + "] = " + result );
-	  }
+      if ( c.get_status() && ( ! fork() )) { // this is the child process
+		
+		bool connection_open = true;
+		while ( connection_open ) {
+		  
+		  long f000 = l.clock_mu_secs();
+		  
+		  std::string tmp_buf;
+		  newSock->read( tmp_buf );
+		  tmp_buf = trim( tmp_buf, " \n\r" );
+		  
+		  long f001 = l.clock_mu_secs();
+		  long diff001 = f001 - f000;
+		  l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
+		  
+		  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
+			connection_open = false;
+			break;
+		  }
+		  
+		  // ----
+		  // here we got a line to test. Now what if this were a filename?
+		  // Start looping over file here.
+		  // ----
+		  
+		  if ( tmp_buf.substr( 0, 5 ) == "file:" ) {
+			
+			l.log( "NOTICE: file mode in socket!" );
+			int pos = tmp_buf.find( ':', 0 );
+			if ( pos != std::string::npos ) {
+			  std::string lhs = trim(tmp_buf.substr( 0, pos ));
+			  std::string rhs = trim(tmp_buf.substr( pos+1 ));
+			  l.log( "Filename: " + rhs );
+			  socket_file( l, c, My_Experiment, rhs, wfreqs, total_count);
+			  std::string p = "ready.";
+			  newSock->write( p );
+			} else {
+			  l.log( "ERROR: cannot parse filename." );
+			}
+		  }
+		  
+		  //
+		  // ----
+		  
+		  // Hapax.
+		  //
+		  std::string classify_line;
+		  if ( hapax > 0 ) {
+			hapax_line( tmp_buf, wfreqs, hapax, 1, classify_line );
+		  } else {
+			classify_line = tmp_buf;
+		  }
+		  
+		  // Start & end symbols. Set sentence:0 to enable.
+		  //
+		  std::string ssym = "<s>";
+		  std::string esym = "</s>";
+		  if ( sentence == 1 ) {
+			classify_line = ssym + " " + classify_line + " " + esym; 
+		  }
+		  l.log( "|" + classify_line + "|" );
+		  
+		  std::vector<std::string> results;
+		  std::vector<std::string> targets;
+		  std::vector<std::string>::iterator ri;
+		  
+		  // The targets are in a seperate array, which is (in this case)
+		  // the same as the input line.
+		  //
+		  std::string t;
+		  if ( (hapax > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
+			hapax_line( tmp_buf, wfreqs, hapax, 1, t );
+		  } else {
+			t = tmp_buf;
+		  }
+		  if ( sentence == 1 ) {
+			t = ssym + " " + t + " " + esym; 
+		  }
+		  Tokenize( t, targets, ' ' );
+		  std::vector<std::string>::iterator ti = targets.begin();
+		  
+		  double total_logprob = 0.0; // Sum of log2(p)
+		  
+		  // The JSON reply to the client (nc or timbl.php).
+		  //
+		  std::string q;
+		  std::string json;
+		  std::string js_cl;
+		  std::string js_p;
+		  if ( output == 1 ) { // 1 is JSON output
+			q     = "\'";
+			json  = "{"+q+"results"+q+":[";
+			js_cl = q+"classifications"+q+":[";
+			js_p  = q+"probs"+q+":["; // what kind op probabilities
+		  }
+		  
+		  // results is an array with the line windowed.
+		  // The targets are in another array.
+		  //
+		  // WHERE DO WE HAPAX? After, or before we window?
+		  //
+		  window( classify_line, t, ws, 0, false, results );
+		  for ( ri = results.begin(); ri != results.end(); ri++ ) {
+			
+			std::string cl = *ri;
+			
+			//l.log( cl ); // debug output
+			
+			// Classify this buf.
+			//
+			// Update: If the last word in the context (the word before the
+			// target is unknown, we skip Timbl, and take the a priori
+			// word probability from the lexicon. This avoids Timbl
+			// failing on the top-node and returning a distribution
+			// containing everything.
+			//
+			std::string target = *ti; // was *ri
+			
+			// Determine word before target. Look it up.
+			// If unknow, skip classification because it will only
+			// return the default distro (big).
+			//
+			std::vector<std::string> lcs; // left context, last word.
+			Tokenize( cl, lcs, ' ' );
+			std::string lc = lcs.at(ws-1);
+			std::map<std::string,int>::iterator wfi = wfreqs.find(lc);
+			bool lc_unknown = false;
+			/*
+			  if ( ( lc != "_") && (wfi == wfreqs.end()) ) {
+			  lc_unknown = true;
+			  }
+			*/
+			
+			if ( lc_unknown == false ) {
+			  //My_Experiment->Classify( cl, result, distrib, distance );
+			  tv = My_Experiment->Classify( cl, vd, distance );
+			  if ( ! tv ) {
+				l.log("ERROR: Timbl returned a classification error, aborting.");
+				break;
+			  }
+			  result = tv->Name();
+			} else {
+			  //
+			  // Set some dummy values so we can fall through the rest
+			  // of the code.
+			  //
+			  //l.log( "Skipping Timbl for unknown context word:" + lc );
+			  result   = "__SKIPPED__"; // make sure this is not in lexicon...
+			  distrib  = "{}";
+			  distance = 10.0;
+			}
+			
+			// Grok the distribution returned by Timbl.
+			//
+			std::map<std::string, double> res;
+			parse_distribution2( vd, res ); // was parse_distribution(...)
+			
+			// Start calculating.
+			//
+			double prob = 0.0;
+			if ( target == result ) {
+			  // we got it, no confusion.
+			  // Count right answers?
+			}
+			//
+			// Look for the target word in the distribution returned by Timbl.
+			// If it wasn't, look it up in the lexicon.
+			//   If in lexicon, take lexicon prob.
+			//   If not in lexicon, unknown, take default low prob. SMOOTHING!
+			// If it was in distribution
+			//    Take prob. in distribution.
+			//
+			std::map<std::string,double>::iterator foo = res.find(target);
+			if ( foo == res.end() ) { // not found. Problem for log.
+			  //
+			  // Fall back 1: look up in dictionary.
+			  //
+			  std::map<std::string,int>::iterator wfi = wfreqs.find(target);
+			  if ( wfi == wfreqs.end() ) { // not found.
+				if ( output == 1) {
+				  js_p = js_p + "{" + q + json_safe(target) + q + ":" 
+					+ q + "unk" + q + "}";
+				}
+			  } else {
+				// Found, take p(word in lexicon)
+				//
+				prob = (int)(*wfi).second / (double)total_count ;
+				if ( output == 1) {
+				  js_p = js_p + "{" + q + json_safe(target) + q + ":" 
+					+ q + "lex" + q + "}";
+				}
+			  }
+			} else {
+			  //
+			  // Our target was in the distribution returned by Timbl.
+			  // Take the probability of word in distribution.
+			  //
+			  prob = (*foo).second;
+			  if ( output == 1 ) {
+				js_p = js_p + "{" + q + json_safe(target) + q + ":" 
+				  + q + "dist" + q + "}";
+			  }
+			}
+			
+			// Good Turing smoothing oid. implementeren :)
+			//
+			if ( prob == 0.0 ) {
+			  prob = unk_prob; // KLUDGE!!! for testing.
+			}
+			total_logprob += log2( prob );
+			
+			if ( verbose == 1 ) {
+			  l.log( "[" + cl + "] = " + result );
+			}
 
 	  /* Takes time!
 	  std::cout << "[" << cl << "] = " << result 
@@ -451,81 +451,81 @@ int server2(Logfile& l, Config& c) {
 	  //std::cout << distrib << std::endl;
 	  */
 
-	  if ( output == 1 ) {
-	    json = json + "{" + q + json_safe(result) + q + ":" 
-	      + q + to_str( prob, precision ) + q + "}";
-	    
-	    js_cl = js_cl + "{" + q + json_safe(target) + q + ":" 
-	      + q + json_safe(result) + q + "}";
-	    
-	    if ( ri != results.end()-1 ) { // add a comma except for the last
-	      json  = json  + ",";
-	      js_cl = js_cl + ",";
-	      js_p  = js_p  + ",";
-	    }
-	  }
-	  result = result + " " + to_str(prob, precision) + "\n"; // not used?
-
-	  //if (send(new_fd, result.c_str(), result.length(), 0) == -1)
-	  //perror("send");
-
-	  ti++;
-	} // end sentence
-
-	long f2 = l.clock_mu_secs();
-	long diff_mu_secs = f2 - f001;
-	l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
-
-	total_logprob = - total_logprob;
-	double avg_logprob = total_logprob / (double)results.size();
-	double total_prplx = pow( 2, avg_logprob );
-	l.log( "total_prplx = " + to_str(total_prplx) );
-	result = to_str(total_prplx, precision) + "\n";
-
-	if ( output == 1 ) {
-	  json = json + "]," + q + "prplx" + q + ":" 
-	    + q + to_str(total_prplx, precision) + q;
-	  
-	  js_cl = js_cl + "]";
-	  js_p = js_p + "]";
-	  
-	  json = json + "," + q + "ibasefile" + q + ":"
-	    + q + c.get_value( "ibasefile" ) + q;
-	  
-	  json = json + "," + q + "lexicon" + q + ":"
-	    + q + lexicon_filename + q;
-	  
-	  json = json + "," + q + "total_count" + q + ":"
-	    + q + to_str( total_count ) + q;
-	  
-	  json = json + "," + q + "status" + q + ":"
-	    + q + "ok" + q;
-	  
-	  json = json + "," + q + "microseconds" + q + ":"
-	    + q + to_str(diff_mu_secs) + q;
-	  
-	  json = json + "," + js_cl; 
-	  json = json + "," + js_p; 
-	  
-	  json = json + " }\n";
-	  
-	  // Should send extra info from c?
-
-	  newSock->write( json );
-	}
-	
-	if ( output == 0 ) { // 0 is perplexity only
-	  std::string p = to_str(total_prplx) + "\n";
-	  newSock->write( p );
-	}
-	
-	//close(new_fd);
-	
-	long f3 = l.clock_mu_secs();
-	long diff2_mu_secs = f3 - f2;
-	l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
-	} // connection_open
-	_exit(0);
+			if ( output == 1 ) {
+			  json = json + "{" + q + json_safe(result) + q + ":" 
+				+ q + to_str( prob, precision ) + q + "}";
+			  
+			  js_cl = js_cl + "{" + q + json_safe(target) + q + ":" 
+				+ q + json_safe(result) + q + "}";
+			  
+			  if ( ri != results.end()-1 ) { // add a comma except for the last
+				json  = json  + ",";
+				js_cl = js_cl + ",";
+				js_p  = js_p  + ",";
+			  }
+			}
+			result = result + " " + to_str(prob, precision) + "\n"; // not used?
+			
+			//if (send(new_fd, result.c_str(), result.length(), 0) == -1)
+			//perror("send");
+			
+			ti++;
+		  } // end sentence
+		  
+		  long f2 = l.clock_mu_secs();
+		  long diff_mu_secs = f2 - f001;
+		  l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
+		  
+		  total_logprob = - total_logprob;
+		  double avg_logprob = total_logprob / (double)results.size();
+		  double total_prplx = pow( 2, avg_logprob );
+		  l.log( "total_prplx = " + to_str(total_prplx) );
+		  result = to_str(total_prplx, precision) + "\n";
+		  
+		  if ( output == 1 ) {
+			json = json + "]," + q + "prplx" + q + ":" 
+			  + q + to_str(total_prplx, precision) + q;
+			
+			js_cl = js_cl + "]";
+			js_p = js_p + "]";
+			
+			json = json + "," + q + "ibasefile" + q + ":"
+			  + q + c.get_value( "ibasefile" ) + q;
+			
+			json = json + "," + q + "lexicon" + q + ":"
+			  + q + lexicon_filename + q;
+			
+			json = json + "," + q + "total_count" + q + ":"
+			  + q + to_str( total_count ) + q;
+			
+			json = json + "," + q + "status" + q + ":"
+			  + q + "ok" + q;
+			
+			json = json + "," + q + "microseconds" + q + ":"
+			  + q + to_str(diff_mu_secs) + q;
+			
+			json = json + "," + js_cl; 
+			json = json + "," + js_p; 
+			
+			json = json + " }\n";
+			
+			// Should send extra info from c?
+			
+			newSock->write( json );
+		  }
+		  
+		  if ( output == 0 ) { // 0 is perplexity only
+			std::string p = to_str(total_prplx) + "\n";
+			newSock->write( p );
+		  }
+		  
+		  //close(new_fd);
+		  
+		  long f3 = l.clock_mu_secs();
+		  long diff2_mu_secs = f3 - f2;
+		  l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
+		} // connection_open
+		_exit(0);
       } // fork
       delete newSock;
     }
@@ -1267,7 +1267,7 @@ int server4(Logfile& l, Config& c) {
 	  
 	} // connection_open
 	
-        l.log( "connection closed." );
+	l.log( "connection closed." );
 	if ( ! running ) {
 	  // Rather crude, children with connexion keep working
 	  // till exited/removed by system.
@@ -1276,18 +1276,18 @@ int server4(Logfile& l, Config& c) {
 	size_t ccs = cache->get_size();
 	l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
 	l.log( cache->stat() );
-        ccs = icache->get_size();
-        l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
-        l.log( icache->stat() );
+	ccs = icache->get_size();
+	l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
+	l.log( icache->stat() );
 	_exit(0);
-
+	
       } else if ( cpid == -1 ) { // fork failed
-	l.log( "Error forking." );
-	perror("fork");
-	return(1);
+		l.log( "Error forking." );
+		perror("fork");
+		return(1);
       }
       delete newSock;
-
+	  
     } // running
   } // try
   catch ( const std::exception& e ) {
