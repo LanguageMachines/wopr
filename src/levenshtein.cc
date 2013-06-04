@@ -351,7 +351,7 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
 			  trans++;
 			}
 		  }
-		} else {
+		} else { // not cs
 		  if ( u_foldCase(u_source.charAt(i-2), 0) != u_foldCase(t_j, 0) ) {
 			//std::cerr << char(t_j) << char(u_source.charAt(i-2)) << std::endl;
 			trans++;
@@ -372,7 +372,6 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
 		}
       }
 #endif
-
       matrix[i][j] = cell;
     }
   }
@@ -405,10 +404,10 @@ int levenshtein( Logfile& l, Config& c ) {
   l.log( "transpåöx-transpöåx: "+to_str( lev_distance( "transpåöx", "transpöåx", mld, cs )));
   l.log( "källardörrhål-källardörrhål: "+to_str( lev_distance( "källardörrhål", "källardörhål", mld, cs )));
   l.log( "至高-高至"+to_str( lev_distance( "至高", "高至", mld, cs )));
-  l.log( "Sor-sor: "+to_str( lev_distance( "Sor", "sor", mld, true )));
-  l.log( "Sor-sor: "+to_str( lev_distance( "Sor", "sor", mld, false )));
-  l.log( "Sör-srÖ: "+to_str( lev_distance( "Sör", "srÖ", mld, true )));
-  l.log( "Sör-srÖ: "+to_str( lev_distance( "Sör", "srÖ", mld, false )));
+  l.log( "Sor-sor (cs): "+to_str( lev_distance( "Sor", "sor", mld, true )));
+  l.log( "Sor-sor (  ): "+to_str( lev_distance( "Sor", "sor", mld, false )));
+  l.log( "ABC-abc (cs): "+to_str( lev_distance( "ABC", "abc", mld, true )));
+  l.log( "ACB-abc (  ): "+to_str( lev_distance( "ACB", "abc", mld, false )));
 
   return 0;
 }
@@ -455,8 +454,7 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
 // tv = My_Experiment->Classify( a_line, vd );
 //
 void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
-		     std::vector<distr_elem*>& distr_vec,
-					 int mld, double min_ratio, double target_lexfreq, bool cs) {
+		     std::vector<distr_elem*>& distr_vec, int mld, double min_ratio, double target_lexfreq, bool cs) {
 
   int    cnt             = 0;
   int    distr_count     = 0;
@@ -754,6 +752,14 @@ int correct( Logfile& l, Config& c ) {
       return -1;
     }
 
+	// header
+	//
+#ifndef TRANSPLD2
+	file_out << "# cs:"+str(cs)+" transpose:1" << std::endl;
+#else
+	file_out << "# cs:"+str(cs)+" transpose:2" << std::endl;
+#fi
+
     std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
 
@@ -909,70 +915,9 @@ int correct( Logfile& l, Config& c ) {
       // Skip words shorter than mwl.
       //
       std::vector<distr_elem*> distr_vec;
-#undef OLDMETHOD
-#ifdef OLDMETHOD
-      it = vd->begin();
-      std::map<std::string,int>::iterator tvsfi;
-      double factor = 0.0;
-      // if in_distr==true, we can look if att ld=1, and then at freq.factor!
-      if ( (cnt <= max_distr) && (target.length() > mwl) && (in_distr == false) ) {
-		while ( it != vd->end() ) {
-		  
-		  // 20100111: freq voorspelde woord : te voorspellen woord > 1
-		  //             uit de distr          target
-		  
-		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight();
-		  int ld = lev_distance( target, tvs, mld, cs );
-		  
-		  // If the ld of the word is less than the minimum,
-		  // we include the result in our output.
-		  //
-		  if (
-			  ( ld <= mld ) && 
-			  (entropy <= max_ent) // should be outside loop
-			  ) { 
-			//
-			// So here we check frequency of tvs from the distr. with
-			// frequency of the target.
-			// 
-			int tvs_lf = 0;
-			double factor = 0.0;
-			wfi = wfreqs.find( tvs );
-			if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-			  tvs_lf =  (int)(*wfi).second;
-			  factor = tvs_lf / target_lexfreq;
-			}
-			//l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
-			// If the target is not found (unknown words), we have no
-			// ratio, and we only use the other parameters, ie. this
-			// test falls through.
-			//
-			if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
-			  //
-			  distr_elem* d = new distr_elem(); 
-			  d->name = tvs;
-			  d->freq = wght;
-			  d->ld = ld;
-			  tvsfi = wfreqs.find( tvs );
-			  if ( tvsfi == wfreqs.end() ) {
-				d->lexfreq = 0;
-			  } else {
-				d->lexfreq = (double)(*tvsfi).second;
-			  }
-			  
-			  distr_vec.push_back( d );
-			} // factor>min_ratio
-		  }
-		  
-		  ++it;
-		}
-      }
-#else
       if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
 		distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs);
       }
-#endif
 	  
       // Word logprob (ref. Antal's mail 21/11/08)
       // 2 ^ (-logprob(w)) 
