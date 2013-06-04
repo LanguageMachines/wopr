@@ -604,6 +604,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "max_distr:  "+to_str(max_distr) );
   l.log( "min_ratio:  "+to_str(min_ratio) );
   l.log( "max_tf:     "+to_str(max_tf) );
+  l.log( "cs:         "+to_str(cs) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
