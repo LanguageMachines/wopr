@@ -90,7 +90,7 @@
 const int transpld = 2;
 #else
 const int transpld = 1;
-#fi
+#endif
 
 char toLowerCase(char c) {
     return char( std::tolower(static_cast<unsigned char>( c ))); 
@@ -761,7 +761,11 @@ int correct( Logfile& l, Config& c ) {
 
 	// header
 	//
-	file_out << "# cs:"+to_str(cs)+" transpose:"+to_str(transpld) << std::endl;
+#ifndef TRANSPLD2
+	file_out << "# cs:"+to_str(cs)+" transpose:1" << std::endl;
+#else
+	file_out << "# cs:"+to_str(cs)+" transpose:2" << std::endl;
+#endif
 
     std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
