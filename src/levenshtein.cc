@@ -755,9 +755,9 @@ int correct( Logfile& l, Config& c ) {
 	// header
 	//
 #ifndef TRANSPLD2
-	file_out << "# cs:"+str(cs)+" transpose:1" << std::endl;
+	file_out << "# cs:"+to_str(cs)+" transpose:1" << std::endl;
 #else
-	file_out << "# cs:"+str(cs)+" transpose:2" << std::endl;
+	file_out << "# cs:"+to_str(cs)+" transpose:2" << std::endl;
 #fi
 
     std::vector<std::string>::iterator vi;
