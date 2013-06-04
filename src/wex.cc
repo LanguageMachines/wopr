@@ -1198,7 +1198,7 @@ int multi_gated( Logfile& l, Config& c ) {
       std::string tmp;
       if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) { 
 		std::vector<distr_elem*> distr_vec;
-		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0);
+		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true);
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 		std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 		int cntr = 0;
