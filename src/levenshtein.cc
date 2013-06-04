@@ -85,13 +85,6 @@
 #define BACKLOG 5        // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once 
 
-
-#ifndef TRANSPLD2
-const int transpld = 2;
-#else
-const int transpld = 1;
-#endif
-
 char toLowerCase(char c) {
     return char( std::tolower(static_cast<unsigned char>( c ))); 
 }
@@ -758,14 +751,6 @@ int correct( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot write output file." );
       return -1;
     }
-
-	// header
-	//
-#ifndef TRANSPLD2
-	file_out << "# cs:"+to_str(cs)+" transpose:1" << std::endl;
-#else
-	file_out << "# cs:"+to_str(cs)+" transpose:2" << std::endl;
-#endif
 
     std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
