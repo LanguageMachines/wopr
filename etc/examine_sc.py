@@ -46,8 +46,8 @@ for scf in all_files:
     min_entropy  =     0.0
     max_entropy  =   -99.0
     line_count   =     0
-    min_wordlp   =  1000
-    max_wordlp   =     0
+    min_wordlp   =  1000.0
+    max_wordlp   =     0.0
 
     distr_distsize = {}
 
@@ -111,11 +111,11 @@ for scf in all_files:
         if not matched and show_missed:
             print line[:-1] 
 
-    print "File", scf
-    print "Lines", line_count
-    print "Logprob", min_logprob, max_logprob
-    print "Entropy", min_entropy, max_entropy
-    print "Wordlp", min_wordlp, max_wordlp
+    print "File",     scf
+    print "Lines",    line_count
+    print "Logprob",  min_logprob, max_logprob
+    print "Entropy",  min_entropy, max_entropy
+    print "Wordlp",   min_wordlp, max_wordlp
     print "Distsize", min_distsize, max_distsize
 
     # File with data, and normalized distr size.
@@ -155,14 +155,10 @@ plot 'data.dat' using ($1-0.5):2 ti col smooth frequency with boxes
 
 set terminal pngcairo enhanced font "arial,10" size 1440, 900
 set output 'tmp_in_48hr.png'
-set xdata time
-set timefmt "%Y-%m-%dT%H:%M:%S"
-set format x "%m-%d %H:%M"
 set grid xtics ytics
 set xtics 7200 rotate by -60
 set rmargin at screen 0.95
 set ytics 1
-set title "Temperatuur binnen 48t"
 set key below
 unset colorbox
 set palette rgbformulae 33,13,10
