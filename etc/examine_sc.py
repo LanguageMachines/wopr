@@ -12,9 +12,10 @@ import tempfile
 
 sc_file = None
 all_files = []
+show_missed = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "d:f:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "d:f:s", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(2)
@@ -27,6 +28,8 @@ for o, a in opts:
         files = filter(test.search, files)    
         for a_file in files:
             all_files.append(a_file)
+    elif o in ("-s", "--show-missed"):
+        show_missed = True
     else:
         assert False, "unhandled option"
 
@@ -76,7 +79,8 @@ for scf in all_files:
             elif wordlp > max_wordlp:
                 max_wordlp = wordlp
         else:
-            print line[:-1]
+            if show_missed:
+                print line[:-1] 
 
     print "File", scf
     print "Lines", line_count
