@@ -22,7 +22,7 @@ except getopt.GetoptError, err:
 for o, a in opts:
     if o in ("-f", "--file"):
         all_files = [ a ]
-    elif o in ("-d", "--dir"):
+    elif o in ("-d", "--dir"): # -d "nyt.*HPX66.*\.px$"
         test  = re.compile(a, re.IGNORECASE)
         files = os.listdir( "." )
         files = filter(test.search, files)    
@@ -33,7 +33,7 @@ for o, a in opts:
     else:
         assert False, "unhandled option"
 
-print all_files
+#print all_files
 for scf in all_files:
     scf_lines = []
     with open(scf, 'r') as f:
