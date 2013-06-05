@@ -14,18 +14,23 @@ sc_file = None
 all_files = []
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "f:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "d:f:", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(2)
 for o, a in opts:
     if o in ("-f", "--file"):
         all_files = [ a ]
-    elif o in ("-i", "--info"):
-        info_only = True
+    elif o in ("-d", "--dir"):
+        test  = re.compile(a, re.IGNORECASE)
+        files = os.listdir( "." )
+        files = filter(test.search, files)    
+        for a_file in files:
+            all_files.append(a_file)
     else:
         assert False, "unhandled option"
 
+print all_files
 for scf in all_files:
     scf_lines = []
     with open(scf, 'r') as f:
@@ -73,6 +78,7 @@ for scf in all_files:
         else:
             print line[:-1]
 
+    print "File", scf
     print "Lines", line_count
     print "Logprob", min_logprob, max_logprob
     print "Entropy", min_entropy, max_entropy
