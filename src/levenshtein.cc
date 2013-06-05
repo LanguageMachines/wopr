@@ -506,7 +506,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
       //
       // std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
       // If the target is not found (unknown words), we have no
-      // ratio, we store the ditribution element (possible correction).
+      // ratio, we store the distribution element (possible correction).
 	  // IF we have a ratio, and it is >= min_ratio, we also store
 	  // this possible correction.
       //
