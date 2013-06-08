@@ -10,14 +10,28 @@ import time
 import getopt
 import tempfile
 
-sc_file = None
-all_files = []
+'''
+Examines wopr .sc and .px output files and produces plot files for Gnuplot
+to produce pretty graphs.
+
+File format is grokked automatically, but it needs top-n [...] output.
+'''
+
+sc_file     = None
+all_files   = []
 show_missed = False
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "d:f:s", ["file="])
 except getopt.GetoptError, err:
-    print str(err)
+    #print str(err)
+    print
+    print "Examples"
+    print "Process single file:"
+    print "python examine_sc.py -s -f austen.test.l2r0_14546.sc"
+    print "Process all files matching a regular expression:"
+    print 'python examine_sc.py -d "nyt.*HPX66.*\.px$"'
+    print
     sys.exit(2)
 for o, a in opts:
     if o in ("-f", "--file"):
