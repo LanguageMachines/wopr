@@ -554,6 +554,9 @@ int correct( Logfile& l, Config& c ) {
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
   const int          hapax            = stoi( c.get_value( "hpx", "0" ));
+  const int          mode             = stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = stoi( c.get_value( "lc", "2" ));
+  const int          rc               = stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
@@ -597,6 +600,9 @@ int correct( Logfile& l, Config& c ) {
   l.log( "timbl:      "+timbl );
   l.log( "id:         "+id );
   l.log( "hapax:      "+to_str(hapax) ); 
+  l.log( "mode:       "+to_str(mode) );
+  l.log( "lc:         "+to_str(lc) ); // left context size for windowing
+  l.log( "rc:         "+to_str(rc) ); // right context size for windowing
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
@@ -763,6 +769,7 @@ int correct( Logfile& l, Config& c ) {
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
+	std::string classify_line;
     std::vector<std::string> results;
     std::vector<std::string> targets;
     std::vector<std::string>::iterator ri;
@@ -782,191 +789,208 @@ int correct( Logfile& l, Config& c ) {
     double sum_logprob        = 0.0;
     int    sentence_wordcount = 0;
 
-    while( std::getline( file_in, a_line )) {
+	std::vector<std::string> cls;
 
+    while( std::getline( file_in, classify_line )) {
+
+	  cls.clear();
       words.clear();
-      a_line = trim( a_line );
-      Tokenize( a_line, words, ' ' );
-      if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
-		words.clear();
-		Tokenize( a_line, words, '\t' );
-      }
+      a_line = trim( classify_line );
 
-	  if ( hapax > 0 ) {
-		int c = hapax_vector( words, hpxfreqs, hapax );
-		std::string t;
-		vector_to_string(words, t);
-		//std::cerr << t << std::endl;
-		a_line = t;
-		words.clear();
-		Tokenize( t, words, ' ' );
+	  if ( mode == 1 ) { // plain text, must be windowed
+	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	  } else {
+	    cls.push_back( classify_line );
 	  }
-	  
-      std::string target = words.at( words.size()-1 );
-	  
-      ++sentence_wordcount;
 
-      // Is the target in the lexicon? We could calculate a smoothed
-      // value here if we load the .cnt file too...
-      //
-      std::map<std::string,int>::iterator wfi = wfreqs.find( target );
-      bool   target_unknown = false;
-      bool   correct_answer = false;
-      double target_lexfreq = 0.0;// should be double because smoothing
-      double target_lexprob = 0.0;
-      if ( wfi == wfreqs.end() ) {
-		target_unknown = true;
-      } else {
-		target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
-		std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
-		if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
-		  target_lexfreq = (double)(*cfi).second;
-		  //l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
+	  for ( int i = 0; i < cls.size(); i++ ) {
+	    
+	    a_line = cls.at(i);
+
+		Tokenize( a_line, words, ' ' );
+
+		if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
+		  words.clear();
+		  Tokenize( a_line, words, '\t' );
 		}
-		target_lexprob = (double)target_lexfreq / (double)total_count;
-      }
 
-      // What does Timbl think?
-      // Do we change this answer to what is in the distr. (if it is?)
-      //
-      tv = My_Experiment->Classify( a_line, vd );
-      if ( ! tv ) {
-		l.log( "ERROR: Timbl returned a classification error, aborting." );
-		break;
-      }
-      std::string answer = tv->Name();
-      //l.log( "Answer: '" + answer + "' / '" + target + "'" );
+		if ( hapax > 0 ) {
+		  int c = hapax_vector( words, hpxfreqs, hapax );
+		  std::string t;
+		  vector_to_string(words, t);
+		  //std::cerr << t << std::endl;
+		  a_line = t;
+		  words.clear();
+		  Tokenize( t, words, ' ' );
+		}
 	  
-      if ( target == answer ) {
-		++correct;
-		correct_answer = true;
-      } else {
-		++wrong;
-      }
+		std::string target = words.at( words.size()-1 );
+	  
+		++sentence_wordcount;
 
-      // Loop over distribution returned by Timbl.
-      /*
-	Je hebt een WOPR, en je laat dat los op een nieuw stuk tekst. Voor ieder
-	woord in de tekst kijk je of het in de distributie zit. Zo NIET, dan
-	check je of er een woord in de distributie zit dat op een kleine
-	Levenshtein-afstand van het woord staat, bijvoorbeeld op afstand 1,
-	dus er is 1 insertie/deletie/transpositie verschil tussen de twee
-	woorden.
-      */
-      // For spelling correction we look in the distro. If the word is not
-      // there, we look at levenshtein distance 1, if there is a word
-      // it could be the 'correction' of our target word.
-      //
-      // PJB: patterns containing spelling errors....
-      //
-      //
-      Timbl::ValueDistribution::dist_iterator it = vd->begin();
-      int cnt = 0;
-      int distr_count = 0;
-      int target_freq = 0;
-      int answer_freq = 0;
-      double prob            = 0.0;
-      double target_distprob = 0.0;
-      double answer_prob     = 0.0;
-      double entropy         = 0.0;
-      bool in_distr          = false;
-      cnt = vd->size();
-      distr_count = vd->totalSize();
-
-      // Check if target word is in the distribution.
-      //
-      while ( it != vd->end() ) {
-		//const Timbl::TargetValue *tv = it->second->Value();
-		
-		std::string tvs  = it->second->Value()->Name();
-		double      wght = it->second->Weight();
-		
-		// Prob. of this item in distribution.
+		// Is the target in the lexicon? We could calculate a smoothed
+		// value here if we load the .cnt file too...
 		//
-		prob     = (double)wght / (double)distr_count;
-		entropy -= ( prob * log2(prob) );
+		std::map<std::string,int>::iterator wfi = wfreqs.find( target );
+		bool   target_unknown = false;
+		bool   correct_answer = false;
+		double target_lexfreq = 0.0;// should be double because smoothing
+		double target_lexprob = 0.0;
+		if ( wfi == wfreqs.end() ) {
+		  target_unknown = true;
+		} else {
+		  target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
+		  std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
+		  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
+			target_lexfreq = (double)(*cfi).second;
+			//l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
+		  }
+		  target_lexprob = (double)target_lexfreq / (double)total_count;
+		}
+
+		// What does Timbl think?
+		// Do we change this answer to what is in the distr. (if it is?)
+		//
+		tv = My_Experiment->Classify( a_line, vd );
+		if ( ! tv ) {
+		  l.log( "ERROR: Timbl returned a classification error, aborting." );
+		  break;
+		}
+		std::string answer = tv->Name();
+		//l.log( "Answer: '" + answer + "' / '" + target + "'" );
+	  
+		if ( target == answer ) {
+		  ++correct;
+		  correct_answer = true;
+		} else {
+		  ++wrong;
+		}
+
+		// Loop over distribution returned by Timbl.
+		/*
+		  Je hebt een WOPR, en je laat dat los op een nieuw stuk tekst. Voor ieder
+		  woord in de tekst kijk je of het in de distributie zit. Zo NIET, dan
+		  check je of er een woord in de distributie zit dat op een kleine
+		  Levenshtein-afstand van het woord staat, bijvoorbeeld op afstand 1,
+		  dus er is 1 insertie/deletie/transpositie verschil tussen de twee
+		  woorden.
+		*/
+		// For spelling correction we look in the distro. If the word is not
+		// there, we look at levenshtein distance 1, if there is a word
+		// it could be the 'correction' of our target word.
+		//
+		// PJB: patterns containing spelling errors....
+		//
+		//
+		Timbl::ValueDistribution::dist_iterator it = vd->begin();
+		int cnt = 0;
+		int distr_count = 0;
+		int target_freq = 0;
+		int answer_freq = 0;
+		double prob            = 0.0;
+		double target_distprob = 0.0;
+		double answer_prob     = 0.0;
+		double entropy         = 0.0;
+		bool in_distr          = false;
+		cnt = vd->size();
+		distr_count = vd->totalSize();
+
+		// Check if target word is in the distribution.
+		//
+		while ( it != vd->end() ) {
+		  //const Timbl::TargetValue *tv = it->second->Value();
 		
-		if ( tvs == target ) { // The correct answer was in the distribution!
-		  target_freq = wght;
-		  in_distr = true;
-		  if ( correct_answer == false ) {
-			++correct_distr;
-			--wrong; // direct answer wrong, but right in distr. compensate count
+		  std::string tvs  = it->second->Value()->Name();
+		  double      wght = it->second->Weight();
+		
+		  // Prob. of this item in distribution.
+		  //
+		  prob     = (double)wght / (double)distr_count;
+		  entropy -= ( prob * log2(prob) );
+		
+		  if ( tvs == target ) { // The correct answer was in the distribution!
+			target_freq = wght;
+			in_distr = true;
+			if ( correct_answer == false ) {
+			  ++correct_distr;
+			  --wrong; // direct answer wrong, but right in distr. compensate count
+			}
+		  }
+		
+		  ++it;
+		}
+		target_distprob = (double)target_freq / (double)distr_count;
+	  
+		// If correct: if target in distr, we take that prob, else
+		// the lexical prob.
+		// Unknown words?
+		//
+		double logprob = 0.0;
+		if ( target_freq > 0 ) { // Right answer was in distr.
+		  logprob = log2( target_distprob );
+		} else {
+		  if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+			logprob = log2( target_lexprob ); // SMOOTHED here, see above
+		  } else {
+			//
+			// What to do here? We have an 'unknown' target, i.e. not in the
+			// lexicon.
+			//
+			logprob = log2( p0 /*0.0001*/ ); // Foei!
 		  }
 		}
-		
-		++it;
-      }
-      target_distprob = (double)target_freq / (double)distr_count;
+		sum_logprob += logprob;
 	  
-      // If correct: if target in distr, we take that prob, else
-      // the lexical prob.
-      // Unknown words?
-      //
-      double logprob = 0.0;
-      if ( target_freq > 0 ) { // Right answer was in distr.
-		logprob = log2( target_distprob );
-      } else {
-		if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-		  logprob = log2( target_lexprob ); // SMOOTHED here, see above
-		} else {
-		  //
-		  // What to do here? We have an 'unknown' target, i.e. not in the
-		  // lexicon.
-		  //
-		  logprob = log2( p0 /*0.0001*/ ); // Foei!
+		//l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
+	  
+		// I we didn't have the correct answer in the distro, we take ld=1
+		// Skip words shorter than mwl.
+		//
+		std::vector<distr_elem*> distr_vec;
+		if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
+		  distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs);
 		}
-      }
-      sum_logprob += logprob;
 	  
-      //l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
+		// Word logprob (ref. Antal's mail 21/11/08)
+		// 2 ^ (-logprob(w)) 
+		//
+		double word_lp = pow( 2, -logprob );
 	  
-      // I we didn't have the correct answer in the distro, we take ld=1
-      // Skip words shorter than mwl.
-      //
-      std::vector<distr_elem*> distr_vec;
-      if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
-		distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs);
-      }
+		// What do we want in the output file? Write the pattern and answer,
+		// the logprob, followed by the entropy (of distr.), the size of the
+		// distribution returned, and the top-10 (or less) of the distribution.
+		//
+		file_out << a_line << " (" << answer << ") "
+				 << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+		file_out << word_lp << ' ';
+		int cntr = 0;
+		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
+		std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+		file_out << cnt << " [ ";
+		while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+		  file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
+		  delete *fi;
+		  fi++;
+		}
+		distr_vec.clear();
+		file_out << "]";
+		file_out << std::endl;
 	  
-      // Word logprob (ref. Antal's mail 21/11/08)
-      // 2 ^ (-logprob(w)) 
-      //
-      double word_lp = pow( 2, -logprob );
+		// End of sentence (sort of)
+		//
+		if ( target == "</s>" ) {
+		  l.log( " sum_logprob = " + to_str( sum_logprob) );
+		  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
+		  double foo  = sum_logprob / (double)sentence_wordcount;
+		  double pplx = pow( 2, -foo ); 
+		  l.log( " pplx = " + to_str( pplx ) );
+		  sum_logprob = 0.0;
+		  sentence_wordcount = 0;
+		  l.log( "--" );
+		}
 	  
-      // What do we want in the output file? Write the pattern and answer,
-      // the logprob, followed by the entropy (of distr.), the size of the
-      // distribution returned, and the top-10 (or less) of the distribution.
-      //
-      file_out << a_line << " (" << answer << ") "
-	       << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
-      file_out << word_lp << ' ';
-      int cntr = 0;
-      sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
-      std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
-      file_out << cnt << " [ ";
-      while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
-		delete *fi;
-		fi++;
-	  }
-      distr_vec.clear();
-      file_out << "]";
-      file_out << std::endl;
-	  
-      // End of sentence (sort of)
-      //
-      if ( target == "</s>" ) {
-		l.log( " sum_logprob = " + to_str( sum_logprob) );
-		l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
-		double foo  = sum_logprob / (double)sentence_wordcount;
-		double pplx = pow( 2, -foo ); 
-		l.log( " pplx = " + to_str( pplx ) );
-		sum_logprob = 0.0;
-		sentence_wordcount = 0;
-		l.log( "--" );
-      }
-	  
+	  } // i.cls loop
+
     } // while getline()
 	
     if ( sentence_wordcount > 0 ) { // Overgebleven zooi (of alles).

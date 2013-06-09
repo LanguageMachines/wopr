@@ -1127,7 +1127,7 @@ int server4(Logfile& l, Config& c) {
 	      vector_to_string(words, t);
 	      classify_line = t;
 	      if ( verbose > 1 ) {
-		l.log( "|" + classify_line + "| hpx" );
+			l.log( "|" + classify_line + "| hpx" );
 	      }
 	    }
 	    
