@@ -553,8 +553,8 @@ int correct( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
+  const int          hapax            = stoi( c.get_value( "hpx", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-
   //std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
@@ -596,6 +596,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "counts:     "+counts_filename );
   l.log( "timbl:      "+timbl );
   l.log( "id:         "+id );
+  l.log( "hapax:      "+to_str(hapax) ); 
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
@@ -671,7 +672,9 @@ int correct( Logfile& l, Config& c ) {
   int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
+  unsigned long hpx_entries = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
+  std::map<std::string,int> hpxfreqs; // hapaxed list
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
     l.log( "NOTICE: cannot load lexicon file." );
@@ -688,6 +691,10 @@ int correct( Logfile& l, Config& c ) {
       if ( wfreq == 1 ) {
 		++N_1;
       }
+	  if ( wfreq > hapax ) {
+		hpxfreqs[a_word] = wfreq;
+		++hpx_entries;
+	  }
     }
     file_lexicon.close();
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
@@ -784,6 +791,17 @@ int correct( Logfile& l, Config& c ) {
 		words.clear();
 		Tokenize( a_line, words, '\t' );
       }
+
+	  if ( hapax > 0 ) {
+		int c = hapax_vector( words, hpxfreqs, hapax );
+		std::string t;
+		vector_to_string(words, t);
+		//std::cerr << t << std::endl;
+		a_line = t;
+		words.clear();
+		Tokenize( t, words, ' ' );
+	  }
+	  
       std::string target = words.at( words.size()-1 );
 	  
       ++sentence_wordcount;
@@ -1570,21 +1588,21 @@ int server_sc_nf( Logfile& l, Config& c ) {
     
     while ( true ) {  // main accept() loop
       l.log( "Listening..." );  
-
+	  
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
-	if( errno == EINTR ) {
-	  continue;
-	} else {
-	  l.log( "ERROR: " + server.getMessage() );
-	  return 1;
-	}
+		if( errno == EINTR ) {
+		  continue;
+		} else {
+		  l.log( "ERROR: " + server.getMessage() );
+		  return 1;
+		}
       }
       if ( verbose > 0 ) {
-	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+		l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+			   + std::string(newSock->getClientName()) );
       }
-    
+	  
       std::string buf;
     
       bool connection_open = true;
@@ -1593,81 +1611,81 @@ int server_sc_nf( Logfile& l, Config& c ) {
     
       while ( connection_open ) {
 
-	std::string tmp_buf;
-	newSock->read( tmp_buf );
-	tmp_buf = trim( tmp_buf, " \n\r" );
-	  
-	if ( tmp_buf == "_CLOSE_" ) {
-	  connection_open = false;
-	  c.set_status(0);
-	  return(0);
-	}
-	if ( tmp_buf == "_CLEAR_" ) {
-	  //cache.clear();
-	  //l.log( "Cache now: "+to_str(cache.size())+" elements." );
-	  continue;
-	}
-	if ( tmp_buf.length() == 0 ) {
-	  connection_open = false;
-	  c.set_status(0);
-	  break;
-	}
-	if ( verbose > 1 ) {
-	  l.log( "|" + tmp_buf + "|" );
-	}
-
-	cls.clear();
-
-	std::string classify_line = tmp_buf;
-	  
-	// Sentence based, window here, classify all, etc.
-	//
-	if ( mode == 1 ) {
-	  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
-	} else {
-	  cls.push_back( classify_line );
-	}
-	  
-	// Loop over all lines.
-	//
-	std::vector<std::string> words;
-	probs.clear();
-	for ( int i = 0; i < cls.size(); i++ ) {
-	    
-	  classify_line = cls.at(i);
-	    
-	  // Check the cache
-	  //
-	  std::string cache_ans = cache->get( classify_line );
-	  if ( cache_ans != "" ) {
-	    if ( verbose > 2 ) {
-	      l.log( "Found in cache." );
-	    }
-	    newSock->write(  cache_ans + '\n' );
-	    continue;
-	  }
-
-	  words.clear();
-	  Tokenize( classify_line, words, ' ' );
-	    
-	  /*if ( hapax > 0 ) {
-	    int c = hapax_vector( words, hpxfreqs, hapax );
-	    std::string t;
-	    vector_to_string(words, t);
-	    classify_line = t;
-	    if ( verbose > 1 ) {
-	    l.log( "|" + classify_line + "| hpx" );
-	    }
-	    }*/
-	    
-	  // if we take target from a pre-non-hapaxed vector, we
-	  // can hapax the whole sentence in the beginning and use
-	  // that for the instances-without-target
-	  //
-	  std::string target = words.at( words.size()-1 );
-	    
-	  // Is the target in the lexicon?
-	  //
+		std::string tmp_buf;
+		newSock->read( tmp_buf );
+		tmp_buf = trim( tmp_buf, " \n\r" );
+		
+		if ( tmp_buf == "_CLOSE_" ) {
+		  connection_open = false;
+		  c.set_status(0);
+		  return(0);
+		}
+		if ( tmp_buf == "_CLEAR_" ) {
+		  //cache.clear();
+		  //l.log( "Cache now: "+to_str(cache.size())+" elements." );
+		  continue;
+		}
+		if ( tmp_buf.length() == 0 ) {
+		  connection_open = false;
+		  c.set_status(0);
+		  break;
+		}
+		if ( verbose > 1 ) {
+		  l.log( "|" + tmp_buf + "|" );
+		}
+		
+		cls.clear();
+		
+		std::string classify_line = tmp_buf;
+		
+		// Sentence based, window here, classify all, etc.
+		//
+		if ( mode == 1 ) {
+		  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+		} else {
+		  cls.push_back( classify_line );
+		}
+		
+		// Loop over all lines.
+		//
+		std::vector<std::string> words;
+		probs.clear();
+		for ( int i = 0; i < cls.size(); i++ ) {
+		  
+		  classify_line = cls.at(i);
+		  
+		  // Check the cache
+		  //
+		  std::string cache_ans = cache->get( classify_line );
+		  if ( cache_ans != "" ) {
+			if ( verbose > 2 ) {
+			  l.log( "Found in cache." );
+			}
+			newSock->write(  cache_ans + '\n' );
+			continue;
+		  }
+		  
+		  words.clear();
+		  Tokenize( classify_line, words, ' ' );
+		  
+		  /*if ( hapax > 0 ) {
+			int c = hapax_vector( words, hpxfreqs, hapax );
+			std::string t;
+			vector_to_string(words, t);
+			classify_line = t;
+			if ( verbose > 1 ) {
+			l.log( "|" + classify_line + "| hpx" );
+			}
+			}*/
+		  
+		  // if we take target from a pre-non-hapaxed vector, we
+		  // can hapax the whole sentence in the beginning and use
+		  // that for the instances-without-target
+		  //
+		  std::string target = words.at( words.size()-1 );
+		  
+		  // Is the target in the lexicon?
+		  //
 	  std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	  bool   target_unknown = false;
 	  bool   correct_answer = false;

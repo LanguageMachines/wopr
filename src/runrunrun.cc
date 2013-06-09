@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2013 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -2125,10 +2125,10 @@ int hapax(Logfile& l, Config& c)  {
       // Words not in the wfreqs vector are "HAPAX"ed.
       // (The actual freq is not checked here anymore.)
       //
-      if ( wfreqs.find(words.at(i)) == wfreqs.end() ) { // not found
-	file_out << hpx_sym << " ";
+      if ( wfreqs.find(words.at(i)) == wfreqs.end() ) { // not found, hapaxes unknowns also
+		file_out << hpx_sym << " ";
       } else {
-	file_out << words.at(i) << " ";
+		file_out << words.at(i) << " ";
       }
     }
     //
@@ -3310,13 +3310,13 @@ int pplx_simple( Logfile& l, Config& c ) {
     std::string a_word;
     while ( file_lexicon >> a_word >> wfreq ) {
       if ( wfreq > hapax ) { // PJB: klopt dit? We don't get ++N_1? Smoothing?
-	wfreqs[a_word] = wfreq;
-	total_count += wfreq;
-	if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
-	  // or we calculate everything <= hapax as mass for the unknown. An
-	  // unknown token will also be HAPAX...
-	  ++N_1;
-	}
+		wfreqs[a_word] = wfreq;
+		total_count += wfreq;
+		if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
+		  // or we calculate everything <= hapax as mass for the unknown. An
+		  // unknown token will also be HAPAX...
+		  ++N_1;
+		}
       }
     }
     file_lexicon.close();
