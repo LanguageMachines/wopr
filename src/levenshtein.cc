@@ -795,7 +795,7 @@ int correct( Logfile& l, Config& c ) {
 
 	  cls.clear();
       words.clear();
-      a_line = trim( classify_line );
+      classify_line = trim( classify_line );
 
 	  if ( mode == 1 ) { // plain text, must be windowed
 	    window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
@@ -805,23 +805,18 @@ int correct( Logfile& l, Config& c ) {
 
 	  for ( int i = 0; i < cls.size(); i++ ) {
 	    
+		words.clear();
 	    a_line = cls.at(i);
+		a_line = trim( a_line );
 
 		Tokenize( a_line, words, ' ' );
 
-		if ( words.size() == 1 ) { // For Hermans data. TODO: better fix.
-		  words.clear();
-		  Tokenize( a_line, words, '\t' );
-		}
-
 		if ( hapax > 0 ) {
 		  int c = hapax_vector( words, hpxfreqs, hapax );
-		  std::string t;
-		  vector_to_string(words, t);
-		  //std::cerr << t << std::endl;
-		  a_line = t;
+		  vector_to_string(words, a_line);
+		  a_line = trim( a_line );
 		  words.clear();
-		  Tokenize( t, words, ' ' );
+		  Tokenize( a_line, words, ' ' );
 		}
 	  
 		std::string target = words.at( words.size()-1 );

@@ -1025,7 +1025,7 @@ int server4(Logfile& l, Config& c) {
       if ( cpid == 0 ) { // child process
 	
 	std::string buf;
-      	bool connection_open = true;
+	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
 
