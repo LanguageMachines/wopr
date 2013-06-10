@@ -58,7 +58,7 @@ my $oneliner = 1;
 open(FHO, $orig_file) || die "Can't open file.";
 open(FHS, $sc_file)   || die "Can't open file.";
 
-$out_data = $c_file.".errs"
+my $out_data = $sc_file.".errs";
 open(OFHD, ">$out_data") || die "Can't open datafile.";
 
 #Skip headers?
@@ -106,13 +106,13 @@ while ( my $ls = <FHS> ) {
   #
   if ( $test_target ne $orig_target ) {
     ++$errors;
-	print OFHD "Error: $test_target should be $orig_target\n";
+	print OFHD "ERROR: $test_target should be $orig_target\n";
   }
 
   # Do we have suggestions from wopr?
   #
   if ( $corrections > 0 ) {
-    print OFHD "$test_target/$orig_target: $l $c $corrections\n";
+    #print "$test_target/$orig_target: $l $c $corrections\n";
     if ( $v > 0 ) {
       # There is a difference between the targets, i.e an error.
       print "$test_target (was $orig_target)\n";
@@ -160,7 +160,7 @@ while ( my $ls = <FHS> ) {
       # we should have suggested a correction.
       print "$test_target (was $orig_target) NOSUGG\n";
     }
-	print OFHD "NOSUGG $test_target (was $orig_target)\n";
+	print OFHD "NOSUGG $test_target (should be: $orig_target)\n";
     ++$no_sugg;
   }
   
