@@ -58,6 +58,9 @@ my $oneliner = 1;
 open(FHO, $orig_file) || die "Can't open file.";
 open(FHS, $sc_file)   || die "Can't open file.";
 
+$out_data = $c_file.".errs"
+open(OFHD, ">$out_data") || die "Can't open datafile.";
+
 #Skip headers?
 
 my $l = 0; #position of (word)
@@ -86,11 +89,11 @@ while ( my $ls = <FHS> ) {
   if ( $l == 0 ) { #do only once
     while ( $i < $#ps ) {
       if ( $ps[$i] =~ /\(.*\)/ ) {
-	$l = $i;
+		$l = $i;
       }
       if ( $ps[$i] eq "[" ) {
-	$c = $i;
-	$i = $#ps;
+		$c = $i;
+		$i = $#ps;
       }
       ++$i;
     }
@@ -99,16 +102,17 @@ while ( my $ls = <FHS> ) {
   my $test_target = $ps[ $l - 1 ]; #target in "spelerr"ed file.
   my $corrections = $#ps - $c - 1; #words between [ ]
 
-  # Count "real" errors.
+  # Count "real" errors, number of differences between targets.
   #
   if ( $test_target ne $orig_target ) {
     ++$errors;
+	print OFHD "Error: $test_target should be $orig_target\n";
   }
 
   # Do we have suggestions from wopr?
   #
   if ( $corrections > 0 ) {
-    #print "$test_target/$orig_target: $l $c $corrections\n";
+    print OFHD "$test_target/$orig_target: $l $c $corrections\n";
     if ( $v > 0 ) {
       # There is a difference between the targets, i.e an error.
       print "$test_target (was $orig_target)\n";
@@ -120,29 +124,32 @@ while ( my $ls = <FHS> ) {
       # a correct spelling correction correction. :-)
       #
       if ( $correction eq $orig_target ) {
-	if ( $v > 0 ) {
-	  print "$test_target -> $correction GOODSUGG\n";
-	}
-	++$good_sugg;
+		if ( $v > 0 ) {
+		  print "$test_target -> $correction GOODSUGG\n";
+		}
+		print OFHD "GOODSUGG $test_target -> $correction\n";
+		++$good_sugg;
       } else {
-	#check for unneccessary corrections also
-	# could be a mistake, corrected wrongly, or no mistake to start with.
-	#   states -> status (should be: states) BADSUGG
-	# versus
-	#   Austraia -> Austria (should be: Australia) WRONGSUGG
-	if ( $test_target eq $orig_target ) {
-	  if ( $v > 0 ) {
-	    # here we suggest a correction for something that is not wrong.
-	    print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
-	  }
-	  ++$bad_sugg;
-	} else {
-	  if ( $v > 0 ) {
-	    # here we suggest the wrong correction for an error.
-	    print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
-	  }
-	  ++$wrong_sugg;
-	}
+		#check for unneccessary corrections also
+		# could be a mistake, corrected wrongly, or no mistake to start with.
+		#   states -> status (should be: states) BADSUGG
+		# versus
+		#   Austraia -> Austria (should be: Australia) WRONGSUGG
+		if ( $test_target eq $orig_target ) {
+		  if ( $v > 0 ) {
+			# here we suggest a correction for something that is not wrong.
+			print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
+		  }
+		  print OFHD "BADSUGG $test_target -> $correction (should be: $orig_target)\n";
+		  ++$bad_sugg;
+		} else {
+		  if ( $v > 0 ) {
+			# here we suggest the wrong correction for an error.
+			print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
+		  }
+		  print OFHD "WRONGSUGG $test_target -> $correction (should be: $orig_target)\n";
+		  ++$wrong_sugg;
+		}
       }
     }
   }
@@ -153,10 +160,12 @@ while ( my $ls = <FHS> ) {
       # we should have suggested a correction.
       print "$test_target (was $orig_target) NOSUGG\n";
     }
+	print OFHD "NOSUGG $test_target (was $orig_target)\n";
     ++$no_sugg;
   }
   
 }
+close(OFHD);
 close(FHS);
 close(FHO);
 
