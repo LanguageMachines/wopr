@@ -20,9 +20,12 @@ File format is grokked automatically, but it needs top-n [...] output.
 sc_file     = None
 all_files   = []
 show_missed = False
+x_range = "[]"
+y_range = "[]"
+normalized = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "d:f:s", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "d:f:nsx:y:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     print
@@ -42,8 +45,13 @@ for o, a in opts:
         files = filter(test.search, files)    
         for a_file in files:
             all_files.append(a_file)
-    elif o in ("-s", "--show-missed"):
-        show_missed = True
+    elif o in ("-n", "--normalized"):
+        normalized = True
+        y_range = "[0:1]"
+    elif o in ("-x", "--x-range"):
+        x_range = a
+    elif o in ("-y", "--y-range"):
+        y_range = a
     else:
         assert False, "unhandled option"
 
@@ -52,11 +60,22 @@ for scf in all_files:
     scf_lines = []
     with open(scf, 'r') as f:
         scf_lines = f.readlines()
+    lc = 0
+    rc = 0
+    m = re.match( ".*l(\d+)r(\d+).*", scf)
+    if m:
+        lc = int(m.group(1))
+        rc = int(m.group(1))
+    hpx = 0
+    m = re.match( ".*hpx(\d+).*", scf)
+    if m:
+        hpx = int(m.group(1))
     sum_logprob  =     0.0
     min_logprob  =     0.0
     max_logprob  =   -99.0
     min_distsize =  1000
     max_distsize =     0
+    max_distfreq =     0 # size of distribution which occurs most
     min_entropy  =     0.0
     max_entropy  =   -99.0
     line_count   =     0
@@ -132,11 +151,16 @@ for scf in all_files:
     print "Wordlp",   min_wordlp, max_wordlp
     print "Distsize", min_distsize, max_distsize
 
+    # Find dist freq which occurs most
+    for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
+        if distrsize_count > max_distfreq:
+            max_distfreq = distrsize_count
+
     # File with data, and normalized distr size.
     scfd = scf + ".ds.data"
     with open(scfd, 'w') as f:
-        for distrsize, distrize_count in iter(sorted(distr_distsize.iteritems())):
-            f.write(str(distrsize)+" "+str(distrize_count)+" "+str(distrsize*100.0/max_distsize)+"\n")
+        for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
+            f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+"\n")
 
     # Gnuplot file
     scfp = scf + ".ds.plot"
@@ -144,22 +168,34 @@ for scf in all_files:
     with open(scfp, 'w') as f:
         f.write("# Created by examine_sc.py -f "+scf+"\n" )
         f.write("set style line 1 lc rgb '#0060ad' lt 1 lw 5 pt 7 pi -1 ps 1.5\n")
-        f.write("set title \"Distribution Size\"\n")
-        f.write("set xlabel \"Size\"\n")
-        f.write("set xrange []\n")
+        info_str = "l"+str(lc)+"r"+str(rc)
+        if hpx > 0:
+            info_str += ", hapax "+str(hpx)
+        f.write("set title \"Distribution Size, "+info_str+"\"\n")
+        f.write("set size 1.5,1\n")
+        f.write("set xlabel \"Size of distribution\"\n")
+        f.write("set xrange "+x_range+"\n")
         f.write("set xtics out\n")
         f.write("set xtics rotate by 270\n")
         f.write("set ytics out\n")
-        f.write("set yrange []\n")
-        f.write("set ylabel \"number\"\n")
-        f.write("plot '"+scfd+"' using 1:2 with impulses ls 1 title \"\"\n")
+        f.write("set yrange "+y_range+"\n")
+        if normalized:
+            f.write("set ylabel \"normalized frequency, 1.00 = "+str(max_distfreq)+"\"\n")
+        else:
+            f.write("set ylabel \"frequency of size\"\n")
+        if normalized:
+            f.write("plot '"+scfd+"' using 1:3 with impulses ls 1 title \"\"\n")
+        else:
+            f.write("plot '"+scfd+"' using 1:2 with impulses ls 1 title \"\"\n")
         f.write("set terminal push\n")
-        f.write("set terminal postscript eps enhanced monochrome rounded lw 2 'Helvetica' 20\n")
+        f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
         f.write("set out '"+scf+".ds.ps'\n")
         f.write("replot\n")
         f.write("!epstopdf '"+scf+".ds.ps'\n")
         f.write("set term pop\n")
         #f.write("pause -1\n")
+    print "Gnuplot file", scfp
+
 
 '''
 set xtics ("332" 332, "336" 336, "340" 340, "394" 394, "398" 398, "1036" 1036)
