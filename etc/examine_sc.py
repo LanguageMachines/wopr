@@ -155,7 +155,9 @@ for scf in all_files:
     print "Distsize", min_distsize, max_distsize
 
     # Find dist freq which occurs most
+    distrsizes_sum = 0
     for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
+        distrsizes_sum += distrsize_count
         if distrsize_count > max_distfreq:
             max_distfreq = distrsize_count
 
@@ -169,7 +171,7 @@ for scf in all_files:
         if topn > 0:
             cnt = topn
         for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
-            f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+"\n")
+            f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+" "+str(float(distrsize_count)/float(line_count))+"\n")
             cnt -= 1
             if cnt == 0:
                 break
@@ -184,7 +186,7 @@ for scf in all_files:
             distrsize = cnt
             try:
                 distrsize_count = distr_distsize[cnt]
-                f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+"\n")
+                f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+" "+str(float(distrsize_count)/float(line_count))+"\n")
             except KeyError:
                 f.write(str(distrsize)+" 0 0.00\n")
 
