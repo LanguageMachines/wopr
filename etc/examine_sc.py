@@ -23,9 +23,10 @@ show_missed = False
 x_range = "[]"
 y_range = "[]"
 normalized = False
+topn = 0
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "d:f:nsx:y:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "d:f:nst:x:y:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     print
@@ -52,6 +53,8 @@ for o, a in opts:
         x_range = a
     elif o in ("-y", "--y-range"):
         y_range = a
+    elif o in ("-t", "--topn"):
+        topn = int(a)
     else:
         assert False, "unhandled option"
 
@@ -65,7 +68,7 @@ for scf in all_files:
     m = re.match( ".*l(\d+)r(\d+).*", scf)
     if m:
         lc = int(m.group(1))
-        rc = int(m.group(1))
+        rc = int(m.group(2))
     hpx = 0
     m = re.match( ".*hpx(\d+).*", scf)
     if m:
@@ -157,36 +160,65 @@ for scf in all_files:
             max_distfreq = distrsize_count
 
     # File with data, and normalized distr size.
+    # Note that using topn truncates the data file!
+    # Indexed top-n? That is print distr_distsize[cnt]
     scfd = scf + ".ds.data"
+    print "Data file", scfd
     with open(scfd, 'w') as f:
+        cnt = 0
+        if topn > 0:
+            cnt = topn
         for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
             f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+"\n")
+            cnt -= 1
+            if cnt == 0:
+                break
+
+    # Indexed top-n, hat is print distr_distsize[cnt]
+    # Or, an absolute top-1, print "0 0.00" for non existing
+    # sizes.
+    scfd = scf + ".ds.data2"
+    print "Data file", scfd
+    with open(scfd, 'w') as f:
+        for cnt in xrange(1,topn+1):
+            distrsize = cnt
+            try:
+                distrsize_count = distr_distsize[cnt]
+                f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+"\n")
+            except KeyError:
+                f.write(str(distrsize)+" 0 0.00\n")
 
     # Gnuplot file
     scfp = scf + ".ds.plot"
     #http://xmodulo.com/2013/01/how-to-plot-data-without-data-files-in-gnuplot.html
     with open(scfp, 'w') as f:
         f.write("# Created by examine_sc.py -f "+scf+"\n" )
-        f.write("set style line 1 lc rgb '#0060ad' lt 1 lw 5 pt 7 pi -1 ps 1.5\n")
+        f.write("set style line 1 lc rgb '#0060ad' lt 1 lw 1\n")
         info_str = "l"+str(lc)+"r"+str(rc)
         if hpx > 0:
             info_str += ", hapax "+str(hpx)
         f.write("set title \"Distribution Size, "+info_str+"\"\n")
-        f.write("set size 1.5,1\n")
+        f.write("set size 1.3,1\n")
         f.write("set xlabel \"Size of distribution\"\n")
         f.write("set xrange "+x_range+"\n")
         f.write("set xtics out\n")
-        f.write("set xtics rotate by 270\n")
-        f.write("set ytics out\n")
+        f.write("set xtics rotate by 295 nomirror\n")
+        f.write("set rmargin 5\n")
+        f.write("set ytics out nomirror\n")
+        f.write("set border 3\n") #http://ontublog.blogspot.se/2009/09/complex-axis-in-gnuplot.html
         f.write("set yrange "+y_range+"\n")
+        f.write("set style data histogram\n")
+        f.write("set style histogram cluster gap 1\n")
+        f.write("set style fill solid\n") # (...solid border -1), and set boxwidth 0.8
         if normalized:
             f.write("set ylabel \"normalized frequency, 1.00 = "+str(max_distfreq)+"\"\n")
+            f.write("set ytics 0.1\n")
         else:
             f.write("set ylabel \"frequency of size\"\n")
         if normalized:
-            f.write("plot '"+scfd+"' using 1:3 with impulses ls 1 title \"\"\n")
+            f.write("plot '"+scfd+"' using 3:xticlabels(1) ls 1 title \"\"\n")
         else:
-            f.write("plot '"+scfd+"' using 1:2 with impulses ls 1 title \"\"\n")
+            f.write("plot '"+scfd+"' using 2:xticlabels(1) ls 1 title \"\"\n")
         f.write("set terminal push\n")
         f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
         f.write("set out '"+scf+".ds.ps'\n")
