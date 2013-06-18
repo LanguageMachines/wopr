@@ -167,22 +167,20 @@ for scf in all_files:
     scfd = scf + ".ds.data"
     print "Data file", scfd
     with open(scfd, 'w') as f:
-        cnt = 0
-        if topn > 0:
-            cnt = topn
+        cnt = topn # cnt = topn if topn > 0 else 0
         for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
             f.write(str(distrsize)+" "+str(distrsize_count)+" "+str(float(distrsize_count)/float(max_distfreq))+" "+str(float(distrsize_count)/float(line_count))+"\n")
             cnt -= 1
             if cnt == 0:
                 break
 
-    # Indexed top-n, hat is print distr_distsize[cnt]
+    # Indexed top-n, that is print distr_distsize[cnt]
     # Or, an absolute top-1, print "0 0.00" for non existing
     # sizes.
     scfd = scf + ".ds.data2"
     print "Data file", scfd
     with open(scfd, 'w') as f:
-        for cnt in xrange(1,topn+1):
+        for cnt in xrange(1,topn+1 if topn > 0 else max_distsize+1):
             distrsize = cnt
             try:
                 distrsize_count = distr_distsize[cnt]
