@@ -27,6 +27,8 @@ def find_bin(v):
         return 0
     if v == 2:
         return 1
+    if v == 3:
+        return 2
     idx = int(log(v)/log(pwr))
     return idx+1
 
@@ -58,7 +60,7 @@ bins[1] = (2, 2, "2")
 bin_counts[1] = 0
 bin_idx = 2
 s = 1
-e = 16
+e = 17
 for x in xrange(s,e+1): #for pwr==10 we need a better algo here and above here.
     #print x, pow(pwr,x), pow(pwr,x+1)-1
     if bin_idx == 2 and pwr == 2:
@@ -68,6 +70,9 @@ for x in xrange(s,e+1): #for pwr==10 we need a better algo here and above here.
     bin_counts[bin_idx] = 0
     bin_idx += 1
 #print repr(bins) #{0: (1, 1), 1: (2, 2), 2: (3, 9), 3: (10, 99), 4: (100, 999), 5: (1000, 9999), 6: (10000, 99999)}
+for x in range(1,12,1):
+    print x, find_bin(x)
+print 68900, find_bin(68900)
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "bd:f:nst:x:y:", ["file="])
