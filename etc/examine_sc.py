@@ -9,6 +9,7 @@ import datetime
 import time
 import getopt
 import tempfile
+from math import log
 
 '''
 Examines wopr .sc and .px output files and produces plot files for Gnuplot
@@ -17,6 +18,18 @@ to produce pretty graphs.
 File format is grokked automatically, but it needs top-n [...] output.
 '''
 
+def find_bin(v):
+    '''
+    #{0: (1, 1), 1: (2, 2), 2: (3, 9), 3: (10, 99), 4: (100, 999), 5: (1000, 9999), 6: (10000, 99999)}
+    Find bin for e.g 6: log(6)/log(10) = 0.77, 0+2 = 2: (3, 9)
+    '''
+    if v == 1:
+        return 0
+    if v == 2:
+        return 1
+    idx = int(log(v)/log(pwr))
+    return idx+1
+
 sc_file     = None
 all_files   = []
 show_missed = False
@@ -24,9 +37,40 @@ x_range = "[]"
 y_range = "[]"
 normalized = False
 topn = 0
+binned = False
+
+# Create bins, special for 1 and 2?
+#0 1 1
+#1 2 3
+#2 4 7
+#3 8 15
+#4 16 31
+#
+# find bin for 6: log_{2}(6) = 2.58 int()=2, bin 4-7
+pwr = 2
+bins = {}
+bin_counts = {}
+# dustbin for left overs?
+# Two special bins for 1 and 2.
+bins[0] = (1, 1, "1") #inclusive
+bin_counts[0] = 0
+bins[1] = (2, 2, "2")
+bin_counts[1] = 0
+bin_idx = 2
+s = 1
+e = 16
+for x in xrange(s,e+1): #for pwr==10 we need a better algo here and above here.
+    #print x, pow(pwr,x), pow(pwr,x+1)-1
+    if bin_idx == 2 and pwr == 2:
+        bins[bin_idx] = (3, 3, "3")
+    else:
+        bins[bin_idx] = (pow(pwr,x), pow(pwr,x+1)-1, str(pow(pwr,x))+"-"+str(pow(pwr,x+1)-1))
+    bin_counts[bin_idx] = 0
+    bin_idx += 1
+#print repr(bins) #{0: (1, 1), 1: (2, 2), 2: (3, 9), 3: (10, 99), 4: (100, 999), 5: (1000, 9999), 6: (10000, 99999)}
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "d:f:nst:x:y:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bd:f:nst:x:y:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     print
@@ -40,6 +84,8 @@ except getopt.GetoptError, err:
 for o, a in opts:
     if o in ("-f", "--file"):
         all_files = [ a ]
+    elif o in ("-b", "--binned"):
+        binned = True
     elif o in ("-d", "--dir"): # -d "nyt.*HPX66.*\.px$"
         test  = re.compile(a, re.IGNORECASE)
         files = os.listdir( "." )
@@ -143,6 +189,12 @@ for scf in all_files:
                 distr_distsize[distsize] += 1
             except:
                 distr_distsize[distsize] = 1
+            if binned:
+                bin = find_bin(distsize)
+                try:
+                    bin_counts[bin] += 1
+                except:
+                    print "No bin for", bin, distsize
 
         if not matched and show_missed:
             print line[:-1] 
@@ -188,6 +240,16 @@ for scf in all_files:
             except KeyError:
                 f.write(str(distrsize)+" 0 0.00\n")
 
+    if binned:
+        scfdb = scf + ".ds.bins"
+        print "Data file", scfdb
+        with open(scfdb, 'w') as f:
+            for x in xrange(0,e+1):
+                f.write(str(x)+" "+str(bin_counts[x])+" "+str(pwr)+" "+str(bins[x][0])+" "+str(bins[x][1])+" "+str(bins[x][2])+"\n")
+                if bins[x][1] > max_distsize:
+                    pass
+                    #break #to stop after largest
+
     # Gnuplot file
     scfp = scf + ".ds.plot"
     #http://xmodulo.com/2013/01/how-to-plot-data-without-data-files-in-gnuplot.html
@@ -228,6 +290,52 @@ for scf in all_files:
         #f.write("pause -1\n")
     print "Gnuplot file", scfp
 
+    # Gnuplot file if binned
+    if binned:
+        scfp = scf + ".ds.bins.plot"
+        with open(scfp, 'w') as f:
+            f.write("# Created by examine_sc.py -f "+scf+"-b \n" )
+            f.write("set style line 1 lc rgb '#0060ad' lt 1 lw 1\n")
+            info_str = "l"+str(lc)+"r"+str(rc)
+            if hpx > 0:
+                info_str += ", hapax "+str(hpx)
+            f.write("set title \"Distribution Size, "+info_str+"\"\n")
+            f.write("set size 1.3,1\n")
+            f.write("set xlabel \"Size of distribution\"\n")
+            f.write("set xrange "+x_range+"\n")
+            f.write("set xtics out\n")
+            f.write("set xtics rotate by 295 nomirror\n")
+            f.write("set xtics font \"Helvetica,14\"\n")
+            #f.write("set label font \"Helvetica,12\"\n")
+            f.write("set rmargin 5\n")
+            f.write("set ytics out nomirror\n")
+            f.write("set border 3\n") #http://ontublog.blogspot.se/2009/09/complex-axis-in-gnuplot.html
+            f.write("set yrange "+y_range+"\n")
+            f.write("set style data histogram\n")
+            f.write("set style histogram cluster gap 1\n")
+            f.write("set style fill solid\n") # (...solid border -1), and set boxwidth 0.8
+            if normalized:
+                f.write("set ylabel \"normalized frequency, 1.00 = "+str(max_distfreq)+"\"\n")
+                f.write("set ytics 0.1\n")
+            else:
+                f.write("set ylabel \"frequency of size\"\n")
+            if normalized:
+                f.write("plot '"+scfdb+"' using 3:xticlabels(6) ls 1 title \"\"\n")
+            else:
+                f.write("plot '"+scfdb+"' using 2:xticlabels(6) ls 1 title \"\"\n") #,'' using 0:($2+500):2 with labels title \"\"
+            # "hand drawn" labels on top of bar is low frequency
+            for x in xrange(0,e+1):
+                if bin_counts[x] < 100:
+                    f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-0.25)+","+str(bin_counts[x]+500)+"\n")
+            f.write("set terminal push\n")
+            f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
+            f.write("set label font \"Helvetica,12\"\n")
+            f.write("set out '"+scf+".ds.bins.ps'\n")
+            f.write("replot\n")
+            f.write("!epstopdf '"+scf+".ds.bins.ps'\n")
+            f.write("set term pop\n")
+            #f.write("pause -1\n")
+        print "Gnuplot file", scfp
 
 '''
 set xtics ("332" 332, "336" 336, "340" 340, "394" 394, "398" 398, "1036" 1036)
@@ -254,3 +362,4 @@ f.write("set xtics ("+xtics_str+")\n")
 f.write("plot '-' using ($1):2 ti col smooth frequency with boxes\n")
 
 '''
+
