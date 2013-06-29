@@ -70,9 +70,9 @@ for x in xrange(s,e+1): #for pwr==10 we need a better algo here and above here.
     bin_counts[bin_idx] = 0
     bin_idx += 1
 #print repr(bins) #{0: (1, 1), 1: (2, 2), 2: (3, 9), 3: (10, 99), 4: (100, 999), 5: (1000, 9999), 6: (10000, 99999)}
-for x in range(1,12,1):
-    print x, find_bin(x)
-print 68900, find_bin(68900)
+#for x in range(1,12,1):
+#    print x, find_bin(x)
+#print 68900, find_bin(68900)
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "bd:f:nst:x:y:", ["file="])
@@ -330,11 +330,14 @@ for scf in all_files:
                 f.write("plot '"+scfdb+"' using 2:xticlabels(6) ls 1 title \"\"\n") #,'' using 0:($2+500):2 with labels title \"\"
             # "hand drawn" labels on top of bar is low frequency
             for x in xrange(0,e+1):
-                if bin_counts[x] < 100:
-                    f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-0.25)+","+str(bin_counts[x]+500)+"\n")
+                if bin_counts[x] < 10000:
+                    adjust = 0.10
+                    if bin_counts[x] > 0:
+                        adjust = (int(log(bin_counts[x])/log(10))+1) * 0.10
+                    print bin_counts[x], adjust
+                    f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-adjust)+","+str(bin_counts[x]+500)+"\n")
             f.write("set terminal push\n")
             f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
-            f.write("set label font \"Helvetica,12\"\n")
             f.write("set out '"+scf+".ds.bins.ps'\n")
             f.write("replot\n")
             f.write("!epstopdf '"+scf+".ds.bins.ps'\n")
