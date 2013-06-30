@@ -23,14 +23,8 @@ def find_bin(v):
     #{0: (1, 1), 1: (2, 2), 2: (3, 9), 3: (10, 99), 4: (100, 999), 5: (1000, 9999), 6: (10000, 99999)}
     Find bin for e.g 6: log(6)/log(10) = 0.77, 0+2 = 2: (3, 9)
     '''
-    if v == 1:
-        return 0
-    if v == 2:
-        return 1
-    if v == 3:
-        return 2
     idx = int(log(v)/log(pwr))
-    return idx+1
+    return idx
 
 sc_file     = None
 all_files   = []
@@ -49,24 +43,22 @@ binned = False
 #4 16 31
 #
 # find bin for 6: log_{2}(6) = 2.58 int()=2, bin 4-7
-pwr = 2
+pwr = 2 
 bins = {}
 bin_counts = {}
 # dustbin for left overs?
-# Two special bins for 1 and 2.
-bins[0] = (1, 1, "1") #inclusive
-bin_counts[0] = 0
-bins[1] = (2, 2, "2")
-bin_counts[1] = 0
-bin_idx = 2
-s = 1
+bin_idx = 0
+s = 0
 e = 17
-for x in xrange(s,e+1): #for pwr==10 we need a better algo here and above here.
+# take the one out from bin 0 and put in a seperate bin:
+# if x == 0: bins[0] = (pow(pwr,0)+1, pow(pwr,x+1)-1, label)
+#     else : bins[bin_idx] = (pow(pwr,x), pow(pwr,x+1)-1, label)
+for x in xrange(s,e): #for pwr==10 we need a better algo here and above here.
     #print x, pow(pwr,x), pow(pwr,x+1)-1
-    if bin_idx == 2 and pwr == 2:
-        bins[bin_idx] = (3, 3, "3")
-    else:
-        bins[bin_idx] = (pow(pwr,x), pow(pwr,x+1)-1, str(pow(pwr,x))+"-"+str(pow(pwr,x+1)-1))
+    label = str(pow(pwr,x))+"-"+str(pow(pwr,x+1)-1)
+    if pow(pwr,x) == pow(pwr,x+1)-1:
+        label = str(pow(pwr,x))
+    bins[bin_idx] = (pow(pwr,x), pow(pwr,x+1)-1, label)
     bin_counts[bin_idx] = 0
     bin_idx += 1
 #print repr(bins) #{0: (1, 1), 1: (2, 2), 2: (3, 9), 3: (10, 99), 4: (100, 999), 5: (1000, 9999), 6: (10000, 99999)}
@@ -249,7 +241,7 @@ for scf in all_files:
         scfdb = scf + ".ds.bins"
         print "Data file", scfdb
         with open(scfdb, 'w') as f:
-            for x in xrange(0,e+1):
+            for x in xrange(s,e):
                 f.write(str(x)+" "+str(bin_counts[x])+" "+str(pwr)+" "+str(bins[x][0])+" "+str(bins[x][1])+" "+str(bins[x][2])+"\n")
                 if bins[x][1] > max_distsize:
                     pass
@@ -329,12 +321,12 @@ for scf in all_files:
             else:
                 f.write("plot '"+scfdb+"' using 2:xticlabels(6) ls 1 title \"\"\n") #,'' using 0:($2+500):2 with labels title \"\"
             # "hand drawn" labels on top of bar is low frequency
-            for x in xrange(0,e+1):
+            for x in xrange(s,e):
                 if bin_counts[x] < 10000:
                     adjust = 0.10
                     if bin_counts[x] > 0:
                         adjust = (int(log(bin_counts[x])/log(10))+1) * 0.10
-                    print bin_counts[x], adjust
+                    #print bin_counts[x], adjust
                     f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-adjust)+","+str(bin_counts[x]+500)+"\n")
             f.write("set terminal push\n")
             f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
