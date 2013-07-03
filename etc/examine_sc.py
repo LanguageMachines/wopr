@@ -34,6 +34,7 @@ y_range = "[]"
 normalized = False
 topn = 0
 binned = False
+show_freqs = False
 
 # Create bins, special for 1 and 2?
 #0 1 1
@@ -49,7 +50,7 @@ bin_counts = {}
 # dustbin for left overs?
 bin_idx = 0
 s = 0
-e = 17
+e = 18
 # take the one out from bin 0 and put in a seperate bin:
 # if x == 0: bins[0] = (pow(pwr,0)+1, pow(pwr,x+1)-1, label)
 #     else : bins[bin_idx] = (pow(pwr,x), pow(pwr,x+1)-1, label)
@@ -67,7 +68,7 @@ for x in xrange(s,e): #for pwr==10 we need a better algo here and above here.
 #print 68900, find_bin(68900)
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "bd:f:nst:x:y:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bd:f:Fnst:x:y:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     print
@@ -92,6 +93,8 @@ for o, a in opts:
     elif o in ("-n", "--normalized"):
         normalized = True
         y_range = "[0:1]"
+    elif o in ("-F", "--showfreqs"):
+        show_freqs = True #only for binned, frequenxy on top of histogram
     elif o in ("-x", "--x-range"):
         x_range = a
     elif o in ("-y", "--y-range"):
@@ -247,12 +250,18 @@ for scf in all_files:
                     pass
                     #break #to stop after largest
 
+    line_styles = [ "set style line 1 lc rgb '#1047a9' lt 1 lw 2 pt 7 pi -1 ps 1.5",
+    "set style line 2 lc rgb '#4577d4' lt 1 lw 2 pt 7 pi -1 ps 1.5",
+    "set style line 3 lc rgb '#6b90d4' lt 1 lw 2 pt 7 pi -1 ps 1.5"
+    ]
+
     # Gnuplot file
     scfp = scf + ".ds.plot"
     #http://xmodulo.com/2013/01/how-to-plot-data-without-data-files-in-gnuplot.html
     with open(scfp, 'w') as f:
         f.write("# Created by examine_sc.py -f "+scf+"\n" )
-        f.write("set style line 1 lc rgb '#0060ad' lt 1 lw 1\n")
+        for ls in line_styles:
+            f.write( ls+"\n" )
         info_str = "l"+str(lc)+"r"+str(rc)
         if hpx > 0:
             info_str += ", hapax "+str(hpx)
@@ -291,8 +300,9 @@ for scf in all_files:
     if binned:
         scfp = scf + ".ds.bins.plot"
         with open(scfp, 'w') as f:
-            f.write("# Created by examine_sc.py -f "+scf+"-b \n" )
-            f.write("set style line 1 lc rgb '#0060ad' lt 1 lw 1\n")
+            f.write("# Created by examine_sc.py -f "+scf+" -b \n" )
+            for ls in line_styles:
+                f.write( ls+"\n" )
             info_str = "l"+str(lc)+"r"+str(rc)
             if hpx > 0:
                 info_str += ", hapax "+str(hpx)
@@ -321,13 +331,14 @@ for scf in all_files:
             else:
                 f.write("plot '"+scfdb+"' using 2:xticlabels(6) ls 1 title \"\"\n") #,'' using 0:($2+500):2 with labels title \"\"
             # "hand drawn" labels on top of bar is low frequency
-            for x in xrange(s,e):
-                if bin_counts[x] < 10000:
-                    adjust = 0.10
-                    if bin_counts[x] > 0:
-                        adjust = (int(log(bin_counts[x])/log(10))+1) * 0.10
-                    #print bin_counts[x], adjust
-                    f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-adjust)+","+str(bin_counts[x]+500)+"\n")
+            if show_freqs:
+                for x in xrange(s,e):
+                    if bin_counts[x] < 10000:
+                        adjust = 0.10
+                        if bin_counts[x] > 0:
+                            adjust = (int(log(bin_counts[x])/log(10))+1) * 0.10
+                        #print bin_counts[x], adjust
+                        f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-adjust)+","+str(bin_counts[x]+500)+"\n")
             f.write("set terminal push\n")
             f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
             f.write("set out '"+scf+".ds.bins.ps'\n")
