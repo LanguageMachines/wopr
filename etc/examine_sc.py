@@ -35,6 +35,7 @@ normalized = False
 topn = 0
 binned = False
 show_freqs = False
+info_only = False
 
 # Create bins, special for 1 and 2?
 #0 1 1
@@ -68,7 +69,7 @@ for x in xrange(s,e): #for pwr==10 we need a better algo here and above here.
 #print 68900, find_bin(68900)
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "bd:f:Fnst:x:y:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bd:f:Finst:x:y:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     print
@@ -93,6 +94,8 @@ for o, a in opts:
     elif o in ("-n", "--normalized"):
         normalized = True
         y_range = "[0:1]"
+    elif o in ("-i", "--infoonly"):
+        info_only = True 
     elif o in ("-F", "--showfreqs"):
         show_freqs = True #only for binned, frequenxy on top of histogram
     elif o in ("-x", "--x-range"):
@@ -206,6 +209,9 @@ for scf in all_files:
     print "Wordlp",   min_wordlp, max_wordlp
     print "Distsize", min_distsize, max_distsize
 
+    if info_only:
+        sys.exit(0)
+        
     # Find dist freq which occurs most
     distrsizes_sum = 0
     for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
