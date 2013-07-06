@@ -27,8 +27,6 @@ aanbestedingsresultaten~aanbestedingsresulaten
 aanbevolen~aangebevolen
 aanbieding~aambieding
 aanboden~aanbooden
-
-Input is plain text files, one sentence per line.
 """
 
 afile = None
@@ -90,14 +88,24 @@ with open(afile, "r") as f:
             num = int( r.uniform(0, 10) ) #create error if [0, 1] out of [0, ... 9] (1/5)
             numindexes = len(indexes)
             # create one error per line
-            if num < 2 and numindexes > 0:
-                randomidx = int( r.uniform(0, numindexes) ) #choose one
-                w = words[ indexes[randomidx] ] #the word from the line
+            if num < 2 and numindexes > 0 and numindexes < 3:
+                randomidx = indexes[ int( r.uniform(0, numindexes) ) ] #choose one
+                w = words[ randomidx ] #the word from the line
                 numerrs = len(vk_errors[w]) #number the possible errors
                 randerr = int( r.uniform(0, numerrs) ) #choose one of them
-                words[ indexes[randomidx] ] = vk_errors[w][randerr]
-                print "CHANGE", w, words[ indexes[randomidx] ] 
+                words[ randomidx ] = vk_errors[w][randerr]
+                print "CHANGE", w, words[ randomidx ] 
                 made_changes += 1
+            elif num < 2 and numindexes > 0 and numindexes > 2:
+                randomidxs = random.sample(set(indexes), 2) #take two random
+                print randomidxs, indexes
+                for randomidx in randomidxs:
+                    w = words[ randomidx ] #the word from the line
+                    numerrs = len(vk_errors[w]) #number the possible errors
+                    randerr = int( r.uniform(0, numerrs) ) #choose one of them
+                    words[ randomidx ] = vk_errors[w][randerr]
+                    print "CHANGE", w, words[ randomidx ] 
+                    made_changes += 1
             new_line = ' '.join(words)
             fo.write(new_line+"\n")
 print "Made", made_changes, "changes out of", poss_changes, "posible changes."
