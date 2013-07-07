@@ -37,12 +37,13 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_o $opt_s $opt_v/;
+use vars qw/ $opt_o $opt_s $opt_t $opt_v/;
 
-getopts('o:s:v:');
+getopts('o:s:tv:');
 
 my $orig_file = $opt_o || "";   #original instances (testfile)
 my $sc_file   = $opt_s || "";   #wopr output
+my $top_only  = $opt_t || 0;    #top-answer can be correct only (to be implemented)
 my $v         = $opt_v || 0;    #verbosity
 
 my $oneliner = 1;
@@ -117,39 +118,41 @@ while ( my $ls = <FHS> ) {
       # There is a difference between the targets, i.e an error.
       print "$test_target (was $orig_target)\n";
     }
+    my $index_counter = 0
     for ( my $idx = $c+1; $idx < $#ps; $idx += 2) {
       my $correction = $ps[$idx];
       #
       # If one of the suggestions equals $orig_target, we did
-      # a correct spelling correction correction. :-)
+      # a correct spelling correction correction. :-) In strict
+      # mode, only the top answer can be correct.
       #
       if ( $correction eq $orig_target ) {
-		if ( $v > 0 ) {
-		  print "$test_target -> $correction GOODSUGG\n";
-		}
-		print OFHD "GOODSUGG $test_target -> $correction\n";
-		++$good_sugg;
+        if ( $v > 0 ) {
+          print "$test_target -> $correction GOODSUGG\n";
+        }
+        print OFHD "GOODSUGG $test_target -> $correction\n";
+        ++$good_sugg;
       } else {
-		#check for unneccessary corrections also
-		# could be a mistake, corrected wrongly, or no mistake to start with.
-		#   states -> status (should be: states) BADSUGG
-		# versus
-		#   Austraia -> Austria (should be: Australia) WRONGSUGG
-		if ( $test_target eq $orig_target ) {
-		  if ( $v > 0 ) {
-			# here we suggest a correction for something that is not wrong.
-			print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
-		  }
-		  print OFHD "BADSUGG $test_target -> $correction (should be: $orig_target)\n";
-		  ++$bad_sugg;
-		} else {
-		  if ( $v > 0 ) {
-			# here we suggest the wrong correction for an error.
-			print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
-		  }
-		  print OFHD "WRONGSUGG $test_target -> $correction (should be: $orig_target)\n";
-		  ++$wrong_sugg;
-		}
+    		#check for unneccessary corrections also
+		    # could be a mistake, corrected wrongly, or no mistake to start with.
+		    #   states -> status (should be: states) BADSUGG
+		    # versus
+		    #   Austraia -> Austria (should be: Australia) WRONGSUGG
+		  if ( $test_target eq $orig_target ) {
+        if ( $v > 0 ) {
+			  # here we suggest a correction for something that is not wrong.
+        print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
+        }
+        print OFHD "BADSUGG $test_target -> $correction (should be: $orig_target)\n";
+        ++$bad_sugg;
+        } else {
+          if ( $v > 0 ) {
+			      # here we suggest the wrong correction for an error.
+            print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
+          }
+          print OFHD "WRONGSUGG $test_target -> $correction (should be: $orig_target)\n";
+          ++$wrong_sugg;
+        } #else
       }
     }
   }

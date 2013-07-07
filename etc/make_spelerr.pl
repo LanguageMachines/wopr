@@ -10,15 +10,29 @@ use Getopt::Std;
 # Introduce "spelling errors".
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_m $opt_p /;
+use vars qw/ $opt_f $opt_l $opt_m $opt_p /;
 
-getopts('f:m:p:');
+getopts('f:l:m:p:');
 
-my $file = $opt_f || "";
-my $mode = $opt_m || 1;   #0 is instances, 1 is plain text
-my $p    = $opt_p || 0.9; #prob for a change
+my $file    = $opt_f || "";
+my $lexicon = $opt_l || "";
+my $mode    = $opt_m || 1;   #0 is instances, 1 is plain text
+my $p       = $opt_p || 0.9; #prob for a change
 
 #------------------------------------------------------------------------------
+
+my %lex;
+if ( $lexicon ne "" ) {
+  open(FHW, $lexicon)  || die "Can't open file.";
+  while ( my $line = <FHW> ) {
+    chomp $line;
+
+    my @parts  = split(/ /, $line);
+
+    $lex{$parts[0]} = $parts[1];
+  }
+  close(FHW);
+}
 
 open(FH, $file) || die "Can't open file.";
 while ( my $line = <FH> ) {
@@ -34,14 +48,14 @@ while ( my $line = <FH> ) {
     my $lt = length($target);
     if ( $lt > 1 ) { #skip _ . , etc
       if ( rand() > $p ) {
-	$target = errorify( $target );
+       $target = errorify( $target );
       }
     }
     print join(' ', @parts[0..($#parts-1)], $target), "\n";
   } elsif ( $mode == 1 ) {
     foreach my $word ( @parts ) {
       if ( rand() > $p ) {
-	$word = errorify( $word );
+       $word = errorify( $word );
       }
       print "$word ";
     }
@@ -92,8 +106,11 @@ sub errorify {
       $target = join( '', @chars[0..$idx], @chars[$idx..($#chars)] );
       #print "DUPLICATE($idx): $target\n";
     }
-    
-  return $target;
+  
+    if ( exists $lex{$target}) {
+      print "(e)";
+    }
+  return $target; # check if in lexicon
 }
  
 __END__
