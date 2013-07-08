@@ -575,6 +575,7 @@ int correct( Logfile& l, Config& c ) {
   int                max_tf           = stoi( c.get_value( "max_tf", "1" ));
   int                skip             = 0;
   bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
+  bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -943,7 +944,9 @@ int correct( Logfile& l, Config& c ) {
 		//
 		std::vector<distr_elem*> distr_vec;
 		if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
-		  distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs);
+		  if ( (typo_only && target_unknown) || ( ! typo_only) ) { 
+			distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs);
+		  }
 		}
 	  
 		// Word logprob (ref. Antal's mail 21/11/08)

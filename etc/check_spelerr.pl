@@ -90,11 +90,11 @@ while ( my $ls = <FHS> ) {
   if ( $l == 0 ) { #do only once
     while ( $i < $#ps ) {
       if ( $ps[$i] =~ /\(.*\)/ ) {
-		$l = $i;
+        $l = $i;
       }
       if ( $ps[$i] eq "[" ) {
-		$c = $i;
-		$i = $#ps;
+        $c = $i;
+        $i = $#ps;
       }
       ++$i;
     }
@@ -105,9 +105,11 @@ while ( my $ls = <FHS> ) {
 
   # Count "real" errors, number of differences between targets.
   #
+  my $text_error = 0;
   if ( $test_target ne $orig_target ) {
     ++$errors;
-	print OFHD "ERROR: $test_target should be $orig_target\n";
+    $text_error = 1; #error with respect to gold data
+    print OFHD "ERROR: $test_target should be $orig_target\n";
   }
 
   # Do we have suggestions from wopr?
@@ -118,7 +120,7 @@ while ( my $ls = <FHS> ) {
       # There is a difference between the targets, i.e an error.
       print "$test_target (was $orig_target)\n";
     }
-    my $index_counter = 0
+    my $index_counter = 0;
     for ( my $idx = $c+1; $idx < $#ps; $idx += 2) {
       my $correction = $ps[$idx];
       #
@@ -138,24 +140,28 @@ while ( my $ls = <FHS> ) {
 		    #   states -> status (should be: states) BADSUGG
 		    # versus
 		    #   Austraia -> Austria (should be: Australia) WRONGSUGG
-		  if ( $test_target eq $orig_target ) {
+		  if ( $text_error == 0 ) { #no text error
         if ( $v > 0 ) {
-			  # here we suggest a correction for something that is not wrong.
-        print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
+			    # here we suggest a correction for something that is not wrong.
+          print "$test_target -> $correction (should be: $orig_target) BADSUGG\n";
         }
         print OFHD "BADSUGG $test_target -> $correction (should be: $orig_target)\n";
         ++$bad_sugg;
-        } else {
-          if ( $v > 0 ) {
-			      # here we suggest the wrong correction for an error.
-            print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
-          }
-          print OFHD "WRONGSUGG $test_target -> $correction (should be: $orig_target)\n";
-          ++$wrong_sugg;
-        } #else
-      }
+      } else { #we do have a text error
+        if ( $v > 0 ) {
+			    # here we suggest the wrong correction for an error.
+          print "$test_target -> $correction (should be: $orig_target) WRONGSUGG\n";
+        }
+        print OFHD "WRONGSUGG $test_target -> $correction (should be: $orig_target)\n";
+        ++$wrong_sugg;
+      } #else
+    }
+    ++$index_counter;
+    if ( $top_only ) {
+      last; # only do the first, break to ignore the rest.
     }
   }
+} # corrections > 0
   # No suggestions, but we had an error.
   #
   if ( ($corrections == 0) && ($test_target ne $orig_target) ) {
