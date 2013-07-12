@@ -39,6 +39,8 @@ def levenshtein_wp(s1, s2):
             insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
             deletions = current_row[j] + 1       # than s2
             substitutions = previous_row[j] + (c1 != c2)
+            if j-i == 1: #this 'correction' makes swap LD:1
+                substitutions -= 1
             current_row.append(min(insertions, deletions, substitutions))
 
         previous_row = current_row

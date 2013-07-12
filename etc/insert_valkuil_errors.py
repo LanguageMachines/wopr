@@ -29,12 +29,36 @@ aanbieding~aambieding
 aanboden~aanbooden
 """
 
+def levenshtein_wp(s1, s2):
+    if len(s1) < len(s2):
+        return levenshtein(s2, s1)
+    if not s1:
+        return len(s2)
+ 
+    previous_row = xrange(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+            deletions = current_row[j] + 1       # than s2
+            substitutions = previous_row[j] + (c1 != c2)
+            if j-i == 1: #this 'correction' makes swap LD:1
+                substitutions -= 1
+            current_row.append(min(insertions, deletions, substitutions))
+
+        previous_row = current_row
+ 
+    return previous_row[-1]
+
 afile = None
 vkfile = "ValkuilErrors.1.0_ns"
 prob = 2
+lex = None
+min_l = 3 #minimum length of word >= min_l
+max_ld = 1 #maximum LD <= max_ld
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "f:v:p:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "d:f:l:m:v:p:", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(1)
@@ -43,10 +67,21 @@ for o, a in opts:
         afile = a 
     elif o in ("-v"): 
         vkfile = a
+    elif o in ("-l"): 
+        lex = a
+    elif o in ("-m"): 
+        min_l = int(a)
+    elif o in ("-d"): 
+        max_ld = int(a)
     elif o in ("-p"): 
         prob = int(a)
     else:
         assert False, "unhandled option"
+
+lexicon = {}
+lex_errs = {}
+if lex:
+    lexicon = dict( ( line.split()[0], int(line.split()[1])) for line in open(lex))
 
 f_path, f_name = os.path.split(afile)
 afile_outs = f_name+".vkerr" # with spelling errors
@@ -63,10 +98,22 @@ with open(vkfile, "r") as f:
             w = m.group(1)
             e = m.group(2)
             #print w, e
-            try:
-                vk_errors[w].append(e) 
-            except:
-                vk_errors[w] = [ e ]
+            err_in_lex = False
+            if lex:
+                if e in lexicon:
+                    err_in_lex = True
+                    try:
+                        lex_errs[e] += 1
+                    except:
+                        print "LEXICON", e
+                        lex_errs[e] = 1
+            ld = levenshtein_wp(w, e)
+            if not err_in_lex:#reverse for confusibles only,
+                if ld <= max_ld and len(w) >= min_l:
+                    try:
+                        vk_errors[w].append(e) 
+                    except:
+                        vk_errors[w] = [ e ]
 
 r = random.Random()
 made_changes = 0
@@ -98,7 +145,7 @@ with open(afile, "r") as f:
                 randomidxs = random.sample(set(indexes), 2) #take two random
             for randomidx in randomidxs:
                 w = words[ randomidx ] #the word from the line
-                numerrs = len(vk_errors[w]) #number the possible errors
+                numerrs = len(vk_errors[w]) #number of possible errors
                 randerr = int( r.uniform(0, numerrs) ) #choose one of them
                 words[ randomidx ] = vk_errors[w][randerr]
                 print "CHANGE", w, words[ randomidx ] 
@@ -107,3 +154,6 @@ with open(afile, "r") as f:
             fo.write(new_line+"\n")
 print "Made", made_changes, "changes out of", poss_changes, "posible changes."
 
+if lex:
+    print "Lexicon contains",len(lex_errs),"errors."
+    #print repr(lex_errs)
