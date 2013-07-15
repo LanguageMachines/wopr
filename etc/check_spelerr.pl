@@ -37,13 +37,14 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_o $opt_s $opt_t $opt_v/;
+use vars qw/ $opt_a $opt_o $opt_s $opt_t $opt_v/;
 
-getopts('o:s:tv:');
+getopts('ao:s:tv:');
 
+my $acc       = $opt_a || 0; #print accuracy, f-score, etc
 my $orig_file = $opt_o || "";   #original instances (testfile)
 my $sc_file   = $opt_s || "";   #wopr output
-my $top_only  = $opt_t || 0;    #top-answer can be correct only (to be implemented)
+my $top_only  = $opt_t || 0;    #top-answer can be correct only 
 my $v         = $opt_v || 0;    #verbosity
 
 my $oneliner = 1;
@@ -70,10 +71,11 @@ open(OFHD, ">$out_data") || die "Can't open datafile.";
 my $l = 0; #position of (word)
 my $c = 0; #position of bracket before first [ correction 1 ]
 
-my $good_sugg  = 0; # corrected a real mistake
-my $no_sugg    = 0; # should have corrected a real mistake
+# TP, FP, TN, FN
+my $good_sugg  = 0; # TP, corrected a real mistake
+my $no_sugg    = 0; # ??,should have corrected a real mistake
 my $bad_sugg   = 0; # tried to correct a mistake, got it wrong
-my $wrong_sugg = 0; # tried to correct a correct word.
+my $wrong_sugg = 0; # TN, tried to correct a correct word.
 my $lines      = 0;
 my $errors     = 0;
 
@@ -181,7 +183,57 @@ close(OFHD);
 close(FHS);
 close(FHO);
 
-if ($oneliner) {
+if ( $acc ) {
+  #Global, same as correctie
+  my $TP = $good_sugg;
+  my $FN = $wrong_sugg + $no_sugg;
+  my $FP = $bad_sugg;
+  my $TN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+  #
+  my $RCL = ($TP*100)/($TP+$FN);           #TPR
+  my $ACC = (100*($TP+$TN))/($lines);
+  my $PRC = (100*$TP)/($TP+$FP);           #PPV
+  my $FPR = (100*$FP)/($FP+$TN);
+  my $F1S = (100*2*$TP)/((2*$TP)+$FP+$FN);
+
+  #Detectie:
+  my $dTP = $good_sugg + $wrong_sugg;
+  my $dFN = $no_sugg;
+  my $dFP = $bad_sugg;
+  my $dTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+
+  my $dRCL = ($dTP*100)/($dTP+$dFN);           #TPR
+  my $dACC = (100*($dTP+$dTN))/($lines);
+  my $dPRC = (100*$dTP)/($dTP+$dFP);           #PPV
+  my $dFPR = (100*$dFP)/($dFP+$dTN);
+  my $dF1S = (100*2*$dTP)/((2*$dTP)+$dFP+$dFN);
+
+  #Correctie:
+  my $cTP = $good_sugg;
+  my $cFN = $no_sugg + $wrong_sugg;
+  my $cFP = $bad_sugg;
+  my $cTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+
+  my $cRCL = ($cTP*100)/($cTP+$cFN);           #TPR
+  my $cACC = (100*($cTP+$cTN))/($lines);
+  my $cPRC = (100*$cTP)/($cTP+$cFP);           #PPV
+  my $cFPR = (100*$cFP)/($cFP+$cTN);
+  my $cF1S = (100*2*$cTP)/((2*$cTP)+$cFP+$cFN);
+
+  #print "a TP+FN=",$TP+$FN,", FP+TN=", $FP+$TN,", TP+FP=", $TP+$FP,",FN+TN=", $FN+$TN, "\n";
+  #print "d TP+FN=",$dTP+$dFN,", FP+TN=", $dFP+$dTN,", TP+FP=", $dTP+$dFP,",FN+TN=", $dFN+$dTN, "\n";
+  #print "c TP+FN=",$cTP+$cFN,", FP+TN=", $cFP+$cTN,", TP+FP=", $cTP+$cFP,",FN+TN=", $cFN+$cTN, "\n";
+  my $out = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $TP, $FN, $FP, $TN, $PRC, $RCL, $ACC, $F1S);
+  my $dout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $dTP, $dFN, $dFP, $dTN, $dPRC, $dRCL, $dACC, $dF1S);
+  my $cout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $cTP, $cFN, $cFP, $cTN, $cPRC, $cRCL, $cACC, $cF1S);
+  #print "a $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg "; 
+  #print "$out\n";
+  print "d $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  print "$dout\n";
+  print "c $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  print "$cout\n";
+
+} elsif ($oneliner) {
   #print "l:$lines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
   print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
   if ($errors != 0) {
