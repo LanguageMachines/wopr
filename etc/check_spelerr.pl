@@ -228,10 +228,9 @@ if ( $acc ) {
   my $cout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $cTP, $cFN, $cFP, $cTN, $cPRC, $cRCL, $cACC, $cF1S);
   #print "a $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg "; 
   #print "$out\n";
-  print "d $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
-  print "$dout\n";
-  print "c $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
-  print "$cout\n";
+  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  print "d $dout "; #detection
+  print "c $cout\n"; #correction
 
 } elsif ($oneliner) {
   #print "l:$lines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";

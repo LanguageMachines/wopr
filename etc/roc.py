@@ -177,15 +177,111 @@ def process_px(pxfile, lc, rc):
 
     gl.info("Ready")
 
+# For spelling correction we need the original gold file also.
+# This is a file with instances, so as long as the px file.
+# These stats don't make sense, don't use.
+def process_sc(pxfile, goldfile, lc, rc):
+    target_pos = lc + rc
+    word_pos   = target_pos # ?
+    classf_pos = lc + rc + 7 # first one inside [ ]
+    indicator_pos = lc + rc + 5 #not available
+    
+    # Pass one, read targets for a word list.
+    #
+    words = []
+    matrices = []
+    classifications = 0
+    gl.info("Reading files: "+pxfile+"/"+goldfile)
+    # iconv -f ISO-8859-1 -t UTF-8 DTI.tok.t1000.vkerr1.l2r0 >DTI.tok.t1000.vkerr1.l2r0.utf8
+    # iconv -f ISO-8859-1 -t UTF-8 DTI.tok.t1000.vkerr1.l2r0_TPO14248.sc  > DTI.tok.t1000.vkerr1.l2r0_TPO14248.sc.utf8
+    f = codecs.open(pxfile, "r", "utf-8")
+    golddata = []
+    with codecs.open(goldfile, 'rb', encoding='utf-8') as gf:
+        for line in gf:
+            golddata.append( line )
+    if not golddata:
+        raise Exception("Cannot read gold data.")
+    goldidx = 0
+    for line in f:
+        if line[0] == "#":
+            continue
+        goldline = golddata[goldidx] #check for '#'?
+        goldidx += 1
+        goldbits = goldline.split()
+        classifications += 1
+        bits = line.split()
+        word = bits[target_pos] #the misspelled word
+        #
+        # If the goldline[target_pos] not equal bits[target_pos]
+        # then we have a spelling error. Otherwise ignore this line.
+        #
+        if goldbits[target_pos] == bits[target_pos]:
+            continue
+        print "ERROR", goldbits[target_pos], bits[target_pos]
+        classf = bits[classf_pos] #classification is top-1 from distro
+        indicator = "-" #bits[indicator_pos] #cg, cd, ic not available in SC
+        #gl.info(bits[target_pos]+"/"+bits[classf_pos])
+        if word not in words:
+            words.append(word)
+            wordm = Matrix(word)
+            matrices.append(wordm)
+        else:
+            wordm = [m for m in matrices if m.word == word][0]
+        wordm.add_classification(classf, indicator)
+    f.close()
+
+    gl.info("Number of classifications: "+str(classifications))
+    gl.info("Calculating stats.")
+
+    # Pass two, look up words in other words :-)
+    #
+    for wordm in matrices:
+        gl.debug(wordm.to_str())
+        fword = wordm.word #this word we focus on
+        # see if this word is classified elsewhere
+        fps = [(x.word, x.get_classfn(fword)) for x in matrices if x.get_classfn(fword) != None]
+        if fps:
+            gl.debug("FPs for: "+wordm.word)
+            # the x in [fps] means x has been classified as fword.
+            # this is called a false positive for the current fword
+            gl.debug("FPs: "+repr([x for x in fps]))
+            for fp in fps:
+                wordm.FP += fp[1][1]
+            gl.debug(wordm.to_str())
+
+    gl.info("Calculate TN from other stats.")
+
+    # Pass three, fill in the TN value
+    #
+    for wordm in matrices:
+        wordm.TN = classifications - wordm.TP - wordm.FP - wordm.FN
+        #gl.info(wordm.to_str())
+        #gl.info( str(wordm.accuracy())+"/"+str(wordm.precision())+"/"+str(wordm.sensitivity())+"/"+str(wordm.FPR())\
+        #         +"/"+str(wordm.specificity())+"/"+str(wordm.Fscore())+"/"+repr(wordm.ROCpoint()) )
+
+    gl.info("Creating gnuplot output.")
+
+    # Gnuplot output
+    # python roc.py -f bla.px > tmp
+    # plot [0:1][0:1]"tmp" using 2:3 with points
+    print "# word TP FP FN TN pt0 pt1 accuracy precision recall Fscore"
+    for wordm in matrices:
+        pt = wordm.ROCpoint()
+        if True or pt[0] < pt[1]: #only top-left
+            print wordm.word,wordm.TP,wordm.FP,wordm.FN,wordm.TN,pt[0],pt[1],wordm.accuracy(),wordm.precision(),wordm.recall(),wordm.Fscore()
+
+    gl.info("Ready")
+
 # ----------------------------------------------------------------------------
 
 pxfile = None
 lc = 2
 rc = 0
 do_dir = False
+goldfile = None
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "df:l:r:", ["lc=","rc="])
+    opts, args = getopt.getopt(sys.argv[1:], "df:g:l:r:", ["lc=","rc="])
 except getopt.GetoptError, err:
     # print help information and exit:
     gl.error(str(err))
@@ -193,6 +289,8 @@ except getopt.GetoptError, err:
 for o, a in opts:
     if o in ("-f"):
         pxfile = a
+    elif o in ("-g"):
+        goldfile = a
     elif o in ("-d"):
         do_dir = True
     elif o in ("-l"):
@@ -226,7 +324,10 @@ else:
     if not pxfile:
         gl.error("Need at least: -f .px file.")
         sys.exit(2)
-    process_px(pxfile, lc, rc)
+    if not goldfile:
+        process_px(pxfile, lc, rc)
+    else:
+        process_sc(pxfile, goldfile, lc, rc)
     
 '''
 wordm = Matrix("test")
