@@ -31,7 +31,7 @@ aanboden~aanbooden
 
 def levenshtein_wp(s1, s2):
     if len(s1) < len(s2):
-        return levenshtein(s2, s1)
+        return levenshtein_wp(s2, s1)
     if not s1:
         return len(s2)
  
@@ -42,13 +42,30 @@ def levenshtein_wp(s1, s2):
             insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
             deletions = current_row[j] + 1       # than s2
             substitutions = previous_row[j] + (c1 != c2)
-            if j-i == 1: #this 'correction' makes swap LD:1
-                substitutions -= 1
             current_row.append(min(insertions, deletions, substitutions))
 
         previous_row = current_row
  
     return previous_row[-1]
+
+def damerau(seq1, seq2):
+    oneago = None
+    thisrow = range(1, len(seq2) + 1) + [0]
+    for x in xrange(len(seq1)):
+        # Python lists wrap around for negative indices, so put the
+        # leftmost column at the *end* of the list. This matches with
+        # the zero-indexed strings and saves extra calculation.
+        twoago, oneago, thisrow = oneago, thisrow, [0] * len(seq2) + [x + 1]
+        for y in xrange(len(seq2)):
+            delcost = oneago[y] + 1
+            addcost = thisrow[y - 1] + 1
+            subcost = oneago[y - 1] + (seq1[x] != seq2[y])
+            thisrow[y] = min(delcost, addcost, subcost)
+            # This block deals with transpositions
+            if (x > 0 and y > 0 and seq1[x] == seq2[y - 1]
+                and seq1[x-1] == seq2[y] and seq1[x] != seq2[y]):
+                thisrow[y] = min(thisrow[y], twoago[y - 2] + 1)
+    return thisrow[len(seq2) - 1]
 
 afile = None
 vkfile = "ValkuilErrors.1.0_ns"
@@ -87,6 +104,7 @@ f_path, f_name = os.path.split(afile)
 afile_outs = f_name+".vkerr" # with spelling errors
 
 vk_errors = {} # word => [ er1, er2 ]
+vk_ld_counts = {}
 with open(vkfile, "r") as f:
     for line in f:
         line = line[:-1]
@@ -107,9 +125,17 @@ with open(vkfile, "r") as f:
                     except:
                         print "LEXICON", e
                         lex_errs[e] = 1
-            ld = levenshtein_wp(w, e)
+            ld = damerau(w, e)
+            try:
+                vk_ld_counts[ld] += 1
+            except:
+                vk_ld_counts[ld] = 1
+            if ld == 0:
+                print ld, w, e
+            if ld < 0:
+                print ld, w, e
             if not err_in_lex:#reverse for confusibles only,
-                if ld <= max_ld and len(w) >= min_l:
+                if ld > 0 and ld <= max_ld and len(w) >= min_l:
                     try:
                         vk_errors[w].append(e) 
                     except:
@@ -118,6 +144,8 @@ with open(vkfile, "r") as f:
 r = random.Random()
 made_changes = 0
 poss_changes = 0
+changed = {}
+lds = {}
 with open(afile, "r") as f:
     with open(afile_outs, "w") as fo:
         for line in f:
@@ -148,12 +176,29 @@ with open(afile, "r") as f:
                 numerrs = len(vk_errors[w]) #number of possible errors
                 randerr = int( r.uniform(0, numerrs) ) #choose one of them
                 words[ randomidx ] = vk_errors[w][randerr]
-                print "CHANGE", w, words[ randomidx ] 
+                ld = damerau(w, vk_errors[w][randerr])
+                print "CHANGE", w, words[ randomidx ], ld
+                try:
+                    changed[ vk_errors[w][randerr] ] += 1
+                except:
+                    changed[ vk_errors[w][randerr] ] = 1
+                try:
+                    lds[ld] += 1
+                except:
+                    lds[ld] = 1
                 made_changes += 1
             new_line = ' '.join(words)
             fo.write(new_line+"\n")
-print "Made", made_changes, "changes out of", poss_changes, "posible changes."
+print "Made", made_changes, "changes out of", poss_changes, "possible changes."
 
 if lex:
     print "Lexicon contains",len(lex_errs),"errors."
     #print repr(lex_errs)
+
+for ld in vk_ld_counts:
+    print "VKLD", ld, vk_ld_counts[ld]
+
+for change in changed:
+    print "FREQ", change, changed[change]
+for ld in lds:
+    print "LD", ld, lds[ld]

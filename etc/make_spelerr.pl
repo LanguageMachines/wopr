@@ -71,7 +71,7 @@ sub errorify {
     # mangle target
     my $r = int(rand(4));
     my $lt = length($target);
-    if ( $lt < 2 ) {
+    if ( $lt < 3 ) { #ignore very small words
       return $target;
     }
     if ( $r == 0 ) {
