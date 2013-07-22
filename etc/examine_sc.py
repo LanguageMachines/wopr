@@ -272,7 +272,7 @@ for scf in all_files:
                     #break #to stop after largest
 
     # Entropy distribution, etc.
-    scfo = scf + ".ds.other"
+    scfo = scf + ".ds.entropy"
     print "Data file", scfo
     with open(scfo, 'w') as f:
         e_int = "0.00"
@@ -378,6 +378,40 @@ for scf in all_files:
             f.write("set term pop\n")
             #f.write("pause -1\n")
         print "Gnuplot file", scfp
+
+    # Gnuplot file for entropy
+    scfp = scf + ".entropy.plot"
+    #http://xmodulo.com/2013/01/how-to-plot-data-without-data-files-in-gnuplot.html
+    with open(scfp, 'w') as f:
+        f.write("# Created by examine_sc.py -f "+scf+"\n" )
+        for ls in line_styles:
+            f.write( ls+"\n" )
+        info_str = "l"+str(lc)+"r"+str(rc)
+        if hpx > 0:
+            info_str += ", hapax "+str(hpx)
+        f.write("set title \"Entropy distribution, "+info_str+"\"\n")
+        f.write("set size 1.3,1\n")
+        f.write("set xlabel \"Entropy (integer)\"\n")
+        f.write("set xrange "+x_range+"\n")
+        f.write("set xtics out\n")
+        f.write("set xtics rotate by 295 nomirror\n")
+        f.write("set rmargin 5\n")
+        f.write("set ytics out nomirror\n")
+        f.write("set border 3\n") #http://ontublog.blogspot.se/2009/09/complex-axis-in-gnuplot.html
+        f.write("set yrange "+y_range+"\n")
+        f.write("set style data histogram\n")
+        f.write("set style histogram cluster gap 1\n")
+        f.write("set style fill solid\n") # (...solid border -1), and set boxwidth 0.8
+        f.write("set ylabel \"Count\"\n")
+        f.write("plot '"+scfo+"' using 2:xticlabels(1) ls 1 title \"\"\n")
+        f.write("set terminal push\n")
+        f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
+        f.write("set out '"+scf+".entropy.ps'\n")
+        f.write("replot\n")
+        f.write("!epstopdf '"+scf+".entropy.ps'\n")
+        f.write("set term pop\n")
+        #f.write("pause -1\n")
+    print "Gnuplot file", scfp
 
 '''
 set xtics ("332" 332, "336" 336, "340" 340, "394" 394, "398" 398, "1036" 1036)
