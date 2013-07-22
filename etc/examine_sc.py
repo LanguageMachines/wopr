@@ -135,6 +135,7 @@ for scf in all_files:
     max_wordlp   =     0.0
 
     distr_distsize = {}
+    distr_entropy  = {}
 
     for line in scf_lines:
         # but he had enough to learned (had) -14.0397 2.84644 16840.7 8 [ earned 1 ]
@@ -142,11 +143,12 @@ for scf in all_files:
         # ('let it not', 'pass', '-6.39197', '1.98777', '83.9797', '5', ' ')
         # lp, entropy, word_lp, dist_size
         # 
-        logprob  = 0
-        entropy  = 0
-        wordlp   = 0
-        distsize = 0
-        matched  = False
+        logprob   = 0
+        entropy   = 0
+        wordlp    = 0
+        distsize  = 0
+        indicator = "?"
+        matched   = False
         # Match for *.sc files
         m = re.match( "(.*?) \((.*?)\) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) \[ (.*?)\]", line )
         if m:
@@ -164,11 +166,12 @@ for scf in all_files:
             m = re.match( "(.*?) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) (cd|cg|ic) (k|u) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+) ([0-9\.,e+\-]+)( \[ (.*?)\])?", line)
             if m:
                 line_count += 1
-                logprob  = float(m.group(2))
-                entropy  = float(m.group(3))
-                wordlp   = float(m.group(4))
-                distsize = int(m.group(9))
-                matched  = True
+                logprob   = float(m.group(2))
+                entropy   = float(m.group(3))
+                wordlp    = float(m.group(4))
+                indicator = m.group(5)
+                distsize  = int(m.group(9))
+                matched   = True
         if matched:
             sum_logprob += logprob
             if logprob < min_logprob:
@@ -198,7 +201,14 @@ for scf in all_files:
                     bin_counts[bin] += 1
                 except:
                     print "No bin for", bin, distsize
-
+            e_int = int(entropy)
+            if entropy == 0: # only when distrsize == 1
+                e_int = "0.00"
+            if indicator != "": #can count for only "cg" etc
+                try:
+                    distr_entropy[e_int] += 1
+                except:
+                    distr_entropy[e_int] = 1
         if not matched and show_missed:
             print line[:-1] 
 
@@ -209,9 +219,14 @@ for scf in all_files:
     print "Wordlp",   min_wordlp, max_wordlp
     print "Distsize", min_distsize, max_distsize
 
+    for e_int in sorted(distr_entropy):
+        print e_int, distr_entropy[e_int]
+
     if info_only:
         sys.exit(0)
-        
+    
+    scf = os.path.basename(scf)
+
     # Find dist freq which occurs most
     distrsizes_sum = 0
     for distrsize, distrsize_count in iter(sorted(distr_distsize.iteritems())):
@@ -255,6 +270,16 @@ for scf in all_files:
                 if bins[x][1] > max_distsize:
                     pass
                     #break #to stop after largest
+
+    # Entropy distribution, etc.
+    scfo = scf + ".ds.other"
+    print "Data file", scfo
+    with open(scfo, 'w') as f:
+        e_int = "0.00"
+        f.write( str(e_int)+" "+str(distr_entropy[e_int])+"\n" )
+        for e_int in sorted(distr_entropy):
+            if e_int != "0.00":
+                f.write( str(e_int)+" "+str(distr_entropy[e_int])+"\n" )
 
     line_styles = [ "set style line 1 lc rgb '#1047a9' lt 1 lw 2 pt 7 pi -1 ps 1.5",
     "set style line 2 lc rgb '#4577d4' lt 1 lw 2 pt 7 pi -1 ps 1.5",

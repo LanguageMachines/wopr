@@ -57,14 +57,14 @@ my $oneliner = 1;
 #
 #  0 1   2  => instance from test_file
 
-open(FHO, $orig_file) || die "Can't open file.";
-open(FHS, $sc_file)   || die "Can't open file.";
+open(FHO, $orig_file) || die "Can't open file $orig_file.";
+open(FHS, $sc_file)   || die "Can't open file $sc_file.";
 
 my $out_data = $sc_file.".errs";
 if ( $top_only ) {
   $out_data = $out_data."1";
 }
-open(OFHD, ">$out_data") || die "Can't open datafile.";
+open(OFHD, ">$out_data") || die "Can't open datafile $out_data.";
 
 #Skip headers?
 
@@ -190,10 +190,20 @@ if ( $acc ) {
   my $FP = $bad_sugg;
   my $TN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
   #
-  my $RCL = ($TP*100)/($TP+$FN);           #TPR
+  my $RCL = 0;
+  if ( $TP+$FN > 0 ) {
+    $RCL = ($TP*100)/($TP+$FN);           #TPR
+  }
   my $ACC = (100*($TP+$TN))/($lines);
-  my $PRC = (100*$TP)/($TP+$FP);           #PPV
-  my $FPR = (100*$FP)/($FP+$TN);
+
+  my $PRC = 0;
+  if ( $TP+$FP > 0 ) {
+    $PRC = (100*$TP)/($TP+$FP);           #PPV
+  }
+  my $FPR = 0;
+  if ( $FP+$TN > 0 ) {
+    $FPR = (100*$FP)/($FP+$TN);
+  }
   my $F1S = (100*2*$TP)/((2*$TP)+$FP+$FN);
 
   #Detectie:
@@ -202,10 +212,20 @@ if ( $acc ) {
   my $dFP = $bad_sugg;
   my $dTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
 
-  my $dRCL = ($dTP*100)/($dTP+$dFN);           #TPR
+  my $dRCL = 0;
+  if ($dTP+$dFN > 0) {
+    $dRCL = ($dTP*100)/($dTP+$dFN);           #TPR
+  }
   my $dACC = (100*($dTP+$dTN))/($lines);
-  my $dPRC = (100*$dTP)/($dTP+$dFP);           #PPV
-  my $dFPR = (100*$dFP)/($dFP+$dTN);
+  my $dPRC = 0;
+  if ( $dTP+$dFP > 0 ) {
+    $dPRC = (100*$dTP)/($dTP+$dFP);          #PPV
+  }
+  my $dFPR = 0;
+  if ( $dFP+$dTN > 0 ) {
+    $dFPR = (100*$dFP)/($dFP+$dTN);
+  }
+
   my $dF1S = (100*2*$dTP)/((2*$dTP)+$dFP+$dFN);
 
   #Correctie:
@@ -214,10 +234,19 @@ if ( $acc ) {
   my $cFP = $bad_sugg;
   my $cTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
 
-  my $cRCL = ($cTP*100)/($cTP+$cFN);           #TPR
+  my $cRCL = 0;
+  if ( $cTP+$cFN > 0 ) {
+    $cRCL = ($cTP*100)/($cTP+$cFN);           #TPR
+  }
   my $cACC = (100*($cTP+$cTN))/($lines);
-  my $cPRC = (100*$cTP)/($cTP+$cFP);           #PPV
-  my $cFPR = (100*$cFP)/($cFP+$cTN);
+  my $cPRC = 0;
+  if ( $cTP+$cFP > 0 ) {
+    $cPRC = (100*$cTP)/($cTP+$cFP);
+  }
+  my $cFPR = 0;
+  if ( $cFP+$cTN > 0 ) {
+    $cFPR = (100*$cFP)/($cFP+$cTN);
+  }
   my $cF1S = (100*2*$cTP)/((2*$cTP)+$cFP+$cFN);
 
   #print "a TP+FN=",$TP+$FN,", FP+TN=", $FP+$TN,", TP+FP=", $TP+$FP,",FN+TN=", $FN+$TN, "\n";
