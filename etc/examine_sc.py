@@ -277,10 +277,13 @@ for scf in all_files:
     print "Data file", scfo
     with open(scfo, 'w') as f:
         e_int = "0.00"
-        f.write( "undef"+" "+str(distr_entropy[e_int])+"\n" )
+        f.write( "0"+" "+str(distr_entropy[e_int])+"\n" )
         for e_int in sorted(distr_entropy):
             if e_int != "0.00":
-                f.write( str(e_int)+" "+str(distr_entropy[e_int])+"\n" )
+                if e_int == 0:
+                    f.write( "]0,1["+" "+str(distr_entropy[e_int])+"\n" )
+                else:
+                    f.write( "["+str(e_int)+","+str(e_int+1)+"[ "+str(distr_entropy[e_int])+"\n" )
 
     line_styles = [ "set style line 1 lc rgb '#1047a9' lt 1 lw 2 pt 7 pi -1 ps 1.5",
     "set style line 2 lc rgb '#4577d4' lt 1 lw 2 pt 7 pi -1 ps 1.5",
@@ -392,7 +395,7 @@ for scf in all_files:
             info_str += ", hapax "+str(hpx)
         f.write("set title \"Entropy distribution, "+info_str+"\"\n")
         f.write("set size 1.3,1\n")
-        f.write("set xlabel \"Entropy (integer)\"\n")
+        f.write("set xlabel \"Entropy interval\"\n")
         f.write("set xrange "+x_range+"\n")
         f.write("set xtics out\n")
         f.write("set xtics rotate by 295 nomirror\n")
