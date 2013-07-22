@@ -225,7 +225,8 @@ for scf in all_files:
     if info_only:
         sys.exit(0)
     
-    scf = os.path.basename(scf)
+    scf  = os.path.basename(scf)
+    scf_ = scf.replace('.','_') #for LaTeX
 
     # Find dist freq which occurs most
     distrsizes_sum = 0
@@ -276,7 +277,7 @@ for scf in all_files:
     print "Data file", scfo
     with open(scfo, 'w') as f:
         e_int = "0.00"
-        f.write( str(e_int)+" "+str(distr_entropy[e_int])+"\n" )
+        f.write( "undef"+" "+str(distr_entropy[e_int])+"\n" )
         for e_int in sorted(distr_entropy):
             if e_int != "0.00":
                 f.write( str(e_int)+" "+str(distr_entropy[e_int])+"\n" )
@@ -320,9 +321,9 @@ for scf in all_files:
             f.write("plot '"+scfd+"' using 2:xticlabels(1) ls 1 title \"\"\n")
         f.write("set terminal push\n")
         f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
-        f.write("set out '"+scf+".ds.ps'\n")
+        f.write("set out '"+scf_+"_ds.ps'\n")
         f.write("replot\n")
-        f.write("!epstopdf '"+scf+".ds.ps'\n")
+        f.write("!epstopdf '"+scf_+"_ds.ps'\n")
         f.write("set term pop\n")
         #f.write("pause -1\n")
     print "Gnuplot file", scfp
@@ -372,9 +373,9 @@ for scf in all_files:
                         f.write("set label \"{/Helvetica=14 "+str(bin_counts[x])+"}\" at "+str(x-adjust)+","+str(bin_counts[x]+500)+"\n")
             f.write("set terminal push\n")
             f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
-            f.write("set out '"+scf+".ds.bins.ps'\n")
+            f.write("set out '"+scf_+"_ds_bins.ps'\n")
             f.write("replot\n")
-            f.write("!epstopdf '"+scf+".ds.bins.ps'\n")
+            f.write("!epstopdf '"+scf_+"_ds_bins.ps'\n")
             f.write("set term pop\n")
             #f.write("pause -1\n")
         print "Gnuplot file", scfp
@@ -406,9 +407,9 @@ for scf in all_files:
         f.write("plot '"+scfo+"' using 2:xticlabels(1) ls 1 title \"\"\n")
         f.write("set terminal push\n")
         f.write("set terminal postscript eps enhanced rounded lw 2 'Helvetica' 20\n")
-        f.write("set out '"+scf+".entropy.ps'\n")
+        f.write("set out '"+scf_+"_entropy.ps'\n")
         f.write("replot\n")
-        f.write("!epstopdf '"+scf+".entropy.ps'\n")
+        f.write("!epstopdf '"+scf_+"_entropy.ps'\n")
         f.write("set term pop\n")
         #f.write("pause -1\n")
     print "Gnuplot file", scfp
