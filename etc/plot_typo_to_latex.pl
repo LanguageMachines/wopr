@@ -11,12 +11,13 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_r /;
+use vars qw/ $opt_f $opt_p $opt_r /;
 
-getopts('f:r:');
+getopts('f:pr:');
 
-my $data_file = $opt_f || "";   #original data file, two lines (normal TOP1) 
-my $re        = $opt_r || ".*"; #regular expression to match lines
+my $data_file   = $opt_f || "";   #original data file, two lines (normal TOP1) 
+my $percentages = $opt_p || 0;    #print percentages
+my $re          = $opt_r || ".*"; #regular expression to match lines
 
 #------------------------------------------------------------------------------
 
@@ -26,11 +27,15 @@ my $re        = $opt_r || ".*"; #regular expression to match lines
 # Sometimes without                        ^^^^^^^^^^^^^^^^^^^^^^ these
 
 # indices to data line
-my $gs = 4;
-my $ws = 6;
-my $ns = 7;
-my $bs = 5;
 my $algoffset = 3;
+my $p_offset = 0;
+if ( $percentages ) {
+  $p_offset = 4;
+}
+my $gs = 4 + $p_offset;
+my $ws = 6 + $p_offset;
+my $ns = 7 + $p_offset;
+my $bs = 5 + $p_offset;
 
 open(FHD, $data_file) || die "Can't open file.";
 
