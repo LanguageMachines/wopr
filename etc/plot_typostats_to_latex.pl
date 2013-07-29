@@ -53,6 +53,8 @@ my $rec = $d_offset + 6;
 my $acc = $d_offset + 7;
 my $f1s = $d_offset + 8;
 
+my $prev_alg = "";
+
 open(FHD, $data_file) || die "Can't open file.";
 open(FHS, $stat_file) || die "Can't open file.";
 
@@ -60,6 +62,17 @@ open(FHS, $stat_file) || die "Can't open file.";
 # recall:    TPR
 # accuracy:  ACC
 
+# Values, ctx_alg as index.
+my %b_ppv;
+my %b_tpc;
+my %b_acc;
+my %b_fsc;
+
+my %b_gsd;
+my %b_gs;
+my %b_ws;
+my %b_ns;
+my %b_bs;
 
 if ( $text_out ) {
   print "ctx  alg     gsd    gs    ws    ns    bs   pre   rec   acc fscore\n";
@@ -126,16 +139,33 @@ while ( my $ls0 = <FHD> ) {
       }
     }
 
+	my $b_idx = $alg;
+	$b_gs{$alg} = $l1[$gs];
+	$b_ws{$alg} = $l1[$ws];
+	$b_ns{$alg} = $l1[$ns];
+	$b_bs{$alg} = $l1[$bs];
+
+	$b_ppv{$alg} = $sbits1[$pre];
+	$b_tpc{$alg} = $sbits1[$rec];
+	$b_acc{$alg} = $sbits1[$acc];
+	$b_fsc{$alg} = $sbits1[$f1s];
+
     if ( $text_out ) {
-      my $out = $alg." ".&i($l0[$gs])." ";
-      $out = $out . &i($l1[$gs])." ".&i($l1[$ws])." ".&i($l1[$ns])." ".&i($l1[$bs])." "; 
-      $out = $out . &f($sbits1[$pre])." ".&f($sbits1[$rec])." ".&f($sbits1[$acc])." ".&f($sbits1[$f1s])." ";
+      my $out = $alg." ".&j($l0[$gs])." "; #gsd
+      $out = $out . &j($l1[$gs])." ".&j($l1[$ws])." ".&j($l1[$ns])." ".&j($l1[$bs])." "; 
+      $out = $out . &j($sbits1[$pre])." ".&j($sbits1[$rec])." ".&j($sbits1[$acc])." ".&j($sbits1[$f1s])." ";
       $out = $out . " ".$l1[0].",".$l1[1].",".$sbits1[4];
       print $out,"\n";
     } else {
       $alg =~ s/_\-a1\+D/ \\igtree{}/;
       $alg =~ s/_\-a4\+D/ \\triblt{}/;
-      my $out = "\\cmp{".$alg."} & \\num{".$l0[$gs]."} & \\num{";
+	  my $alg_bit = substr $alg, -9;
+	  my $ctx = substr $alg, 0, 4;
+	  if ( $alg_bit ne $prev_alg ) {
+		print "$alg_bit\\\\\n";
+		$prev_alg = $alg_bit;
+	  }
+      my $out = "\\cmp{~".$ctx."} & \\num{".$l0[$gs]."} & \\num{";
       $out = $out . $l1[$gs]."} & \\num{".$l1[$ws]."} & \\num{".$l1[$ns]."} & \\num{".$l1[$bs]."} & \\num{"; 
       $out = $out . $sbits1[$pre]."} & \\num{".$sbits1[$rec]."} & \\num{".$sbits1[$acc]."} & \\num{".$sbits1[$f1s]."} ";
       $out = $out . "\\\\ %".$l1[0]." ".$l1[1]." ".$sbits1[4];
@@ -156,14 +186,58 @@ print << "EOT";
 EOT
 }
 
+# Bests
+print "\n";
+print "% ".&best( \%b_gs, "gs", "h" )."     ".&best( \%b_gs, "gs", "l" )."\n";
+print "% ".&best( \%b_ws, "ws", "l" )."     ".&best( \%b_ws, "ws", "h" )."\n"; 
+print "% ".&best( \%b_ns, "ns", "l" )."     ".&best( \%b_ns, "ns", "h" )."\n";
+print "% ".&best( \%b_bs, "bs", "l" )."     ".&best( \%b_bs, "bs", "h" )."\n";
+
+print "\n";
+print "% ".&best( \%b_ppv, "pre", "h" )."     ".&best( \%b_ppv, "pre", "l" )."\n";
+print "% ".&best( \%b_tpc, "rec", "h" )."     ".&best( \%b_tpc, "rec", "l" )."\n";
+print "% ".&best( \%b_acc, "acc", "h" )."     ".&best( \%b_acc, "acc", "l" )."\n";
+print "% ".&best( \%b_fsc, "fsc", "h" )."     ".&best( \%b_fsc, "fsc", "l" )."\n";
+
+
 sub i {
     my $v = shift || 0; 
     return sprintf("%5d", $v)
 }
 sub f {
     my $v = shift || 0; 
-    return sprintf("%5.2f", $v)
+	if ( $v < 100 ) {
+	  return sprintf("%5.2f", $v)
+	}
+	if ( $v < 1000 ) {
+	  return sprintf("%5.1f", $v)
+	}
+	return sprintf("%5.0f", $v)
 }
-
+sub j {
+  my $v = shift || 0;
+  if ( $v =~ m/\d+\.\d+/ ) {
+	return &f($v);
+  }
+  return &i($v);
+}
+sub best{
+  my $br = shift;
+  my %b0 = %$br;
+  my $nm = shift; #name
+  my $hl = shift; #high low
+  
+  if ( $hl eq "h" ) {
+	foreach (sort { ($b0{$b} <=> $b0{$a}) } keys %b0) {
+	  return "best  $nm: $_ ".&j($b0{$_});
+	  #last;
+	}
+  } else {
+	foreach (sort { ($b0{$a} <=> $b0{$b}) } keys %b0) {
+	  return "worst $nm: $_ ".&j($b0{$_});
+	  #last;
+	}
+  }
+}
 __END__
 
