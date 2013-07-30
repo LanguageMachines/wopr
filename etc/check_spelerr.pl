@@ -188,7 +188,9 @@ if ( $acc ) {
   my $TP = $good_sugg;
   my $FN = $wrong_sugg + $no_sugg;
   my $FP = $bad_sugg;
-  my $TN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+  #my $TN = $lines - $errors - $bad_sugg; #Niks gedaan als niks moest
+  my $TN = $lines - $TP - $FN - $FP; #Niks gedaan als niks moest
+
   #
   my $RCL = 0;
   if ( $TP+$FN > 0 ) {
@@ -206,11 +208,15 @@ if ( $acc ) {
   }
   my $F1S = (100*2*$TP)/((2*$TP)+$FP+$FN);
 
+  #my $F1Sp = 2*( ($PRC*$RCL)/($PRC+$RCL) );
+  #print STDERR $F1S,"  ",$F1Sp, "\n";
+
   #Detectie:
   my $dTP = $good_sugg + $wrong_sugg;
   my $dFN = $no_sugg;
   my $dFP = $bad_sugg;
-  my $dTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+  #my $dTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+  my $dTN = $lines - $dTP - $dFN - $dFP;
 
   my $dRCL = 0;
   if ($dTP+$dFN > 0) {
@@ -232,7 +238,8 @@ if ( $acc ) {
   my $cTP = $good_sugg;
   my $cFN = $no_sugg + $wrong_sugg;
   my $cFP = $bad_sugg;
-  my $cTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+  #my $cTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
+  my $cTN = $lines - $cTP - $cFN - $cFP;
 
   my $cRCL = 0;
   if ( $cTP+$cFN > 0 ) {

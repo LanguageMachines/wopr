@@ -11,10 +11,11 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
+use vars qw/ $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
 
-getopts('f:n:pr:s:t');
+getopts('df:n:pr:s:t');
 
+my $detection   = $opt_d || 0;    # -d shows scores for detections, else correction
 my $data_file   = $opt_f || "";   #original data file, two lines (normal TOP1) 
 my $cycle_nr    = $opt_n || "";   #cycle nr (like 14200)
 my $percentages = $opt_p || 0;    #print percentages
@@ -45,13 +46,15 @@ my $ns = 7;
 my $bs = 5;
 my $algoffset = 3;
 
-my $d_offset = 9; #pos of the 'd'
-my $c_offset = 18; #pos of the 'c'
+my $offset = 18; #pos of the 'c'
+if ( $detection ) {
+  $offset = 9; #pos of the 'd'
+}
 
-my $pre = $d_offset + 5;
-my $rec = $d_offset + 6;
-my $acc = $d_offset + 7;
-my $f1s = $d_offset + 8;
+my $pre = $offset + 5;
+my $rec = $offset + 6;
+my $acc = $offset + 7;
+my $f1s = $offset + 8;
 
 my $prev_alg = "";
 
@@ -74,11 +77,15 @@ my %b_ws;
 my %b_ns;
 my %b_bs;
 
+my $extra = "";
+if ( $detection ) {
+  $extra = "-d";
+}
 if ( $text_out ) {
   print "ctx  alg     gsd    gs    ws    ns    bs   pre   rec   acc fscore\n";
   } else {
 print << "EOF";
-% plot_typostats_to_latex.pl -f $data_file -s $stat_file -r "$re"
+% plot_typostats_to_latex.pl -f $data_file -s $stat_file -r "$re" $extra
 \\begin{table}[h!]
 \\caption{$data_file}
 \\centering
