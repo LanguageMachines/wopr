@@ -115,6 +115,17 @@ while ( my $ls0 = <FHD> ) {
     my @l1 = split(/\ /, $ls1);
     my $numl1 = $#l1;
 
+    if ( $numl1 < 10 ) {
+      print STDOUT "ERROR!\n";
+      print $ls1;
+      last;
+    }
+    if ( $numl0 < 10 ) {
+      print STDOUT "ERROR!\n";
+      print $ls0;
+      last;
+    }
+
     my $alg = $l1[ $numl1 - $algoffset ]; #could be empty if missing md5sum
     #print "{".$alg."}\n";
     if ($alg eq "") {
@@ -130,6 +141,17 @@ while ( my $ls0 = <FHD> ) {
     my @sbits0 = split(/\ /, $s0);
     chomp $s1;
     my @sbits1 = split(/\ /, $s1);
+
+    if ( $#sbits0 < 10 ) {
+      print STDOUT "ERROR!\n";
+      print "$s0\n";
+      last;
+    }
+    if ( $#sbits1 < 10 ) {
+      print STDOUT "ERROR!\n";
+      print "$s1\n";
+      last;
+    }
 
     if ( $sbits1[0] ne $l1[0] ) {
       print "ERROR: ".$sbits1[0]."/".$l1[0]."\n";
