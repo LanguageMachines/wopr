@@ -11,10 +11,11 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
+use vars qw/ $opt_b $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
 
-getopts('df:n:pr:s:t');
+getopts('bdf:n:pr:s:t');
 
+my $b_ptr       = $opt_b || 0;    #0 for default ($alg), else l1[0]
 my $detection   = $opt_d || 0;    # -d shows scores for detections, else correction
 my $data_file   = $opt_f || "";   #original data file, two lines (normal TOP1) 
 my $cycle_nr    = $opt_n || "";   #cycle nr (like 14200)
@@ -168,16 +169,19 @@ while ( my $ls0 = <FHD> ) {
       }
     }
 
-	my $b_idx = $alg;
-	$b_gs{$alg} = $l1[$gs];
-	$b_ws{$alg} = $l1[$ws];
-	$b_ns{$alg} = $l1[$ns];
-	$b_bs{$alg} = $l1[$bs];
+  my $b_idx = $alg;
+  if ( $b_ptr  ) {
+    $b_idx = $l1[0];
+  }
+	$b_gs{$b_idx} = $l1[$gs];
+	$b_ws{$b_idx} = $l1[$ws];
+	$b_ns{$b_idx} = $l1[$ns];
+	$b_bs{$b_idx} = $l1[$bs];
 
-	$b_ppv{$alg} = $sbits1[$pre];
-	$b_tpc{$alg} = $sbits1[$rec];
-	$b_acc{$alg} = $sbits1[$acc];
-	$b_fsc{$alg} = $sbits1[$f1s];
+	$b_ppv{$b_idx} = $sbits1[$pre];
+	$b_tpc{$b_idx} = $sbits1[$rec];
+	$b_acc{$b_idx} = $sbits1[$acc];
+	$b_fsc{$b_idx} = $sbits1[$f1s];
 
     if ( $text_out ) {
       my $out = $alg." ".&j($l0[$gs])." "; #gsd
