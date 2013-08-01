@@ -37,11 +37,12 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_a $opt_o $opt_s $opt_t $opt_v/;
+use vars qw/ $opt_a $opt_n $opt_o $opt_s $opt_t $opt_v/;
 
-getopts('ao:s:tv:');
+getopts('ao:ns:tv:');
 
 my $acc       = $opt_a || 0; #print accuracy, f-score, etc
+my $no_output = $opt_n || 0; #produce no errs and errs1 output
 my $orig_file = $opt_o || "";   #original instances (testfile)
 my $sc_file   = $opt_s || "";   #wopr output
 my $top_only  = $opt_t || 0;    #top-answer can be correct only 
@@ -64,7 +65,11 @@ my $out_data = $sc_file.".errs";
 if ( $top_only ) {
   $out_data = $out_data."1";
 }
-open(OFHD, ">$out_data") || die "Can't open datafile $out_data.";
+if ( $no_output ) {
+  open(OFHD, ">/dev/null") || die "Can't open datafile $out_data.";
+} else {
+  open(OFHD, ">$out_data") || die "Can't open datafile $out_data.";
+}
 
 #Skip headers?
 
