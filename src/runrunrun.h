@@ -68,6 +68,7 @@ int ngram( std::string, int, std::vector<std::string>& );
 int timbl_test( Logfile&, Config& );
 int lexicon( Logfile&, Config& );
 int hapax( Logfile&, Config& );
+int hapax_txt( Logfile&, Config& );
 int hapax_line_OLD( Logfile&, Config& );
 int trainfile( Logfile&, Config& );
 int testfile( Logfile&, Config& );

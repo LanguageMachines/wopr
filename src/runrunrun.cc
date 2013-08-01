@@ -456,6 +456,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &lexicon;
   } else if ( a_fname == "hapax" ) {
     return &hapax;
+  } else if ( a_fname == "hapax_txt" ) {
+    return &hapax_txt;
   } else if ( a_fname == "trainfile" ) {
     return &trainfile;
   } else if ( a_fname == "testfile" ) {
@@ -2159,6 +2161,117 @@ int hapax(Logfile& l, Config& c)  {
     l.log( "SET testfile to " + output_filename );
   }
   */
+  c.add_kv( "filename", output_filename );
+  l.log( "SET filename to "+filename );
+
+  return 0;
+}
+
+//  2013-08-01 Hapax including targets/classes, i.e hapax a text
+//
+int hapax_txt(Logfile& l, Config& c)  {
+  l.log( "hapax_txt" );
+
+  const std::string& filename = c.get_value( "filename" );
+  int hapax = stoi( c.get_value( "hpx", "1" ));
+
+  if ( hapax <= 0 ) {
+    l.log( "WARNING: not doing hapax <=0" );
+    return 0;
+  }
+
+  std::string output_filename = filename;
+  std::string        id             = c.get_value( "id", "" );
+  if ( (id != "") && ( ! contains_id( filename, id)) ) {
+    output_filename = output_filename + "_" + id;
+  }
+  output_filename = output_filename + ".hpt" + to_str(hapax); // New suffix
+
+  std::string lexicon_filename = c.get_value("lexicon");
+  std::string hpx_sym = c.get_value("hpx_sym", "<unk>");
+
+  l.inc_prefix();
+  l.log( "filename: "+filename );
+  l.log( "hpx:      "+to_str(hapax) );
+  l.log( "lexicon:  "+lexicon_filename );
+  l.log( "OUTPUT:   "+output_filename );
+  l.dec_prefix();
+
+  if ( file_exists(l, c, output_filename) ) {
+    c.add_kv( "filename", output_filename );
+    l.log( "SET filename to "+filename );
+    return 0;
+  }
+
+  std::ifstream file_in( filename.c_str() );
+  if ( ! file_in ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write file." );
+    return -1;
+  }
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "ERROR: cannot load file." );
+    return -1;
+  }
+
+  std::string a_line;
+  std::vector<std::string>words;
+  unsigned long lcount = 0;
+  unsigned long wcount = 0;
+  std::string a_word;
+  int wfreq;
+  std::map<std::string,int> wfreqs;
+
+  // Read the lexicon with word frequencies.
+  // Words with freq <= hapax level are skipped (i.e., will be
+  // "HAPAX"/"<unk>" in the resulting file. So everything not in the
+  // resulting list will be skipped.
+  //
+  l.log( "Reading lexicon, creating hapax list." );
+  while( file_lexicon >> a_word >> wfreq ) {
+    if ( wfreq > hapax ) {
+      wfreqs[a_word] = wfreq;
+    }
+    ++wcount;
+  }
+  l.log( "Loaded hapax list ("+to_str((int)wfreqs.size())+"), total "
+	 + to_str(wcount) );
+  file_lexicon.close();
+
+  // We don't want to hapax '_', or <s> (small chance anyway)
+  //
+  wfreqs["_"]    = 1;
+  wfreqs["<s>"]  = 1;
+  wfreqs["</s>"] = 1;
+
+  while( std::getline( file_in, a_line )) {
+    ++lcount;
+    Tokenize( a_line, words, ' ' );
+    //
+    // The features and class
+    //
+    for ( int i = 0; i < words.size(); i++ ) {
+      //
+      // Words not in the wfreqs vector are "HAPAX"ed.
+      // (The actual freq is not checked here anymore.)
+      //
+      if ( wfreqs.find(words.at(i)) == wfreqs.end() ) { // not found, hapaxes unknowns also
+		file_out << hpx_sym << " ";
+      } else {
+		file_out << words.at(i) << " ";
+      }
+    }
+    file_out <<  std::endl;
+    words.clear();
+  }
+  file_out.close();
+  file_in.close();
+
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+filename );
 
