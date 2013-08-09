@@ -99,7 +99,7 @@ while ( my $ls = <FHS> ) {
   my $i = 0;
   if ( $l == 0 ) { #do only once
     while ( $i < $#ps ) {
-      if ( $ps[$i] =~ /\(.*\)/ ) {
+      if ( $ps[$i] =~ /\(.*\)/ ) { #the word between ()
         $l = $i;
       }
       if ( $ps[$i] eq "[" ) {
@@ -109,9 +109,12 @@ while ( my $ls = <FHS> ) {
       ++$i;
     }
   }
-  
+
+  # l2r0:
+  # could elect their (to) -8.32193 2.85737 320 53 [ the 9 this 2 other 1 ]
+
   my $test_target = $ps[ $l - 1 ]; #target in "spelerr"ed file.
-  my $corrections = $#ps - $c - 1; #words between [ ]
+  my $corrections = $#ps - $c - 1; #position of words between [ ]
 
   # Count "real" errors, number of differences between targets.
   #

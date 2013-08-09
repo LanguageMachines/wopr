@@ -855,7 +855,7 @@ int window_s( Logfile& l, Config& c ) {
 
     a_line = pre_s + a_line + suf_s;
 
-    window( a_line, a_line, ws, 0, false, results );
+    window( a_line, a_line, ws, 0, 0, false, results );
     if ( (skip == 0) || (results.size() >= ws) ) {
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
@@ -1315,8 +1315,8 @@ int window_line( Logfile& l, Config& c ) {
 // copy ( targets.begin(), targets.end(), new_targets.begin()+to );
 //
 int window( std::string a_line, std::string target_str, 
-	    int lc, int rc, bool var,
-	    std::vector<std::string>& res ) {
+			int lc, int rc, int it, bool var,
+			std::vector<std::string>& res ) {
 
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
@@ -1366,11 +1366,13 @@ int window( std::string a_line, std::string target_str,
     
     for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
       if ( fi != si ) {
-	//spacer = (*fi == "") ? "" : " ";
-	windowed_line = windowed_line + *fi + " ";
-      }/* else { // the target, but we don't show that here.
-	windowed_line = windowed_line + "(T) ";
-	}*/
+		//spacer = (*fi == "") ? "" : " ";
+		windowed_line = windowed_line + *fi + " ";
+      } else { 
+		if ( it == 1) {// the target, if it == 1
+		  windowed_line = windowed_line + *fi + " "; // not *(ti+offset) because error from txt
+		}
+	  }
     }
     windowed_line = windowed_line + *(ti+offset); // target. function to make target?
     res.push_back( windowed_line );
@@ -1508,6 +1510,7 @@ int window_lr( Logfile& l, Config& c ) {
   int                lc              = stoi( c.get_value( "lc", "2" ));
   int                rc              = stoi( c.get_value( "rc", "0" ));
   int                to              = stoi( c.get_value( "to", "0" ));
+  int                it              = stoi( c.get_value( "it", "0" )); //include target (at end? in place?)
   std::string        output_filename = filename + ".l" + to_str(lc) + 
                                                   "r" + to_str(rc);
   if ( to > 0 ) {
@@ -1515,12 +1518,17 @@ int window_lr( Logfile& l, Config& c ) {
   } else {
     to = 0;
   }
+  // PJB: can we combine to and it ?
+  if ( it > 0 ) { // we already used the 't' suffix, we'll use 'e' for errors.
+    output_filename = output_filename + "e";
+  }
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
   l.log( "lc:        "+to_str(lc) );
   l.log( "rc:        "+to_str(rc) );
   l.log( "to:        "+to_str(to) );
+  l.log( "it:        "+to_str(it) );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
@@ -1549,24 +1557,24 @@ int window_lr( Logfile& l, Config& c ) {
   if ( to == 0 ) {  
     while( std::getline( file_in, a_line ) ) { 
       if ( a_line == "" ) {
-	continue;
+		continue;
       }
-      window( a_line, a_line, lc, rc, false, results ); // line 1303
+      window( a_line, a_line, lc, rc, false, results ); // line 1317
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	file_out << *ri << "\n";
+		file_out << *ri << "\n";
       }
       results.clear();
     }
   } else {
     while( std::getline( file_in, a_line ) ) { 
-      window( a_line, a_line, lc, rc, false, to, results );
+      window( a_line, a_line, lc, rc, false, to, results ); // line 1390
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	file_out << *ri << "\n";
+		file_out << *ri << "\n";
       }
       results.clear();
     }
   }
-
+  
   file_out.close();
   file_in.close();
 
