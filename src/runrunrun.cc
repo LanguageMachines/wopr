@@ -1368,7 +1368,7 @@ int window( std::string a_line, std::string target_str,
       if ( fi != si ) {
 		//spacer = (*fi == "") ? "" : " ";
 		windowed_line = windowed_line + *fi + " ";
-      } else { 
+      } else { 		  
 		if ( it == 1) {// the target, if it == 1
 		  windowed_line = windowed_line + *fi + " "; // not *(ti+offset) because error from txt
 		}
@@ -1520,7 +1520,9 @@ int window_lr( Logfile& l, Config& c ) {
   }
   // PJB: can we combine to and it ?
   if ( it > 0 ) { // we already used the 't' suffix, we'll use 'e' for errors.
-    output_filename = output_filename + "e";
+    output_filename = filename + ".l" + to_str(lc) + 
+      "e" + to_str(it) +
+      "r" + to_str(rc);
   }
 
   l.inc_prefix();
@@ -1559,7 +1561,7 @@ int window_lr( Logfile& l, Config& c ) {
       if ( a_line == "" ) {
 		continue;
       }
-      window( a_line, a_line, lc, rc, false, results ); // line 1317
+      window( a_line, a_line, lc, rc, it, false, results ); // line 1317
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 		file_out << *ri << "\n";
       }
