@@ -1506,11 +1506,12 @@ int window( std::string a_line, std::string target_str,
 //
 int window_lr( Logfile& l, Config& c ) {
   l.log( "window_lr" );
-  const std::string& filename        = c.get_value( "filename" );
+  std::string        filename        = c.get_value( "filename" );
   int                lc              = stoi( c.get_value( "lc", "2" ));
   int                rc              = stoi( c.get_value( "rc", "0" ));
   int                to              = stoi( c.get_value( "to", "0" ));
   int                it              = stoi( c.get_value( "it", "0" )); //include target (at end? in place?)
+  std::string        targetfile      = c.get_value( "targetfile", "" ); // file to read targets from, same format/tokenizing
   std::string        output_filename = filename + ".l" + to_str(lc) + 
                                                   "r" + to_str(rc);
   if ( to > 0 ) {
@@ -1519,14 +1520,19 @@ int window_lr( Logfile& l, Config& c ) {
     to = 0;
   }
   // PJB: can we combine to and it ?
-  if ( it > 0 ) { // we already used the 't' suffix, we'll use 'e' for errors.
+  if ( it > 0 ) { // we put the target inside between r and l context
     output_filename = filename + ".l" + to_str(lc) + 
-      "e" + to_str(it) +
+      "t" + to_str(it) +
       "r" + to_str(rc);
   }
-
+  if ( (it > 0) && (targetfile == "") ) {
+	targetfile = filename;
+  }
   l.inc_prefix();
   l.log( "filename:  "+filename );
+  if ( it > 0 ) { // only when it parameter is specified.
+	l.log( "targetfile:"+targetfile );
+  }
   l.log( "lc:        "+to_str(lc) );
   l.log( "rc:        "+to_str(rc) );
   l.log( "to:        "+to_str(to) );
@@ -1546,6 +1552,14 @@ int window_lr( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
+  std::ifstream tfile_in;
+  if ( it > 0 ) {
+	tfile_in.open( targetfile.c_str() );
+	if ( ! tfile_in ) {
+	  l.log( "ERROR: cannot load target file." );
+	  return -1;
+	}
+  }
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
@@ -1553,15 +1567,26 @@ int window_lr( Logfile& l, Config& c ) {
   }
 
   std::string                        a_line;
+  std::string                        t_line;
   std::vector<std::string>           results;
   std::vector<std::string>::iterator ri;
 
   if ( to == 0 ) {  
     while( std::getline( file_in, a_line ) ) { 
       if ( a_line == "" ) {
+		if ( it > 0 ) { // we assume target file has identical layout/empty lines
+		  std::getline( tfile_in, t_line ); // also forward one line
+		}
 		continue;
       }
-      window( a_line, a_line, lc, rc, it, false, results ); // line 1317
+	  if ( it > 0 ) {
+		std::getline( tfile_in, t_line );
+	  }
+	  if ( it > 0 ) {
+		window( a_line, t_line, lc, rc, it, false, results ); // line 1317
+	  } else {
+		window( a_line, a_line, lc, rc, it, false, results ); // line 1317
+	  }
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 		file_out << *ri << "\n";
       }

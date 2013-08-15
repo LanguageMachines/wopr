@@ -1,3 +1,7 @@
+1.37.2	Parameter targetfile possible for window_lr with it > 0.
+	
+1.37.1	Working error window_lr
+	
 1.37.0	Added "error" mode to windowing
 	
 1.36.9	Added hapax_txt to hapax (plain) text.
