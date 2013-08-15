@@ -1363,26 +1363,70 @@ int window( std::string a_line, std::string target_str,
   }
   for ( int i = offset; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
-    
-    for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
-      if ( fi != si ) {
-		//spacer = (*fi == "") ? "" : " ";
-		windowed_line = windowed_line + *fi + " ";
-      } else { 		  
-		if ( it == 1) {// the target, if it == 1
+
+	if ( it == 0 ) {
+	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
+		if ( fi != si ) {
+		  //spacer = (*fi == "") ? "" : " ";
+		  windowed_line = windowed_line + *fi + " ";
+		}
+	  }
+	  windowed_line = windowed_line + *(ti+offset); // target. function to make target?
+	  res.push_back( windowed_line );
+	  windowed_line.clear();
+	  si++;
+	  ti++;
+	  if ( factor > 0 ) {
+		--factor;
+	  }
+	}
+	if ( it == 1 ) {
+	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
+		if ( fi != si ) {
+		  //spacer = (*fi == "") ? "" : " ";
+		  windowed_line = windowed_line + *fi + " ";
+		} else {
+		  // This can be done two ways. We can have two texts, one good, one with errors.
+		  // Method one:
+		  // Create instances from the error-text, the target is taken from the clean-text.
 		  windowed_line = windowed_line + *fi + " "; // not *(ti+offset) because error from txt
 		}
 	  }
-    }
-    windowed_line = windowed_line + *(ti+offset); // target. function to make target?
-    res.push_back( windowed_line );
-    windowed_line.clear();
-    si++;
-    ti++;
-    if ( factor > 0 ) {
-      --factor;
-    }
-  }
+	  windowed_line = windowed_line + *(ti+offset); // target. function to make target?
+	  res.push_back( windowed_line );
+	  windowed_line.clear();
+	  si++;
+	  ti++;
+	  if ( factor > 0 ) {
+		--factor;
+	  }
+	}
+	if ( it == 2 ) {
+	  std::string t;
+	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
+		if ( fi != si ) {
+		  //spacer = (*fi == "") ? "" : " ";
+		  windowed_line = windowed_line + *fi + " ";
+		} else {
+		  // This can be done two ways. We can have two texts, one good, one with errors.
+		  // Method two:
+		  // Create instances from the clean-text, but take the target in the INSTANCES from the error-text.
+		  // The parameters don't have the most logical names in this case.
+		  t = *fi;
+		  windowed_line = windowed_line + *ti + " "; // included target in instance from targetfile.
+		}
+	  }
+	  windowed_line = windowed_line + t;
+	  res.push_back( windowed_line );
+	  windowed_line.clear();
+	  si++;
+	  ti++;
+	  if ( factor > 0 ) {
+		--factor;
+	  }
+	}
+
+  } // int i ...
 
   return 0;
 }
@@ -1582,9 +1626,13 @@ int window_lr( Logfile& l, Config& c ) {
 	  if ( it > 0 ) {
 		std::getline( tfile_in, t_line );
 	  }
-	  if ( it > 0 ) {
+	  if ( it == 1 ) {
 		window( a_line, t_line, lc, rc, it, false, results ); // line 1317
-	  } else {
+	  }
+	  if ( it == 2 ) {
+		window( t_line, a_line, lc, rc, it, false, results ); // line 1317
+	  }
+	  if ( it == 0 ) {
 		window( a_line, a_line, lc, rc, it, false, results ); // line 1317
 	  }
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
