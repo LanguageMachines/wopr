@@ -140,6 +140,25 @@ std::string Config::kvs_str() {
   return res;
 }
 
+// Without the PID and the run string.
+std::string Config::kvs_str_clean() {
+  std::string res;
+  std::string val;
+  std::map<std::string, std::string>::iterator mi;
+  for( mi = kv.begin(); mi != kv.end(); mi++ ) {
+	if ( (mi->first == "PID") || (mi->first == "run") ) {
+	  continue;
+	}
+    val = mi->second;
+    if ( val.find( ' ', 0 ) != std::string::npos ) { // contains space
+      val = "'" + val + "'";
+    }
+    res = res + mi->first + ":" + val + ",";
+  }
+  res = res.substr(0, res.length()-1);
+  return res;
+}
+
 void Config::clear_kv() {
   kv.clear();
 }

@@ -1,3 +1,5 @@
+1.37.4	Added kvs option
+	
 1.37.3	Added it:2 options
 	
 1.37.2	Parameter targetfile possible for window_lr with it > 0.

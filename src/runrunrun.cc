@@ -536,6 +536,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &window_letters;
   } else if ( a_fname == "pdt2web" ) { // from prededit.cc
     return &pdt2web;
+  } else if ( a_fname == "kvs" ) { // keyword:value string
+    return &kvs;
   }
   return &tst;
 }
@@ -4383,10 +4385,35 @@ int test_wopr( Logfile& l, Config& c ) {
     for ( wfi = w.begin(); wfi != w.end(); wfi++ ) {
       std::cout << (*wfi).first << std::endl;
     }
-  }
-    
-    return 0;
+  }    
+  return 0;
 }  
+
+int kvs( Logfile& l, Config& c ) {
+  l.log( "kvs" );
+
+  std::string filename = c.get_value( "kvsfile" );
+  if ( filename == "" ) {
+	filename = "PID"+c.get_value("PID", "00000")+".kvs";
+	c.add_kv( "kvsfile", filename );
+  }
+
+  l.inc_prefix();
+  l.log( "OUTPUT: "+filename );
+  l.dec_prefix();
+
+  std::ofstream file_out( filename.c_str(), std::ios::out );
+  if ( ! file_out ) {
+    l.log( "ERROR: cannot write output file." );
+    return -1;
+  }
+
+  std::string kvs = c.kvs_str_clean();
+  file_out << kvs << std::endl;
+  file_out.close();
+
+  return 0;
+}
 
 /*
 “The competent programmer is fully aware of the limited size of his

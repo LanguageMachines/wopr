@@ -84,4 +84,5 @@ int pplx_simple( Logfile&, Config& );
 bool file_exists( Logfile&, Config&, const std::string& );
 bool contains_id( const std::string&, const std::string& );
 int test_wopr( Logfile&, Config& );
+int kvs( Logfile&, Config& );
 #endif
