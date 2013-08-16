@@ -140,7 +140,7 @@ std::string Config::kvs_str() {
   return res;
 }
 
-// Without the PID and the run string.
+// Without the PID, emptry strings and the run string.
 std::string Config::kvs_str_clean() {
   std::string res;
   std::string val;
@@ -153,7 +153,9 @@ std::string Config::kvs_str_clean() {
     if ( val.find( ' ', 0 ) != std::string::npos ) { // contains space
       val = "'" + val + "'";
     }
-    res = res + mi->first + ":" + val + ",";
+	if ( val != "" ) {
+	  res = res + mi->first + ":" + val + ",";
+	}
   }
   res = res.substr(0, res.length()-1);
   return res;
