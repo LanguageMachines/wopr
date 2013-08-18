@@ -11,7 +11,10 @@ import re
 import platform
 from operator import itemgetter
 import operator
-from collections import Counter
+try:
+    from collections import Counter
+except:
+    pass
 
 """
 Takes a plain text file, and inserts confusibles/errors
@@ -160,7 +163,10 @@ with open(vkfile, "r") as f:
             
 print
 for err in vk_errors:
-    print err, len( vk_errors[err]), Counter( vk_errors[err] )
+    try:
+        print err, len( vk_errors[err] ), Counter( vk_errors[err] )
+    except:
+        print err, len( vk_errors[err] ), vk_errors[err] 
 print
         
 r = random.Random()
