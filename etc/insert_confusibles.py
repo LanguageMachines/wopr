@@ -62,7 +62,7 @@ def add_error(w, e, p):
     if p == 0: #real 0 is ignore
         return
     ld = damerau(w, e)
-    #print w, e, ld
+    print w, e, p, ld
     try:
         vk_ld_counts[ld] += 1
     except:
