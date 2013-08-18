@@ -77,12 +77,12 @@ def add_error(w, e, p):
         except:
             vk_errors[w] =  [e] * n 
     
-afile = None
+afile  = None
 vkfile = "ValkuilErrors.1.0_ns"
-prob = 2
-min_l = 3 #minimum length of word >= min_l
-max_ld = 1 #maximum LD <= max_ld
-skip = 0 #errors every Nth line, 0 & 1 is in all lines
+prob   = 10 # prob/10 that we make one change (if possible)
+min_l  = 3  # minimum length of word >= min_l
+max_ld = 10 # maximum LD <= max_ld, much higher because we supply errors from list
+skip   = 0  # errors every Nth line, 0 & 1 is in all lines
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "cd:f:l:m:v:p:s:", ["file="])
