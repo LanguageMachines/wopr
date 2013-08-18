@@ -11,12 +11,17 @@ import re
 import platform
 from operator import itemgetter
 import operator
+from collections import Counter
 
 """
 Takes a plain text file, and inserts confusibles/errors
 
 The error file looks like:
-aan aam 0.1
+hun hen 0.3
+de het                    (assign default_p)
+in op onder naast 0.1
+
+python insert_confusibles.py -v conf_nl.txt -f zin
 ...
 """
 
@@ -62,27 +67,47 @@ def add_error(w, e, p):
     if p == 0: #real 0 is ignore
         return
     ld = damerau(w, e)
-    print w, e, p, ld
+    #print w, e, p, ld
     try:
         vk_ld_counts[ld] += 1
     except:
         vk_ld_counts[ld] = 1
     if ld > 0 and ld <= max_ld and len(w) >= min_l:
         n = int(p * 100); #assume percentages in data file (fill till 100 at end?)
-        if n == 0:
-            n = 1;
+        np = 100 - n #n'
         try:
-            #print e, n
+            print w, e, n
             vk_errors[w].extend( [e] * n) 
+            #vk_errors[w].extend( [w] * np) 
         except:
-            vk_errors[w] =  [e] * n 
-    
-afile  = None
-vkfile = "ValkuilErrors.1.0_ns"
-prob   = 10 # prob/10 that we make one change (if possible)
-min_l  = 3  # minimum length of word >= min_l
-max_ld = 10 # maximum LD <= max_ld, much higher because we supply errors from list
-skip   = 0  # errors every Nth line, 0 & 1 is in all lines
+            vk_errors[w] = [e] * n 
+            vk_errors[w].extend( [w] * np )
+
+def add_error(w, e, p, s): 
+    if p == 0: #real 0 is ignore
+        return
+    ld = damerau(w, e)
+    #print w, e, p, ld
+    try:
+        vk_ld_counts[ld] += 1
+    except:
+        vk_ld_counts[ld] = 1
+    if ld > 0 and ld <= max_ld and len(w) >= min_l:
+        n = int(p * 100); #assume percentages in data file (fill till 100 at end?)
+        np = 100 - (n*(s-1)) #n', compensate so total for sets > 2items is 100
+        try:
+            vk_errors[w].extend( [e] * n) 
+            #vk_errors[w].extend( [w] * np) 
+        except:
+            vk_errors[w] = [e] * n 
+            vk_errors[w].extend( [w] * np )
+
+afile     =  None
+vkfile    =  "ValkuilErrors.1.0_ns"
+min_l     =  1   # minimum length of word >= min_l
+max_ld    = 10   # maximum LD <= max_ld, much higher because we supply errors from list
+skip      =  0   # errors every Nth line, 0 & 1 is in all lines
+default_p =  0.5 #chance we take another from the confusible set
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "cd:f:l:m:v:p:s:", ["file="])
@@ -101,7 +126,7 @@ for o, a in opts:
     elif o in ("-d"): 
         max_ld = int(a)
     elif o in ("-p"): 
-        prob = int(a)
+        default_p = float(a)
     elif o in ("-s"): 
         skip = int(a)
     else:
@@ -118,49 +143,26 @@ with open(vkfile, "r") as f:
         if line == "" or line[0] == "#":
             continue
         line = line[:-1]
-        # two words and prob
-        m = re.match( "^([A-Za-z]*) ([A-Za-z]*) ([0\.1234656789]+)$", line)
-        if m:
-            w = m.group(1)
-            e = m.group(2)
-            p = float(m.group(3))
-            add_error(w, e, p)
-            continue
-        # three words
-        m = re.match( "^([A-Za-z]*) ([A-Za-z]*) ([A-Za-z]*)$", line)
-        if m:
-            w1 = m.group(1)
-            w2 = m.group(2)
-            w3 = m.group(3)
-            p = 0.5 # ?
-            add_error(w1, w2, p)
-            add_error(w1, w3, p)
-            add_error(w2, w3, p)
-            add_error(w2, w1, p)
-            add_error(w3, w1, p)
-            add_error(w3, w2, p)
-            continue
-        # two words only
-        m = re.match( "^([A-Za-z]*) ([A-Za-z]*)$", line)
-        if m:
-            w = m.group(1)
-            e = m.group(2)
-            p = 0.5 # ?
-            add_error(w, e, p)
-            add_error(e, w, p) #reverse them
-
+        words = line.split()
+        p = default_p #chance is default_p that we take one other from the set # 1.0/len(words) 
+        if re.match( "([0\.1234656789]+)$", words[-1:][0]):
+            p = float( words[-1:][0] )
+            words = words[:-1]
+            if p < 0.01:
+                print "p too small, setting to 0.01"
+                p = 0.01
+        print words, p
+        pairs = []
+        for i in range(len(words)):
+            for j in range(len(words)):
+                if i != j:
+                    add_error(words[i], words[j], p, len(words))
             
-'''
-Normalise the error lists to 100 items (?)
-'''
+print
 for err in vk_errors:
-    #print err, len( vk_errors[err]), vk_errors[err]
-    if len( vk_errors[err]) > 100:
-        print "Hmm, more than 100."
-    if  len( vk_errors[err] ) < 100:
-        vk_errors[err].extend( [err] * (100-len( vk_errors[err])) )
-        #print err, len( vk_errors[err]), vk_errors[err]
-
+    print err, len( vk_errors[err]), Counter( vk_errors[err] )
+print
+        
 r = random.Random()
 made_changes = 0
 poss_changes = 0
@@ -191,13 +193,12 @@ with open(afile, "r") as f:
                 idx += 1
             #print indexes
             #at these positions we can introduce an error
-            num = int( r.uniform(0, 10) ) #create error if [0, 1] out of [0, ... 9] (1/5)
             numindexes = len(indexes)
             # create one or two errors per line
             randomidxs = []
-            if num < prob and numindexes > 0 and numindexes < 3:
+            if numindexes > 0 and numindexes < 3:
                 randomidxs = [ indexes[ int( r.uniform(0, numindexes) ) ] ] #choose one,
-            elif num < prob and numindexes > 0 and numindexes > 2:
+            elif numindexes > 0 and numindexes > 2:
                 randomidxs = random.sample(set(indexes), 2) #take two random
             for randomidx in randomidxs:
                 w = words[ randomidx ] #the word from the line
@@ -224,7 +225,7 @@ print "Made", made_changes, "changes out of", poss_changes, "possible changes."
 
 
 for ld in vk_ld_counts:
-    print "VKLD", ld, vk_ld_counts[ld]
+    print "CFLD", ld, vk_ld_counts[ld]
 
 for change in changed:
     print "FREQ", change, changed[change]
