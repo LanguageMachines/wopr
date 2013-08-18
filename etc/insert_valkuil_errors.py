@@ -67,15 +67,42 @@ def damerau(seq1, seq2):
                 thisrow[y] = min(thisrow[y], twoago[y - 2] + 1)
     return thisrow[len(seq2) - 1]
 
+def add_error(w, e):
+    err_in_lex = False
+    if lex:
+        if e in lexicon:
+            err_in_lex = True
+            try:
+                lex_errs[e] += 1
+            except:
+                print "LEXICON", e
+                lex_errs[e] = 1
+    ld = damerau(w, e)
+    try:
+        vk_ld_counts[ld] += 1
+    except:
+        vk_ld_counts[ld] = 1
+    if ld == 0:
+        print ld, w, e
+    if ld < 0:
+        print ld, w, e
+    if not err_in_lex: #always False if no lexicon
+        if ld > 0 and ld <= max_ld and len(w) >= min_l:
+            try:
+                vk_errors[w].append(e) 
+            except:
+                vk_errors[w] = [ e ]
+                        
 afile = None
 vkfile = "ValkuilErrors.1.0_ns"
 prob = 2
 lex = None
 min_l = 3 #minimum length of word >= min_l
 max_ld = 1 #maximum LD <= max_ld
+confusibles = False #if true, pairs can be reversed
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "d:f:l:m:v:p:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "cd:f:l:m:v:p:", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(1)
@@ -84,6 +111,8 @@ for o, a in opts:
         afile = a 
     elif o in ("-v"): 
         vkfile = a
+    elif o in ("-c"): 
+        confusibles = True
     elif o in ("-l"): 
         lex = a
     elif o in ("-m"): 
@@ -115,32 +144,18 @@ with open(vkfile, "r") as f:
         if m:
             w = m.group(1)
             e = m.group(2)
-            #print w, e
-            err_in_lex = False
-            if lex:
-                if e in lexicon:
-                    err_in_lex = True
-                    try:
-                        lex_errs[e] += 1
-                    except:
-                        print "LEXICON", e
-                        lex_errs[e] = 1
-            ld = damerau(w, e)
-            try:
-                vk_ld_counts[ld] += 1
-            except:
-                vk_ld_counts[ld] = 1
-            if ld == 0:
-                print ld, w, e
-            if ld < 0:
-                print ld, w, e
-            if not err_in_lex:#reverse for confusibles only,
-                if ld > 0 and ld <= max_ld and len(w) >= min_l:
-                    try:
-                        vk_errors[w].append(e) 
-                    except:
-                        vk_errors[w] = [ e ]
-
+            add_error(w,e)
+            if confusibles:
+                add_error(e,w)
+        m = re.match( "^([A-Za-z]*)~(.*) ([0\.1234656789]+)$", line)
+        if m:
+            w = m.group(1)
+            e = m.group(2)
+            p = m.group(3)
+            add_error(w,e)
+            if confusibles:
+                add_error(e,w)
+                
 r = random.Random()
 made_changes = 0
 poss_changes = 0
