@@ -203,14 +203,15 @@ with open(afile, "r") as f:
                 w = words[ randomidx ] #the word from the line
                 numerrs = len( vk_errors[w] ) #number of possible errors
                 randerr = int( r.uniform(0, numerrs) ) #choose one of them
-                words[ randomidx ] = vk_errors[w][randerr]
-                ld = damerau(w, vk_errors[w][randerr])
-                if ld > 0: #could be the original word in the array
-                    print "CHANGE", w, words[ randomidx ], ld
+                confused = vk_errors[w][randerr] #the confused word
+                words[ randomidx ] = confused 
+                ld = damerau(w, confused)
+                if ld > 0: #could be the original word in the array for low prob changes
+                    print "CHANGE", w, confused, ld
                     try:
-                        changed[ vk_errors[w][randerr] ] += 1
+                        changed[ confused ] += 1
                     except:
-                        changed[ vk_errors[w][randerr] ] = 1
+                        changed[ confused ] = 1
                     try:
                         lds[ld] += 1
                     except:
