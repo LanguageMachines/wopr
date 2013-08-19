@@ -3,6 +3,7 @@
 #
 use strict;
 use Getopt::Std;
+use List::Util 'max';
 
 #------------------------------------------------------------------------------
 #
@@ -170,7 +171,7 @@ while ( my $ls0 = <FHD> ) {
     }
 
   my $b_idx = $alg;
-  if ( $b_ptr  ) {
+  if ( $b_ptr  ) { #"pointer" to experiment ID, always unique
     $b_idx = $l1[0];
   }
 	$b_gs{$b_idx} = $l1[$gs];
@@ -261,15 +262,32 @@ sub best{
   my $hl = shift; #high low
   
   if ( $hl eq "h" ) {
+	my $ans = "";
+	my $h = -1;
 	foreach (sort { ($b0{$b} <=> $b0{$a}) } keys %b0) {
-	  return "best  $nm: $_ ".&j($b0{$_});
-	  #last;
+	  #return "best  $nm: $_ ".&j($b0{$_});
+	  $ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+	  if ( $h == -1 ) {
+		$h = &j($b0{$_});
+	  }
+	  if ( $h != &j($b0{$_}) ) {
+		last;
+	  }
 	}
+	return "best $nm: " . $ans.":".$h;
   } else {
+	my $h = -1;
+	my $ans = "";
 	foreach (sort { ($b0{$a} <=> $b0{$b}) } keys %b0) {
-	  return "worst $nm: $_ ".&j($b0{$_});
-	  #last;
+	  $ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+	  if ( $h == -1 ) {
+		$h = &j($b0{$_});
+	  }
+	  if ( $h != &j($b0{$_}) ) {
+		last;
+	  }
 	}
+	return "worst $nm: " . $ans.":".$h;
   }
 }
 __END__

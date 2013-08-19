@@ -96,7 +96,7 @@ def add_error(w, e, p, s):
     except:
         vk_ld_counts[ld] = 1
     if ld > 0 and ld <= max_ld and len(w) >= min_l:
-        n = int(p * 100); #assume percentages in data file (fill till 100 at end?)
+        n = int(p * 100); #assume percentages in data file
         np = 100 - (n*(s-1)) #n', compensate so total for sets > 2items is 100
         try:
             vk_errors[w].extend( [e] * n) 
@@ -151,9 +151,12 @@ with open(vkfile, "r") as f:
         if re.match( "([0\.1234656789]+)$", words[-1:][0]):
             p = float( words[-1:][0] )
             words = words[:-1]
-            if p < 0.01:
-                print "p too small, setting to 0.01"
-                p = 0.01
+        if p < 0.01:
+            print "p too small, setting to 0.01"
+            p = 0.01
+        if p > 1.0/len(words):
+            print "p too large, setting to",1.0/len(words)
+            p = 1.0/len(words)
         print words, p
         pairs = []
         for i in range(len(words)):
