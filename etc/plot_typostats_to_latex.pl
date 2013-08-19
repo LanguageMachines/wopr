@@ -222,16 +222,18 @@ EOT
 
 # Bests
 print "\n";
-print "% ".&best( \%b_gs, "gs", "h" )."     ".&best( \%b_gs, "gs", "l" )."\n";
-print "% ".&best( \%b_ws, "ws", "l" )."     ".&best( \%b_ws, "ws", "h" )."\n"; 
-print "% ".&best( \%b_ns, "ns", "l" )."     ".&best( \%b_ns, "ns", "h" )."\n";
-print "% ".&best( \%b_bs, "bs", "l" )."     ".&best( \%b_bs, "bs", "h" )."\n";
+#my $spacer = "     ";
+my $spacer = "\n% ";
+print "% ".&best( \%b_gs, "gs", "h" ).$spacer.&best( \%b_gs, "gs", "l" )."\n";
+print "% ".&best( \%b_ws, "ws", "l" ).$spacer.&best( \%b_ws, "ws", "h" )."\n"; 
+print "% ".&best( \%b_ns, "ns", "l" ).$spacer.&best( \%b_ns, "ns", "h" )."\n";
+print "% ".&best( \%b_bs, "bs", "l" ).$spacer.&best( \%b_bs, "bs", "h" )."\n";
 
 print "\n";
-print "% ".&best( \%b_ppv, "pre", "h" )."     ".&best( \%b_ppv, "pre", "l" )."\n";
-print "% ".&best( \%b_tpc, "rec", "h" )."     ".&best( \%b_tpc, "rec", "l" )."\n";
-print "% ".&best( \%b_acc, "acc", "h" )."     ".&best( \%b_acc, "acc", "l" )."\n";
-print "% ".&best( \%b_fsc, "fsc", "h" )."     ".&best( \%b_fsc, "fsc", "l" )."\n";
+print "% ".&best( \%b_ppv, "pre", "h" ).$spacer.&best( \%b_ppv, "pre", "l" )."\n";
+print "% ".&best( \%b_tpc, "rec", "h" ).$spacer.&best( \%b_tpc, "rec", "l" )."\n";
+print "% ".&best( \%b_acc, "acc", "h" ).$spacer.&best( \%b_acc, "acc", "l" )."\n";
+print "% ".&best( \%b_fsc, "fsc", "h" ).$spacer.&best( \%b_fsc, "fsc", "l" )."\n";
 
 
 sub i {
@@ -266,25 +268,27 @@ sub best{
 	my $h = -1;
 	foreach (sort { ($b0{$b} <=> $b0{$a}) } keys %b0) {
 	  #return "best  $nm: $_ ".&j($b0{$_});
-	  $ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
 	  if ( $h == -1 ) {
 		$h = &j($b0{$_});
-	  }
-	  if ( $h != &j($b0{$_}) ) {
+		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+	  } elsif ( $h != &j($b0{$_}) ) {
 		last;
+	  } else {
+		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
 	  }
 	}
-	return "best $nm: " . $ans.":".$h;
+	return "best  $nm: " . $ans.":".$h;
   } else {
 	my $h = -1;
 	my $ans = "";
 	foreach (sort { ($b0{$a} <=> $b0{$b}) } keys %b0) {
-	  $ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
 	  if ( $h == -1 ) {
 		$h = &j($b0{$_});
-	  }
-	  if ( $h != &j($b0{$_}) ) {
+		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+	  } elsif ( $h != &j($b0{$_}) ) {
 		last;
+	  } else {
+		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
 	  }
 	}
 	return "worst $nm: " . $ans.":".$h;
