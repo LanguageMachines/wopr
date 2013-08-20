@@ -1979,6 +1979,8 @@ int mcorrect( Logfile& l, Config& c ) {
   int                max_tf           = stoi( c.get_value( "max_tf", "1" ));
   // minimum frequency of all words in the distribution
   int                min_df           = stoi( c.get_value( "min_df", "0" ));
+  // offset for triggerpos, from the right, so 0 is the target position
+  int                offset           = stoi( c.get_value( "offset", "0" ));
   int                skip             = 0;
   bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
@@ -2017,6 +2019,7 @@ int mcorrect( Logfile& l, Config& c ) {
   l.log( "min_ratio:  "+to_str(min_ratio) );
   l.log( "max_tf:     "+to_str(max_tf) );
   l.log( "min_df:     "+to_str(min_df) );
+  l.log( "offset:     "+to_str(offset) );
   l.log( "cs:         "+to_str(cs) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
@@ -2221,7 +2224,6 @@ int mcorrect( Logfile& l, Config& c ) {
 	std::map<std::string, Expert*>::iterator tsi; //triggers 
 	Expert *e = NULL; // Expert used
 	int pos;
-	int offset = 1;
 	std::string trigger;
 
     while( std::getline( file_in, classify_line )) {
@@ -2277,10 +2279,10 @@ int mcorrect( Logfile& l, Config& c ) {
 		}
 
 		// Do we Timbl, check triggers.
-		pos     = words.size()-offset;
+		pos     = words.size()-1-offset;
 		pos     = (pos < 0) ? 0 : pos;
 		trigger = words[pos];
-		l.log( "trigger: "+trigger);
+		//l.log( "trigger: "+trigger);
 
 		tsi = triggers.find( trigger );
 		if ( tsi != triggers.end() ) {
