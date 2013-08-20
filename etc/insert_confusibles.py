@@ -175,6 +175,7 @@ print
 r = random.Random()
 made_changes = 0
 poss_changes = 0
+skipped_poss_changes = 0
 changed = {}
 lds = {}
 skip_cnt = skip
@@ -185,6 +186,12 @@ with open(afile, "r") as f:
             skip_cnt -= 1
             if skip_cnt > 0:
                 fo.write(line) #write unmodified line
+                # stats on the skipped line
+                line = line[:-1]
+                words = line.split()
+                for word in words:
+                    if word in vk_errors:
+                        skipped_poss_changes += 1
                 continue
             # Every skip-th line, we introduce errors.
             skip_cnt = skip
@@ -231,7 +238,7 @@ with open(afile, "r") as f:
             fo.write(new_line+"\n")
 
 print "Made", made_changes, "changes out of", poss_changes, "possible changes."
-
+print "Skipped", skipped_poss_changes, " possible changes in the skipped lines."
 
 for ld in vk_ld_counts:
     print "CFLD", ld, vk_ld_counts[ld]

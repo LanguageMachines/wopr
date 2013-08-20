@@ -12,11 +12,12 @@ use List::Util 'max';
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
+use vars qw/ $opt_b $opt_c $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
 
-getopts('bdf:n:pr:s:t');
+getopts('bcdf:n:pr:s:t');
 
 my $b_ptr       = $opt_b || 0;    #0 for default ($alg), else l1[0]
+my $compact     = $opt_c || 0;    #0 for one best/worse per line
 my $detection   = $opt_d || 0;    # -d shows scores for detections, else correction
 my $data_file   = $opt_f || "";   #original data file, two lines (normal TOP1) 
 my $cycle_nr    = $opt_n || "";   #cycle nr (like 14200)
@@ -222,8 +223,10 @@ EOT
 
 # Bests
 print "\n";
-#my $spacer = "     ";
 my $spacer = "\n% ";
+if ( $compact ) {
+  $spacer = "     ";
+}
 print "% ".&best( \%b_gs, "gs", "h" ).$spacer.&best( \%b_gs, "gs", "l" )."\n";
 print "% ".&best( \%b_ws, "ws", "l" ).$spacer.&best( \%b_ws, "ws", "h" )."\n"; 
 print "% ".&best( \%b_ns, "ns", "l" ).$spacer.&best( \%b_ns, "ns", "h" )."\n";
