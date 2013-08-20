@@ -64,6 +64,7 @@
 #include "ngram_server.h"
 #include "wex.h"
 #include "prededit.h"
+#include "Expert.h"
 
 #ifdef HAVE_ICU
 #define U_CHARSET_IS_UTF8 1
@@ -510,6 +511,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &multi_gated;
   } else if ( a_fname == "correct" ) {
     return &correct;
+  } else if ( a_fname == "mcorrect" ) {
+    return &mcorrect;
   } else if ( a_fname == "generate" ) {
     return &generate;
   } else if ( a_fname == "generate_server" ) {

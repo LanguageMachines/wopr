@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2013 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -223,7 +223,7 @@ int multi( Logfile& l, Config& c ) {
 
       Timbl::TimblAPI *timbl = classifier->get_exp();
 
-      //      pattern target  lc    rc  backoff
+      //      pattern target  lc    rc  it backoff
       window( a_line, a_line, win_s, 0, 0, false, results ); 
 
       // For each classifier, make data and run. We need to specify how to
@@ -998,7 +998,7 @@ int multi_gated( Logfile& l, Config& c ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
       if ( wfreq == 1 ) {
-	++N_1;
+		++N_1;
       }
     }
     file_lexicon.close();
@@ -1030,9 +1030,9 @@ int multi_gated( Logfile& l, Config& c ) {
       // Gated classifier, rest is ignored.
       //
       if ( (*cli)->get_type() == 3 ) {
-	gated_cls[ (*cli)->get_gatetrigger() ] = (*cli);
+		gated_cls[ (*cli)->get_gatetrigger() ] = (*cli);
       } else if ( (*cli)->get_type() == 4 ) { //Well, not the default one
-	dflt = (*cli);
+		dflt = (*cli);
       }
 
       ++classifier_count;
@@ -1198,7 +1198,7 @@ int multi_gated( Logfile& l, Config& c ) {
       std::string tmp;
       if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) { 
 		std::vector<distr_elem*> distr_vec;
-		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true);
+		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true, 0);
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 		std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 		int cntr = 0;

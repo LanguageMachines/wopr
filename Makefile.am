@@ -56,7 +56,8 @@ wopr_SOURCES = \
 	src/tinyxml.cpp \
 	src/tinyxmlparser.cpp \
 	src/tinyxmlerror.cpp \
-	src/PDT.h
+	src/PDT.h \
+	src/Expert.h
 
 woprsm_SOURCES = \
 	src/woprsm.cc

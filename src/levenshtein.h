@@ -29,10 +29,11 @@
 int distance(const std::string&, const std::string&);
 int levenshtein( Logfile&, Config& );
 void distr_spelcorr( const Timbl::ValueDistribution *, const std::string&, std::map<std::string,int>&,
-					 std::vector<distr_elem*>&,int, double, double, bool);
+					 std::vector<distr_elem*>&,int, double, double, bool, int);
 int correct( Logfile&, Config& );
 int lev_distance(const std::string&, const std::string&, int, bool);
 int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
+int mcorrect( Logfile&, Config& );
 
 #endif
