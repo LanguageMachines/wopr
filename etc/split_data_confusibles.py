@@ -66,15 +66,13 @@ with open(cfile, "r") as f:
 # create hash with openfiles
 rev = {}
 tr_openfiles = {}
-indexfiles = {}
 for c in confusibles:
     counter = c[0]
     tr_c_file = trfile + "_" + w_id + ".cs" + str(counter) #confusible set
     #print tr_c_file
     tr_openfiles[tr_c_file] = open(tr_c_file, "w")
-    ifile = tr_c_file + ".i"
-    indexfiles[ifile] = open(ifile, "w")
     words = c[1]
+    print words
     for w in words:
         rev[w] = tr_c_file
 
@@ -92,25 +90,27 @@ with open(trfile, "r") as f:
             fp = rev[trigger] #get filename
             of = tr_openfiles[fp] #get filepointer
             of.write(line+"\n")
-            of = indexfiles[fp+".i"] #get filepointer for index
-            of.write(str(index)+"\n")
         index += 1
         
 #close all
 for fp in tr_openfiles:
     of = tr_openfiles[fp]
     of.close()
-    of = indexfiles[fp+".i"]
-    of.close()
 
-for c in confusibles:
-    counter = c[0]
-    tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
-    #
-    print wopr_path+" -l -r make_ibase,kvs -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
-    #
-    # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
-    timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
-    ibasefile = tr_c_file+"_"+timbl_compact+".ibase" #outside of wopr, we create our own filenames.    
-    print ibasefile, w, " ".join(c[1])
-    
+with open("make_ibases.sh", "w") as of_ib:
+    with open("configfile.txt", "w") as of_cf:
+        for c in confusibles:
+            counter = c[0]
+            words = c[1]
+            print words
+            tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
+            #
+            print wopr_path+" -l -r make_ibase,kvs -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
+            of_ib.write(wopr_path+" -l -r make_ibase,kvs -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
+            #
+            # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
+            timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
+            ibasefile = tr_c_file+"_"+timbl_compact+".ibase" #outside of wopr, we create our own filenames.    
+            print ibasefile, " ".join(c[1])
+            of_cf.write(ibasefile+" "+" ".join(c[1])+"\n")
+            
