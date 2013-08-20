@@ -2067,6 +2067,7 @@ int mcorrect( Logfile& l, Config& c ) {
   std::vector<Expert*> exs;
   std::vector<Expert*>::iterator exi;
   std::map<std::string,Expert*> triggers; // reverse list, trigger to expert
+  std::map<std::string,int> called; // counter
 
   if ( configfile != "" ) {
     l.log( "Reading classifiers." );
@@ -2097,6 +2098,7 @@ int mcorrect( Logfile& l, Config& c ) {
 	  e->init();
 	  for ( int i = 1; i < words.size(); i++ ) {
 		triggers[words[i]] = e;
+		called[words[i]] = 0;
 		l.log( "TRIGGER: "+words[i] );
 	  }
 	}
@@ -2300,6 +2302,8 @@ int mcorrect( Logfile& l, Config& c ) {
 		// Do we change this answer to what is in the distr. (if it is?)
 		//
 		tv = e->My_Experiment->Classify( a_line, vd );
+		e->call();
+		called[trigger] += 1; //we know it exists
 		if ( ! tv ) {
 		  l.log( "ERROR: Timbl returned a classification error, aborting." );
 		  break;
@@ -2464,6 +2468,14 @@ int mcorrect( Logfile& l, Config& c ) {
       l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
     }
 	
+	// print call statistics for triggers.
+	//
+	std::map<std::string,int>::const_iterator ci = called.begin();
+	while ( ci != called.end() ) {
+	  l.log( ci->first+": "+to_str(ci->second) );
+	  ci++;
+	}
+
     c.add_kv( "sc_file", output_filename );
     l.log( "SET sc_file to "+output_filename );
 
