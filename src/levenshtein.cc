@@ -2294,7 +2294,8 @@ int mcorrect( Logfile& l, Config& c ) {
 		}
 
 		if ( e == NULL ) {
-		  file_out << a_line << " (" << target << ") 0 0 0 0 [ ]\n";
+		  // We print a dummy line, same format a normal experiments.
+		  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
 		  continue;
 		}
 

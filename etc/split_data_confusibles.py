@@ -44,11 +44,11 @@ for o, a in opts:
     elif o in ("-o"): 
         offset = int(a)
     elif o in ("-i"): 
-        w_id = i
+        w_id = a
     elif o in ("-s"): 
         sfile = a
     elif o in ("-t"): 
-        wopr_timbl = a #quotes!
+        wopr_timbl = '"'+a+'"' #quotes!
     else:
         assert False, "unhandled option"
 
@@ -70,6 +70,7 @@ with open(cfile, "r") as f:
 # create hash with openfiles
 rev = {}
 tr_openfiles = {}
+trigger_counter = {}
 for c in confusibles:
     counter = c[0]
     tr_c_file = trfile + "_" + w_id + ".cs" + str(counter) #confusible set
@@ -79,6 +80,7 @@ for c in confusibles:
     print words
     for w in words:
         rev[w] = tr_c_file
+        trigger_counter[w] = 0
 
 #print rev
 
@@ -94,6 +96,7 @@ with open(trfile, "r") as f:
             fp = rev[trigger] #get filename
             of = tr_openfiles[fp] #get filepointer
             of.write(line+"\n")
+            trigger_counter[trigger] += 1
         index += 1
         
 #close all
@@ -107,10 +110,17 @@ with open("make_ibases_"+w_id+".sh", "w") as of_ib:
             counter = c[0]
             words = c[1]
             print words
+            # check if none of the counters is 0...
+            counts = [ trigger_counter[w] for w in words ]
+            positives = [e for e in counts if e > 0]
+            print counts
+            if len(positives) < 2:
+                print "Useless classifier."
+                continue
             tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
             #
-            print wopr_path+" -l -r make_ibase,kvs -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
-            of_ib.write(wopr_path+" -l -r make_ibase,kvs -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
+            print wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
+            of_ib.write(wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
             #
             # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
             timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
