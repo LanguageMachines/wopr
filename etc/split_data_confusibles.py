@@ -26,13 +26,13 @@ multiple = False #not used
 offset   = -1 #last word in "a b c", the target
 sfile    = "conf_train.wopr.sh" #script fil
 
-w_id = "EXP01"
+w_id = "EXP01" #should be supplied to wopr as well
 
 wopr_path  = "/exp2/pberck/wopr/wopr"
 wopr_timbl = '"-a1 +D"'
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "c:f:o:s:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "c:f:i:o:s:t:", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(1)
@@ -43,8 +43,12 @@ for o, a in opts:
         cfile = a
     elif o in ("-o"): 
         offset = int(a)
+    elif o in ("-i"): 
+        w_id = i
     elif o in ("-s"): 
         sfile = a
+    elif o in ("-t"): 
+        wopr_timbl = a #quotes!
     else:
         assert False, "unhandled option"
 
@@ -97,8 +101,8 @@ for fp in tr_openfiles:
     of = tr_openfiles[fp]
     of.close()
 
-with open("make_ibases.sh", "w") as of_ib:
-    with open("configfile.txt", "w") as of_cf:
+with open("make_ibases_"+w_id+".sh", "w") as of_ib:
+    with open("configfile_"+w_id+".txt", "w") as of_cf:
         for c in confusibles:
             counter = c[0]
             words = c[1]
