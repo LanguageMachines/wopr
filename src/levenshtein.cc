@@ -1984,6 +1984,7 @@ int mcorrect( Logfile& l, Config& c ) {
   int                skip             = 0;
   bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
+  bool               bl               = stoi( c.get_value( "bl", "0" )) == 1; //run baseline
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -2021,6 +2022,7 @@ int mcorrect( Logfile& l, Config& c ) {
   l.log( "min_df:     "+to_str(min_df) );
   l.log( "offset:     "+to_str(offset) );
   l.log( "cs:         "+to_str(cs) );
+  l.log( "bl:         "+to_str(bl) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -2061,6 +2063,39 @@ int mcorrect( Logfile& l, Config& c ) {
     return 0;
   }
 
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  unsigned long hpx_entries = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::map<std::string,int> hpxfreqs; // hapaxed list
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+		++N_1;
+      }
+	  if ( wfreq > hapax ) {
+		hpxfreqs[a_word] = wfreq;
+		++hpx_entries;
+	  }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  }
+
   // Read configfile with ibase definitions
   // --------------------------------------
 
@@ -2096,47 +2131,27 @@ int mcorrect( Logfile& l, Config& c ) {
 	  e->set_ibasefile(ibf);
 	  e->set_timbl( timbl );
 	  e->init();
+	  int hi_freq = 0;
 	  for ( int i = 1; i < words.size(); i++ ) {
-		triggers[words[i]] = e;
-		called[words[i]] = 0;
-		l.log( "TRIGGER: "+words[i] );
+		std::string tr = words[i];
+		triggers[ tr ] = e;
+		called[ tr ] = 0;
+		l.log( "TRIGGER: "+tr );
+		// lookup if baseline
+		if ( bl == true ) {
+		  std::map<std::string,int>::iterator wfi = wfreqs.find( tr );
+		  if ( wfi != wfreqs.end() ) {
+			int tr_freq = (int)(*wfi).second;
+			if ( tr_freq > hi_freq ) {
+			  e->set_highest( tr );
+			  e->set_highest_f( tr_freq );
+			}
+		  }
+		}
 	  }
 	}
   }
   l.log( "Instance bases loaded." );
-
-  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
-  //
-  int wfreq;
-  unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
-  unsigned long hpx_entries = 0;
-  std::map<std::string,int> wfreqs; // whole lexicon
-  std::map<std::string,int> hpxfreqs; // hapaxed list
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "NOTICE: cannot load lexicon file." );
-    //return -1;
-  } else {
-    // Read the lexicon with word frequencies.
-    // We need a hash with frequence - countOfFrequency, ffreqs.
-    //
-    l.log( "Reading lexicon." );
-    std::string a_word;
-    while ( file_lexicon >> a_word >> wfreq ) {
-      wfreqs[a_word] = wfreq;
-      total_count += wfreq;
-      if ( wfreq == 1 ) {
-		++N_1;
-      }
-	  if ( wfreq > hapax ) {
-		hpxfreqs[a_word] = wfreq;
-		++hpx_entries;
-	  }
-    }
-    file_lexicon.close();
-    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-  }
   
   // If we want smoothed counts, we need this file...
   // Make mapping <int, double> from c to c* ?
@@ -2294,8 +2309,14 @@ int mcorrect( Logfile& l, Config& c ) {
 		}
 
 		if ( e == NULL ) {
-		  // We print a dummy line, same format a normal experiments.
+		  // We print a dummy line, same format as normal experiments.
 		  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
+		  continue;
+		}
+
+		if ( bl == true ) {
+		  // We print a dummy line, same format as normal experiments.
+		  file_out << a_line << " (" << e->get_highest() << ") 0 0 1 1 [ "+e->get_highest()+" "+to_str(e->get_highest_f())+" ]\n";
 		  continue;
 		}
 
@@ -2307,6 +2328,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		called[trigger] += 1; //we know it exists
 		if ( ! tv ) {
 		  l.log( "ERROR: Timbl returned a classification error, aborting." );
+		  l.log( "ERROR: "+a_line );
 		  break;
 		}
 		std::string answer = tv->Name();

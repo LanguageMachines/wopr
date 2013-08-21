@@ -28,6 +28,8 @@ class Expert {
   int         offset;
   std::string timbl;
   int         called;
+  std::string highest;
+  int         highest_f;
 #ifdef TIMBL
   Timbl::TimblAPI                *My_Experiment;
   const Timbl::ValueDistribution *vd;
@@ -72,6 +74,20 @@ class Expert {
   }
   const std::string& get_trigger() {
     return trigger;
+  }
+
+  void set_highest( const std::string& h ) {
+    highest = h;
+  }
+  const std::string& get_highest() {
+    return highest;
+  }
+
+  void set_highest_f( int h ) {
+    highest_f = h;
+  }
+  int get_highest_f() {
+    return highest_f;
   }
 
   void set_offset( int p ) {
