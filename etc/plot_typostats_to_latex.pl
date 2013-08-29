@@ -7,8 +7,8 @@ use List::Util 'max';
 
 #------------------------------------------------------------------------------
 #
-# Takes a DATA...plot file, creates tables with gs/ws etc scores.
-# Only works with newest versions which include HPX setting in output.
+# Takes a STAT... and DATA...plot file, creates tables with gs/ws etc scores.
+# (Only works with newest versions which include HPX setting in output.)
 #
 #------------------------------------------------------------------------------
 
@@ -79,6 +79,8 @@ my %b_gs;
 my %b_ws;
 my %b_ns;
 my %b_bs;
+
+my %bests; #for later
 
 my $extra = "";
 if ( $detection ) {
@@ -189,13 +191,16 @@ while ( my $ls0 = <FHD> ) {
       my $out = $alg." ".&j($l0[$gs])." "; #gsd
       $out = $out . &j($l1[$gs])." ".&j($l1[$ws])." ".&j($l1[$ns])." ".&j($l1[$bs])." "; 
       $out = $out . &j($sbits1[$pre])." ".&j($sbits1[$rec])." ".&j($sbits1[$acc])." ".&j($sbits1[$f1s])." ";
-      $out = $out . " ".$l1[0].",".$l1[1].",".$sbits1[4];
+      $out = $out . " ".$l1[0]." ".$l1[1]." ".$sbits1[4];
       print $out,"\n";
     } else {
       $alg =~ s/_\-a1\+D/ \\igtree{}/;
       $alg =~ s/_\-a4\+D/ \\triblt{}/;
 	  my $alg_bit = substr $alg, -9;
 	  my $ctx = substr $alg, 0, 4;
+	  if ( substr($ctx, 2, 1) eq 't' ) {
+		$ctx = substr $alg, 0, 6;
+	  }
 	  if ( $alg_bit ne $prev_alg ) {
 		print "$alg_bit\\\\\n";
 		$prev_alg = $alg_bit;
@@ -274,10 +279,12 @@ sub best{
 	  if ( $h == -1 ) {
 		$h = &j($b0{$_});
 		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+		$bests{$_} += 1;
 	  } elsif ( $h != &j($b0{$_}) ) {
 		last;
 	  } else {
 		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+		$bests{$_} += 1;
 	  }
 	}
 	return "best  $nm: " . $ans.":".$h;
@@ -288,10 +295,12 @@ sub best{
 	  if ( $h == -1 ) {
 		$h = &j($b0{$_});
 		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+		$bests{$_} += 1;
 	  } elsif ( $h != &j($b0{$_}) ) {
 		last;
 	  } else {
 		$ans .= $_ ." "; #. &j($b0{$_}) ."/"  ;
+		$bests{$_} += 1;
 	  }
 	}
 	return "worst $nm: " . $ans.":".$h;
