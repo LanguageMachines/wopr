@@ -30,7 +30,7 @@ class Matrix():
         self.WS = 0
         self.NS = 0
         self.BS = 0
-        print "MATRIX:", word
+        #print "MATRIX:", word
         self.corrected_from = []
         self.corrected_as = []
     def add_GS(self, error):
@@ -53,22 +53,40 @@ class Matrix():
     def to_str(self):
         ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
         return ans
+    def to_latex(self):
+        ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"} & \\tnum{"+str(self.BS)+"}"
+        return ans
     
 all_files = None
+cfile = None
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "f:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "c:f:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     sys.exit(2)
 for o, a in opts:
     if o in ("-f", "--file"):
         all_files = [ a ]
+    elif o in ("-c", "--cfile"):
+        cfile = a 
     else:
         assert False, "unhandled option"
 
 cf_info = {}
 
+confusibles = []
+counter = 0
+with open(cfile, "r") as f:
+    for line in f:
+        if line == "" or line[0] == "#":
+            continue
+        line = line[:-1]
+        words = line.split()
+        confusibles.append( words )
+
+print confusibles
+        
 for filename in all_files:
     with open(filename, 'r') as f:
         file_lines = f.readlines()
@@ -114,11 +132,12 @@ for filename in all_files:
                 m = Matrix(w_orig)
                 cf_info[w_orig] = m
                 m.add_BS(w_error)
-                #WRONGSUGG sight -> cite (should be: site)
-        m = re.match( "WRONGSUGG (.*?) \-> (.*?) \(", line )
+        #WRONGSUGG sight -> cite (should be: site)
+        #in the text we have SIGHT, corrected to CITE, should have been SITE
+        m = re.match( "WRONGSUGG (.*?) \-> (.*?) \(should be: (.*?)\)", line )
         if m:
             #print line
-            w_orig  = m.group(1)
+            w_orig  = m.group(3)
             w_error = m.group(2)
             #print w_orig, w_error
             try:
@@ -131,10 +150,10 @@ for filename in all_files:
                 #NOSUGG they're (should be: their)
         m = re.match( "NOSUGG (.*?) \(should be: (.*?)\)", line )
         if m:
-            print line
+            #print line
             w_orig  = m.group(2)
             w_error = m.group(1)
-            print w_orig, w_error
+            #print w_orig, w_error
             try:
                 m = cf_info[w_orig]
                 m.add_NS()
@@ -143,8 +162,77 @@ for filename in all_files:
                 cf_info[w_orig] = m
                 m.add_NS()
 
+'''
+Latex header
+'''
+print '''
+\\begin{table}[h!]
+\\caption{'''+filename.replace('_', '\\_')+'''}
+\\centering
+\\vspace{\\baselineskip}
+%\\fit{%
+\\begin{tabular}{@{} l r r r r r l r r r r r @{}} %
+\\toprule
+ & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\
+\midrule'''
+
 total = 0
+'''
 for m in cf_info:
-    print cf_info[m].to_str()
+    #print cf_info[m].to_str()
+    print cf_info[m].to_latex()
     total += cf_info[m].total()
 print total
+'''
+for cf_set in confusibles:
+    l = len(cf_set)
+    out = ""
+    for cf in cf_set:
+        if cf in cf_info:
+            out += cf_info[cf].to_latex() + " & "
+        else:
+            out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
+    if l == 2:
+        print out[:-2],"\\\\"
+    else:
+        print "%",out[:-2],"\\\\"
+        
+print '''
+\\bottomrule
+\\end{tabular}%}%endfit
+\\label{tab:LABEL}
+\\end{table}
+'''
+
+# triple word sets
+
+print '''
+\\begin{table}[h!]
+\\caption{'''+filename.replace('_', '\\_')+'''}
+\\centering
+\\vspace{\\baselineskip}
+%\\fit{%
+\\begin{tabular}{@{} l r r r r r l r r r r r l r r r r r @{}} %
+\\toprule
+ & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} & & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\
+\midrule'''
+
+for cf_set in confusibles:
+    l = len(cf_set)
+    out = ""
+    for cf in cf_set:
+        if cf in cf_info:
+            out += cf_info[cf].to_latex() + " & "
+        else:
+            out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
+    if l == 3:
+        print out[:-2],"\\\\"
+    else:
+        pass #print "%",out[:-2],"\\\\"
+        
+print '''
+\\bottomrule
+\\end{tabular}%}%endfit
+\\label{tab:LABEL}
+\\end{table}
+'''
