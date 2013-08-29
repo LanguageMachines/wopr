@@ -51,7 +51,10 @@ class Matrix():
     def total(self):
         return self.GS+self.WS+self.NS
     def to_str(self):
-        ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
+        if show_bs:
+            ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)+" BS:"+str(self.BS)
+        else:
+            ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
         return ans
     def to_latex(self):
         ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"} & \\tnum{"+str(self.BS)+"}"
@@ -59,6 +62,7 @@ class Matrix():
     
 all_files = None
 cfile = None
+show_bs = True
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "c:f:", ["file="])
@@ -85,7 +89,7 @@ with open(cfile, "r") as f:
         words = line.split()
         confusibles.append( words )
 
-print confusibles
+#print confusibles
         
 for filename in all_files:
     with open(filename, 'r') as f:
@@ -119,10 +123,10 @@ for filename in all_files:
                 print "ERROR", line
                 sys.exit(1)
                 #BADSUGG between -> among (should be: between)
-        m = re.match( "BADSUGG (.*?) \-> (.*?) \(", line )
+        m = re.match( "BADSUGG (.*?) \-> (.*?) \(should be: (.*?)\)", line )
         if m:
             #print line
-            w_orig  = m.group(1)
+            w_orig  = m.group(3)
             w_error = m.group(2)
             #print w_orig, w_error
             try:
@@ -162,6 +166,14 @@ for filename in all_files:
                 cf_info[w_orig] = m
                 m.add_NS()
 
+
+total = 0
+for m in cf_info:
+    print cf_info[m].to_str()
+    total += cf_info[m].total()
+print total
+
+
 '''
 Latex header
 '''
@@ -176,14 +188,6 @@ print '''
  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\
 \midrule'''
 
-total = 0
-'''
-for m in cf_info:
-    #print cf_info[m].to_str()
-    print cf_info[m].to_latex()
-    total += cf_info[m].total()
-print total
-'''
 for cf_set in confusibles:
     l = len(cf_set)
     out = ""
