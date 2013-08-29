@@ -143,3 +143,8 @@ for filename in all_files:
                 cf_info[w_orig] = m
                 m.add_NS()
 
+total = 0
+for m in cf_info:
+    print cf_info[m].to_str()
+    total += cf_info[m].total()
+print total
