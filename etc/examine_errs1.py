@@ -50,22 +50,25 @@ class Matrix():
         self.BS += 1
     def total(self):
         return self.GS+self.WS+self.NS
-    def to_str(self):
+    def to_str(self, show_bs):
         if show_bs:
             ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)+" BS:"+str(self.BS)
         else:
             ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
         return ans
-    def to_latex(self):
-        ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"} & \\tnum{"+str(self.BS)+"}"
+    def to_latex(self, show_bs):
+        if show_bs:
+            ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"} & \\tnum{"+str(self.BS)+"}"
+        else:
+            ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"}"
         return ans
     
 all_files = None
 cfile = None
-show_bs = True
+show_bs = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "c:f:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bc:f:", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     sys.exit(2)
@@ -74,6 +77,8 @@ for o, a in opts:
         all_files = [ a ]
     elif o in ("-c", "--cfile"):
         cfile = a 
+    elif o in ("-b", "--showbs"):
+        show_bs = True
     else:
         assert False, "unhandled option"
 
@@ -169,7 +174,7 @@ for filename in all_files:
 
 total = 0
 for m in cf_info:
-    print cf_info[m].to_str()
+    print cf_info[m].to_str(show_bs)
     total += cf_info[m].total()
 print total
 
@@ -182,18 +187,23 @@ print '''
 \\caption{'''+filename.replace('_', '\\_')+'''}
 \\centering
 \\vspace{\\baselineskip}
-%\\fit{%
-\\begin{tabular}{@{} l r r r r r l r r r r r @{}} %
-\\toprule
- & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\
-\midrule'''
+%\\fit{%'''
+if show_bs:
+    print "\\begin{tabular}{@{} l r r r r r l r r r r r @{}} %\n"
+    print "\\toprule\n"
+    print " & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\\n"
+else:
+    print "\\begin{tabular}{@{} l r r r r l r r r r @{}} %\n"
+    print "\\toprule\n"
+    print " & total & \\gs{} & \\ws{} & \\ns{} &  & total & \\gs{} & \\ws{} & \\ns{} \\\\\n"
+print "\\midrule\n"
 
 for cf_set in confusibles:
     l = len(cf_set)
     out = ""
     for cf in cf_set:
         if cf in cf_info:
-            out += cf_info[cf].to_latex() + " & "
+            out += cf_info[cf].to_latex(show_bs) + " & "
         else:
             out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
     if l == 2:
@@ -215,18 +225,23 @@ print '''
 \\caption{'''+filename.replace('_', '\\_')+'''}
 \\centering
 \\vspace{\\baselineskip}
-%\\fit{%
-\\begin{tabular}{@{} l r r r r r l r r r r r l r r r r r @{}} %
-\\toprule
- & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} & & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\
-\midrule'''
+%\\fit{%'''
+if show_bs:
+    print "\\begin{tabular}{@{} l r r r r r l r r r r r l r r r r r @{}} %\n"
+    print "\\toprule\n"
+    print " & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} & & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\\n"
+else:
+    print "\\begin{tabular}{@{} l r r r r l r r r r l r r r r @{}} %\n"
+    print "\\toprule\n"
+    print " & total & \\gs{} & \\ws{} & \\ns{} &  & total & \\gs{} & \\ws{} & \\ns{} & & total & \\gs{} & \\ws{} & \\ns{} \\\\\n"
+print "\\midrule\n"
 
 for cf_set in confusibles:
     l = len(cf_set)
     out = ""
     for cf in cf_set:
         if cf in cf_info:
-            out += cf_info[cf].to_latex() + " & "
+            out += cf_info[cf].to_latex(show_bs) + " & "
         else:
             out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
     if l == 3:
