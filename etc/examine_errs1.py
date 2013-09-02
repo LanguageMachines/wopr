@@ -50,11 +50,16 @@ class Matrix():
         self.BS += 1
     def total(self):
         return self.GS+self.WS+self.NS
+    def get_stats(self, show_bs):
+        if show_bs:
+            return (self.total(), self.GS, self.WS, self.NS, self.BS)
+        else:
+            return (self.total(), self.GS, self.WS, self.NS)
     def to_str(self, show_bs):
         if show_bs:
-            ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)+" BS:"+str(self.BS)
+            ans = self.confusible+": TOT:"+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)+" BS:"+str(self.BS)
         else:
-            ans = self.confusible+": TOT: "+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
+            ans = self.confusible+": TOT:"+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
         return ans
     def to_latex(self, show_bs):
         if show_bs:
@@ -66,9 +71,10 @@ class Matrix():
 all_files = None
 cfile = None
 show_bs = False
+text_only = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "bc:f:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bc:f:t", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     sys.exit(2)
@@ -79,9 +85,20 @@ for o, a in opts:
         cfile = a 
     elif o in ("-b", "--showbs"):
         show_bs = True
+    elif o in ("-t", "--textonly"):
+        text_only = True
     else:
         assert False, "unhandled option"
 
+        
+if all_files == None:
+    print "Need a .errs1 file (-f parameter)."
+    sys.exit(1)
+
+if cfile == None:
+    print "Need a confusible file (-c parameter)."
+    sys.exit(1)
+    
 cf_info = {}
 
 confusibles = []
@@ -178,7 +195,30 @@ for m in cf_info:
     total += cf_info[m].total()
 print total
 
+if show_bs:
+    print '{0:<10} {1:>3} {2:>3} {3:>3} {4:>3} {5:>3}   {0:<10} {1:>3} {2:>3} {3:>3} {4:>3} {5:>3}'.format( "C", "T", "gs", "ws", "ns", "bs" )
+else:
+    print '{0:<10} {1:>3} {2:>3} {3:>3} {4:>3}   {0:<10} {1:>3} {2:>3} {3:>3} {4:>3}'.format("C", "T", "gs", "ws", "ns" )
+for cf_set in confusibles:
+    l = len(cf_set)
+    out = ""
+    for cf in cf_set:
+        if cf in cf_info:
+            stats = cf_info[cf].get_stats(show_bs)
+            if show_bs:
+                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, *stats )
+            else:
+                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, *stats )
+        else:
+            if show_bs:
+                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, 0, 0, 0, 0, 0 )
+            else:
+                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, 0, 0, 0, 0 )
+    print out
 
+if text_only:
+    sys.exit(0)
+        
 '''
 Latex header
 '''
