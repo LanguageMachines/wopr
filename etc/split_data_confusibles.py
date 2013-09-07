@@ -136,3 +136,4 @@ with open("make_ibases_"+w_id+".sh", "w") as of_ib:
                 bits = wopr_timbl.split()
                 id_str = '{0:03n}'.format( idx )
                 of_ts.write(id_str+"=\"-i "+ibasefile+" "+wopr_timbl+" +vdb+di\"\n")
+                idx += 1
