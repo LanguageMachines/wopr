@@ -17,7 +17,8 @@ Takes a windowed data set and a confusible file.
 
 create ibases, plus control file:
 ibasename timbl confusibles
-
+creates timblserver ini file
+creates stimpy.py code to include
 """
 
 trfile    = None #training file
@@ -104,36 +105,63 @@ for fp in tr_openfiles:
     of = tr_openfiles[fp]
     of.close()
 
+
+ctx_it_re = re.compile(".*l(\d)t1r(\d)$")
+ctx_re = re.compile(".*l(\d)r(\d)$")
+lc = None
+rc = None
+it = None
+
+m = ctx_it_re.match(trfile)
+if m:
+    lc = int(m.group(1))
+    rc = int(m.group(2))
+    it = 1
+m = ctx_re.match(trfile)
+if m:
+    lc = int(m.group(1))
+    rc = int(m.group(2))
+    it = 0
+
 with open("make_ibases_"+w_id+".sh", "w") as of_ib:
     with open("configfile_"+w_id+".txt", "w") as of_cf:
         with open("tserver_"+w_id+".ini", "w") as of_ts:
-            idx = 0
-            for c in confusibles:
-                counter = c[0]
-                words = c[1]
-                print words
-                # check if none of the counters is 0...
-                counts = [ trigger_counter[w] for w in words ]
-                positives = [e for e in counts if e > 0]
-                print counts
-                if len(positives) < 2:
-                    print "Useless classifier."
-                    continue
-                tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
-                #
-                print wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
-                of_ib.write(wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
-                #
-                # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
-                timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
-                ibasefile = tr_c_file+"_"+timbl_compact+".ibase" #outside of wopr, we create our own filenames.    
-                print ibasefile, " ".join(c[1])
-                of_cf.write(ibasefile+" "+" ".join(c[1])+"\n")
-                # File for tibleservers.
-                #port=2000
-                #maxconn=2
-                #wpred="-i DTI.1e6.10000.l2r2_-a1+D.ibase -a1 +D +vdb+di"
-                bits = wopr_timbl.split()
-                id_str = '{0:03n}'.format( idx )
-                of_ts.write(id_str+"=\"-i "+ibasefile+" "+wopr_timbl.replace("\"", "")+" +vdb+di\"\n")
-                idx += 1
+            with open("pyserver_"+w_id+".py", "w") as of_py:
+                idx = 0
+                of_ts.write("port=2000\n")
+                of_ts.write("maxconn=20\n")
+                of_py.write( "s1=TServers(\"localhost\",2000)\n" )
+                for c in confusibles:
+                    counter = c[0]
+                    words = c[1]
+                    print words
+                    # check if none of the counters is 0...
+                    counts = [ trigger_counter[w] for w in words ]
+                    positives = [e for e in counts if e > 0]
+                    print counts
+                    if len(positives) < 2:
+                        print "Useless classifier."
+                        continue
+                    tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
+                    #
+                    print wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
+                    of_ib.write(wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
+                    #
+                    # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
+                    timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
+                    ibasefile = tr_c_file+"_"+timbl_compact+".ibase" #outside of wopr, we create our own filenames.    
+                    print ibasefile, " ".join(c[1])
+                    of_cf.write(ibasefile+" "+" ".join(c[1])+"\n")
+                    # File for tibleservers.
+                    #port=2000
+                    #maxconn=2
+                    #wpred="-i DTI.1e6.10000.l2r2_-a1+D.ibase -a1 +D +vdb+di"
+                    bits = wopr_timbl.split()
+                    id_str = '{0:03n}'.format( idx )
+                    of_ts.write(w_id+id_str+"=\"-i "+ibasefile+" "+wopr_timbl.replace("\"", "")+" +vdb+di\"\n")
+                    of_py.write( w_id+id_str+"=Classifier(\""+w_id+id_str+"\", "+str(lc)+", "+str(rc)+")\n" )
+                    words = [ "\""+word+"\"" for word in words ]
+                    triggers = ",".join(words)
+                    of_py.write( w_id+id_str+".set_triggers(["+triggers+"])\n" )
+                    of_py.write( "s1.add_classifier("+w_id+id_str+")\n" )
+                    idx += 1
