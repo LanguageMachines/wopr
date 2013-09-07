@@ -106,25 +106,33 @@ for fp in tr_openfiles:
 
 with open("make_ibases_"+w_id+".sh", "w") as of_ib:
     with open("configfile_"+w_id+".txt", "w") as of_cf:
-        for c in confusibles:
-            counter = c[0]
-            words = c[1]
-            print words
-            # check if none of the counters is 0...
-            counts = [ trigger_counter[w] for w in words ]
-            positives = [e for e in counts if e > 0]
-            print counts
-            if len(positives) < 2:
-                print "Useless classifier."
-                continue
-            tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
-            #
-            print wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
-            of_ib.write(wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
-            #
-            # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
-            timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
-            ibasefile = tr_c_file+"_"+timbl_compact+".ibase" #outside of wopr, we create our own filenames.    
-            print ibasefile, " ".join(c[1])
-            of_cf.write(ibasefile+" "+" ".join(c[1])+"\n")
-            
+        with open("tserver_"+w_id+".ini", "w") as of_ts:
+            idx = 0
+            for c in confusibles:
+                counter = c[0]
+                words = c[1]
+                print words
+                # check if none of the counters is 0...
+                counts = [ trigger_counter[w] for w in words ]
+                positives = [e for e in counts if e > 0]
+                print counts
+                if len(positives) < 2:
+                    print "Useless classifier."
+                    continue
+                tr_c_file = trfile + "_" + w_id + ".cs" + str(counter)
+                #
+                print wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl
+                of_ib.write(wopr_path+" -l -r make_ibase -p filename:"+tr_c_file+",id:"+w_id+",timbl:"+wopr_timbl+"\n")
+                #
+                # utexas.1000000.l2r0_EXP01.cs19_-a1+D.ibase
+                timbl_compact = wopr_timbl.replace(" ", "").replace("\"", "")
+                ibasefile = tr_c_file+"_"+timbl_compact+".ibase" #outside of wopr, we create our own filenames.    
+                print ibasefile, " ".join(c[1])
+                of_cf.write(ibasefile+" "+" ".join(c[1])+"\n")
+                # File for tibleservers.
+                #port=2000
+                #maxconn=2
+                #wpred="-i DTI.1e6.10000.l2r2_-a1+D.ibase -a1 +D +vdb+di"
+                bits = wopr_timbl.split()
+                id_str = '{0:03n}'.format( idx )
+                of_ts.write(id_str+"=\"-i "+ibasefile+" "+wopr_timbl+" +vdb+di\"\n")
