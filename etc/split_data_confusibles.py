@@ -21,11 +21,12 @@ creates timblserver ini file
 creates stimpy.py code to include
 """
 
-trfile    = None #training file
+trfile   = None #training file
 cfile    = None #file with confusibles
 multiple = False #not used
 offset   = -1 #last word in "a b c", the target
 sfile    = "conf_train.wopr.sh" #script fil
+binary   = False #make +/- classifiers
 
 w_id = "EXP01" #should be supplied to wopr as well
 
@@ -33,7 +34,7 @@ wopr_path  = "/exp2/pberck/wopr/wopr"
 wopr_timbl = '"-a1 +D"'
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "c:f:i:o:s:t:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bc:f:i:o:s:t:w:", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(1)
@@ -42,6 +43,8 @@ for o, a in opts:
         trfile = a 
     elif o in ("-c"): 
         cfile = a
+    elif o in ("-b"): 
+        binary = True
     elif o in ("-o"): 
         offset = int(a)
     elif o in ("-i"): 
@@ -50,6 +53,8 @@ for o, a in opts:
         sfile = a
     elif o in ("-t"): 
         wopr_timbl = '"'+a+'"' #quotes!
+    elif o in ("-w"): 
+        wopr_path = a
     else:
         assert False, "unhandled option"
 
@@ -69,6 +74,7 @@ with open(cfile, "r") as f:
 # open a file for each set, 
 # create reverse hash from confusible to => counter
 # create hash with openfiles
+# if binary, we need a negative classifier/filelist as well
 rev = {}
 tr_openfiles = {}
 trigger_counter = {}
@@ -96,15 +102,42 @@ with open(trfile, "r") as f:
             #print trigger, rev[trigger]
             fp = rev[trigger] #get filename
             of = tr_openfiles[fp] #get filepointer
+            #if binary, we change target to '+'
+            if binary:
+                words[-1] = '+'
+                line = " ".join(words)
             of.write(line+"\n")
             trigger_counter[trigger] += 1
         index += 1
-        
+
+"""
+Once more, add negative examples. order is not important.
+number is...count number in + files? Same -ve example in more
+than one file? We should only run this script with one set
+if doing binary
+"""
+if binary:
+    negs = 0
+    # use trigger counter to count negs?
+    with open(trfile, "r") as f:
+        index = 0
+        for line in f:
+            line = line[:offset]
+            words = line.split()
+            trigger = words[offset]
+            if trigger not in rev:
+                for tr in tr_openfiles:
+                    of = tr_openfiles[tr] #get filepointer
+                    words[-1] = '-'
+                    line = " ".join(words)
+                    of.write(line+"\n")
+                    negs += 1
+            index += 1
+
 #close all
 for fp in tr_openfiles:
     of = tr_openfiles[fp]
     of.close()
-
 
 ctx_it_re = re.compile(".*l(\d)t1r(\d)$")
 ctx_re = re.compile(".*l(\d)r(\d)$")
@@ -131,6 +164,8 @@ with open("make_ibases_"+w_id+".sh", "w") as of_ib:
                 of_ts.write("port=2000\n")
                 of_ts.write("maxconn=20\n")
                 of_py.write( "s1=TServers(\"localhost\",2000)\n" )
+                if it == 1:
+                    of_py.write( "# it:1\n" )
                 for c in confusibles:
                     counter = c[0]
                     words = c[1]
@@ -159,7 +194,11 @@ with open("make_ibases_"+w_id+".sh", "w") as of_ib:
                     bits = wopr_timbl.split()
                     id_str = '{0:03n}'.format( idx )
                     of_ts.write(w_id+id_str+"=\"-i "+ibasefile+" "+wopr_timbl.replace("\"", "")+" +vdb+di\"\n")
-                    of_py.write( w_id+id_str+"=Classifier(\""+w_id+id_str+"\", "+str(lc)+", "+str(rc)+")\n" )
+                    ty = 1
+                    if it == 1:
+                        ty = 2
+                    ts = "s1"
+                    of_py.write( w_id+id_str+"=Classifier(\""+w_id+id_str+"\", "+str(lc)+", "+str(rc)+", "+str(ty)+", "+ts+")\n" )
                     words = [ "\""+word+"\"" for word in words ]
                     triggers = ",".join(words)
                     of_py.write( w_id+id_str+".set_triggers(["+triggers+"])\n" )
