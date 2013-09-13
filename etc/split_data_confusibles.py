@@ -118,6 +118,40 @@ if doing binary
 If more than one set, do the following per set, re-reading from the
 dataset from 0 every time to add negatives.
 """
+'''
+skip = 2
+if binary:
+    negs = 0
+    for c in confusibles:
+        print c
+        counter = c[0]
+        tr_c_file = trfile + "_" + w_id + ".cs" + str(counter) #confusible set
+        print tr_openfiles[tr_c_file] 
+
+        want_negs = sum(trigger_counter.values())
+        pn_factor = 1.0
+        want_negs = int(want_negs*pn_factor)
+        print want_negs
+
+        with open(trfile, "r") as f:
+            for line in f:
+                if negs >= want_negs:
+                    break
+                if random.randint(0,9) < skip:
+                    continue
+                line = line[:offset]
+                words = line.split()
+                trigger = words[offset]
+                if trigger not in rev:
+                    for tr in tr_openfiles:
+                        of = tr_openfiles[tr] #get filepointer
+                        words[-1] = '-'
+                        line = " ".join(words)
+                        of.write(line+"\n")
+                        negs += 1            
+sys.exit(1)
+'''
+
 skip = 2
 want_negs = sum(trigger_counter.values())
 pn_factor = 1.0
@@ -144,9 +178,10 @@ if binary:
                     of.write(line+"\n")
                     negs += 1
             index += 1
-if want_negs > negs:
-    print "Did not get all negatives (",want_negs-negs,"left )"
-    
+    if want_negs > negs:
+        print "Did not get all negatives (",want_negs-negs,"left )"
+
+        
 #close all
 for fp in tr_openfiles:
     of = tr_openfiles[fp]
