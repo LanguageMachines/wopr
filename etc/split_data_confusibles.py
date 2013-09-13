@@ -115,13 +115,24 @@ Once more, add negative examples. order is not important.
 number is...count number in + files? Same -ve example in more
 than one file? We should only run this script with one set
 if doing binary
+If more than one set, do the following per set, re-reading from the
+dataset from 0 every time to add negatives.
 """
+skip = 2
+want_negs = sum(trigger_counter.values())
+pn_factor = 1.0
+want_negs = int(want_negs*pn_factor)
+print want_negs
 if binary:
     negs = 0
     # use trigger counter to count negs?
     with open(trfile, "r") as f:
         index = 0
         for line in f:
+            if negs >= want_negs:
+                break
+            if random.randint(0,9) < skip:
+                continue
             line = line[:offset]
             words = line.split()
             trigger = words[offset]
@@ -133,7 +144,9 @@ if binary:
                     of.write(line+"\n")
                     negs += 1
             index += 1
-
+if want_negs > negs:
+    print "Did not get all negatives (",want_negs-negs,"left )"
+    
 #close all
 for fp in tr_openfiles:
     of = tr_openfiles[fp]
