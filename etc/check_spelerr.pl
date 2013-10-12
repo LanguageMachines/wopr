@@ -37,9 +37,9 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_a $opt_n $opt_o $opt_s $opt_t $opt_v/;
+use vars qw/ $opt_a $opt_c $opt_n $opt_o $opt_s $opt_t $opt_v/;
 
-getopts('ao:ns:tv:');
+getopts('ac:o:ns:tv:');
 
 my $acc       = $opt_a || 0; #print accuracy, f-score, etc
 my $no_output = $opt_n || 0; #produce no errs and errs1 output
@@ -47,8 +47,10 @@ my $orig_file = $opt_o || "";   #original instances (testfile)
 my $sc_file   = $opt_s || "";   #wopr output
 my $top_only  = $opt_t || 0;    #top-answer can be correct only 
 my $v         = $opt_v || 0;    #verbosity
-
+my $conf_file = $opt_c || 0; #sets with confusibles, ignore others
 my $oneliner = 1;
+
+my %confusibles;
 
 #------------------------------------------------------------------------------
 
@@ -71,6 +73,17 @@ if ( $no_output ) {
   open(OFHD, ">$out_data") || die "Can't open datafile $out_data.";
 }
 
+if ( $conf_file ) {
+  open(FHC, $conf_file) || die "Can't open file $conf_file.";
+  while ( my $l = <FHC> ) {
+	chomp $l;
+	my @cs = split(/ /, $l);
+	foreach (@cs) {
+	  #print $_,"\n";
+	  $confusibles{$_} = 1;
+	}
+  }
+}
 #Skip headers?
 
 my $l = 0; #position of (word)
@@ -108,6 +121,15 @@ while ( my $ls = <FHS> ) {
       }
       ++$i;
     }
+  }
+
+  # If we zoom in on confusibles, we abort if the orig_target
+  # is not in the confusibles.
+  #
+  if ( $conf_file ) {
+	if (not exists $confusibles{$orig_target}) {
+	  next;
+	}
   }
 
   # l2r0:
