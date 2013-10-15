@@ -95,6 +95,7 @@ my $no_sugg    = 0; # ??,should have corrected a real mistake
 my $bad_sugg   = 0; # tried to correct a mistake, got it wrong
 my $wrong_sugg = 0; # TN, tried to correct a correct word.
 my $lines      = 0;
+my $clines     = 0; # lines, but when filtering on confusibles
 my $errors     = 0;
 
 while ( my $ls = <FHS> ) {
@@ -131,6 +132,8 @@ while ( my $ls = <FHS> ) {
 	  next;
 	}
   }
+
+  ++$clines;
 
   # l2r0:
   # could elect their (to) -8.32193 2.85737 320 53 [ the 9 this 2 other 1 ]
@@ -219,14 +222,14 @@ if ( $acc ) {
   my $FN = $wrong_sugg + $no_sugg;
   my $FP = $bad_sugg;
   #my $TN = $lines - $errors - $bad_sugg; #Niks gedaan als niks moest
-  my $TN = $lines - $TP - $FN - $FP; #Niks gedaan als niks moest
+  my $TN = $clines - $TP - $FN - $FP; #Niks gedaan als niks moest
 
   #
   my $RCL = 0;
   if ( $TP+$FN > 0 ) {
     $RCL = ($TP*100)/($TP+$FN);           #TPR
   }
-  my $ACC = (100*($TP+$TN))/($lines);
+  my $ACC = (100*($TP+$TN))/($clines);
 
   my $PRC = 0;
   if ( $TP+$FP > 0 ) {
@@ -245,14 +248,14 @@ if ( $acc ) {
   my $dTP = $good_sugg + $wrong_sugg;
   my $dFN = $no_sugg;
   my $dFP = $bad_sugg;
-  #my $dTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
-  my $dTN = $lines - $dTP - $dFN - $dFP;
+  #my $dTN = $clines - $errors - $bad_sugg; #niks gedaan als niks moest
+  my $dTN = $clines - $dTP - $dFN - $dFP;
 
   my $dRCL = 0;
   if ($dTP+$dFN > 0) {
     $dRCL = ($dTP*100)/($dTP+$dFN);           #TPR
   }
-  my $dACC = (100*($dTP+$dTN))/($lines);
+  my $dACC = (100*($dTP+$dTN))/($clines);
   my $dPRC = 0;
   if ( $dTP+$dFP > 0 ) {
     $dPRC = (100*$dTP)/($dTP+$dFP);          #PPV
@@ -268,14 +271,14 @@ if ( $acc ) {
   my $cTP = $good_sugg;
   my $cFN = $no_sugg + $wrong_sugg;
   my $cFP = $bad_sugg;
-  #my $cTN = $lines - $errors - $bad_sugg; #niks gedaan als niks moest
-  my $cTN = $lines - $cTP - $cFN - $cFP;
+  #my $cTN = $clines - $errors - $bad_sugg; #niks gedaan als niks moest
+  my $cTN = $clines - $cTP - $cFN - $cFP;
 
   my $cRCL = 0;
   if ( $cTP+$cFN > 0 ) {
     $cRCL = ($cTP*100)/($cTP+$cFN);           #TPR
   }
-  my $cACC = (100*($cTP+$cTN))/($lines);
+  my $cACC = (100*($cTP+$cTN))/($clines);
   my $cPRC = 0;
   if ( $cTP+$cFP > 0 ) {
     $cPRC = (100*$cTP)/($cTP+$cFP);
@@ -292,15 +295,15 @@ if ( $acc ) {
   my $out = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $TP, $FN, $FP, $TN, $PRC, $RCL, $ACC, $F1S);
   my $dout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $dTP, $dFN, $dFP, $dTN, $dPRC, $dRCL, $dACC, $dF1S);
   my $cout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $cTP, $cFN, $cFP, $cTN, $cPRC, $cRCL, $cACC, $cF1S);
-  #print "a $lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg "; 
+  #print "a $clines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg "; 
   #print "$out\n";
-  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  print "$clines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
   print "d $dout "; #detection
   print "c $cout\n"; #correction
 
 } elsif ($oneliner) {
-  #print "l:$lines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
-  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  #print "l:$clines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
+  print "$clines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
   if ($errors != 0) {
    my $out = sprintf("%.2f %.2f %.2f %.2f", ($good_sugg/$errors*100),($bad_sugg/$errors*100),($wrong_sugg/$errors*100),($no_sugg/$errors*100));
    print "$out\n";
@@ -308,7 +311,7 @@ if ( $acc ) {
    print "\n";
   }
 } else {
-  print "lines:      $lines\n";
+  print "lines:      $clines\n";
   print "errors:     $errors\n";
   print "good_sugg:  $good_sugg\n";
   print "bad_sugg:   $bad_sugg\n";
