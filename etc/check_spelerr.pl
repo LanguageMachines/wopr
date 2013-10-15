@@ -297,13 +297,13 @@ if ( $acc ) {
   my $cout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $cTP, $cFN, $cFP, $cTN, $cPRC, $cRCL, $cACC, $cF1S);
   #print "a $clines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg "; 
   #print "$out\n";
-  print "$clines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg "; #Here be $lines 
   print "d $dout "; #detection
   print "c $cout\n"; #correction
 
 } elsif ($oneliner) {
   #print "l:$clines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
-  print "$clines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
+  print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
   if ($errors != 0) {
    my $out = sprintf("%.2f %.2f %.2f %.2f", ($good_sugg/$errors*100),($bad_sugg/$errors*100),($wrong_sugg/$errors*100),($no_sugg/$errors*100));
    print "$out\n";
@@ -311,7 +311,7 @@ if ( $acc ) {
    print "\n";
   }
 } else {
-  print "lines:      $clines\n";
+  print "lines:      $lines\n";
   print "errors:     $errors\n";
   print "good_sugg:  $good_sugg\n";
   print "bad_sugg:   $bad_sugg\n";
