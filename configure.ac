@@ -16,7 +16,7 @@ LT_INIT
 
 #types, compiler options and such
 AC_HEADER_STDBOOL
-AC_CHECK_TYPES([ptrdiff_t]
+AC_CHECK_TYPES([ptrdiff_t])
 AC_C_INLINE
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
