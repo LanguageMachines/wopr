@@ -4,7 +4,7 @@ AC_INIT(wopr, 1.38.1)
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_CONFIG_HEADER(config.h) 
+AM_CONFIG_HEADER(config.h)
 
 AM_INIT_AUTOMAKE
 
@@ -12,8 +12,30 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 
 AC_PROG_LIBTOOL
-AC_SUBST([LIBTOOL_DEPS])
+LT_INIT
 
+#types, compiler options and such
+AC_HEADER_STDBOOL
+AC_CHECK_TYPES([ptrdiff_t]
+AC_C_INLINE
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT32_T
+
+#check headers
+AC_CHECK_HEADERS([netinet/in.h])
+AC_CHECK_HEADERS([fcntl.h,limits.h,stddef.h,syslog.h])
+AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([arpa/inet.h])
+AC_CHECK_HEADERS([netdb.h])
+AC_CHECK_HEADERS([sys/socket.h])
+
+#check functions
+AC_CHECK_FUNCS([gethostbyaddr,gethostbyname,gethostname,gettimeofday,inet_ntoa])
+AC_CHECK_FUNCS([memset,pow,regcomp,select,setlocale,socket,strchr,strerror])
+AC_CHECK_FUNCS([sqrt])
+AC_FUNC_FORK
+AC_FUNC_MKTIME
+AC_FUNC_STRTOD
 
 # This "magic" seems to be necessary...
 if test "x$PKG_CONFIG_PATH" = x; then
@@ -47,7 +69,7 @@ AS_IF([test "x$with_folia" != xno],
 	    [
 	    AC_MSG_NOTICE([Checking for FoLiA])
 	    AC_ARG_WITH(folia,
-       [  --with-folia=DIR       use libfolia installed in <DIR>; 
+       [  --with-folia=DIR       use libfolia installed in <DIR>;
                note that you can install folia in a non-default directory with
                ./configure --prefix=<DIR> in the folia installation directory],
        [PKG_CONFIG_PATH="$withval/lib/pkgconfig:$PKG_CONFIG_PATH"],
@@ -80,7 +102,7 @@ AS_IF([test "x$with_timbl" != xno],
 # Checks for timblserve library.
 
 #AC_ARG_WITH(timblserver,
-#       [  --with-timblserver=DIR       use timblserver installed in <DIR>; 
+#       [  --with-timblserver=DIR       use timblserver installed in <DIR>;
 #               note that you can install Timbl in a non-default directory with
 #               ./configure --prefix=<DIR> in the Timbl installation directory],
 #       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"
