@@ -77,9 +77,11 @@ if ( $conf_file ) {
   open(FHC, $conf_file) || die "Can't open file $conf_file.";
   while ( my $l = <FHC> ) {
 	chomp $l;
+	if ( substr($l, 0, 1) eq "#" ) {
+	  next;
+	}
 	my @cs = split(/ /, $l);
 	foreach (@cs) {
-	  #print $_,"\n";
 	  $confusibles{$_} = 1;
 	}
   }

@@ -111,9 +111,10 @@ min_l     =  1   # minimum length of word >= min_l
 max_ld    = 10   # maximum LD <= max_ld, much higher because we supply errors from list
 skip      =  0   # errors every Nth line, 0 & 1 is in all lines
 default_p =  0.5 #chance we take another from the confusible set
+chance    =  0.5 #chance we change a confusible (if random < change )
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "cd:f:l:m:v:p:s:", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "c:d:f:l:m:v:p:s:", ["file="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(1)
@@ -123,7 +124,7 @@ for o, a in opts:
     elif o in ("-v"): 
         vkfile = a
     elif o in ("-c"): 
-        confusibles = True
+        chance = float(a)
     elif o in ("-m"): 
         min_l = int(a)
     elif o in ("-d"): 
@@ -211,19 +212,22 @@ with open(afile, "r") as f:
             #at these positions we can introduce an error
             numindexes = len(indexes)
             # create one or two errors per line
+            randomidxs = [ x for x in indexes if random.uniform(0, 1) < chance ]
+            '''
             randomidxs = []
-            if numindexes > 0 and numindexes < 3:
-                randomidxs = [ indexes[ int( r.uniform(0, numindexes) ) ] ] #choose one,
-            elif numindexes > 0 and numindexes > 2:
+            if numindexes > 0 and numindexes < 3: #1,2
+                randomidxs = random.sample(set(indexes), 1) #take one random # [ indexes[ int( r.uniform(0, numindexes) ) ] ] #choose one,
+            elif numindexes > 0 and numindexes > 2:#3,...
                 randomidxs = random.sample(set(indexes), 2) #take two random
+            '''
             for randomidx in randomidxs:
                 w = words[ randomidx ] #the word from the line
-                numerrs = len( vk_errors[w] ) #number of possible errors
+                numerrs = len( vk_errors[w] ) #number of possible errors, often 2
                 randerr = int( r.uniform(0, numerrs) ) #choose one of them
                 confused = vk_errors[w][randerr] #the confused word
                 words[ randomidx ] = confused 
                 ld = damerau(w, confused)
-                if ld > 0: #could be the original word in the array for low prob changes
+                if ld > 0: #could be the original word in the array for low prob changes therefor -c0.5 becomes 26%
                     print "CHANGE", w, confused, ld
                     try:
                         changed[ confused ] += 1

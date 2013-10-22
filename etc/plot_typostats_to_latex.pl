@@ -12,12 +12,13 @@ use List::Util 'max';
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_c $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
+use vars qw/ $opt_b $opt_c $opt_C $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
 
-getopts('bcdf:n:pr:s:t');
+getopts('bcCdf:n:pr:s:t');
 
 my $b_ptr       = $opt_b || 0;    #0 for default ($alg), else l1[0]
 my $compact     = $opt_c || 0;    #0 for one best/worse per line
+my $cf          = $opt_C || 0;    #if we are dealing with STATCF and DATACF
 my $detection   = $opt_d || 0;    # -d shows scores for detections, else correction
 my $data_file   = $opt_f || "";   #original data file, two lines (normal TOP1) 
 my $cycle_nr    = $opt_n || "";   #cycle nr (like 14200)
@@ -27,8 +28,13 @@ my $stat_file   = $opt_s || "";   #the accompanying stats file
 my $text_out    = $opt_t || 0;
 
 if ( $cycle_nr ne "" ) {
-  $data_file = "DATA.".$cycle_nr.".plot";
-  $stat_file = "STAT.".$cycle_nr.".data";
+  if ( $cf ) {
+	$data_file = "DATACF.".$cycle_nr.".plot";
+	$stat_file = "STATCF.".$cycle_nr.".data";
+  } else {
+	$data_file = "DATA.".$cycle_nr.".plot";
+	$stat_file = "STAT.".$cycle_nr.".data";
+  }
 }
 
 #------------------------------------------------------------------------------

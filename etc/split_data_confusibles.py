@@ -19,16 +19,22 @@ create ibases, plus control file:
 ibasename timbl confusibles
 creates timblserver ini file
 creates stimpy.py code to include
+
+Examples:
+python2.7 split_data_confusibles.py -f utexas.10e6.dt.cf05.1e6.l4t1r4 -c preps_hoo2013.txt -t "-a1 +D" -w "wopr" -i
+
+(scootaloo)
+python split_data_confusibles.py -f utexas.10e6.dt.1e6.l4r4 -c dets_hoo2013.txt -b -w wopr -i UT1e6_l4r4_DETSPN
+python split_data_confusibles.py -f utexas.10e6.dt.1e6.l4r4 -c preps_hoo2013.txt  -w wopr -i PREPS
 """
 
-trfile   = None #training file
-cfile    = None #file with confusibles
-multiple = False #not used
-offset   = -1 #last word in "a b c", the target
-sfile    = "conf_train.wopr.sh" #script fil
-binary   = False #make +/- classifiers
-
-w_id = "EXP01" #should be supplied to wopr as well
+trfile    = None #training file
+cfile     = None #file with confusibles
+multiple  = False #not used
+offset    = -1 #last word in "a b c", the target
+sfile     = "conf_train.wopr.sh" #script fil
+binary    = False #make +/- classifiers
+w_id      = "EXP01" #should be supplied to wopr as well
 
 wopr_path  = "/exp2/pberck/wopr/wopr"
 wopr_timbl = '"-a1 +D"'
@@ -58,6 +64,15 @@ for o, a in opts:
     else:
         assert False, "unhandled option"
 
+def upcase_first_letter(s):
+    return s[0].upper() + s[1:]
+def lower_first_letter(s):
+    return s[0].lower() + s[1:]
+def toggle_first_letter(s):
+    if s[0].isupper():
+        return lower_first_letter(s)
+    return upcase_first_letter(s)
+    
 confusibles = []
 counter = 0
 with open(cfile, "r") as f:
@@ -66,7 +81,8 @@ with open(cfile, "r") as f:
             continue
         line = line[:-1]
         words = line.split()
-        confusibles.append((counter,words))
+        words2 = [ toggle_first_letter(w) for w in words]
+        confusibles.append((counter,words+words2))
         counter += 1
 
 #print confusibles
@@ -152,10 +168,39 @@ if binary:
 sys.exit(1)
 '''
 
+"""
+"Here is (the) missing det."  MISSING
+"I am going (the) home."      REDUNDANT
+
+Test on MISSING - no word on focus/target pos: here-is-//-missing-det:MISSING, no focus pos
+Test on REDUNDANT - word on focus/target pos: am-going-/the/-home-.:the, with focus pos, classification should be DETRED
+
+
+Train on MISSING - normal instances where PREP is a target (here should be a PREP between l2r2)
+Train on REDUNDANT -normal instances where NOT-PREP is a target (there should not be a PREP between l2r2)
+
+I am going home .
+I go to the market .
+
+l2r2
+_ _ am going I
+_ I going home am
+I am home . going  PREPRED-NEG or DETRED-NEG (between "I am" and "home ." not a PREP or DET) with focus/target
+am going . _ home
+going home _ _ .
+_ _ go to I
+_ I to the go       PREPMIS-NEGATIVE, DETMIS-NEGATIVE
+I go the market to  PREPMIS-POSITIVE
+go to market . the  DETMIS-POSITIVE
+to the . _ market
+the market _ _ .
+
+"""
+
 skip = 2
 want_negs = sum(trigger_counter.values())
 pn_factor = 1.0
-want_negs = int(want_negs*pn_factor)
+want_negs = 10*int(want_negs*pn_factor)
 print want_negs
 if binary:
     negs = 0
