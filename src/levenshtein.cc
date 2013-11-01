@@ -456,7 +456,7 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
 //
 void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
 					 std::vector<distr_elem*>& distr_vec, int mld, double min_ratio, double target_lexfreq, bool cs,
-					 int min_df) {
+					 int min_df, double confidence) {
 
   int    cnt             = 0;
   int    distr_count     = 0;
@@ -575,12 +575,14 @@ int correct( Logfile& l, Config& c ) {
   // ratio target_lexfreq:tvs_lexfreq
   double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
   // maximum target frequency (word under scrutiny is not in dist or (<=) very low freq)
-  int                max_tf           = stoi( c.get_value( "max_tf", "1" ));
+  int                max_tf           = stoi( c.get_value( "max_tf", "1" )); //for confusibles
   // minimum frequency of all words in the distribution
   int                min_df           = stoi( c.get_value( "min_df", "0" ));
   int                skip             = 0;
   bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
+  // Ratio between top-1 frequency and sum of rest of distribution frequencies
+  double             confidence      = stod( c.get_value( "confidence", "0" ));
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -617,6 +619,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "max_tf:     "+to_str(max_tf) );
   l.log( "min_df:     "+to_str(min_df) );
   l.log( "cs:         "+to_str(cs) );
+  l.log( "confidence  "+to_str(confidence) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -896,6 +899,7 @@ int correct( Logfile& l, Config& c ) {
 		bool in_distr          = false;
 		cnt = vd->size();
 		distr_count = vd->totalSize();
+		double answer_f = 0;
 
 		// Check if target word is in the distribution.
 		//
@@ -918,11 +922,21 @@ int correct( Logfile& l, Config& c ) {
 			  --wrong; // direct answer wrong, but right in distr. compensate count
 			}
 		  }
+		  if ( tvs == answer ) { // Get the frequency to be able to calculate confidence
+			answer_f = wght;
+		  }
 		
 		  ++it;
 		}
 		target_distprob = (double)target_freq / (double)distr_count;
-	  
+
+		// Confidence, after Skype call 20131101
+		// frequency of top-1, the answer / sum(frequences rest of distribution)
+		double the_confidence = -1; // -1 as shortcut to infinity
+		if ( cnt > 1 ) { // then there are more, with frequency, so we don't divide by 0
+		  the_confidence = answer_f / (distr_count - answer_f);
+		}
+
 		// If correct: if target in distr, we take that prob, else
 		// the lexical prob.
 		// Unknown words?
@@ -951,7 +965,9 @@ int correct( Logfile& l, Config& c ) {
 		std::vector<distr_elem*> distr_vec;
 		if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
 		  if ( (typo_only && target_unknown) || ( ! typo_only) ) { 
-			distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df);
+			if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
+			  distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
+			}
 		  }
 		}
 	  
@@ -1985,6 +2001,8 @@ int mcorrect( Logfile& l, Config& c ) {
   bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
   bool               bl               = stoi( c.get_value( "bl", "0" )) == 1; //run baseline
+  // Ratio between top-1 frequency and sum of rest of distribution frequencies
+  double             confidence      = stod( c.get_value( "confidence", "0" ));
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -2023,6 +2041,7 @@ int mcorrect( Logfile& l, Config& c ) {
   l.log( "offset:     "+to_str(offset) );
   l.log( "cs:         "+to_str(cs) );
   l.log( "bl:         "+to_str(bl) );
+  l.log( "confidence  "+to_str(confidence) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -2369,6 +2388,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		bool in_distr          = false;
 		cnt = vd->size();
 		distr_count = vd->totalSize();
+		double answer_f = 0;
 
 		// Check if target word is in the distribution.
 		//
@@ -2391,11 +2411,21 @@ int mcorrect( Logfile& l, Config& c ) {
 			  --wrong; // direct answer wrong, but right in distr. compensate count
 			}
 		  }
-		
+		  if ( tvs == answer ) { // Get the frequency to be able to calculate confidence
+			answer_f = wght;
+		  }
+
 		  ++it;
 		}
 		target_distprob = (double)target_freq / (double)distr_count;
 	  
+		// Confidence, after Skype call 20131101
+		// frequency of top-1, the answer / sum(frequences rest of distribution)
+		double the_confidence = -1; // -1 as shortcut to infinity
+		if ( cnt > 1 ) { // then there are more, with frequency, so we don't divide by 0
+		  the_confidence = answer_f / (distr_count - answer_f);
+		}
+
 		// If correct: if target in distr, we take that prob, else
 		// the lexical prob.
 		// Unknown words?
@@ -2424,7 +2454,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		std::vector<distr_elem*> distr_vec;
 		if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
 		  if ( (typo_only && target_unknown) || ( ! typo_only) ) { 
-			distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df);
+			distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
 		  }
 		}
 	  
