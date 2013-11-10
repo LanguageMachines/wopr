@@ -487,31 +487,31 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
     // we include the result in our output.
     //
     if (
-		( ld > 0 ) && 
-		( ld <= mld ) &&
-		( (min_df == 0) || (wght >= min_df) )
-		) { 
+	( ld > 0 ) && 
+	( ld <= mld ) &&
+	( (min_df == 0) || (wght >= min_df) )
+	) { 
       //
       // So here we check frequency of element from the distr. with
       // frequency of the target. As parameter, we prolly already know it?
       // This is to determine if, even if target is a dictionary word,
-	  // it could be a misspelt word. Calculate the ratio between the
-	  // element from the distribution and the frequency of the target.
-	  // (PJB: should we not check target DISTR frequency?)
+      // it could be a misspelt word. Calculate the ratio between the
+      // element from the distribution and the frequency of the target.
+      // (PJB: should we not check target DISTR frequency?)
       int    tvs_lf = 0;
       double factor = 0.0;
       wfi = wfreqs.find( tvs );
-	  // if we find distr. element in lexicon, and target is in lexicon
+      // if we find distr. element in lexicon, and target is in lexicon
       if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-		tvs_lf =  (int)(*wfi).second;
-		factor = tvs_lf / target_lexfreq;
+	tvs_lf =  (int)(*wfi).second;
+	factor = tvs_lf / target_lexfreq;
       }
       //
       // std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
       // If the target is not found (unknown words), we have no
       // ratio, we store the distribution element (possible correction).
-	  // IF we have a ratio, and it is >= min_ratio, we also store
-	  // this possible correction.
+      // IF we have a ratio, and it is >= min_ratio, we also store
+      // this possible correction.
       //
       if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
 		//
@@ -863,7 +863,14 @@ int correct( Logfile& l, Config& c ) {
 		}
 		std::string answer = tv->Name();
 		//l.log( "Answer: '" + answer + "' / '" + target + "'" );
-	  
+
+		// Check match-depth, if too undeep, we are probably
+		// unsure.
+		//
+		size_t md  = My_Experiment->matchDepth();
+		bool   mal = My_Experiment->matchedAtLeaf();
+		l.log( "md/mal: " + to_str(md) + " / " + to_str(mal) );
+
 		if ( target == answer ) {
 		  ++correct;
 		  correct_answer = true;
@@ -1295,6 +1302,12 @@ int server_sc( Logfile& l, Config& c ) {
 	      break;
 	    }
 	    
+	    // Check match-depth, if too undeep, we are probably
+	    // unsure.
+	    //
+	    size_t md  = My_Experiment->matchDepth();
+	    bool   mal = My_Experiment->matchedAtLeaf();
+
 	    size_t      res_freq = tv->ValFreq();	    
 	    std::string answer   = tv->Name();
 	    if ( verbose > 1 ) {
