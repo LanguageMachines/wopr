@@ -12,10 +12,11 @@ use List::Util 'max';
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_b $opt_c $opt_C $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
+use vars qw/ $opt_B $opt_b $opt_c $opt_C $opt_d $opt_f $opt_n $opt_p $opt_r $opt_s $opt_t /;
 
-getopts('bcCdf:n:pr:s:t');
+getopts('BbcCdf:n:pr:s:t');
 
+my $no_bests    = $opt_B || 0;    #0 means, do show bests
 my $b_ptr       = $opt_b || 0;    #0 for default ($alg), else l1[0]
 my $compact     = $opt_c || 0;    #0 for one best/worse per line
 my $cf          = $opt_C || 0;    #if we are dealing with STATCF and DATACF
@@ -233,6 +234,7 @@ EOT
 }
 
 # Bests
+if ( $no_bests == 0 ) {
 print "\n";
 my $spacer = "\n% ";
 if ( $compact ) {
@@ -248,7 +250,7 @@ print "% ".&best( \%b_ppv, "pre", "h" ).$spacer.&best( \%b_ppv, "pre", "l" )."\n
 print "% ".&best( \%b_tpc, "rec", "h" ).$spacer.&best( \%b_tpc, "rec", "l" )."\n";
 print "% ".&best( \%b_acc, "acc", "h" ).$spacer.&best( \%b_acc, "acc", "l" )."\n";
 print "% ".&best( \%b_fsc, "fsc", "h" ).$spacer.&best( \%b_fsc, "fsc", "l" )."\n";
-
+}
 
 sub i {
     my $v = shift || 0; 
