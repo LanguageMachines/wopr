@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007-2010 Peter Berck                                           *
+ * Copyright 2007-2013 Peter Berck                                           *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -36,6 +36,7 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <limits>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -136,6 +137,11 @@ int main( int argc, char* argv[] ) {
   l.log_begin( "ICU support, " );
   printf("version %s\n", U_ICU_VERSION);
 #endif
+
+  l.log_begin( "std::numeric_limits<int>::max() = " );
+  std::cout << std::numeric_limits<int>::max() << std::endl;
+  l.log_begin( "std::numeric_limits<long>::max() = " );
+  std::cout << std::numeric_limits<long>::max() << std::endl;
 
   Config co;
   co.add_kv( "PID", to_str(getpid()) );
