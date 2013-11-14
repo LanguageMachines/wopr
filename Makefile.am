@@ -1,5 +1,5 @@
 #  $Id$
-#  $URL: https://ilk.uvt.nl/svn/sources/tscan/trunk/include/Makefile.am $
+#  $URL$
 
 ACLOCAL_AMFLAGS = -I m4 --install
 

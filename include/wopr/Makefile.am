@@ -1,5 +1,5 @@
-#  $Id: Makefile.am 15418 2012-11-12 16:43:19Z sloot $
-#  $URL: https://ilk.uvt.nl/svn/sources/tscan/trunk/include/tscan/Makefile.am $
+#  $Id$
+#  $URL$
 
 pkginclude_HEADERS = cache.h \
 	focus.h \

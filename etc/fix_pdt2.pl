@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: pplx_px.pl 13475 2011-10-27 11:15:11Z pberck $
+# $Id$
 #
 use strict;
 use Getopt::Std;
