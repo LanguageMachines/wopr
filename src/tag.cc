@@ -401,7 +401,7 @@ int tag( Logfile& l, Config& c ) {
   std::map<int, std::string> classes;
   std::map<int, std::string> features;
   std::vector<int> counts(88, 0); //88 is arbitrary limit...
-  Node *top_node;
+  Node *top_node = 0;
   long here; // pos_type?
   while( std::getline( file_ibase, a_line )) {
     if ( a_line == "Classes" ) {

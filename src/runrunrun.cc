@@ -3151,7 +3151,7 @@ int pplx( Logfile& l, Config& c ) {
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                skip             = 0;
-  Timbl::TimblAPI   *My_Experiment;
+  Timbl::TimblAPI   *My_Experiment = 0;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
