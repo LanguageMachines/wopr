@@ -41,12 +41,12 @@
 #include <iterator>
 #include <deque>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "lcontext.h"
-#include "runrunrun.h"
-#include "cache.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/lcontext.h"
+#include "wopr/runrunrun.h"
+#include "wopr/cache.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -100,7 +100,7 @@ int gen_test( Logfile& l, Config& c ) {
     l.log( "WARNING: cache_size should be >= 0, setting to 0." );
     cache_size = 0;
   }
-  
+
   // No slash at end of dirname.
   //
   if ( (dirname != "") && (dirname.substr(dirname.length()-1, 1) == "/") ) {
@@ -166,7 +166,7 @@ int gen_test( Logfile& l, Config& c ) {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
-      return 1;      
+      return 1;
     }
     (void)My_Experiment->GetInstanceBase( ibasefile );
     if ( ! My_Experiment->Valid() ) {
@@ -188,7 +188,7 @@ int gen_test( Logfile& l, Config& c ) {
 
     l.log( "Processing: "+a_file );
     l.log( "OUTPUT:     "+output_filename );
-    
+
     if ( file_exists(l,c,output_filename) ) {
       l.log( "OUTPUT file exist, not overwriting." );
       c.add_kv( "gt_file", output_filename );
@@ -197,7 +197,7 @@ int gen_test( Logfile& l, Config& c ) {
     }
 
     l.inc_prefix();
-    
+
     std::ifstream file_in( a_file.c_str() );
     if ( ! file_in ) {
       l.log( "ERROR: cannot load inputfile." );
@@ -209,7 +209,7 @@ int gen_test( Logfile& l, Config& c ) {
       return -1;
     }
     file_out << "# target class ci md mal (dist.cnt sumF [topn])" << std::endl;
-    
+
     // Here we created Timbl exp before.
 
     std::string a_line;
@@ -223,7 +223,7 @@ int gen_test( Logfile& l, Config& c ) {
     int wrong   = 0;
     int correct_unknown = 0;
     int correct_distr = 0;
-    
+
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
@@ -233,7 +233,7 @@ int gen_test( Logfile& l, Config& c ) {
     double sum_wlp            = 0.0; // word level pplx
     int    sentence_count     = 0;
     double sum_rrank          = 0.0;
-    
+
     // Cache a map(string:freq) of the top-n distributions returned
     // by Timbl.
     // We get the size first, if it is bigger than the ones we have cached,
@@ -258,7 +258,7 @@ int gen_test( Logfile& l, Config& c ) {
     long timbl_time = 0;
 
     while( std::getline( file_in, a_line )) { ///// GETLINE <---------- \\\\\\ \
-      
+
       words.clear();
       a_line = trim( a_line );
 
@@ -269,13 +269,13 @@ int gen_test( Logfile& l, Config& c ) {
       if ( cache_ans != "" ) {
 	file_out << cache_ans << std::endl;
 	continue;
-      }	
+      }
 
       Tokenize( a_line, words, ' ' );
-      
+
       std::string target         = words.at( words.size()-1 );
       bool        target_in_dist = false;
-      
+
       // What does Timbl think?
       //
       long us0 = clock_u_secs();
@@ -286,7 +286,7 @@ int gen_test( Logfile& l, Config& c ) {
       }
       long us1 = clock_u_secs();
       timbl_time += (us1-us0);
-      
+
       std::string answer = tv->Name();
       if ( vd == NULL ) {
 	l.log( "Classify( a_line, vd ) was null, skipping current line." );
@@ -295,14 +295,14 @@ int gen_test( Logfile& l, Config& c ) {
 	file_out.close();
 	file_in.close();
 	return 1; // Abort
-      } 
-      
+      }
+
       size_t md  = My_Experiment->matchDepth();
       bool   mal = My_Experiment->matchedAtLeaf();
-      
+
       // Loop over distribution returned by Timbl.
       //
-      // entropy over distribution: sum( p log(p) ). 
+      // entropy over distribution: sum( p log(p) ).
       //
       Timbl::ValueDistribution::dist_iterator it = vd->begin();
       int cnt = 0;
@@ -318,7 +318,7 @@ int gen_test( Logfile& l, Config& c ) {
       std::vector<distr_elem> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
-      
+
       // Check cache/size/presence. Note it assumes that each size
       // only occurs once...
       //
@@ -349,7 +349,7 @@ int gen_test( Logfile& l, Config& c ) {
       // 0, 1, 2, 3
       //
       int cache_level = -1; // see above.
-      
+
       if (cache_idx == -1) {
 	if ( cd == NULL ) {
 	  cache_level = 0;
@@ -363,9 +363,9 @@ int gen_test( Logfile& l, Config& c ) {
 	  cache_level = 2;// play mission impossible theme
 	}
       }
-      
+
       // ----
-      
+
       if ( cache_level == 3 ) { // Use the cache, Luke.
 	std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
 	if ( wfi != (cd->freqs).end() ) {
@@ -376,14 +376,14 @@ int gen_test( Logfile& l, Config& c ) {
 	distr_vec = cd->distr_vec; // the [distr] we print
       }
       if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
-	
+
 	int rank_counter = 1;
 	while ( it != vd->end() ) {
 	  //const Timbl::TargetValue *tv = it->second->Value();
-	  
+
 	  std::string tvs  = it->second->Value()->Name();
 	  double      wght = it->second->Weight(); // absolute frequency.
-	  
+
 	  if ( topn > 0 ) { // only save if we want to sort/print them later.
 	    distr_elem  d;
 	    d.name   = tvs;
@@ -391,24 +391,24 @@ int gen_test( Logfile& l, Config& c ) {
 	    d.s_freq = wght;
 	    distr_vec.push_back( d );
 	  }
-	  
+
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    target_freq = wght;
 	    target_in_dist = true;
 	    rank = rank_counter;
 	  }
-	  
+
 	  // Save it in the cache?
 	  //
 	  if ( cache_level == 1 ) {
 	    cd->freqs[tvs] = wght;
 	  }
-	  
+
 	  // Entropy of whole distr. Cache.
 	  //
 	  prob     = (double)wght / (double)distr_count;
 	  entropy -= ( prob * log2(prob) );
-	  
+
 	  ++rank_counter;
 	  ++it;
 	} // end loop distribution
@@ -416,21 +416,21 @@ int gen_test( Logfile& l, Config& c ) {
 	  cd->entropy = entropy;
 	}
       } // cache_level == 1 or 0
-      
-      
+
+
       // Counting correct guesses
       //
       if ( answer == target ) {
 	++correct;
       } else if ( (answer != target) && (target_in_dist == true) ) {
-	++correct_distr; 
+	++correct_distr;
 	sum_rrank += (1.0 / rank); // THESE are unsorted!
       } else {
 	++wrong;
       }
-      
+
       target_distprob = (double)target_freq / (double)distr_count;
-      
+
       // What do we want in the output file? Write the pattern and answer,
       // the logprob, followed by the entropy (of distr.), the size of the
       // distribution returned, and the top-10 (or less) of the distribution.
@@ -439,7 +439,7 @@ int gen_test( Logfile& l, Config& c ) {
       //
       std::ostringstream out;
 
-      out << /*a_line << ' ' <<*/ target 
+      out << /*a_line << ' ' <<*/ target
 	       << ' ' << answer << ' '
 	/*<< entropy << ' '*/ ;
 
@@ -450,7 +450,7 @@ int gen_test( Logfile& l, Config& c ) {
       } else {
 	out << "ic "; // incorrect
       }
-      
+
       // New in 1.10.0, the matchDepth and matchedAtLeaf
       //
       out << md << ' ' << mal << ' ';
@@ -473,11 +473,11 @@ int gen_test( Logfile& l, Config& c ) {
 	}
 	out << "]";
       }
-      
+
       std::string out_str = out.str();
       file_out << out_str << std::endl;
       cache->add( a_line, out_str );
-      
+
       // Find new lowest here. Overdreven om sort te gebruiken?
       //
       if ( cache_level == 1 ) {
@@ -491,12 +491,12 @@ int gen_test( Logfile& l, Config& c ) {
 	  }
 	}
       }
-      
+
     } // while getline() ///////////// <-------------- \\\\\\\\\\\\\\\\/7
-    
+
     file_out.close();
     file_in.close();
-    
+
     l.log( cache->stat() );
 
     if ( cs == 0 ) {
@@ -511,19 +511,19 @@ int gen_test( Logfile& l, Config& c ) {
     }
 
     l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
-    
+
     c.add_kv( "gt_file", output_filename );
     l.log( "SET gt_file to "+output_filename );
-   
+
     l.dec_prefix();
-  } 
+  }
   return 0;
 }
 #else
 int gen_test( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
-}  
+}
 #endif
-  
+
 // ---------------------------------------------------------------------------

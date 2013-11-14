@@ -40,11 +40,11 @@
 #include <algorithm>
 #include <iterator>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "tr.h"
-#include "runrunrun.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/tr.h"
+#include "wopr/runrunrun.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -81,7 +81,7 @@ int tr( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
-  
+
   // We should only look at the last word (target).
   //
   std::ifstream file_in( filename.c_str() );
@@ -97,20 +97,20 @@ int tr( Logfile& l, Config& c ) {
   int         pos;
   std::map<std::string, int>::iterator ri;
 
-  while( std::getline( file_in, a_line ) ) { 
+  while( std::getline( file_in, a_line ) ) {
 
     words.clear();
     Tokenize( a_line, words, ' ' );
     int t_pos = words.size()-1; // Target position
     for ( int i=0; i < t_pos; i++ ) {
-      
+
       char c = words.at(i)[0];
       if ( (c >= '0') && (c <= '9') ) {
 	file_out << "<num> ";
       } else {
 	file_out << words.at(i) << " ";
       }
-      
+
     }
     file_out << words.at(t_pos) << std::endl;
   }

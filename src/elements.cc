@@ -31,7 +31,7 @@
 #include <vector>
 #include <string>
 
-#include "elements.h"
+#include "wopr/elements.h"
 
 // ----------------------------------------------------------------------------
 // Classes

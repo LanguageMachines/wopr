@@ -37,8 +37,8 @@
 #include <dirent.h>
 #include <sys/types.h>
 
-#include <stdlib.h>  
-#include <string.h>  
+#include <stdlib.h>
+#include <string.h>
 
 #include <string>
 #include <iostream>
@@ -49,9 +49,9 @@
 #include <vector>
 #include <map>
 
-#include "Config.h"
-#include "qlog.h"
-#include "util.h"
+#include "wopr/Config.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
 
 // ----------------------------------------------------------------------------
 // Code

@@ -40,14 +40,14 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "qlog.h"
-#include "util.h"
-#include "Config.h"
-#include "runrunrun.h"
-#include "server.h"
-#include "generator.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
+#include "wopr/Config.h"
+#include "wopr/runrunrun.h"
+#include "wopr/server.h"
+#include "wopr/generator.h"
 
-#include "MersenneTwister.h"
+#include "wopr/MersenneTwister.h"
 
 // Socket stuff
 
@@ -70,7 +70,7 @@
 #endif
 
 #ifdef TIMBLSERVER
-#include "SocketBasics.h"
+#include "wopr/SocketBasics.h"
 #endif
 
 
@@ -115,7 +115,7 @@ int generate( Logfile& l, Config& c ) {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
-      return 1;      
+      return 1;
     }
     (void)My_Experiment->GetInstanceBase( ibasefile );
     if ( ! My_Experiment->Valid() ) {
@@ -221,7 +221,7 @@ int generate( Logfile& l, Config& c ) {
       std::string tvs  = it->second->Value()->Name();
       double      wght = it->second->Weight();
       answer = tvs;
-      
+
       result = result + answer;
       if ( show_counts && ( cnt > 1 )) { // Show if more than one choice
 	result = result + "("+to_str(cnt)+")";
@@ -246,7 +246,7 @@ int generate( Logfile& l, Config& c ) {
       }
 
     }
-    
+
     //l.log( result );
     file_out << result;
     if ( show_counts) {
@@ -257,12 +257,12 @@ int generate( Logfile& l, Config& c ) {
   file_out.close();
 
   return 0;
-}  
+}
 #else
 int generate( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
-}  
+}
 #endif
 
 #ifdef TIMBL
@@ -293,9 +293,9 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
     }
     std::string answer = "";// tv->Name();
     cnt = vd->size();
-    
+
     int rnd_idx = mtrand.randInt( cnt -1 );
-    
+
     // Take (top) answer, or choose something from the
     // distribution.
     //
@@ -307,28 +307,28 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
     answer = tvs;
-    
+
     result = result + answer + " ";
-    
+
     // shift/add/repeat
     //
     copy( words.begin()+1, words.end(), words.begin() );
     words.at(ws-1) = answer;
-    
+
     a_line = "";
     for ( int i = 0; i < ws; i++ ) {
       a_line = a_line + words[i] + " ";
-    }  
+    }
 
     std::string::size_type pos = end.find( answer, 0 );
     if ( pos != std::string::npos ) {
       len = 0;
     }
-    
+
   }
 
   return result;
-  
+
 }
 
 // returns one sentence of length len.
@@ -365,7 +365,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
   //std::cerr << "(" << a_line << ")" << std::endl;
 
   words.clear();
-  Tokenize( a_line, words, ' ' ); 
+  Tokenize( a_line, words, ' ' );
 
   std::string result = "<sentence id=\""+id+"\">";
   int idx = 0;
@@ -441,11 +441,11 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     //
     copy( words.begin()+1, words.end(), words.begin() );
     words.at(ws-1) = answer;
-    
+
     a_line = "";
     for ( int i = 0; i < ws; i++ ) {
       a_line = a_line + words[i] + " ";
-    }  
+    }
 
     std::string::size_type pos = end.find( answer, 0 );
     if ( pos != std::string::npos ) {
@@ -459,7 +459,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 
   result = result + "</sentence>";
 
-  return result;  
+  return result;
 }
 #endif
 
@@ -498,7 +498,7 @@ int generate_server( Logfile& l, Config& c ) {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
-      return 1;      
+      return 1;
     }
     (void)My_Experiment->GetInstanceBase( ibasefile );
     if ( ! My_Experiment->Valid() ) {
@@ -532,7 +532,7 @@ int generate_server( Logfile& l, Config& c ) {
   std::string result;
   std::string buf;
 
-  while ( true ) { 
+  while ( true ) {
 
     Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
     if ( !server.accept( *newSock ) ) {
@@ -554,29 +554,29 @@ int generate_server( Logfile& l, Config& c ) {
     buf = trim( buf, " \n\r" );
     std::string tmp_buf = str_clean( buf );
     tmp_buf = trim( tmp_buf, " \n\r" );
-    
+
     start = tmp_buf;
     l.log( "start="+start );
-    
+
     // INfo about wopr
     std::string info = "<info>";
     info += "ibasefile:"+ibasefile+",lc:"+to_str(lc)+",rc:"+to_str(rc);
     info += "</info>";
     newSock->write( info );
-    
+
     int n1 = n;
     while ( --n1 >= 0 ) {
       a_line = start;
-      
+
       //int len1 = mtrand.randInt( len )+1;
-      
+
       std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n1),
 				      My_Experiment );
-      
+
       //foo = "<data><![CDATA[" + foo + "]]></data>";
       newSock->write( foo );
     } // --n
-    
+
     l.log( "ready." );
 
     delete newSock;
@@ -589,5 +589,5 @@ int generate_server( Logfile& l, Config& c ) {
 int generate_server( Logfile& l, Config& c ) {
   l.log( "No TIMBL/SERVER support." );
   return -1;
-}  
+}
 #endif

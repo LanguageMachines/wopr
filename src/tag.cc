@@ -23,7 +23,7 @@
  *****************************************************************************/
 
 /*
-  
+
 */
 
 // ---------------------------------------------------------------------------
@@ -46,16 +46,16 @@
 
 #include <unistd.h>
 #include <stdio.h>
-#include <math.h> 
+#include <math.h>
 
 #include <sys/msg.h>
 
-#include "qlog.h"
-#include "util.h"
-#include "Config.h"
-#include "runrunrun.h"
-#include "watcher.h"
-#include "tag.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
+#include "wopr/Config.h"
+#include "wopr/runrunrun.h"
+#include "wopr/watcher.h"
+#include "wopr/tag.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -117,7 +117,7 @@ void Node::dump() {
 void Node::dump( std::map<int, std::string>& classes,
 		 std::map<int, std::string>& features, std::string pat,
 		 int d, std::ofstream& os ) {
-  
+
   // pattern we generate is class from dist with pat prepended.
   // log10 calculated from local apriori probs.
   // We need a place to insert our smoothed values.
@@ -142,7 +142,7 @@ void Node::dump( std::map<int, std::string>& classes,
       //}
     }
   }
-  
+
   for ( int i = 0; i < arcs.size(); i++ ) {
     Arc* a = arcs[i];
     //std::cout << features[ a->get_label() ] << std::endl;
@@ -160,7 +160,7 @@ void Node::dump( std::map<int, std::string>& classes,
 		 std::map<int, std::string>& features, std::string pat,
 		 int d, std::ofstream& os,
 		 std::map<int, double>& smooth ) {
-  
+
   // pattern we generate is class from dist with pat prepended.
   // log10 calculated from local apriori probs.
   // We need a place to insert our smoothed values.
@@ -187,7 +187,7 @@ void Node::dump( std::map<int, std::string>& classes,
       os << log10(class_prob) << " " << pat << the_class << std::endl;
     }
   }
-  
+
   for ( int i = 0; i < arcs.size(); i++ ) {
     Arc* a = arcs[i];
     Node* n = a->get_node();
@@ -209,7 +209,7 @@ std::string Node::get_dist() {
 /*
 ffreqs opbouwen als we de boom parsen, dan smoothen. Mixen we dan teveel?
 
-Of tellen als we de output doen, ffreqs & smoothing per lengte 
+Of tellen als we de output doen, ffreqs & smoothing per lengte
 van patroon. Nee.
 */
 void Node::smooth_dist( std::map<int, double>& smooth, // count -> count*
@@ -236,7 +236,7 @@ int read_digits( std::ifstream& f ) {
 
   return stoi( res );
 }
-  
+
 void read_dist( Node* n, std::ifstream& f, int d, std::vector<int>& counts ) {
   char chr;
   std::string res;
@@ -255,7 +255,7 @@ void read_dist( Node* n, std::ifstream& f, int d, std::vector<int>& counts ) {
     // error....Timbl wants integers.
     ++count;
 
-    f.get( chr ); 
+    f.get( chr );
     if ( chr != ',' ) {
       readdist = false;
       counts[d+1] += count;
@@ -282,7 +282,7 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
   bool working = true;
 
   while ( working ) {
-    
+
     if ( ! f.get( chr ) ) {
       working = false;
       return a_node; // was break;
@@ -302,12 +302,12 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
       f.get( chr ); // eat CR
       continue;
     }
-    
+
     if ( chr == '{' ) {// { 1 3,
       read_dist( a_node, f, depth, counts );
       continue;
     }
-    
+
     if ( chr == '[' ) { // children, arcs.
       number = read_digits( f ); // label on arc
       f.get( chr ); // '('
@@ -316,7 +316,7 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
       a_node->add_arc( number, c_node );
       continue;
     }
-    
+
     if ( chr == ',' ) {
       number = read_digits( f ); // label on arc
       f.get( chr ); // '(' ?
@@ -336,7 +336,7 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
 // Timbl Arpa generator
 //
 int tag( Logfile& l, Config& c ) {
-  
+
   const std::string& ibase_filename = c.get_value( "ibasefile" );
   const int precision = stoi( c.get_value( "precision", "6" ));
   const int n = stoi( c.get_value( "n", "3" ));
@@ -351,7 +351,7 @@ int tag( Logfile& l, Config& c ) {
   l.dec_prefix();
 
   // Parse first bit, the hashed filenames. Non-hashed version also?
-  
+
   /*
     node has: default dist (not really used)
               class dist (class + value)
@@ -361,7 +361,7 @@ int tag( Logfile& l, Config& c ) {
   // Counts.
   //
   std::map<int,double> ffreqs;
-  if ( counts_filename != "" ) { 
+  if ( counts_filename != "" ) {
     l.log( "Reading counts." );
     std::ifstream file_counts( counts_filename.c_str() );
     if ( ! file_counts ) {
@@ -418,7 +418,7 @@ int tag( Logfile& l, Config& c ) {
       file_ibase >> name;
       //l.log( hashname + " " + name );
       classes[stoi(hashname)] = name;
-    } 
+    }
     if ( mode == 2 ) {
       char chr;
       // parse and store features

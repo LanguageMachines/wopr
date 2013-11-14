@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <iterator>
 
-#include "Context.h"
+#include "wopr/Context.h"
 
 std::ostream& operator << ( std::ostream& os, const Context& ctx ) {
   size_t i;
@@ -74,7 +74,8 @@ const std::string& Context::last_letter() {
   if ( size > 0 ) {
     return data.at(size-1);
   }
-  return "";
+  static std::string empty;
+  return empty;
 }
 
 std::string Context::toString() {

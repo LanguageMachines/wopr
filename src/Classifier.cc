@@ -1,5 +1,5 @@
 #include <string>
-#include "Classifier.h"
+#include "wopr/Classifier.h"
 
 Classifier::Classifier( const std::string& n ) {
   id      = n;

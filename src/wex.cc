@@ -42,15 +42,15 @@
 
 #include "math.h"
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "runrunrun.h"
-#include "Multi.h"
-#include "ngrams.h"
-#include "elements.h"
-#include "wex.h"
-#include "levenshtein.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/runrunrun.h"
+#include "wopr/Multi.h"
+#include "wopr/ngrams.h"
+#include "wopr/elements.h"
+#include "wopr/wex.h"
+#include "wopr/levenshtein.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -137,7 +137,7 @@ int multi( Logfile& l, Config& c ) {
   int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
-    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
@@ -224,7 +224,7 @@ int multi( Logfile& l, Config& c ) {
       Timbl::TimblAPI *timbl = classifier->get_exp();
 
       //      pattern target  lc    rc  it backoff
-      window( a_line, a_line, win_s, 0, 0, false, results ); 
+      window( a_line, a_line, win_s, 0, 0, false, results );
 
       // For each classifier, make data and run. We need to specify how to
       // make data. We have the ws parameter in the Classifier.
@@ -279,7 +279,7 @@ int multi( Logfile& l, Config& c ) {
 }
 #else
 int multi( Logfile& l, Config& c ) {
-  l.log( "Timbl support not built in." );  
+  l.log( "Timbl support not built in." );
   return -1;
 }
 #endif
@@ -300,7 +300,7 @@ int read_kv_from_file( std::ifstream& file,
       res[lhs] = rhs;
     }
   }
-  
+
   return 0;
 }
 
@@ -317,7 +317,7 @@ int read_classifiers_from_file( std::ifstream& file,
 				std::vector<Classifier*>& cl )  {
   std::string a_line;
   Classifier* c = NULL;
-  
+
   while( std::getline( file, a_line )) {
     if ( a_line.length() == 0 ) {
       continue;
@@ -391,12 +391,12 @@ int read_classifiers_from_file( std::ifstream& file,
   if ( c != NULL ) {
     cl.push_back( c );
   }
-  
+
   return 0;
 }
 
 // After discussion with Antal 09/12/09, mixing of distributions.
-// 
+//
 struct distr_probs {
   std::string name; // PJB call this token
   long        freq;
@@ -486,7 +486,7 @@ int multi_dist( Logfile& l, Config& c ) {
   int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
-    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." ); 
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
@@ -584,7 +584,7 @@ int multi_dist( Logfile& l, Config& c ) {
       int distr_count = vd->totalSize(); // sum of freqs in distr.
       distr_counts[classifier_idx] = distr_count;
 
-      /*l.log( (*cli)->id + ":" + cl + "/" + answer + " " + 
+      /*l.log( (*cli)->id + ":" + cl + "/" + answer + " " +
 	to_str(cnt) + "/" + to_str(distr_count) );*/
       //file_out << " " << (*cli)->id << ":" << answer;
       file_out << " " << answer;
@@ -593,7 +593,7 @@ int multi_dist( Logfile& l, Config& c ) {
 	(*cli)->inc_correct();
       }
 
-      Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+      Timbl::ValueDistribution::dist_iterator it = vd->begin();
       while ( it != vd->end() ) {
 	std::string tvs  = it->second->Value()->Name();
 	long        wght = it->second->Weight(); // absolute frequency.
@@ -612,7 +612,7 @@ int multi_dist( Logfile& l, Config& c ) {
       }
       ++classifier_idx;
     } // classifiers
-    
+
     file_out << " ] {";
 
     // sort combined, get top-n, etc.
@@ -631,7 +631,7 @@ int multi_dist( Logfile& l, Config& c ) {
     int cntr = topn;
     std::string combined_guess = "";
     dei = distr_vec.begin();
-    while ( dei != distr_vec.end() ) { 
+    while ( dei != distr_vec.end() ) {
       if ( --cntr >= 0 ) {
 	//file_out << (*dei).name << ' ' << (*dei).freq << ' ';
 	//l.log( (*dei).name + ' ' + to_str((*dei).prob) ); // was .freq
@@ -650,23 +650,23 @@ int multi_dist( Logfile& l, Config& c ) {
     distr_vec.clear();
     combined_distr.clear();
   } // get_line
-  
+
   file_out.close();
   file_in.close();
-  
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
+
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
     Classifier *classifier = *cli;
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) );
   }
   l.log( "Combined: "+to_str(combined_correct) );
-  
+
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;
 }
 #else
 int multi_dist( Logfile& l, Config& c ) {
-  l.log( "Timbl support not built in." );  
+  l.log( "Timbl support not built in." );
   return -1;
 }
 #endif
@@ -791,7 +791,7 @@ int multi_dist2( Logfile& l, Config& c ) {
     combined_distr.clear();
 
     for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
-      
+
       Classifier *classifier = *cli;
       go_on = classifier->classify_next();
 
@@ -808,12 +808,12 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  outline   = outline + to_str(foo.md) + " " + to_str(foo.mal) + " ";
 	}
 	outtarget = foo.target;
-	
+
 	if ( do_combined == true ) {
 	  // The distribution is in classification.distr
 	  std::vector<md2_elem>::iterator dei;
 	  dei = foo.distr.begin();
-	  while ( dei != foo.distr.end() ) { 
+	  while ( dei != foo.distr.end() ) {
 	    //std::cout << " " << (*dei).token << " " << (*dei).prob;
 	    if ( type == 1 ) { // merge normal classifier
 	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
@@ -832,14 +832,14 @@ int multi_dist2( Logfile& l, Config& c ) {
 	    ++dei;
 	  }
 	}
-	
+
       } // go_on
       ++classifier_idx;
     } // classifiers
 
     if ( go_on == true ) {
       file_out << outtarget << " [ " << outline << "]";
-      
+
       if ( do_combined == true ) {
 	file_out << " {";
 	// Calculate the combined guess, and write top-n to output file.
@@ -850,7 +850,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	std::vector<distr_probs>::iterator dei;
 	std::map<std::string, double>::iterator mi;
 	std::vector<double> distr_counts(classifier_count);
-	
+
 	// Convert hash to vector so we can sort it.
 	//
 	for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
@@ -860,12 +860,12 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  distr_vec.push_back( d );
 	}
 	sort( distr_vec.begin(), distr_vec.end() );
-	
+
 	// Loop over sorted vector, take top-n.
 	//
 	dei = distr_vec.begin();
 	combined_guess = (*dei).name; // take the first
-	while ( dei != distr_vec.end() ) { 
+	while ( dei != distr_vec.end() ) {
 	  if ( --cntr >= 0 ) {
 	    //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
 	    file_out << " " << (*dei).name << " " << (*dei).prob;
@@ -881,12 +881,12 @@ int multi_dist2( Logfile& l, Config& c ) {
       } // do_combined
       file_out << std::endl;
     }
-      
+
   } // while go_on
 
   file_out.close();
-  
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
+
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
     Classifier *classifier = *cli;
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
 	   to_str((*cli)->get_cc()) );
@@ -901,7 +901,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 }
 #else
 int multi_dist2( Logfile& l, Config& c ) {
-  l.log( "Timbl support not built in." );  
+  l.log( "Timbl support not built in." );
   return -1;
 }
 #endif
@@ -928,7 +928,7 @@ int multi_gated( Logfile& l, Config& c ) {
   int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
   // ratio target_lexfreq:tvs_lexfreq
   double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
-  
+
   std::string output_filename;
   std::string mode_str = "";
   if ( mode == 1 ) {
@@ -964,7 +964,7 @@ int multi_gated( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "filename:   "+filename );
   l.log( "kvs:        "+kvs_filename );
-  l.log( "fco:        "+to_str(fco) ); 
+  l.log( "fco:        "+to_str(fco) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.log( "mode:       "+to_str(mode) );
@@ -1038,7 +1038,7 @@ int multi_gated( Logfile& l, Config& c ) {
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
-    
+
     if ( dflt == NULL ) {
       l.log( "ERROR: no default classifier" );
       file_out.close();
@@ -1107,11 +1107,11 @@ int multi_gated( Logfile& l, Config& c ) {
     //
     //l.log( cl->id + "/" + to_str(cl->get_type()) );
     cl->classify_one( a_line );
-    
+
     multidist = cl->classification;
     type      = cl->get_type();
     subtype   = cl->get_subtype();
-    
+
     //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
     // Print the instance plus classification. We keep the .sc format
@@ -1152,7 +1152,7 @@ int multi_gated( Logfile& l, Config& c ) {
 		file_out << log2( multidist.prob ) << " ";
       }
     }
-	
+
     // Indicator if it was correct or not.
     // We have gated:correct/indist/wrong, and idem for default.
     //
@@ -1163,7 +1163,7 @@ int multi_gated( Logfile& l, Config& c ) {
 		file_out << "G ";
       }
       file_out << cl->id << " ";
-      
+
       if ( multidist.info == INFO_WRONG ) {
 		file_out << "ic ";
       } else if ( multidist.info == INFO_CORRECT ) {
@@ -1172,18 +1172,18 @@ int multi_gated( Logfile& l, Config& c ) {
 		file_out << "cd ";
       }
       file_out << known << " ";
-      
+
       file_out << multidist.md << " " << multidist.mal << " ";
     }
-    
+
     // sc format prints only cnt, we want to be the same
     //
     file_out << multidist.cnt << " ";
-	
+
     if ( mode != 1 ) {
       file_out << multidist.distr_count << " ";
     }
-	
+
     // For MRR, this makes output format different from px output again.
     //
     if ( mode != 1 ) {
@@ -1196,7 +1196,7 @@ int multi_gated( Logfile& l, Config& c ) {
     if ( mode == 1 ) {
       int cnt = multidist.cnt;
       std::string tmp;
-      if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) { 
+      if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) {
 		std::vector<distr_elem*> distr_vec;
 		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true, 0, -1);
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
@@ -1215,7 +1215,7 @@ int multi_gated( Logfile& l, Config& c ) {
       int cntr = topn;
       dei = multidist.distr.begin();
       file_out << "[";
-      while ( dei != multidist.distr.end() ) { 
+      while ( dei != multidist.distr.end() ) {
 		if ( --cntr >= 0 ) {
 		  //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
 		  file_out << " " << (*dei).token << " " << (*dei).freq;
@@ -1224,7 +1224,7 @@ int multi_gated( Logfile& l, Config& c ) {
       }
       file_out << " ]";
     }
-	
+
     file_out << std::endl;
   }
   file_in.close();
@@ -1239,11 +1239,11 @@ int multi_gated( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write stat output file." );
     return -1;
   }
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {  
-    stat_out << (*cli)->id << " " 
+  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    stat_out << (*cli)->id << " "
 	     << (*cli)->get_cc() << " "
-	     << (*cli)->get_cg() << " " 
-	     << (*cli)->get_cd() << " " 
+	     << (*cli)->get_cg() << " "
+	     << (*cli)->get_cd() << " "
 	     << (*cli)->get_ic() << std::endl;
   }
   stat_out.close();
@@ -1256,7 +1256,7 @@ int multi_gated( Logfile& l, Config& c ) {
 }
 #else
 int multi_gated( Logfile& l, Config& c ) {
-  l.log( "Timbl support not built in." );  
+  l.log( "Timbl support not built in." );
   return -1;
 }
 #endif

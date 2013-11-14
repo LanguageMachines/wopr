@@ -27,17 +27,17 @@
 #include <errno.h>
 #include <sys/msg.h>
 
-#include <stdlib.h>  
-#include <string.h>  
+#include <stdlib.h>
+#include <string.h>
 #include <getopt.h>
 
-#include "qlog.h"
-#include "util.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
 
-#include "cache.h"
+#include "wopr/cache.h"
 
 #ifdef TIMBLSERVER
-#include "SocketBasics.h"
+#include "wopr/SocketBasics.h"
 #endif
 
 int run_file( Logfile&, const std::string&,
@@ -68,7 +68,7 @@ int main( int argc, char* argv[] ) {
     int option_index = 0;
     int c;
     static struct option long_options[] = {
-      //{"name, has_arg, *flag, val"} 
+      //{"name, has_arg, *flag, val"}
       //no_argument, required_argument, optional_argument
       {"host", required_argument, 0, 0},
       {"port", required_argument, 0, 0},
@@ -81,9 +81,9 @@ int main( int argc, char* argv[] ) {
     if (c == -1) {
       break;
     }
-	     
+
     switch ( c ) {
-      
+
     case 0:
       if ( long_options[option_index].name == "verbose" ) {
 	verbose = 1;
@@ -98,11 +98,11 @@ int main( int argc, char* argv[] ) {
 	filename = optarg;
       }
       break;
-      
+
     case 'v':
       verbose = 1;
       break;
-      
+
     case 'p':
       port = optarg;
       break;
@@ -305,7 +305,7 @@ Chaos:
 pberck@chaos:/exp/pberck/wopr$ ./wopr -r server_sc_nf -p ibasefile:/exp/antalb/valkuil-servers/DUTCH-TWENTE-ILK.tok.1e5.l3r3.ibase,timbl:"-a1 +D",lexicon:/exp/antalb/sources/valkuil/valkuil-servers/DUTCH-TWENTE-ILK.tok.1e5.lex,port:1984,keep:1,mwl:3,cs:5000
 
 pberck@chaos:/exp/pberck/wopr$ head -n10000  /exp/pberck/wopr_exps1/timbl-a1+D/ibase_1e6.l3r3/DUTCH-TWENTE-ILK.tok.l10000.l3r3 >tst.l3r3.10000
-pberck@chaos:/exp/pberck/wopr$ ./woprst -f tst.l3r3.10000 
+pberck@chaos:/exp/pberck/wopr$ ./woprst -f tst.l3r3.10000
 
 server_sc
 cache: 1:
@@ -390,7 +390,7 @@ int run_file( Logfile& l, const std::string& filename,
 
   u_secs0 = clock_u_secs();
   std::cout << u_secs0 << std::endl;
-  while( std::getline( infile, a_line ) ) {    
+  while( std::getline( infile, a_line ) ) {
     //l.log( a_line );
     (void)cs.write( a_line +"\n" );
     std::string answer;
@@ -431,7 +431,7 @@ int run_cache( Logfile& l, const std::string& filename ) {
 
   u_secs0 = clock_u_secs();
   std::cout << u_secs0 << std::endl;
-  while( std::getline( infile, a_line ) ) {    
+  while( std::getline( infile, a_line ) ) {
     //l.log( a_line );
     cache->add( a_line, a_line );
     ++lines;
@@ -456,7 +456,7 @@ int run_cache( Logfile& l, const std::string& filename ) {
 
   u_secs0 = clock_u_secs();
   std::cout << u_secs0 << std::endl;
-  while( std::getline( infile2, a_line ) ) {    
+  while( std::getline( infile2, a_line ) ) {
     //l.log( a_line );
     cache->get( a_line );
     ++lines;
@@ -483,7 +483,7 @@ int run_ping( Logfile& l, const std::string& host, const std::string& port) {
 
   u_secs0 = clock_u_secs();
   std::cout << u_secs0 << std::endl;
-  while( --count != 0 ) {    
+  while( --count != 0 ) {
 
     l.log( "ping" );
     Sockets::ClientSocket cs;

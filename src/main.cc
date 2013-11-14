@@ -48,8 +48,8 @@
 #include <errno.h>
 #include <getopt.h>
 
-#include <stdlib.h>  
-#include <string.h>  
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef HAVE_FOLIA
 #include "libfolia/folia.h"
@@ -59,10 +59,10 @@
 #include "unicode/uversion.h"
 #endif
 
-#include "qlog.h"
-#include "util.h"
-#include "Config.h"
-#include "runrunrun.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
+#include "wopr/Config.h"
+#include "wopr/runrunrun.h"
 
 // ---------------------------------------------------------------------------
 //  Detested globals
@@ -152,7 +152,7 @@ int main( int argc, char* argv[] ) {
   while ( 1 ) {
     int option_index = 0;
     static struct option long_options[] = {
-      //{"name, has_arg, *flag, val"} 
+      //{"name, has_arg, *flag, val"}
       //no_argument, required_argument, optional_argument
       {"config", required_argument, 0, 0},
       {"log", no_argument, 0, 0},
@@ -169,9 +169,9 @@ int main( int argc, char* argv[] ) {
     if (c == -1) {
       break;
     }
-	     
+
     switch ( c ) {
-      
+
     case 0:
       if ( long_options[option_index].name == "verbose" ) {
 	verbose = 1;
@@ -204,7 +204,7 @@ int main( int argc, char* argv[] ) {
 	// true in scripts.
       }
       break;
-      
+
     case 'v':
       verbose = 1;
       break;
@@ -212,7 +212,7 @@ int main( int argc, char* argv[] ) {
     case 'V':
       return 0;
       break;
-      
+
     case 'c':
       co.read_file( optarg );
       break;

@@ -42,14 +42,14 @@
 #include <regex.h>
 #include <inttypes.h>
 
-#include <stdlib.h>  
-#include <string.h>  
+#include <stdlib.h>
+#include <string.h>
 
 #include <fcntl.h>
 //#include <paths.h>
 #include <config.h>
 
-#include "util.h"
+#include "wopr/util.h"
 
 //-----------------------------------------------------------------------------
 // Code
@@ -123,7 +123,7 @@ std::string secs_to_str( long t ) {
 std::string secs_to_str( long t, long l ) {
   if ( t > l ) {
     return ">"+secs_to_str( l );
-  }  
+  }
   return secs_to_str( t );
 }
 
@@ -216,7 +216,7 @@ std::string to_str(bool b) {
 */
 long now() {
   timeval tv;
-  
+
   gettimeofday(&tv, 0);
   return tv.tv_sec ;
 }
@@ -235,7 +235,7 @@ std::string the_date_time() {
   char               timestring[32];
   timeval            tv;
   struct tm          *t;
-  
+
   std::string time_format = std::string("%Y/%m/%d %H:%M:%S");
   gettimeofday(&tv, 0);
   t = localtime(&tv.tv_sec);
@@ -246,7 +246,7 @@ std::string the_date_time_stamp() {
   char               timestring[32];
   timeval            tv;
   struct tm          *t;
-  
+
   std::string time_format = std::string("%Y%m%d.%H%M%S");
   gettimeofday(&tv, 0);
   t = localtime(&tv.tv_sec);
@@ -257,7 +257,7 @@ std::string the_time() {
   char               timestring[32];
   timeval            tv;
   struct tm          *t;
-  
+
   std::string time_format = std::string("%H:%M:%S");
   gettimeofday(&tv, 0);
   t = localtime(&tv.tv_sec);
@@ -268,7 +268,7 @@ std::string the_date() {
   char               timestring[32];
   timeval            tv;
   struct tm          *t;
-  
+
   std::string time_format = std::string("%Y/%m/%d");
   gettimeofday(&tv, 0);
   t = localtime(&tv.tv_sec);
@@ -282,7 +282,7 @@ std::string the_date() {
 std::string the_date_time(long s) {
   char               timestring[32];
   struct tm          *t;
-  
+
   std::string time_format = std::string("%Y/%m/%d %H:%M:%S");
   t = localtime(&s);
   strftime(timestring, 32, time_format.c_str(),  t);
@@ -295,7 +295,7 @@ std::string the_date_time(long s) {
 std::string the_date_time_utc(long s) {
   char               timestring[32];
   struct tm          *t;
-  
+
   std::string time_format = std::string("%Y/%m/%d %H:%M");
   t = gmtime(&s);
   strftime(timestring, 32, time_format.c_str(),  t);
@@ -321,7 +321,7 @@ long parse_date_time(const std::string& d) {
   int dd = stoi( d.substr(8, 2) );
   int hh = stoi( d.substr(11, 2) );
   int mn = stoi( d.substr(14, 2) );
-  
+
   struct tm t_s;
   extern time_t timezone;
   extern int daylight;
@@ -385,8 +385,8 @@ void arg_split(char *buf, char **args) {
 	*buf++ = '\0';
       }
     }
-    
-    if ( ! in_string ) { 
+
+    if ( ! in_string ) {
       *args++ = buf;
     }
 
@@ -455,14 +455,14 @@ s.seekg ( 0, std::ios::beg );
 while ( s>> token )
   std::cout<< token <<'\n';
 
-    std::stringstream foo( a_line ); 
+    std::stringstream foo( a_line );
     std::string a_word;
     while ( foo >> a_word ) {
       l.log( a_word );
     }
 */
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens ) {
-  std::stringstream foo( buffer ); 
+  std::stringstream foo( buffer );
   std::string a_word;
   while ( foo >> a_word ) {
     tokens.push_back( a_word );
@@ -470,7 +470,7 @@ void Tokenize(const std::string& buffer, std::vector<std::string>& tokens ) {
 }
 
 void Tokenize_punc(const std::string& buffer, std::vector<std::string>& tokens ) {
-  std::stringstream foo( buffer ); 
+  std::stringstream foo( buffer );
   std::string a_word;
   while ( foo >> a_word ) {
     // split on "',./ only
@@ -497,7 +497,7 @@ void Tokenize_punc(const std::string& buffer, std::vector<std::string>& tokens )
 }
 
 std::string Tokenize_str(const std::string& buffer ) {
-  std::stringstream foo( buffer ); 
+  std::stringstream foo( buffer );
   std::string a_word;
   std::string str;
 
@@ -539,7 +539,7 @@ std::string Tokenize_str(const std::string& buffer ) {
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
               const char delimiter) {
   int pos = 0, pos_ant = 0;
-  
+
   if ( buffer == "" ) {
     return;
   }
@@ -568,7 +568,7 @@ std::string status_to_str(int status) {
     sig = WTERMSIG(status); //status & 127;
   }
   res = WEXITSTATUS(status); //result code
-  
+
   return to_str(res)+"/"+to_str(sig);
 }
 
@@ -578,21 +578,21 @@ std::string trim(std::string const& source, char const* delims ) {
   if ( index != std::string::npos ) {
     result.erase( ++index );
   }
-  
+
   index = result.find_first_not_of( delims );
   if ( index != std::string::npos ) {
     result.erase( 0, index );
   } else {
     result.erase();
   }
-  
+
   return result;
 }
 
 bool is_numeric( std::string s ) {
   for ( int i = 0; i < s.length(); i++ ) {
     char c = s.at(i);
-    if ( isdigit(c) || (c == '.') || (c == ',') || (c == '+') || 
+    if ( isdigit(c) || (c == '.') || (c == ',') || (c == '+') ||
 	 (c == '-') ) {
       continue;// make it: c = 32, then fall through rest?
     }

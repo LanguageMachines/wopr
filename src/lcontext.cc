@@ -42,11 +42,11 @@
 #include <deque>
 #include <limits>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "lcontext.h"
-#include "runrunrun.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/lcontext.h"
+#include "wopr/runrunrun.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -142,7 +142,7 @@ int range_from_lex( Logfile& l, Config& c ) {
   int idx = 1; // top-1 is the first one---+
   do {
     *fli--;
-    if ( (idx >= m) && (idx < n) ) { 
+    if ( (idx >= m) && (idx < n) ) {
       wanted_freqs.push_back( (*fli).first ); // words with these freqs we want.
     }
     ++idx;
@@ -164,7 +164,7 @@ int range_from_lex( Logfile& l, Config& c ) {
   }
   l.log( "Range file contains "+to_str(cnt)+ " items." );
   // --
-  
+
   // Just frequencies
   /*
   li = lex_vec.begin();
@@ -188,13 +188,13 @@ int range_from_lex( Logfile& l, Config& c ) {
 
   range_out.close();
 
-  // set RANGE_FILE to range_filename 
+  // set RANGE_FILE to range_filename
   //
   c.add_kv( "range", range_filename );
   l.log( "SET range to "+range_filename );
   return 0;
 }
-  
+
 /*
   Create data with a the .rng file.
 
@@ -272,7 +272,7 @@ int lcontext( Logfile& l, Config& c ) {
     // WE could also do this WITHOUT the spaces...
     // "0 0 1 0" of "0010" als EEN feature...
   }
-  
+
   //std::string gc_sep = " ";
 
   // So, NOW we can do this.
@@ -308,8 +308,8 @@ int lcontext( Logfile& l, Config& c ) {
   }
 
   // What will the output look like....?
-  //   Pierre Vinken, 61 years old, will join the board as a 
-  //   nonexecutive director Nov. 29. 
+  //   Pierre Vinken, 61 years old, will join the board as a
+  //   nonexecutive director Nov. 29.
   // Imagine, years is focus word. ws2 context, plus global context.
   // Instance: (global) , 61 years
   // global looks like: bit vector? The words or empty words?
@@ -318,7 +318,7 @@ int lcontext( Logfile& l, Config& c ) {
   // gc: _ Vinken _
   // Second parameter: size of global context, i.e 10 out of a possible 831.
   //
-  // expand global context "vertically", 10x one global context plus rest 
+  // expand global context "vertically", 10x one global context plus rest
   // of context:
   // _ , 61 years
   // Vinken , 61 years
@@ -344,7 +344,7 @@ int lcontext( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
-  
+
   // File to make data from. If this is a wopr-data set, we should
   // only look at the last word (target).
   //
@@ -379,7 +379,7 @@ int lcontext( Logfile& l, Config& c ) {
   // lc_str in array, so we can skip a few, "delay" the start
   std::deque<std::string> gc(gco+1, lc_str);
 
-  while( std::getline( file_in, a_line ) ) { 
+  while( std::getline( file_in, a_line ) ) {
 
     Tokenize( a_line, words, ' ' );
     int start = 0;
@@ -436,7 +436,7 @@ int lcontext( Logfile& l, Config& c ) {
       //
       std::string output_gc = gc.front();
       gc.pop_front();
-      
+
       if ( gct != 2 ) {
 	file_out << output_gc; //lc_str;
       } else {
@@ -478,7 +478,7 @@ int lcontext( Logfile& l, Config& c ) {
 	    gc_hash += (*di).hv;
 	  }
 	}
-      } while ( di != global_context.begin() ); 
+      } while ( di != global_context.begin() );
       //--
 
       gc.push_back( lc_str );
@@ -498,7 +498,7 @@ int lcontext( Logfile& l, Config& c ) {
 
     } // i
     words.clear();
-      
+
   } //while
 
   file_in.close();
@@ -606,7 +606,7 @@ int occgaps( Logfile& l, Config& c ) {
     return -1;
   }
 
-  // Open lex file. 
+  // Open lex file.
   //
   std::ifstream file_lex( lex_filename.c_str() );
   if ( ! file_lex ) {
@@ -621,8 +621,8 @@ int occgaps( Logfile& l, Config& c ) {
   std::map<std::string, Tvref > word_positions;
   int i = 0;
   while( file_lex >> a_word >> wfreq ) {
-    range[ a_word ] = i; 
-    //                
+    range[ a_word ] = i;
+    //
     ++i;
     //word_positions[ a_word ].push_back(0);
   }
@@ -658,7 +658,7 @@ int occgaps( Logfile& l, Config& c ) {
   Tvref::iterator vri;
   bool inside = false;
   for( wpi = word_positions.begin(); wpi != word_positions.end(); ++wpi ) {
-    
+
     Tvref vv = (*wpi).second;
 
     // bracket them? (3 6 7) 1234 8745 (3 5) ?
@@ -709,11 +709,11 @@ int occgaps( Logfile& l, Config& c ) {
       //average gap? ag / all words?
       float ave_sg = 0;
       if ( sgaps > 0 ) {
-	ave_sg = sum_sg / sgaps; 
+	ave_sg = sum_sg / sgaps;
       }
       float ave_lg = 0;
       if ( lgaps > 0 ) {
-	ave_lg = sum_lg / lgaps; 
+	ave_lg = sum_lg / lgaps;
       }
       float p1 = (float)igrps/ogrps; // inside/outside groups? misnomer
       float r1 = (float)sgaps/(sgaps+lgaps);
@@ -722,7 +722,7 @@ int occgaps( Logfile& l, Config& c ) {
 	g1 = (float)ave_lg/ave_sg;
       }
 
-      file_out << "[ " 
+      file_out << "[ "
 	       << igrps << " " << ogrps << " " << p1 << " "
 	       << sgaps << " " << lgaps << " " << r1 << " "
 	       << sum_sg << " " << ave_sg << " "
@@ -730,7 +730,7 @@ int occgaps( Logfile& l, Config& c ) {
 	       << " ]" << std::endl;
       inside = false;
 
-      if ( (filter == false) 
+      if ( (filter == false)
 	   ||
 	   (
 	    (r1 >= min_r) &&
@@ -750,14 +750,14 @@ int occgaps( Logfile& l, Config& c ) {
 	       << sgaps << " " << lgaps << " " << r1 << " "
 	       << sum_sg << " " << ave_sg << " "
 	       << g1
-	       << std::endl;	
+	       << std::endl;
       }
 
     }
-    
+
   }
   file_out.close();
-  
+
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;

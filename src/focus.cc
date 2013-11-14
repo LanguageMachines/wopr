@@ -42,11 +42,11 @@
 
 #include <math.h>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "focus.h"
-#include "runrunrun.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/focus.h"
+#include "wopr/runrunrun.h"
 
 #ifdef TIMBL
 # include "timbl/TimblAPI.h"
@@ -72,7 +72,7 @@ int focus( Logfile& l, Config& c ) {
   int                numeric_files   = stoi( c.get_value( "nf", "-1" ));
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
-  std::string        timbl           = c.get_value( "timbl", "no" ); 
+  std::string        timbl           = c.get_value( "timbl", "no" );
   bool               skip_create     = stoi( c.get_value( "sc", "0" )) == 1;
 
   std::string        output_filename = filename + ".fcs"+to_str(fco);
@@ -146,7 +146,7 @@ int focus( Logfile& l, Config& c ) {
 		  std::string a_word = words[0]; //assume first is the word, then freq
 		  focus_words[ a_word ] = freq;
 		}
-      } 
+      }
     } else if ( words.size() == 1 ) {
       std::string a_word = words[0];
       focus_words[ a_word ] = 1;
@@ -175,7 +175,7 @@ int focus( Logfile& l, Config& c ) {
 
   if ( (fmode == 0) || (fmode == 4) ) { // one only
     output_files[ combined_class ] = output_filename;
-  } else  { 
+  } else  {
     // seperate file for each focus word.
     std::map<std::string,int>::iterator ofi;
     for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
@@ -197,7 +197,7 @@ int focus( Logfile& l, Config& c ) {
       }
     }
   }
-  
+
   if ( skip_create == false ) {
     // Data file, already windowed.
     //
@@ -206,24 +206,24 @@ int focus( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot load data file." );
       return -1;
     }
-    
+
     std::string target;
     std::string a_str;
     int         pos;
     std::map<std::string, int>::iterator ri;
     int is_gated;
-    
-    while( std::getline( file_in, a_line ) ) { 
-      
+
+    while( std::getline( file_in, a_line ) ) {
+
       words.clear();
       Tokenize( a_line, words, ' ' );
-      
+
       pos = words.size()-1-fco;
       pos = (pos < 0) ? 0 : pos;
       target = words[pos]; // target is the focus "target"
       a_str  = words[0];
       is_gated = 0;
-      
+
       ri = focus_words.find( target ); // Is it in the focus list?
       if ( ri != focus_words.end() ) { // yes
 		//l.log( "FOUND: "+target+" in "+a_line );
@@ -247,7 +247,7 @@ int focus( Logfile& l, Config& c ) {
 		  ++ic[target];
 		}
       }
-      
+
       // The left over to the default, or in case of fmode 4, everything.
       if ( (is_gated == 0) || (fmode == 4) ) {// gated==0 -> not found in list
 		std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
@@ -259,49 +259,49 @@ int focus( Logfile& l, Config& c ) {
 		file_out.close(); // must be inefficient...
 		++ic[dflt];
       }
-      
+
     }
-    
+
     file_in.close();
-    
+
     l.log( "Created "+to_str(output_files.size())+" data files." );
   }
-  
+
   // Now train them all, or create a script to train...? or train,
   // and create kvs script (best).
   //
 #ifdef TIMBL
-  
+
   if ( timbl != "no" ) { // We skip kvs and ibase creation is so desired
     std::ofstream kvs_out( kvs_filename.c_str(), std::ios::out );
     if ( ! kvs_out ) {
       l.log( "ERROR: cannot write kvs output file." );
       return -1;
     }
-    
+
     Timbl::TimblAPI       *My_Experiment;
     std::map<std::string,std::string>::iterator ofi;
     for( ofi = output_files.begin(); ofi != output_files.end(); ofi++ ) {
       std::string focus_word      = (*ofi).first;
       std::string output_filename = (*ofi).second;
-      
+
       std::string t_ext = timbl;
       std::string ibase_filename = output_filename;
       bool dataset_ok = true;
-      
+
       bool skip_dflt = false;
       if ((focus_word == dflt) && (fmode == 2)) {
 		skip_dflt = true;
       }
-	  
+
       t_ext.erase( std::remove(t_ext.begin(), t_ext.end(), ' '), t_ext.end());
       if ( t_ext != "" ) {
 		ibase_filename = ibase_filename+"_"+t_ext;
       }
       ibase_filename = ibase_filename+".ibase";
-      
+
       l.log( output_filename+"/"+ibase_filename );
-      
+
       if ( ! file_exists( l, c, ibase_filename ) ) {
 		if ( file_exists( l, c, output_filename ) ) {
 		  if ( ! skip_dflt ) {
@@ -321,11 +321,11 @@ int focus( Logfile& l, Config& c ) {
       } else {
 		l.log( "Instance base exists, not overwriting." );
       }
-	  
+
       if ( dataset_ok == true ) {
-		
+
 		if ( ! skip_dflt ) {
-		  
+
 		  kvs_out << "classifier:" << focus_word << std::endl;
 		  kvs_out << "ibasefile:" << ibase_filename << std::endl;
 		  kvs_out << "timbl:" << timbl << std::endl;
@@ -344,15 +344,15 @@ int focus( Logfile& l, Config& c ) {
 		}
       }
     }
-    
+
     kvs_out.close();
-	
+
     c.add_kv( "kvs", kvs_filename );
     l.log( "SET kvs to "+kvs_filename );
-	
+
   }
 #endif
-  
+
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;

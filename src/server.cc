@@ -57,17 +57,17 @@
 #include "libfolia/document.h"
 #endif
 
-#include "qlog.h"
-#include "util.h"
-#include "Config.h"
-#include "runrunrun.h"
-#include "watcher.h"
-#include "server.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
+#include "wopr/Config.h"
+#include "wopr/runrunrun.h"
+#include "wopr/watcher.h"
+#include "wopr/server.h"
 
-#include "Multi.h" // for server_mg
-#include "wex.h"   // for server_mg
+#include "wopr/Multi.h" // for server_mg
+#include "wopr/wex.h"   // for server_mg
 
-#include "cache.h"
+#include "wopr/cache.h"
 
 #ifdef TIMBL
 #include "timbl/TimblAPI.h"
@@ -88,7 +88,7 @@
 #include <signal.h>
 
 #ifdef TIMBLSERVER
-#include "SocketBasics.h"
+#include "wopr/SocketBasics.h"
 #endif
 
 #define BACKLOG 5     // how many pending connections queue will hold

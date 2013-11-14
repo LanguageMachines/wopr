@@ -46,8 +46,8 @@
 
 // Local includes
 //
-#include "qlog.h"
-#include "util.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
 
 // Import some stuff into our namespace.
 //
@@ -62,7 +62,7 @@ using std::string;
 // Code
 //-----------------------------------------------------------------------------
 
-//openlog( argv[0], LOG_PID, LOG_USER ); 
+//openlog( argv[0], LOG_PID, LOG_USER );
 //syslog( LOG_INFO, "Started." );
 //syslog( LOG_INFO, "Ended. No arguments supplied." );
 
@@ -84,7 +84,7 @@ Logfile::~Logfile() {
 void Logfile::init() {
   char      timestring[32];
   struct tm *t;
-  
+
   time_format = std::string("%H:%M:%S");
 }
 
@@ -93,7 +93,7 @@ void Logfile::init() {
 
   Writes the string to the logfile, prefixed by the current time,
   and (if set), the prefix string.
-  
+
   \param string The string to write to the log file. Will be prepended
   by a timestamp.
 
@@ -107,7 +107,7 @@ void Logfile::append( const std::string& s) {
 
   gettimeofday(&tv, 0);
   t = localtime(&tv.tv_sec);
-  
+
   strftime(timestring, 32, time_format.c_str(),  t);
 
   // We only display with milli-seconds accuracy.
@@ -134,7 +134,7 @@ void Logfile::log( const std::string& s ) {
 
   gettimeofday( &tv, 0 );
   t = localtime( &tv.tv_sec );
-  
+
   strftime( timestring, 32, time_format.c_str(),  t );
 
   // We only display with centi-seconds accuracy.
@@ -159,7 +159,7 @@ void Logfile::log( const std::string& s, const std::string& esc_code  ) {
 
   gettimeofday( &tv, 0 );
   t = localtime( &tv.tv_sec );
-  
+
   strftime( timestring, 32, time_format.c_str(),  t );
 
   // We only display with centi-seconds accuracy.
@@ -194,7 +194,7 @@ void Logfile::log_raw( const std::string& s ) {
 
   gettimeofday( &tv, 0 );
   t = localtime( &tv.tv_sec );
-  
+
   strftime( timestring, 32, time_format.c_str(),  t );
 
   int msec = tv.tv_usec;
@@ -216,7 +216,7 @@ void Logfile::log_begin( const std::string& s ) {
 
   gettimeofday( &tv, 0 );
   t = localtime( &tv.tv_sec );
-  
+
   strftime( timestring, 32, time_format.c_str(),  t );
 
   // We only display with centi-seconds accuracy.
@@ -290,7 +290,7 @@ void Logfile::DBG( const std::string& s ) {
 
   gettimeofday( &tv, 0 );
   t = localtime( &tv.tv_sec );
-  
+
   strftime( timestring, 32, time_format.c_str(),  t );
 
   int msec = tv.tv_usec;
@@ -333,7 +333,7 @@ void Logfile::DBG( const std::string& s ) {
 */
 long Logfile::clock_start() {
   gettimeofday(&clck, 0);
-  clck_mu_sec = clck.tv_sec * 1000000 + clck.tv_usec; 
+  clck_mu_sec = clck.tv_sec * 1000000 + clck.tv_usec;
   return clck.tv_sec ;
 }
 

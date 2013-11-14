@@ -42,12 +42,12 @@
 
 #include <math.h>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "runrunrun.h"
-#include "ngrams.h"
-#include "ngram_elements.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/runrunrun.h"
+#include "wopr/ngrams.h"
+#include "wopr/ngram_elements.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -148,7 +148,7 @@ int ngram_list( Logfile& l, Config& c ) {
   // P(d | a,b) = C(a,b,d) / C(a,b)
   //            = 1 / 2
 
-  // ngram-count -text austen.txt gt1min 0 -gt2min 0 -gt3min 0 
+  // ngram-count -text austen.txt gt1min 0 -gt2min 0 -gt3min 0
   // -no-sos -no-eos -lm austen.txt.srilm
 
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
@@ -167,7 +167,7 @@ int ngram_list( Logfile& l, Config& c ) {
     data structure, per n-gram.
     Word-trie? Nah.
   */
-  
+
   // Format is:
   // n-gram frequency probability
   //
@@ -193,7 +193,7 @@ int ngram_list( Logfile& l, Config& c ) {
 	  if ( log_base > 0 ) {
 	    p = mylog(p);
 	  }
-	  file_out << ngram << " " << e.freq << " " 
+	  file_out << ngram << " " << e.freq << " "
 		   << p << std::endl;
 	}
       } // freq>1
@@ -279,7 +279,7 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
   // P(d | a,b) = C(a,b,d) / C(a,b)
   //            = 1 / 2
 
-  // ngram-count -text austen.txt gt1min 0 -gt2min 0 -gt3min 0 
+  // ngram-count -text austen.txt gt1min 0 -gt2min 0 -gt3min 0
   // -no-sos -no-eos -lm austen.txt.srilm
 
   std::ofstream file_out( output_filename.c_str(), std::ios::out );
@@ -298,7 +298,7 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
     data structure, per n-gram.
     Word-trie? Nah.
   */
-  
+
   // Format is:
   // n-gram frequency probability
   //
@@ -316,7 +316,7 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
 	if ( pos != std::string::npos ) {
 	  std::string n_minus_1_gram = ngram.substr(0, pos);
 	  ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
-	  file_out << ngram << " " << e.freq << " " 
+	  file_out << ngram << " " << e.freq << " "
 		   << e.freq / (float)em1.freq << std::endl;
 	}
       } // freq>1
@@ -331,7 +331,7 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
 }
 
 // Return last word in "string with spaces".
-// 
+//
 void last_word( std::string& str, std::string& res ) {
     size_t pos = str.rfind( ' ' );
     if ( pos != std::string::npos ) {
@@ -502,7 +502,7 @@ int ngram_test( Logfile& l, Config& c ) {
   l.log( "Reading ngrams..." );
 
   // format: ngram freq prob
-  // ngram can contain spaces. 
+  // ngram can contain spaces.
   // NB: input and stod are not checked for errors (TODO).
   //
   // he sat 10 0.000467006  -> probs, not l10probs, unless log:10 parameter
@@ -512,7 +512,7 @@ int ngram_test( Logfile& l, Config& c ) {
   //
   // SRILM format:
   //
-  // \data 
+  // \data
   // ngram 1=1865
   // ngram 2=7353
   // ...
@@ -530,7 +530,7 @@ int ngram_test( Logfile& l, Config& c ) {
   if ( mode == "srilm" ) {
     // read srilm counts file, for later use. Problem is that the counts
     // are "plain", unmodified, and the probs in the .lm file have
-    // been smoothed, etc etc. 
+    // been smoothed, etc etc.
     //
     // Users/pberck/work/mbmt/srilm/bin/macosx/ngram-count -no-eos -no-sos -text rmt.1e5 -sort -write srilm.counts
     // format is "ngram freq".
@@ -542,7 +542,7 @@ int ngram_test( Logfile& l, Config& c ) {
     int offset = 2;//2 for srilm, 3 for wopr
     if ( file_ngc ) {
       l.log( "Reading SRILM counts file." );
-      while( std::getline( file_ngc, a_line ) ) { 
+      while( std::getline( file_ngc, a_line ) ) {
 	results.clear();
 	// maybe with split_tab and a separate SRILM/WOPR mode?
 	replace( a_line.begin(), a_line.end(), '\t', ' ' );
@@ -552,7 +552,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	for ( i = 0; i < results.size()-offset; i++ ) {
 	  ngram = ngram + results.at(i) + " ";
 	}
-	ngram = ngram + results.at(i); 
+	ngram = ngram + results.at(i);
 
 	++i;
 	freq = stol( results.at(i) );
@@ -593,7 +593,7 @@ int ngram_test( Logfile& l, Config& c ) {
       split_tab( a_line, lp, ngram, rp );
       //l.log( lp+"/"+ngram+"/"+rp );
       l10prob = stod( lp );
-      prob = pow( 10, l10prob ); 
+      prob = pow( 10, l10prob );
       l2prob = l10prob * 0.3010299957;
       sngi = srilm_ngrams.find( ngram );
       if ( (sngi == srilm_ngrams.end()) ) {
@@ -704,7 +704,7 @@ int ngram_test( Logfile& l, Config& c ) {
       }
 
     }
-    // end foo 
+    // end foo
 
   }
   file_ngl.close();
@@ -785,7 +785,7 @@ int ngram_test( Logfile& l, Config& c ) {
   std::map<std::string,std::string>::iterator mi;
   std::vector<ngram_elem> best_ngrams;
   std::vector<ngram_elem>::iterator ni;
- 
+
   l.log( "Writing output..." );
 
   long   total_words    = 0;
@@ -813,10 +813,10 @@ int ngram_test( Logfile& l, Config& c ) {
     for ( int i = 1; i <= n; i++ ) { // loop over ngram sizes
       results.clear();
 
-      // convert input to ngrams size i, look them up in ngl list, 
+      // convert input to ngrams size i, look them up in ngl list,
       // start small, try to find largest.
       //
-      if ( ngram_line( a_line, i, results ) == 0 ) { 
+      if ( ngram_line( a_line, i, results ) == 0 ) {
 
 	int word_idx = i-1;
 	for ( ri = results.begin(); ri != results.end(); ri++ ) {
@@ -854,7 +854,7 @@ int ngram_test( Logfile& l, Config& c ) {
 		ne.ngram = matchgram;
 	      }
 	    }
-	    
+
 	  } else {
 	    //l.log( "unknown" );
 	    if ( i == 1 ) { // start with unigrams
@@ -956,7 +956,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	  out = out + " [";
 	  while ( (vi != v.end()) && (--cnt >= 0) ) {
 	    long freq = (*vi).freq;
-	    out = out + " " + (*vi).token+" "+to_str(freq); 
+	    out = out + " " + (*vi).token+" "+to_str(freq);
 	    ++vi;
 	  }
 	  out = out + " ]";
@@ -977,7 +977,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	      out = out + " [";
 	      while ( (sli != sorted_lex.end()) && (--cnt >= 0) ) {
 		long freq = (*sli).freq;
-		out = out + " " + (*sli).token+" "+to_str(freq); 
+		out = out + " " + (*sli).token+" "+to_str(freq);
 		++sli;
 	      }
 	      out = out + " ]";
@@ -1009,7 +1009,7 @@ int ngram_test( Logfile& l, Config& c ) {
       pplx   = pow(  2, -H/(double)(wc-oov) );
       pplx10 = pow( 10, -sum_l10p/(double)(wc-oov) );
     }
-    ngp_out << H << " " 
+    ngp_out << H << " "
 	    << pplx << " "
 	    << wc << " "
 	    << oov << " "
@@ -1056,7 +1056,7 @@ int ngram_test( Logfile& l, Config& c ) {
   For use in the ngram server.
 */
 
-int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngrams, std::vector<ngram_elem>& best_ngrams, 
+int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngrams, std::vector<ngram_elem>& best_ngrams,
 		    std::vector<std::string>& results, Logfile& l ) {
 
   std::vector<std::string>::iterator ri;
@@ -1065,13 +1065,13 @@ int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngr
   std::map<std::string,double>::iterator gi;
 
   best_ngrams.clear();
-  
+
   for ( int i = 1; i <= n; i++ ) { // loop over ngram sizes
     //l.log( "n="+to_str(i) );
     results.clear();
-    
+
     if ( ngram_line( a_line, i, results ) == 0 ) { // input to ngrams size i
-      
+
       int word_idx = i-1;
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
 	std::string cl = *ri;
@@ -1105,7 +1105,7 @@ int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngr
 	      ne.ngram = matchgram;
 	    }
 	  }
-	  
+
 	} else { // cl not found in ngrams
 	  //l.log( "unknown" );
 	  if ( i == 1 ) { // start with unigrams
@@ -1114,7 +1114,7 @@ int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngr
 	    ne.n = 0;
 	    best_ngrams.push_back(ne);
 	  }
-	  
+
 	}
 	++word_idx;
       } // for

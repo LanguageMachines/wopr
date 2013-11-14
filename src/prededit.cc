@@ -40,16 +40,16 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "qlog.h"
-#include "util.h"
-#include "Config.h"
-#include "runrunrun.h"
-#include "server.h"
-#include "Context.h"
-#include "prededit.h"
-#include "PDT.h"
+#include "wopr/qlog.h"
+#include "wopr/util.h"
+#include "wopr/Config.h"
+#include "wopr/runrunrun.h"
+#include "wopr/server.h"
+#include "wopr/Context.h"
+#include "wopr/prededit.h"
+#include "wopr/PDT.h"
 
-#include "MersenneTwister.h"
+#include "wopr/MersenneTwister.h"
 
 #ifdef HAVE_ICU
 #define U_CHARSET_IS_UTF8 1
@@ -82,7 +82,7 @@
 #endif
 
 #ifdef TIMBLSERVER
-#include "SocketBasics.h"
+#include "wopr/SocketBasics.h"
 #endif
 
 
@@ -172,7 +172,7 @@ int pdt( Logfile& l, Config& c ) {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
-      return 1;      
+      return 1;
     }
     (void)My_Experiment->GetInstanceBase( ibasefile );
     if ( ! My_Experiment->Valid() ) {
@@ -246,18 +246,18 @@ int pdt( Logfile& l, Config& c ) {
   long keypresses = 0;
   long keyssaved = 0;
 
-  while( std::getline( file_in, a_line ) ) { 
+  while( std::getline( file_in, a_line ) ) {
     if ( a_line == "" ) {
       continue;
     }
-    
+
     words.clear();
     Tokenize( a_line, words );
 
     // Print the sentence, with counts, and length (keypresses):
     // S0000 we sat and waited for the woman
     //
-    file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " ";
     file_out << a_line << " " << count_keys(a_line) << std::endl;
 
     keypresses += count_keys(a_line);
@@ -280,8 +280,8 @@ int pdt( Logfile& l, Config& c ) {
       if ( skip > 0 ) {
 	//l.log( "Skipping: " + to_str(skip) );
 	// increment instance count? Log? E, edited, excluded
-	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
+	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "."
+		 << std::setfill('0') << std::setw(4) << instance_count << " ";
 	file_out << ctx << std::endl;
 	++instance_count;
 	--skip;
@@ -291,12 +291,12 @@ int pdt( Logfile& l, Config& c ) {
       // TEST
       //
       // NADEEL: this cannot use right context...only advantage is tribl2...?
-      //         unless we shift instance bases after having generated the first 
+      //         unless we shift instance bases after having generated the first
       //         right context. Tribl2 no use either, we generate self, never
       //         any unknown words in context.
       //
       // IDEA: generated sentences to compare to sentence to be LM'd, if
-      // it can be generated, it gets extra score, or score based on 
+      // it can be generated, it gets extra score, or score based on
       // choices every word. That was already an idea.
       //
       std::vector<std::string> strs; // should be a struct with more stuff
@@ -306,8 +306,8 @@ int pdt( Logfile& l, Config& c ) {
       // Print the instance, with counts.
       // I0000.0004 waited for
       //
-      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-	       << std::setfill('0') << std::setw(4) << instance_count << " "; 
+      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "."
+	       << std::setfill('0') << std::setw(4) << instance_count << " ";
       file_out << ctx << std::endl;
 
       std::vector<std::string>::iterator si = strs.begin();
@@ -368,14 +368,14 @@ int pdt( Logfile& l, Config& c ) {
 	// (print only when a match, optional?)
 	//
 	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
-	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		   << std::setfill('0') << std::setw(4) << instance_count << "." 
+	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "."
+		   << std::setfill('0') << std::setw(4) << instance_count << "."
 		   << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
-	  
+
 	  if ( matched != "" )  {
-	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		     << std::setfill('0') << std::setw(4) << instance_count << "." 
-		     << std::setfill('0') << std::setw(4) << prediction_count 
+	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "."
+		     << std::setfill('0') << std::setw(4) << instance_count << "."
+		     << std::setfill('0') << std::setw(4) << prediction_count
 		     << " " << matched << count_keys(matched)-1 << std::endl; // -1 for trailing space
 	  }
 	}
@@ -383,15 +383,15 @@ int pdt( Logfile& l, Config& c ) {
 	si++;
       }
       strs.clear();
-      
+
       keyssaved += savedhere;
-      
+
       ++instance_count;
     } // i over words
 
     // Output Result for this sentence.
     //
-    file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " ";
     file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << std::endl;
 
     ctx.reset();
@@ -410,7 +410,7 @@ int pdt( Logfile& l, Config& c ) {
   l.log( "SET pdt_file to "+output_filename );
 
   return 0;
-}  
+}
 
 // Two instance bases.
 //
@@ -428,7 +428,7 @@ int pdt2( Logfile& l, Config& c ) {
   int                rc1             = stoi( c.get_value( "rc1", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
   int                pel             = stoi( c.get_value( "n", "3" )); // length
-  std::string        dl              = c.get_value( "dl", "3" ); // letter depth 
+  std::string        dl              = c.get_value( "dl", "3" ); // letter depth
   bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
   std::string        id              = c.get_value( "id", to_str(getpid()) );
   int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
@@ -498,7 +498,7 @@ int pdt2( Logfile& l, Config& c ) {
     My_Experiment0 = new Timbl::TimblAPI( timbl0 );
     if ( ! My_Experiment0->Valid() ) {
       l.log( "Timbl Experiment0 is not valid." );
-      return 1;      
+      return 1;
     }
     (void)My_Experiment0->GetInstanceBase( ibasefile0 );
     if ( ! My_Experiment0->Valid() ) {
@@ -509,7 +509,7 @@ int pdt2( Logfile& l, Config& c ) {
     My_Experiment1 = new Timbl::TimblAPI( timbl1 );
     if ( ! My_Experiment1->Valid() ) {
       l.log( "Timbl Experiment1 is not valid." );
-      return 1;      
+      return 1;
     }
     (void)My_Experiment1->GetInstanceBase( ibasefile1 );
     if ( ! My_Experiment1->Valid() ) {
@@ -587,18 +587,18 @@ int pdt2( Logfile& l, Config& c ) {
   long keyssaved = 0;
   long letterssaved = 0;
 
-  while( std::getline( file_in, a_line ) ) { 
+  while( std::getline( file_in, a_line ) ) {
     if ( a_line == "" ) {
       continue;
     }
-    
+
     words.clear();
     Tokenize( a_line, words );
 
     // Print the sentence, with counts, and length (keypresses):
     // S0000 we sat and waited for the woman
     //
-    file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << "S" << std::setfill('0') << std::setw(4) << sentence_count << " ";
     file_out << a_line << " " << a_line.size() << std::endl;
 
     keypresses += a_line.size();
@@ -624,8 +624,8 @@ int pdt2( Logfile& l, Config& c ) {
 	//l.log( "Skipping: " + to_str(skip) );
 	// increment instance count? Log? E, edited, excluded
 	//
-	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		 << std::setfill('0') << std::setw(4) << instance_count << " "; 
+	file_out << "E" << std::setfill('0') << std::setw(4) << sentence_count << "."
+		 << std::setfill('0') << std::setw(4) << instance_count << " ";
 	file_out << ctx1 << std::endl;
 	++instance_count;
 	--skip;
@@ -644,8 +644,8 @@ int pdt2( Logfile& l, Config& c ) {
 
       // Moved up from below.
       //
-      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-	       << std::setfill('0') << std::setw(4) << instance_count << " "; 
+      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "."
+	       << std::setfill('0') << std::setw(4) << instance_count << " ";
       file_out << ctx1 << std::endl;
 
       std::vector<std::string> strs; // should be a struct with more stuff
@@ -670,9 +670,9 @@ int pdt2( Logfile& l, Config& c ) {
 	//l.log( "ctx0="+ctx0.toString() );
 
 	/*
-	file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "."
 		 << std::setfill('0') << std::setw(4) << instance_count << "."
-		 << std::setfill('0') << std::setw(4) << j << " "; 
+		 << std::setfill('0') << std::setw(4) << j << " ";
 	file_out << ctx0 << std::endl;
 	*/
 
@@ -687,10 +687,10 @@ int pdt2( Logfile& l, Config& c ) {
 	for ( int s = 0; s < strs0.size(); s++ ) {
 	  std::string lpred = strs0.at(s).substr(1, strs0.at(s).length()-1);
 	  //l.log( "pred="+to_str(s)+"/"+lpred );
-	  
+
 	  if ( lpred == token ) { //NB these spaces in the beginning
 	    //l.log( "MATCH INSIDE WORD" );
-      
+
 	    lsaved = letters.size() - j - 1; // NB, we subtract the space also
 
 	    // So, if it is the last word, we substract one.
@@ -701,14 +701,14 @@ int pdt2( Logfile& l, Config& c ) {
 
 	    // L0000.0000.0004 o m m u communication 8
 	    //
-	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "." 
+	    file_out << "L" << std::setfill('0') << std::setw(4) << sentence_count << "."
 		     << std::setfill('0') << std::setw(4) << instance_count << "."
-		     << std::setfill('0') << std::setw(4) << j << " "; 
+		     << std::setfill('0') << std::setw(4) << j << " ";
 	    file_out << ctx0 << " " << lpred << " " << lsaved << std::endl;
-	    
+
 	    /*lout = "L" + to_str((double)sentence_count, 4) + "." + to_str((double)instance_count, 4) + "."
 	      + to_str(j, 4) + " " + ctx0.toString() + " " + lpred + " ";*/
-	      
+
 	    // The pred. should be insterted in this context here, if match inside word.
 	    // actually, the lpred is what is already in ctx1, because if we match it is
 	    // the current word.
@@ -718,7 +718,7 @@ int pdt2( Logfile& l, Config& c ) {
 	    //l.log( "ctx1="+ctx1.toString() );
 	    //l.log( "ctx01="+ctx01.toString() );
 
-	    // Continue with words based on correctly guessed 
+	    // Continue with words based on correctly guessed
 	    // letter continuation.
 	    //
 	    generate_tree( My_Experiment1, ctx01, strs, length, depths, length, t );
@@ -749,7 +749,7 @@ int pdt2( Logfile& l, Config& c ) {
 
       //l.log( "IBASE1 predictions: "+to_str(strs.size()) );
 
-      // If lsaved == 0, we call 
+      // If lsaved == 0, we call
       // generate_tree( My_Experiment1, c, ctx01, strs, length, depths, t );
       // again. It means we never completed the word correctly, and are now
       // at a " ". At this point, we run the word predictor.
@@ -765,8 +765,8 @@ int pdt2( Logfile& l, Config& c ) {
       // I0000.0004 waited for
       //
       /*
-      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-	       << std::setfill('0') << std::setw(4) << instance_count << " "; 
+      file_out << "I" << std::setfill('0') << std::setw(4) << sentence_count << "."
+	       << std::setfill('0') << std::setw(4) << instance_count << " ";
       file_out << ctx1 << std::endl;
       */
 
@@ -809,7 +809,7 @@ int pdt2( Logfile& l, Config& c ) {
 	}
 
 	// We take largest number of presses, not words. Same result.
-	// 
+	//
 	if ( matched.size() > savedhere+1 ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
@@ -825,16 +825,16 @@ int pdt2( Logfile& l, Config& c ) {
 	// The lsaved can be added here, or counted seperately.
 	//
 	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
-	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		   << std::setfill('0') << std::setw(4) << instance_count << "." 
+	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "."
+		   << std::setfill('0') << std::setw(4) << instance_count << "."
 		   << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
-	  
+
 	  if ( matched != "" ) {
-	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "." 
-		     << std::setfill('0') << std::setw(4) << instance_count << "." 
-		     << std::setfill('0') << std::setw(4) << prediction_count 
-		     << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space. 
-	    
+	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "."
+		     << std::setfill('0') << std::setw(4) << instance_count << "."
+		     << std::setfill('0') << std::setw(4) << prediction_count
+		     << " " << matched << matched.size()-1 << std::endl; // -1 for trailing space.
+
 	    // We need to add one for the space after the letter predictor, that
 	    // is already subtracted.
 	    //
@@ -846,24 +846,24 @@ int pdt2( Logfile& l, Config& c ) {
       } //si over strs
 
       strs.clear();
-      
-      // If we had word matches, we win the space after the letter 
+
+      // If we had word matches, we win the space after the letter
       // classifier.
       //
       if ( (lsaved > 0) && (adjust > 0) ) {
 	lsaved = lsaved + adjust;
       }
-      
+
       keyssaved += savedhere;
       letterssaved += lsaved;
       sletterssaved += lsaved;
-      
+
       ++instance_count;
     } // i over words
 
     // Output Result for this sentence.
     //
-    file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " "; 
+    file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " ";
     file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << " ";
     file_out << sletterssaved << std::endl;
 
@@ -887,7 +887,7 @@ int pdt2( Logfile& l, Config& c ) {
   l.log( "SET pdt2_file to "+output_filename );
 
   return 0;
-}  
+}
 
 
 // Should implement caching? Threading, ...
@@ -908,21 +908,21 @@ void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::v
     //l.log( "ERROR: Timbl returned a classification error, aborting." );
     //error
   }
-  
-  result = tv->Name();	
+
+  result = tv->Name();
   size_t res_freq = tv->ValFreq();
-  
+
   double res_p = -1;
   bool target_in_dist = false;
   int target_freq = 0;
   int cnt = vd->size();
   int distr_count = vd->totalSize();
-  
+
   // Grok the distribution returned by Timbl.
   //
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   while ( it != vd->end() ) {
-    
+
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight(); // absolute frequency.
 
@@ -937,7 +937,7 @@ void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::v
 
   // We can take the top-n here, and recurse into generate_next (add a depth parameter)
   // with each top-n new instance. OR write a wrapper fun.
-  
+
 }
 
 // Recursive. How to do variable length? Use dc parameter instead of lenth?
@@ -978,8 +978,8 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
 
   std::vector<distr_elem>::iterator fi = res.begin();
   int cnt = depths.at( dc ); // was length
-  while ( (fi != res.end()) && (--cnt >= 0) ) { 
-    
+  while ( (fi != res.end()) && (--cnt >= 0) ) {
+
     //for ( int i = 5-length; i > 0; i--) { std::cout << "  ";}
     //std::cerr << length << ":" << cnt  << " " << ctx << " -> " << (*fi).name /* << ' ' << (*fi).freq */ << std::endl;
 
@@ -996,10 +996,10 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
     } else {
       generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
     }
-    
+
     fi++;
   }
-  
+
 }
 
 // --
@@ -1089,7 +1089,7 @@ void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx
 // h e  _   <- from window_word_letters(...)
 // e _ man  <- from extra space inserted
 // _ m man
-// 
+//
 void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<std::string>& res) {
   std::vector<std::string> words;
   std::vector<std::string>::iterator wi;
@@ -1100,7 +1100,7 @@ void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<
     // Also, redict the "current" word after the space.
     if ( i > 0 ) {
       ctx.push( "_" );
-      res.push_back( ctx.toString() + " " + words.at(i)); 
+      res.push_back( ctx.toString() + " " + words.at(i));
     }
     // Continue with the individual letters of the word.
     window_word_letters( words.at(i), words.at(i), lc, ctx, res );
@@ -1136,7 +1136,7 @@ int window_letters( Logfile& l, Config& c ) {
     l.log( "SET filename to "+output_filename );
     return 0;
   }
- 
+
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
@@ -1154,9 +1154,9 @@ int window_letters( Logfile& l, Config& c ) {
   std::vector<std::string>           results;
   std::vector<std::string>::iterator ri;
   Context ctx(lc);
-  
+
   if ( mode == 0 ) {
-    while ( file_in >> a_word ) { 
+    while ( file_in >> a_word ) {
 
       if ( ! first ) {
 	//window_word_letters( "_", a_word, lc, ctx, results );
@@ -1165,7 +1165,7 @@ int window_letters( Logfile& l, Config& c ) {
 	// normally. The last windowed prediction of each word predicts
 	// a _, therefore we need to push it in here.
 	ctx.push( "_" );
-	results.push_back( ctx.toString() + " " + a_word ); 
+	results.push_back( ctx.toString() + " " + a_word );
       }
       window_word_letters(a_word, a_word, lc, ctx, results);
       for ( ri = results.begin(); ri != results.end(); ri++ ) {
@@ -1176,7 +1176,7 @@ int window_letters( Logfile& l, Config& c ) {
     }
   } else if ( mode == 1 ) {
 
-    while( std::getline( file_in, a_line ) ) { 
+    while( std::getline( file_in, a_line ) ) {
       if ( a_line == "" ) {
 	continue;
       }
@@ -1193,7 +1193,7 @@ int window_letters( Logfile& l, Config& c ) {
 
   file_out.close();
   file_in.close();
-  
+
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;
@@ -1203,16 +1203,16 @@ int window_letters( Logfile& l, Config& c ) {
 int pdt( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
-}  
+}
 int pdt2( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
-}  
+}
 #endif
 
 /*
   Server/web demo
-  
+
   implement the following:
   1) init (inits the contexts till empty).
   2) type:x (adds ('types') letter x, add it to the letter context)
@@ -1238,7 +1238,7 @@ int pe_complete( PDT& pdt ) {
   //generate_tree( My_Experiment0, c, ctx0, strs0, length0, depths0, t0 );
 }
 
-#include "tinyxml.h"
+#include "wopr/tinyxml.h"
 
 void add_element(TiXmlElement* ele, const std::string& t, const std::string& v) {
   TiXmlElement *e  = new TiXmlElement( t );
@@ -1252,10 +1252,10 @@ Letter only, with a dummy wrd ibase, and no "ds" parameter:
 ../../wopr -l -r pdt2web -p lc0:8,timbl0:'-a1 +D',ibasefile0:nyt.3e7.10000.lt8m1_-a1+D.ibase,lc1:2,
                             timbl1:'-a1 +D',ibasefile1:dummy.l2r0_-a1+D.ibase,dl:5,users:10
 other terminal:
-echo "START" | nc localhost 1984 
-echo "FEED 0 T" | nc localhost 1984 
-echo "FEED 0 h" | nc localhost 1984 
-echo "GEN 0" | nc localhost 1984 
+echo "START" | nc localhost 1984
+echo "FEED 0 T" | nc localhost 1984
+echo "FEED 0 h" | nc localhost 1984
+echo "GEN 0" | nc localhost 1984
 */
 int pdt2web( Logfile& l, Config& c ) {
   l.log( "work in progress pdt2web" );
@@ -1279,24 +1279,24 @@ int pdt2web( Logfile& l, Config& c ) {
   UErrorCode status = U_ZERO_ERROR;
   UConverter *conv;
   int32_t     len;
-  
+
   // set up the converter
   //conv = ucnv_open("iso-8859-6", &status);
   conv = ucnv_open("utf-8", &status);
   assert(U_SUCCESS(status));
-  
-  // convert 
+
+  // convert
   len = ucnv_fromUChars(conv, target, 100, source, -1, &status);
   assert(U_SUCCESS(status));
-  
+
   // close the converter
   ucnv_close(conv);
-  
+
   std::string s(target);
   std::cerr << "-------->" << s << std::endl;
 
   // ---
-  
+
   static char const* const cp = "utf-8";
   ustr = "This öäå is rubbish Wye エイ ひ.く T1 ひき びき {pull} {tug} {jerk}.";
   std::string a_str = "This öäå is rubbish Wye エイ ひ.く T1 ひき びき {pull} {tug} {jerk}.";
@@ -1325,7 +1325,7 @@ int pdt2web( Logfile& l, Config& c ) {
     ret.assign( buf.begin(), buf.begin() + len );
     std::cerr << "-------->" << ret << std::endl;
   }
-  
+
   for ( int i = 0; i < ustr.length(); i++ ) {
     UnicodeString uc = ustr.charAt(i);
     std::string us;
@@ -1355,7 +1355,7 @@ int pdt2web( Logfile& l, Config& c ) {
   int                rc1             = stoi( c.get_value( "rc1", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
   int                pel             = stoi( c.get_value( "n", "3" )); // length. implicit in ds!
-  std::string        dl              = c.get_value( "dl", "3" ); // letter depth 
+  std::string        dl              = c.get_value( "dl", "3" ); // letter depth
   int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
   int                users           = stoi( c.get_value( "users", "5" )); // number of users/connections
 
@@ -1474,7 +1474,7 @@ int pdt2web( Logfile& l, Config& c ) {
 
 
   Sockets::ServerSocket server;
-  
+
   if ( ! server.connect( port )) {
     l.log( "ERROR: cannot start server: "+server.getMessage() );
     return 1;
@@ -1483,7 +1483,7 @@ int pdt2web( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot listen. ");
     return 1;
   };
-    
+
   bool run = true;
   std::vector<std::string> buf_tokens;
 
@@ -1511,8 +1511,8 @@ int pdt2web( Logfile& l, Config& c ) {
 
   while ( run ) {  // main accept() loop
 
-    l.log( "Listening..." );  
-    
+    l.log( "Listening..." );
+
     Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
     if ( !server.accept( *newSock ) ) {
       if( errno == EINTR ) {
@@ -1587,7 +1587,7 @@ int pdt2web( Logfile& l, Config& c ) {
       TiXmlElement     *element = new TiXmlElement( "result" );
       res_doc.LinkEndChild( decl );
       res_doc.LinkEndChild( element );
-      
+
       // These/this should be taken from PDT.
       //
       add_element( element, "ltr_ibasefile", ibasefile0 );
@@ -1612,7 +1612,7 @@ int pdt2web( Logfile& l, Config& c ) {
 
     // LTR 2 a
     // CTX 0
-    // 
+    //
     if ( buf_tokens.size() > 1 ) {
 
       std::string cmd = buf_tokens.at(0);
@@ -1638,7 +1638,7 @@ int pdt2web( Logfile& l, Config& c ) {
 	delete pdt;
 	pdts.at( pdt_idx ) = NULL;
 	newSock->write( ok_doc_str );
-      } else if ( cmd == "GEN" ) { 
+      } else if ( cmd == "GEN" ) {
       //
       // Generate from the contexts. First complete with the letter predictor,
       // then follow up with the word predictor.
@@ -1757,7 +1757,7 @@ int pdt2web( Logfile& l, Config& c ) {
 	for ( int i = 2; i < buf_tokens.size(); i++ ) {
 	  l.log("FEED: "+ buf_tokens.at(i));
 	  (void)explode( buf_tokens.at(i), letters );
-	  
+
 	  for ( int j = lpos; j < letters.size(); j++ ) {
 	    if ( letters.at(j) == " " ) {
 	      pdt->add_spc();
@@ -1811,14 +1811,14 @@ int pdt2web( Logfile& l, Config& c ) {
 	  }
 	  newSock->write( ok_doc_str );// should be answer
 	}
-	
+
       }
 
     }
 
     l.log( "connection closed." );
     delete newSock;
-    
+
   } // while true
 
   return 0;

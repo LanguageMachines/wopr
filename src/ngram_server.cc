@@ -43,16 +43,16 @@
 
 #include <math.h>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "runrunrun.h"
-#include "ngram_server.h"
-#include "ngram_elements.h"
-#include "ngrams.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/runrunrun.h"
+#include "wopr/ngram_server.h"
+#include "wopr/ngram_elements.h"
+#include "wopr/ngrams.h"
 
 #ifdef TIMBLSERVER
-#include "SocketBasics.h"
+#include "wopr/SocketBasics.h"
 #endif
 
 // ---------------------------------------------------------------------------
@@ -62,9 +62,9 @@
 #ifdef TIMBLSERVER
 /*
   On margretetorp:
-  terminal1: pberck@margretetorp ~/work/prog/sources/wopr $ 
+  terminal1: pberck@margretetorp ~/work/prog/sources/wopr $
              ./wopr -r ngs -p port:1984,ngl:test/austen.txt.ngl3f0,resm:1,verbose:1
-  terminal2: echo "Admiral hates trouble"  | nc localhost 1984 
+  terminal2: echo "Admiral hates trouble"  | nc localhost 1984
 */
 int ngram_server(Logfile& l, Config& c) {
   l.log( "ngs" );
@@ -119,7 +119,7 @@ int ngram_server(Logfile& l, Config& c) {
   // ngram can contain spaces. freq is ignored at the mo.
   // NB: input and stod are not checked for errors (TODO).
   //
-  while( std::getline( file_ngl, a_line ) ) {  
+  while( std::getline( file_ngl, a_line ) ) {
     pos      = a_line.rfind(' ');
     prob_str = a_line.substr(pos+1);
     prob     = stod( prob_str );
@@ -127,11 +127,11 @@ int ngram_server(Logfile& l, Config& c) {
     pos1     = a_line.rfind(' ', pos-1);
     //freq_str = a_line.substr(pos1+1, pos-pos1-1);
     ngram    = a_line.substr(0, pos1);
-    
+
     ngrams[ngram] = prob;
   }
   file_ngl.close();
-  
+
   Sockets::ServerSocket server;
 
   if ( ! server.connect( port )) {
@@ -145,7 +145,7 @@ int ngram_server(Logfile& l, Config& c) {
 
   l.log( "Starting server..." );
   std::string buf;
-  while ( true ) { 
+  while ( true ) {
     Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
     if ( !server.accept( *newSock ) ) {
       if( errno == EINTR ) {
@@ -172,11 +172,11 @@ int ngram_server(Logfile& l, Config& c) {
 	l.log( "[" + buf + "]" );
       }
       // process one line...
-      
+
       std::vector<ngram_elem> best_ngrams;
       std::vector<std::string> results;
       int foo = ngram_one_line( buf, n, ngrams, best_ngrams, results, l );
-      
+
       double sum_l10probs = 0.0;
       int wc = 0;
       std::vector<ngram_elem>::iterator ni;
@@ -203,7 +203,7 @@ int ngram_server(Logfile& l, Config& c) {
 	l.log( to_str(sum_l10probs));
       }
       newSock->write( to_str(sum_l10probs));
-      
+
       buf.clear();
     }
     delete newSock;
@@ -216,6 +216,6 @@ int ngram_server( Logfile& l, Config& c ) {
   l.log( "No TIMBLSERVER support." );
   return -1;
 }
-#endif 
+#endif
 
 // ---------------------------------------------------------------------------

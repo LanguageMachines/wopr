@@ -44,10 +44,10 @@
 #include <pthread.h>
 #include <sys/msg.h>
 
-#include "qlog.h"
-#include "Config.h"
-#include "util.h"
-#include "watcher.h"
+#include "wopr/qlog.h"
+#include "wopr/Config.h"
+#include "wopr/util.h"
+#include "wopr/watcher.h"
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -74,7 +74,7 @@ extern "C" void* watcher( void *params ) {
 	c->set_status(0);
       }
     }
-    
+
   }
 }
 
