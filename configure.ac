@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(wopr, 1.38.3)
+AC_PREREQ([2.60])
+AC_INIT(wopr, 1.38.4-RC1)
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
@@ -9,6 +10,8 @@ AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE
 
 AC_PROG_CXX
+AC_PROG_AWK
+AC_PROG_LEX
 AC_PROG_INSTALL
 
 AC_PROG_LIBTOOL
@@ -222,5 +225,24 @@ else
 fi
 # ---
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile
+                 include/Makefile
+                 include/wopr/Makefile
+		 m4/Makefile
+                 src/Makefile
+		 etc/Makefile
+		 man/Makefile
+		 web/Makefile
+		 web/compoli/Makefile
+		 web/images/Makefile
+		 web/js/Makefile
+		 web/pdt/Makefile
+		 web/wopr/Makefile
+		 web/wopr/css/Makefile
+		 web/wopr/js/Makefile
+		 web/generator/Makefile
+		 web/generator/js/Makefile
+		 stimpy/Makefile
+                 doc/Makefile])
+AC_OUTPUT
 

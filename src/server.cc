@@ -92,7 +92,7 @@
 #endif
 
 #define BACKLOG 5     // how many pending connections queue will hold
-#define MAXDATASIZE 2048 // max number of bytes we can get at once 
+#define MAXDATASIZE 2048 // max number of bytes we can get at once
 
 void sigchld_handler( int s ) {
   while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -107,7 +107,7 @@ test$ ../wopr -r server2 -p ibasefile:reuters.martin.tok.1000.ws3.ibase,lexicon:
 #ifdef TIMBL
 int server2(Logfile& l, Config& c) {
   l.log( "server2. Deprecated." );
-  
+
   const std::string& timbl  = c.get_value( "timbl" );
   const std::string port    = c.get_value( "port", "1984" );
   const int precision = stoi( c.get_value( "precision", "10" )); // c++ output
@@ -179,7 +179,7 @@ int server2(Logfile& l, Config& c) {
   double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  
+
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
@@ -188,7 +188,7 @@ int server2(Logfile& l, Config& c) {
     // here we start socket server and wait/process.
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -197,7 +197,7 @@ int server2(Logfile& l, Config& c) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    
+
     l.log( "Starting server..." );
 
     // loop
@@ -226,34 +226,34 @@ int server2(Logfile& l, Config& c) {
       // Measure processing time.
       //
       long f1 = l.clock_mu_secs();
-	  
+
       if ( c.get_status() && ( ! fork() )) { // this is the child process
-		
+
 		bool connection_open = true;
 		while ( connection_open ) {
-		  
+
 		  long f000 = l.clock_mu_secs();
-		  
+
 		  std::string tmp_buf;
 		  newSock->read( tmp_buf );
 		  tmp_buf = trim( tmp_buf, " \n\r" );
-		  
+
 		  long f001 = l.clock_mu_secs();
 		  long diff001 = f001 - f000;
 		  l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
-		  
+
 		  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
 			connection_open = false;
 			break;
 		  }
-		  
+
 		  // ----
 		  // here we got a line to test. Now what if this were a filename?
 		  // Start looping over file here.
 		  // ----
-		  
+
 		  if ( tmp_buf.substr( 0, 5 ) == "file:" ) {
-			
+
 			l.log( "NOTICE: file mode in socket!" );
 			int pos = tmp_buf.find( ':', 0 );
 			if ( pos != std::string::npos ) {
@@ -267,10 +267,10 @@ int server2(Logfile& l, Config& c) {
 			  l.log( "ERROR: cannot parse filename." );
 			}
 		  }
-		  
+
 		  //
 		  // ----
-		  
+
 		  // Hapax.
 		  //
 		  std::string classify_line;
@@ -279,20 +279,20 @@ int server2(Logfile& l, Config& c) {
 		  } else {
 			classify_line = tmp_buf;
 		  }
-		  
+
 		  // Start & end symbols. Set sentence:0 to enable.
 		  //
 		  std::string ssym = "<s>";
 		  std::string esym = "</s>";
 		  if ( sentence == 1 ) {
-			classify_line = ssym + " " + classify_line + " " + esym; 
+			classify_line = ssym + " " + classify_line + " " + esym;
 		  }
 		  l.log( "|" + classify_line + "|" );
-		  
+
 		  std::vector<std::string> results;
 		  std::vector<std::string> targets;
 		  std::vector<std::string>::iterator ri;
-		  
+
 		  // The targets are in a seperate array, which is (in this case)
 		  // the same as the input line.
 		  //
@@ -303,13 +303,13 @@ int server2(Logfile& l, Config& c) {
 			t = tmp_buf;
 		  }
 		  if ( sentence == 1 ) {
-			t = ssym + " " + t + " " + esym; 
+			t = ssym + " " + t + " " + esym;
 		  }
 		  Tokenize( t, targets, ' ' );
 		  std::vector<std::string>::iterator ti = targets.begin();
-		  
+
 		  double total_logprob = 0.0; // Sum of log2(p)
-		  
+
 		  // The JSON reply to the client (nc or timbl.php).
 		  //
 		  std::string q;
@@ -322,7 +322,7 @@ int server2(Logfile& l, Config& c) {
 			js_cl = q+"classifications"+q+":[";
 			js_p  = q+"probs"+q+":["; // what kind op probabilities
 		  }
-		  
+
 		  // results is an array with the line windowed.
 		  // The targets are in another array.
 		  //
@@ -330,11 +330,11 @@ int server2(Logfile& l, Config& c) {
 		  //
 		  window( classify_line, t, ws, 0, 0, false, results );
 		  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-			
+
 			std::string cl = *ri;
-			
+
 			//l.log( cl ); // debug output
-			
+
 			// Classify this buf.
 			//
 			// Update: If the last word in the context (the word before the
@@ -344,7 +344,7 @@ int server2(Logfile& l, Config& c) {
 			// containing everything.
 			//
 			std::string target = *ti; // was *ri
-			
+
 			// Determine word before target. Look it up.
 			// If unknow, skip classification because it will only
 			// return the default distro (big).
@@ -359,7 +359,7 @@ int server2(Logfile& l, Config& c) {
 			  lc_unknown = true;
 			  }
 			*/
-			
+
 			if ( lc_unknown == false ) {
 			  //My_Experiment->Classify( cl, result, distrib, distance );
 			  tv = My_Experiment->Classify( cl, vd, distance );
@@ -378,12 +378,12 @@ int server2(Logfile& l, Config& c) {
 			  distrib  = "{}";
 			  distance = 10.0;
 			}
-			
+
 			// Grok the distribution returned by Timbl.
 			//
 			std::map<std::string, double> res;
 			parse_distribution2( vd, res ); // was parse_distribution(...)
-			
+
 			// Start calculating.
 			//
 			double prob = 0.0;
@@ -407,7 +407,7 @@ int server2(Logfile& l, Config& c) {
 			  std::map<std::string,int>::iterator wfi = wfreqs.find(target);
 			  if ( wfi == wfreqs.end() ) { // not found.
 				if ( output == 1) {
-				  js_p = js_p + "{" + q + json_safe(target) + q + ":" 
+				  js_p = js_p + "{" + q + json_safe(target) + q + ":"
 					+ q + "unk" + q + "}";
 				}
 			  } else {
@@ -415,7 +415,7 @@ int server2(Logfile& l, Config& c) {
 				//
 				prob = (int)(*wfi).second / (double)total_count ;
 				if ( output == 1) {
-				  js_p = js_p + "{" + q + json_safe(target) + q + ":" 
+				  js_p = js_p + "{" + q + json_safe(target) + q + ":"
 					+ q + "lex" + q + "}";
 				}
 			  }
@@ -426,38 +426,38 @@ int server2(Logfile& l, Config& c) {
 			  //
 			  prob = (*foo).second;
 			  if ( output == 1 ) {
-				js_p = js_p + "{" + q + json_safe(target) + q + ":" 
+				js_p = js_p + "{" + q + json_safe(target) + q + ":"
 				  + q + "dist" + q + "}";
 			  }
 			}
-			
+
 			// Good Turing smoothing oid. implementeren :)
 			//
 			if ( prob == 0.0 ) {
 			  prob = unk_prob; // KLUDGE!!! for testing.
 			}
 			total_logprob += log2( prob );
-			
+
 			if ( verbose == 1 ) {
 			  l.log( "[" + cl + "] = " + result );
 			}
 
 	  /* Takes time!
-	  std::cout << "[" << cl << "] = " << result 
+	  std::cout << "[" << cl << "] = " << result
 		    << "/" << distance << " "
-		    << res.size() << " " 
+		    << res.size() << " "
 		    << "p("+target+")=" << prob
 		    << std::endl;
 	  //std::cout << distrib << std::endl;
 	  */
 
 			if ( output == 1 ) {
-			  json = json + "{" + q + json_safe(result) + q + ":" 
+			  json = json + "{" + q + json_safe(result) + q + ":"
 				+ q + to_str( prob, precision ) + q + "}";
-			  
-			  js_cl = js_cl + "{" + q + json_safe(target) + q + ":" 
+
+			  js_cl = js_cl + "{" + q + json_safe(target) + q + ":"
 				+ q + json_safe(result) + q + "}";
-			  
+
 			  if ( ri != results.end()-1 ) { // add a comma except for the last
 				json  = json  + ",";
 				js_cl = js_cl + ",";
@@ -465,62 +465,62 @@ int server2(Logfile& l, Config& c) {
 			  }
 			}
 			result = result + " " + to_str(prob, precision) + "\n"; // not used?
-			
+
 			//if (send(new_fd, result.c_str(), result.length(), 0) == -1)
 			//perror("send");
-			
+
 			ti++;
 		  } // end sentence
-		  
+
 		  long f2 = l.clock_mu_secs();
 		  long diff_mu_secs = f2 - f001;
 		  l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
-		  
+
 		  total_logprob = - total_logprob;
 		  double avg_logprob = total_logprob / (double)results.size();
 		  double total_prplx = pow( 2, avg_logprob );
 		  l.log( "total_prplx = " + to_str(total_prplx) );
 		  result = to_str(total_prplx, precision) + "\n";
-		  
+
 		  if ( output == 1 ) {
-			json = json + "]," + q + "prplx" + q + ":" 
+			json = json + "]," + q + "prplx" + q + ":"
 			  + q + to_str(total_prplx, precision) + q;
-			
+
 			js_cl = js_cl + "]";
 			js_p = js_p + "]";
-			
+
 			json = json + "," + q + "ibasefile" + q + ":"
 			  + q + c.get_value( "ibasefile" ) + q;
-			
+
 			json = json + "," + q + "lexicon" + q + ":"
 			  + q + lexicon_filename + q;
-			
+
 			json = json + "," + q + "total_count" + q + ":"
 			  + q + to_str( total_count ) + q;
-			
+
 			json = json + "," + q + "status" + q + ":"
 			  + q + "ok" + q;
-			
+
 			json = json + "," + q + "microseconds" + q + ":"
 			  + q + to_str(diff_mu_secs) + q;
-			
-			json = json + "," + js_cl; 
-			json = json + "," + js_p; 
-			
+
+			json = json + "," + js_cl;
+			json = json + "," + js_p;
+
 			json = json + " }\n";
-			
+
 			// Should send extra info from c?
-			
+
 			newSock->write( json );
 		  }
-		  
+
 		  if ( output == 0 ) { // 0 is perplexity only
 			std::string p = to_str(total_prplx) + "\n";
 			newSock->write( p );
 		  }
-		  
+
 		  //close(new_fd);
-		  
+
 		  long f3 = l.clock_mu_secs();
 		  long diff2_mu_secs = f3 - f2;
 		  l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
@@ -594,12 +594,12 @@ int parse_distribution2( const Timbl::ValueDistribution* vd,
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   int cnt = vd->size();
   int distr_count = vd->totalSize();
-  
+
   while ( it != vd->end() ) {
-    
+
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
-    
+
     // Prob. of this item in distribution.
     //
     double prob = (double)wght / (double)distr_count;
@@ -660,7 +660,7 @@ int parse_distribution( std::string dist, std::map<std::string, double>& res ) {
   //
   for( std::map<std::string,double>::iterator iter = res.begin(); iter != res.end(); iter++ ) {
     //std::cout << (*iter).first << " " << (*iter).second << "\n";
-    (*iter).second = (double)(*iter).second / (double)sum; 
+    (*iter).second = (double)(*iter).second / (double)sum;
     //std::cout << (*iter).first << " " << (*iter).second << "\n";
   }
 
@@ -672,7 +672,7 @@ int parse_distribution( std::string dist, std::map<std::string, double>& res ) {
 #ifdef TIMBL
 int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 		 const std::string& fn,
-		 std::map<std::string,int>& wfreqs, 
+		 std::map<std::string,int>& wfreqs,
 		 unsigned long total_count) {
 
   int ws = stoi( c.get_value( "ws", "7" ));
@@ -721,7 +721,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
     std::string ssym = "<s>";
     std::string esym = "</s>";
     if ( sentence == 1 ) {
-      classify_line = ssym + " " + classify_line + " " + esym; 
+      classify_line = ssym + " " + classify_line + " " + esym;
     }
     l.log( "|" + classify_line + "|" );
 
@@ -739,11 +739,11 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       t = tmp_buf;
     }
     if ( sentence == 1 ) {
-      t = ssym + " " + t + " " + esym; 
+      t = ssym + " " + t + " " + esym;
     }
     Tokenize( t, targets, ' ' );
     std::vector<std::string>::iterator ti = targets.begin();
-    
+
     double total_logprob = 0.0; // Sum of log2(p)
 
     // results is an array with the line windowed.
@@ -753,11 +753,11 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
     //
     window( classify_line, t, ws, 0, 0, false, results );
     for ( ri = results.begin(); ri != results.end(); ri++ ) {
-      
+
       std::string cl = *ri;
-	  
+
       //l.log( cl ); // debug output
-      
+
       // Classify this buf.
       //
       // Update: If the last word in the context (the word before the
@@ -767,7 +767,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       // containing everything.
       //
       std::string target = *ti; // was *ri
-      
+
       // Determine word before target. Look it up.
       //
       std::vector<std::string> lcs; // left context, last word.
@@ -778,7 +778,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       if ( ( lc != "_") && (wfi == wfreqs.end()) ) {
 	lc_unknown = true;
       }
-      
+
       if ( lc_unknown == false ) {
 	//My_Experiment->Classify( cl, result, distrib, distance );
 	tv = My_Experiment->Classify( cl, vd, distance );
@@ -803,7 +803,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
       std::map<std::string, double> res;
       //parse_distribution( distrib, res );
       parse_distribution2( vd, res );
-      
+
       // Start calculating.
       //
       double prob = 0.0;
@@ -834,18 +834,18 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 	// verbose output removed
       }
       //419
-   
+
       // Good Turing smoothing oid. implementeren :)
       //
       if ( prob == 0.0 ) {
 	prob = unk_prob; // KLUDGE!!! for testing.
       }
       total_logprob += log2( prob );
-      
+
       if ( verbose == 1 ) {
 	l.log( "[" + cl + "] = " + result );
       }
-      
+
       // verbose output removed
 
       ti++;
@@ -897,7 +897,7 @@ int server3( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }
-#endif 
+#endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
 /*
@@ -912,7 +912,7 @@ int server3( Logfile& l, Config& c ) {
 */
 int server4(Logfile& l, Config& c) {
   l.log( "server4. Returns a log10prob over sequence." );
-  
+
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
@@ -948,7 +948,7 @@ int server4(Logfile& l, Config& c) {
   l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
   l.dec_prefix();
 
-  // Load lexicon. 
+  // Load lexicon.
   //
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
@@ -984,7 +984,7 @@ int server4(Logfile& l, Config& c) {
   double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  
+
   signal(SIGCHLD, SIG_IGN);
   volatile sig_atomic_t running = 1;
 
@@ -993,7 +993,7 @@ int server4(Logfile& l, Config& c) {
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -1002,9 +1002,9 @@ int server4(Logfile& l, Config& c) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    
+
     while ( running ) {  // main accept() loop
-      l.log( "Listening..." );  
+      l.log( "Listening..." );
 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
@@ -1023,7 +1023,7 @@ int server4(Logfile& l, Config& c) {
       //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
       int cpid = fork();
       if ( cpid == 0 ) { // child process
-	
+
 	std::string buf;
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
@@ -1045,7 +1045,7 @@ int server4(Logfile& l, Config& c) {
 	    connection_open = false;
 	    break;
 	  }
-	  
+
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = 0;
@@ -1064,11 +1064,11 @@ int server4(Logfile& l, Config& c) {
 	    break;
 	  }
 
-	  
+
 	  if ( verbose > 0 ) {
 	    l.log( "|" + tmp_buf + "|" );
 	  }
-	  
+
 	  // Remove <s> </s> if so requested.
 	  //
 	  if ( skip_sm == true ) {
@@ -1081,15 +1081,15 @@ int server4(Logfile& l, Config& c) {
 	    }
 	    if ( verbose > 1 ) {
 	      l.log( "|" + tmp_buf + "| skm" );
-	    }	      
-	    
+	    }
+
 	  }
-	  
+
 	  cls.clear();
-	  
+
 	  std::string classify_line = tmp_buf;
 	  std::string full_string = classify_line; // needed for cache.
-	  
+
 	  // Check the cache
 	  //
 	  std::string cache_ans = cache->get( classify_line );
@@ -1100,7 +1100,7 @@ int server4(Logfile& l, Config& c) {
 	    newSock->write(  cache_ans + '\n' ); //moses format?
 	    continue;
 	  }
-	  
+
 	  // Sentence based, window here, classify all, etc.
 	  //
 	  if ( mode == 1 ) {
@@ -1108,16 +1108,16 @@ int server4(Logfile& l, Config& c) {
 	  } else {
 	    cls.push_back( classify_line );
 	  }
-	  
+
 	  // Loop over all lines.
 	  //
 	  std::vector<std::string> words;
 
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
-	    
+
 	    classify_line = cls.at(i);
-	    
+
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
 
@@ -1130,7 +1130,7 @@ int server4(Logfile& l, Config& c) {
 			l.log( "|" + classify_line + "| hpx" );
 	      }
 	    }
-	    
+
 	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
 	    if ( verbose > 2 ) {
 	      l.log( "Check instance cache: ["+classify_line+"]" );
@@ -1142,20 +1142,20 @@ int server4(Logfile& l, Config& c) {
 	      }
 	      res_pl10 = stod(cache_ans); // stod() slows it down?
 	    } else {
-	      
+
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
 	      // that for the instances-without-target
 	      //
 	      std::string target = words.at( words.size()-1 );
-	      
+
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
 	      if ( ! tv ) {
 		l.log( "ERROR: Timbl returned a classification error, aborting." );
 		break;
 	      }
 
-	      result = tv->Name();		
+	      result = tv->Name();
 	      size_t res_freq = tv->ValFreq();
 
 	      if ( verbose > 1 ) {
@@ -1167,20 +1167,20 @@ int server4(Logfile& l, Config& c) {
 	      int target_freq = 0;
 	      int cnt = vd->size();
 	      int distr_count = vd->totalSize();
-	      
+
 	      if ( result == target ) {
 		res_p = res_freq / distr_count;
-	      } 
+	      }
 	      //
 	      // Grok the distribution returned by Timbl.
 	      //
 	      std::map<std::string, double> res;
-	      Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
-		
+
 		std::string tvs  = it->second->Value()->Name();
 		double      wght = it->second->Weight(); // absolute frequency.
-		
+
 		if ( tvs == target ) { // The correct answer was in the distribution!
 		  target_freq = wght;
 		  target_in_dist = true;
@@ -1188,14 +1188,14 @@ int server4(Logfile& l, Config& c) {
 		    l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
 		  }
 		}
-		
+
 		++it;
 	      } // end loop distribution
-	      
+
 	      if ( target_freq > 0 ) { //distr_count allways > 0.
 		res_p = (double)target_freq / (double)distr_count;
 	      }
-	      
+
 	      if ( resm == 2 ) {
 		res_pl10 = 0; // average w/o OOV words
 	      }
@@ -1216,20 +1216,20 @@ int server4(Logfile& l, Config& c) {
 	      if ( verbose > 1 ) {
 		l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	      }
-	      
+
 	      if ( verbose > 2 ) {
                 l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
               }
               icache->add( classify_line, to_str(res_pl10) );
-              
+
 	    } // end not in cache
-	    
+
 	    probs.push_back( res_pl10 ); // store for later.
-	    
+
 	  } // i loop
-	  
+
 	  //l.log( "Probs: "+ to_str(probs.size() ));
-	  
+
 	  double ave_pl10 = 0.0;
 	  for ( int p = 0; p < probs.size(); p++ ) {
 	    double prob = probs.at(p);
@@ -1242,11 +1242,11 @@ int server4(Logfile& l, Config& c) {
 	    ave_pl10 /= probs.size();
 	  }
 	  // else resm == 1, we return the sum.
-	  
+
 	  if ( verbose > 0 ) {
 	    l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	  }
-	  
+
 	  if ( lb == 0 ) { // lb:0 is no logs
 	    ave_pl10 = pow(10, ave_pl10);
 	  }
@@ -1256,7 +1256,7 @@ int server4(Logfile& l, Config& c) {
 	    newSock->write( ans + "\n" );
 	  } else if ( moses == 1 ) { // 6 char output for moses
 	    char res_str[7];
-	    
+
 	    snprintf( res_str, 7, "%f2.3", ave_pl10 );
 	    //std::cerr << "(" << res_str << ")" << std::endl;
 	    newSock->write( res_str );
@@ -1264,9 +1264,9 @@ int server4(Logfile& l, Config& c) {
 	  }
 	  connection_open = (keep == 1);
 	  //connection_open = false;
-	  
+
 	} // connection_open
-	
+
 	l.log( "connection closed." );
 	if ( ! running ) {
 	  // Rather crude, children with connexion keep working
@@ -1280,21 +1280,21 @@ int server4(Logfile& l, Config& c) {
 	l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
 	l.log( icache->stat() );
 	_exit(0);
-	
+
       } else if ( cpid == -1 ) { // fork failed
 		l.log( "Error forking." );
 		perror("fork");
 		return(1);
       }
       delete newSock;
-	  
+
     } // running
   } // try
   catch ( const std::exception& e ) {
     l.log( std::string("ERROR: exception caught: ") + e.what() );
     return -1;
   }
-  
+
   return 0;
 }
 #else
@@ -1302,7 +1302,7 @@ int server4( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }
-#endif 
+#endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL) && defined(HAVE_FOLIA)
 /*
@@ -1310,7 +1310,7 @@ int server4( Logfile& l, Config& c ) {
 */
 int xmlserver(Logfile& l, Config& c) {
   l.log( "xmlserver. Returns a FoLiA document over a sequence." );
-  
+
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
@@ -1344,7 +1344,7 @@ int xmlserver(Logfile& l, Config& c) {
   l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
   l.dec_prefix();
 
-  // Load lexicon. 
+  // Load lexicon.
   //
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
@@ -1381,7 +1381,7 @@ int xmlserver(Logfile& l, Config& c) {
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -1390,9 +1390,9 @@ int xmlserver(Logfile& l, Config& c) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    
+
     while ( running ) {  // main accept() loop
-      l.log( "Listening..." );  
+      l.log( "Listening..." );
 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
@@ -1411,7 +1411,7 @@ int xmlserver(Logfile& l, Config& c) {
       //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
       int cpid = fork();
       if ( cpid == 0 ) { // child process
-	
+
 	std::string buf;
       	bool connection_open = true;
 
@@ -1425,7 +1425,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    connection_open = false;
 	    break;
 	  }
-	  
+
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = 0;
@@ -1444,11 +1444,11 @@ int xmlserver(Logfile& l, Config& c) {
 	    break;
 	  }
 
-	  
+
 	  if ( verbose > 0 ) {
 	    l.log( "|" + tmp_buf + "|" );
 	  }
-	  
+
 	  // Remove <s> </s> if so requested.
 	  //
 	  if ( skip_sm == true ) {
@@ -1461,13 +1461,13 @@ int xmlserver(Logfile& l, Config& c) {
 	    }
 	    if ( verbose > 1 ) {
 	      l.log( "|" + tmp_buf + "| skm" );
-	    }	      
-	    
+	    }
+
 	  }
-	  
+
 	  std::string classify_line = tmp_buf;
 	  std::vector<std::string> cls; // classify lines
-	  
+
 	  // Sentence based, window here, classify all, etc.
 	  //
 	  if ( mode == 1 ) {
@@ -1478,8 +1478,8 @@ int xmlserver(Logfile& l, Config& c) {
 
 	  // init a new FoLiA XML document
 	  folia::Document doc( "id='wopr'" );
-	  doc.declare( folia::AnnotationType::METRIC, 
-		       "metricset", 
+	  doc.declare( folia::AnnotationType::METRIC,
+		       "metricset",
 		       "annotator='wopr'" );
 	  folia::Text *text = new folia::Text( &doc, "id='wopr.t'" );
 	  doc.append( text );
@@ -1494,7 +1494,7 @@ int xmlserver(Logfile& l, Config& c) {
 	  //
 
 	  for ( size_t i = 0; i < cls.size(); i++ ) {
-	    
+
 	    classify_line = cls.at(i);
 	    std::vector<std::string> words;
 	    Tokenize( classify_line, words, ' ' );
@@ -1508,9 +1508,9 @@ int xmlserver(Logfile& l, Config& c) {
 		l.log( "|" + classify_line + "| hpx" );
 	      }
 	    }
-	    
+
 	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
-	      
+
 	    // if we take target from a pre-non-hapaxed vector, we
 	    // can hapax the whole sentence in the beginning and use
 	    // that for the instances-without-target
@@ -1525,7 +1525,7 @@ int xmlserver(Logfile& l, Config& c) {
 	      break;
 	    }
 
-	    std::string result = tv->Name();		
+	    std::string result = tv->Name();
 	    size_t res_freq = tv->ValFreq();
 
 	    if ( verbose > 1 ) {
@@ -1535,16 +1535,16 @@ int xmlserver(Logfile& l, Config& c) {
 	    double res_p = DBL_EPSILON;
 	    double target_freq = 0.0;
 	    int distr_count = vd->totalSize();
-	      
+
 	    if ( result == target ) {
 	      res_p = res_freq / distr_count;
-	    } 
+	    }
 	    //
 	    // Grok the distribution returned by Timbl.
 	    //
-	    Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	    while ( it != vd->end() ) {
-		
+
 	      std::string tvs  = it->second->Value()->Name();
 	      if ( tvs == target ) { // The correct answer was in the distribution!
 		target_freq = it->second->Weight(); // absolute frequency.
@@ -1555,11 +1555,11 @@ int xmlserver(Logfile& l, Config& c) {
 	      }
 	      ++it;
 	    } // end loop distribution
-	    
+
 	    if ( target_freq > 0 ) { //distr_count allways > 0.
 	      res_p = (double)target_freq / (double)distr_count;
 	    }
-	      
+
 	    if ( res_p > DBL_EPSILON ) {
 	      res_pl10 = log10( res_p );
 	    } else {
@@ -1589,13 +1589,13 @@ int xmlserver(Logfile& l, Config& c) {
 	    if ( verbose > 1 ) {
 	      l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	    }
-	      
+
 	    probs.push_back( res_pl10 ); // store for later.
-	    
+
 	  } // i loop
-	  
+
 	  //l.log( "Probs: "+ to_str(probs.size() ));
-	  
+
 	  double ave_pl10 = 0.0;
 	  for ( size_t p = 0; p < probs.size(); p++ ) {
 	    double prob = probs.at(p);
@@ -1606,11 +1606,11 @@ int xmlserver(Logfile& l, Config& c) {
 	  }
 
 	  ave_pl10 /= probs.size();
-	  
+
 	  if ( verbose > 0 ) {
 	    l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	  }
-	  
+
 	  if ( lb == 0 ) { // lb:0 is no logs
 	    ave_pl10 = pow(10, ave_pl10);
 	  }
@@ -1620,17 +1620,17 @@ int xmlserver(Logfile& l, Config& c) {
 	  std::string avg10 = to_str(ave_pl10);
 	  std::string entro = to_str(entropy);
 	  std::string perpl = to_str(perplexity);
-	  folia::MetricAnnotation *m 
+	  folia::MetricAnnotation *m
 	    = new folia::MetricAnnotation( &doc,
-					   "class='avg_prob10', value='" 
+					   "class='avg_prob10', value='"
 					   + avg10 + "'" );
 	  s->append( m );
 	  m = new folia::MetricAnnotation( &doc,
-					   "class='entropy', value='" + 
+					   "class='entropy', value='" +
 					   entro + "'" );
 	  s->append( m );
 	  m = new folia::MetricAnnotation( &doc,
-					   "class='perplexity', value='" + 
+					   "class='perplexity', value='" +
 					   perpl + "'" );
 	  s->append( m );
 	  std::ostringstream os;
@@ -1638,9 +1638,9 @@ int xmlserver(Logfile& l, Config& c) {
 	  newSock->write( os.str() );
 	  connection_open = (keep == 1);
 	  //connection_open = false;
-	  
+
 	} // connection_open
-	
+
         l.log( "connection closed." );
 	if ( ! running ) {
 	  // Rather crude, children with connexion keep working
@@ -1662,7 +1662,7 @@ int xmlserver(Logfile& l, Config& c) {
     l.log( std::string("ERROR: exception caught: ") + e.what() );
     return -1;
   }
-  
+
   return 0;
 }
 #else
@@ -1670,12 +1670,12 @@ int xmlserver( Logfile& l, Config& c ) {
   l.log( "No TIMBL or FoLiA support." );
   return -1;
 }
-#endif 
+#endif
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int mbmt(Logfile& l, Config& c) {
   l.log( "server for (pbmb) machine translation. Returns a (log10)prob over sequence." );
-  
+
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
@@ -1711,7 +1711,7 @@ int mbmt(Logfile& l, Config& c) {
   l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
   l.dec_prefix();
 
-  // Load lexicon. 
+  // Load lexicon.
   //
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
@@ -1747,7 +1747,7 @@ int mbmt(Logfile& l, Config& c) {
   double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  
+
   signal(SIGCHLD, SIG_IGN);
   volatile sig_atomic_t running = 1;
 
@@ -1756,7 +1756,7 @@ int mbmt(Logfile& l, Config& c) {
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -1765,9 +1765,9 @@ int mbmt(Logfile& l, Config& c) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    
+
     while ( running ) {  // main accept() loop
-      l.log( "Listening..." );  
+      l.log( "Listening..." );
 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
@@ -1787,7 +1787,7 @@ int mbmt(Logfile& l, Config& c) {
       bool connection_open = true;
       std::vector<std::string> cls; // classify lines
       std::vector<double> probs;
-      
+
       // Local cache. Useful for pbmbmt which holds connection
       // the whole time. Seperate cache for instances and whole
       // inputs (otherwise mixing!):
@@ -1800,18 +1800,18 @@ int mbmt(Logfile& l, Config& c) {
       //
       Cache *cache = new Cache( cachesize ); // whole input
       Cache *icache = new Cache( cachesize ); // instances
-      
+
       while ( running & connection_open ) {
-	
+
 	std::string classify_line;
 	newSock->read( classify_line );
 	classify_line = trim( classify_line, " \n\r" );
-	
+
 	if ( classify_line.length() == 0 ) {
 	  connection_open = false;
 	  break;
 	}
-	
+
 	// So we can do:
 	// kill `echo "_PPID_" | nc localhost 8888`
 	// from a script
@@ -1828,7 +1828,7 @@ int mbmt(Logfile& l, Config& c) {
 	}
 
 	cls.clear();
-	
+
 	// Check the cache
 	//
 	if ( verbose > 2 ) {
@@ -1853,12 +1853,12 @@ int mbmt(Logfile& l, Config& c) {
 	  std::vector<std::string> words;
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
-	    
+
 	    classify_line = cls.at(i);
-	    
+
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
-	    
+
 	    if ( hapax > 0 ) {
 	      int c = hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
@@ -1868,9 +1868,9 @@ int mbmt(Logfile& l, Config& c) {
 		l.log( "|" + classify_line + "| hpx" );
 	      }
 	    }
-	    
+
 	    double res_pl10 = -99; // or zero, like SRILM when pplx-ing
-	    
+
 	    if ( verbose > 2 ) {
 	      l.log( "Check instance cache: ["+classify_line+"]" );
 	    }
@@ -1881,53 +1881,53 @@ int mbmt(Logfile& l, Config& c) {
 	      }
 	      res_pl10 = stod(cache_ans); // stod() slows it down?
 	    } else {
-	      
+
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
 	      // that for the instances-without-target
 	      //
 	      std::string target = words.at( words.size()-1 );
-	      
+
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
 	      if ( ! tv ) {
 		l.log( "ERROR: Timbl returned a classification error, aborting." );
 		break;
 	      }
-	      
-	      result = tv->Name();		
+
+	      result = tv->Name();
 	      size_t res_freq = tv->ValFreq();
-	      
+
 	      double res_p = -1;
 	      bool target_in_dist = false;
 	      int target_freq = 0;
 	      int cnt = vd->size();
 	      int distr_count = vd->totalSize();
-	      
+
 	      if ( result == target ) {
 		res_p = res_freq / distr_count;
-	      } 
+	      }
 	      //
 	      // Grok the distribution returned by Timbl.
 	      //
-	      Timbl::ValueDistribution::dist_iterator it = vd->begin();		  
+	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
-		
+
 		std::string tvs  = it->second->Value()->Name();
 		double      wght = it->second->Weight(); // absolute frequency.
-		
+
 		if ( tvs == target ) { // The correct answer was in the distribution!
 		  target_freq = wght;
 		  target_in_dist = true;
 		  break;
 		}
-		
+
 		++it;
 	      } // end loop distribution
-	      
+
 	      if ( target_freq > 0 ) { //distr_count allways > 0.
 		res_p = (double)target_freq / (double)distr_count;
 	      }
-	      
+
 	      if ( res_p > 0 ) {
 		res_pl10 = log10( res_p );
 	      } else {
@@ -1943,7 +1943,7 @@ int mbmt(Logfile& l, Config& c) {
 		l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
 	      }
 	      icache->add( classify_line, to_str(res_pl10) );
-	      
+
 	      } // end not in cache
 
 	      probs.push_back( res_pl10 ); // store for later calculation.
@@ -1964,15 +1964,15 @@ int mbmt(Logfile& l, Config& c) {
 	      ave_pl10 /= probs.size();
 	    }
 	    // else resm == 1, we return the sum.
-	    
+
 	    if ( verbose > 0 ) {
 	      l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	    }
-	    
+
 	    if ( lb == 0 ) { // lb:0 is no logs
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
-	    
+
 	    std::string ans = to_str(ave_pl10);
 	    if ( verbose > 2 ) {
 	      l.log( "Add to cache: ["+full_string+"]("+ans+")" );
@@ -1981,9 +1981,9 @@ int mbmt(Logfile& l, Config& c) {
 	    newSock->write( ans + "\n" );
 	    connection_open = (keep == 1);
       } // while running & connection_open
-      
+
       l.log( "connection closed." );
-      
+
       size_t ccs = cache->get_size();
       l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
       l.log( cache->stat() );
@@ -1991,10 +1991,10 @@ int mbmt(Logfile& l, Config& c) {
       l.log( "iCache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
       l.log( icache->stat() );
 
-    delete newSock;      
+    delete newSock;
     } // while running
 
-    
+
   } // try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
@@ -2009,7 +2009,7 @@ int mbmt( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }
-#endif 
+#endif
 
 // In place hapaxing. For server4. uses full lexicon and hpx freq.
 //
@@ -2032,13 +2032,13 @@ int hapax_vector( std::vector<std::string>& words, const std::map<std::string,in
       words.at(i) = hpx_sym;
       ++changes;
     } // else leave it as it is
-  } 
+  }
   return changes;
 }
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int webdemo(Logfile& l, Config& c) {
-  l.log( "webdemo." );  
+  l.log( "webdemo." );
 
   // listen or commands: "one", "window", etc, and return
   // answer in XML.
@@ -2096,13 +2096,13 @@ int webdemo(Logfile& l, Config& c) {
   double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  
+
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -2111,12 +2111,12 @@ int webdemo(Logfile& l, Config& c) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    
+
     l.log( "Starting server..." );
     std::string buf;
     bool skip = false;
 
-    while ( true ) { 
+    while ( true ) {
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
@@ -2130,7 +2130,7 @@ int webdemo(Logfile& l, Config& c) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
 	       + std::string(newSock->getClientName()) );
       }
-      
+
       std::vector<double> probs;
       std::string tmp_buf;
 
@@ -2139,7 +2139,7 @@ int webdemo(Logfile& l, Config& c) {
       //
       newSock->read( tmp_buf );
       tmp_buf = trim( tmp_buf, " \n\r" );
-    
+
       if ( verbose > 0 ) {
 	l.log( "|" + tmp_buf + "|" );
       }
@@ -2151,7 +2151,7 @@ int webdemo(Logfile& l, Config& c) {
 	l.log( "ERROR: could not read all data." );
       }
       tmp_buf = trim( tmp_buf, " \n\r" );
-    
+
       //replacein( tmp_buf, "__DBLQ__",  "\"" );
 
       if ( verbose > 0 ) {
@@ -2166,7 +2166,7 @@ int webdemo(Logfile& l, Config& c) {
 	std::string lw;
 	std::string pat;
 	split( classify_line, pat, lw );
-	
+
 	xml = "<instance>";
 	xml = xml + "<full><![CDATA["+classify_line+"]]></full>";
 	xml = xml + "<target><![CDATA["+lw+"]]></target>";
@@ -2177,7 +2177,7 @@ int webdemo(Logfile& l, Config& c) {
 	//
 	if ( do_filter == true ) {
 	  fi = filter.find( lw );
-	  
+
 	  if ( fi == filter.end() ) { // not found in lexicon
 	    xml = xml + "<timbl skip=\"1\" />";
 	    skip = true;
@@ -2186,7 +2186,7 @@ int webdemo(Logfile& l, Config& c) {
 	  }
 
 	}
-	
+
 	// If we take target from a pre-non-hapaxed vector, we
 	// can hapax the whole sentence in the beginning and use
 	// that for the instances-without-target.
@@ -2198,30 +2198,30 @@ int webdemo(Logfile& l, Config& c) {
 
 	  xml = xml + "<timbl md=\""+to_str(md)+"\" mal=\""+to_str(md)+"\" />";
 
-	  if ( tv ) {    
-	    result = tv->Name();		
+	  if ( tv ) {
+	    result = tv->Name();
 	    size_t res_freq = tv->ValFreq(); //??
-	    
+
 	    if ( verbose > 1 ) {
 	      l.log("timbl("+classify_line+")="+result+" f="+to_str(res_freq));
 	    }
-	    
+
 	    int cnt = vd->size();
 	    int distr_count = vd->totalSize();
-	    
+
 	    if ( verbose > 1 ) {
 	      l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "
 		     + to_str(distr_count) );
 	    }
-	    
+
 	    dist_to_xml( vd, xml, lw );
-	    
+
 	  } /*tv*/ else {
 	    xml = "<error><full>"+classify_line+"</full></error>";
 	  }
 	} //skip
       } /*instance*/ else if ( cmd == "window" ) {
-	std::vector<std::string> cls; 
+	std::vector<std::string> cls;
 	std::string classify_line = tmp_buf;
 	if ( tok == true ) {
 	  classify_line = Tokenize_str( classify_line );
@@ -2243,7 +2243,7 @@ int webdemo(Logfile& l, Config& c) {
 	}
 	xml = xml + "</instances>";
       } /*window*/
-      
+
       xml = "<xml>" + xml;
       xml = xml + "<info><ibasefile>"+ibasefile+"@"+info_str+"</ibasefile></info>";
       xml = xml + "</xml>\n";
@@ -2263,13 +2263,13 @@ int webdemo(Logfile& l, Config& c) {
       delete newSock;
       l.log( "ready." );
     }
-    
+
   }
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     return -1;
   }
-  
+
   return 0;
 }
 #else
@@ -2277,14 +2277,14 @@ int webdemo( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }
-#endif 
+#endif
 
 // Iternal
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
 int one(Logfile& l, Config& c) {
   l.log( "one." );
-  
+
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
@@ -2305,13 +2305,13 @@ int one(Logfile& l, Config& c) {
   double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  
+
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
-    
+
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
@@ -2320,11 +2320,11 @@ int one(Logfile& l, Config& c) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    
+
     l.log( "Starting server..." );
     std::string buf;
 
-    while ( true ) { 
+    while ( true ) {
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
@@ -2338,26 +2338,26 @@ int one(Logfile& l, Config& c) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
 	       + std::string(newSock->getClientName()) );
       }
-      
+
     std::vector<double> probs;
     std::string tmp_buf;
     if ( newSock->read( tmp_buf ) == false ) {
       l.log( "ERROR: could not read all data from socket." );
     }
     tmp_buf = trim( tmp_buf, " \n\r" );
-    
+
     if ( verbose > 0 ) {
       l.log( "|" + tmp_buf + "|" );
     }
-    
+
     std::string classify_line = tmp_buf;
-    
+
     // Loop over all lines.
     //
     std::vector<std::string> words;
     words.clear();
     Tokenize( classify_line, words, ' ' );
-        
+
     // if we take target from a pre-non-hapaxed vector, we
     // can hapax the whole sentence in the beginning and use
     // that for the instances-without-target
@@ -2366,27 +2366,27 @@ int one(Logfile& l, Config& c) {
     std::string xml;
 
     tv = My_Experiment->Classify( classify_line, vd, distance );
-    if ( tv ) {    
-      result = tv->Name();		
+    if ( tv ) {
+      result = tv->Name();
       size_t res_freq = tv->ValFreq(); //??
-      
+
       if ( verbose > 1 ) {
 	l.log( "timbl("+classify_line+")="+result+" f="+to_str(res_freq) );
       }
-      
+
       double res_p = -1;
       bool target_in_dist = false;
       int target_freq = 0;
       int cnt = vd->size();
       int distr_count = vd->totalSize();
-      
+
       if ( verbose > 1 ) {
 	l.log( "vd->size() = "+to_str(cnt) + " vd->totalSize() = "+to_str(distr_count) );
       }
-      
+
       dist_to_xml( vd, xml, target );
 
-    } else {// if tv      
+    } else {// if tv
       xml = "<error />";
     }
     xml = "<xml>" + xml;
@@ -2403,13 +2403,13 @@ int one(Logfile& l, Config& c) {
     delete newSock;
     l.log( "ready." );
     }
-    
+
   }
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     return -1;
   }
-  
+
   return 0;
 }
 #else
@@ -2417,7 +2417,7 @@ int one( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }
-#endif 
+#endif
 
 #ifdef TIMBL
 // PJB: TODO: real XML processing
@@ -2431,7 +2431,7 @@ struct distr_elem {
 };
 int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
 		 std::string target) {
-  
+
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   int cnt = vd->size();
   int distr_count = vd->totalSize();
@@ -2439,10 +2439,10 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
   std::string cg = "ic";
 
   while ( it != vd->end() ) {
-    
+
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
-    
+
     distr_elem  d;
     d.name   = tvs;
     d.freq   = wght;
@@ -2520,7 +2520,7 @@ int server_mg( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "filename:   "+filename );
   l.log( "kvs:        "+kvs_filename );
-  l.log( "fco:        "+to_str(fco) ); 
+  l.log( "fco:        "+to_str(fco) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "id:         "+id );
   l.dec_prefix();
@@ -2585,7 +2585,7 @@ int server_mg( Logfile& l, Config& c ) {
       ++classifier_count;
       l.log( (*cli)->info_str() );
     }
-    
+
     if ( dflt == NULL ) {
       l.log( "ERROR: no default classifier" );
       return -1;
@@ -2627,7 +2627,7 @@ int server_mg( Logfile& l, Config& c ) {
     l.log( "Starting server..." );
 
     while ( running ) {  // main accept() loop
-      l.log( "Listening..." );  
+      l.log( "Listening..." );
 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
@@ -2650,13 +2650,13 @@ int server_mg( Logfile& l, Config& c ) {
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
-	
+
 	while ( running & connection_open ) {
-	  
+
 	  std::string tmp_buf;
 	  newSock->read( tmp_buf );
 	  tmp_buf = trim( tmp_buf, " \n\r" );
-	  
+
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = 0;
@@ -2674,7 +2674,7 @@ int server_mg( Logfile& l, Config& c ) {
 	  if ( verbose > 0 ) {
 	    l.log( "|" + tmp_buf + "|" );
 	  }
-	  
+
 	  // Remove <s> </s> if so requested.
 	  //
 	  if ( skip_sm == true ) {
@@ -2687,12 +2687,12 @@ int server_mg( Logfile& l, Config& c ) {
 	    }
 	    if ( verbose > 1 ) {
 	      l.log( "|" + tmp_buf + "| skm" );
-	    }	      
+	    }
 	  } //skip_sm
-	  
+
 	  cls.clear();
 	  std::string classify_line = tmp_buf;
-	  
+
 	  // Sentence based, window here, classify all, etc.
 	  //
 	  if ( mode == 1 ) {
@@ -2706,11 +2706,11 @@ int server_mg( Logfile& l, Config& c ) {
 	  std::vector<std::string> words;
 	  probs.clear();
 	  for ( int i = 0; i < cls.size(); i++ ) {
-	    
+
 	    classify_line = cls.at(i);
-	    
+
 	    words.clear();
-	    
+
 	    if ( hapax > 0 ) {
 	      /*int c = hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
@@ -2720,14 +2720,14 @@ int server_mg( Logfile& l, Config& c ) {
 		l.log( "|" + classify_line + "| hpx" );
 		}*/
 	    } // hapax
-	    
+
 	    Tokenize( classify_line, words, ' ' ); // instance
 
 	    pos    = (int)words.size()-1-fco;
 	    pos    = (pos < 0) ? 0 : pos;
 	    gate   = words[pos];
 	    target = words[words.size()-1];
-	    
+
 	    if ( verbose > 1 ) {
 	      l.log( classify_line );
 	      l.log( "pos:"+to_str(pos)+" gate:"+gate );
@@ -2742,12 +2742,12 @@ int server_mg( Logfile& l, Config& c ) {
 	  } else { // the default classifier.
 	    cl = dflt;
 	  }
-	  
+
 	  // Do the classification.
 	  //
 	  //l.log( cl->id + "/" + to_str(cl->get_type()) );
 	  cl->classify_one( classify_line );
-	  
+
 	  multidist = cl->classification;
 	  type      = cl->get_type();
 	  subtype   = cl->get_subtype();
@@ -2760,7 +2760,7 @@ int server_mg( Logfile& l, Config& c ) {
 	      l.log( "G" );
 	    }
 	    l.log( cl->id );
-	  }	      
+	  }
 
 	  // return only prob? pplx?
 	  //file_out << a_line << " " << multidist.answer << " ";
@@ -2787,18 +2787,18 @@ int server_mg( Logfile& l, Config& c ) {
 	  if ( multidist.prob > 0 ) {
 	    res_pl10 = log10( multidist.prob );
 	  }
-	  
+
 	  if ( verbose > 1 ) {
 	    l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	  }
-	  
+
 	  probs.push_back( res_pl10 ); // store for later.
-	  
+
 	  } // i over cls
-	  
+
 	  //file_out << a_line << " " << multidist.answer << " ";
 	  //newSock->write( to_str(multidist.prob) );
-	  
+
 	  double ave_pl10 = 0.0;
 	    for ( int p = 0; p < probs.size(); p++ ) {
 	      double prob = probs.at(p);
@@ -2811,29 +2811,29 @@ int server_mg( Logfile& l, Config& c ) {
 	      ave_pl10 /= probs.size();
 	    }
 	    // else resm == 1, we return the sum.
-	    
+
 	    if ( verbose > 0 ) {
 	      l.log( "result ave="+to_str(ave_pl10)+"/"+to_str(pow(10,ave_pl10)) );
 	    }
-	    
+
 	    if ( lb == 0 ) { // lb:0 is no logs
 	      ave_pl10 = pow(10, ave_pl10);
 	    }
 	    if ( moses == 0 ) {
 	      newSock->write( to_str(ave_pl10) + '\n' ); // added lf
-	      
+
 	    } else if ( moses == 1 ) { // 6 char output for moses
 	      char res_str[7];
-	      
+
 	      snprintf( res_str, 7, "%f2.3", ave_pl10 );
-	      
+
 	      //std::cerr << "(" << res_str << ")" << std::endl;
 	      newSock->write( res_str );
 	    }
 
 
 	  connection_open = (keep == 1);
-	  
+
 	} // connection_open
 
         l.log( "connection closed." );
@@ -2843,27 +2843,27 @@ int server_mg( Logfile& l, Config& c ) {
 	  kill( getppid(), SIGTERM );
 	}
 	_exit(0);
-	
+
       } else if ( cpid == -1 ) { // fork failed
 	l.log( "Error forking." );
 	perror("fork");
 	return(1);
       }
       delete newSock;
-      
+
     } // true running
-    
+
   } // try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
     return -1;
-  } 
-  
+  }
+
   return 0;
 }
 #else
 int server_mg( Logfile& l, Config& c ) {
-  l.log( "Timbl support not built in." );  
+  l.log( "Timbl support not built in." );
   return -1;
 }
 #endif
