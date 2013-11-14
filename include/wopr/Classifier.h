@@ -15,8 +15,8 @@
 # include "timbl/TimblAPI.h"
 #endif
 
-#include "util.h"
-#include "ngrams.h"
+#include "wopr/util.h"
+#include "wopr/ngrams.h"
 
 struct md2_elem {
   std::string token;
@@ -43,7 +43,7 @@ struct md2 {
   int         info; // 0:no info, 1:in distr, 2:correct
   bool        in_distr; // needed for spelcorr without changing old functionality
   long        idx; // index in distribution
-  double      mrr; 
+  double      mrr;
   std::vector<md2_elem> distr;
 };
 
@@ -53,11 +53,11 @@ const unsigned int INFO_UNKNOWN  = 2;
 const unsigned int INFO_CORRECT  = 4;
 const unsigned int INFO_WRONG    = 8;
 
-class cmp { 
+class cmp {
  public:
   bool operator() (const long x, const long y) {
     return (x-y) > 0;
-  } 
+  }
 };
 
 class Classifier {
@@ -78,11 +78,11 @@ class Classifier {
   std::string distfile;
   double      weight;
   double      distprob;
-  long        correct; 
+  long        correct;
   long        score_cg;
   long        score_cd;
   long        score_ic;
-  long        classification_count; 
+  long        classification_count;
   md2         classification;
   std::vector<std::string> words;
 #ifdef TIMBL
@@ -192,21 +192,21 @@ class Classifier {
       classification.distr.clear();
 
       if ( type == 1 ) { // A "real" classifier
-#ifdef TIMBL    
+#ifdef TIMBL
 	tv = My_Experiment->Classify( classification.cl, vd );
 	if ( ! tv ) {
 	  return false;
 	}
 	classification.answer = tv->Name();
-	
+
 	classification.md  = My_Experiment->matchDepth();
 	classification.mal = My_Experiment->matchedAtLeaf();
-	
+
 	++classification_count;
 	classification.cnt = vd->size(); // size of distr.
-	classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
-	
-	Timbl::ValueDistribution::dist_iterator it = vd->begin();      
+	classification.distr_count = vd->totalSize(); // sum of freqs in distr.
+
+	Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	while ( it != vd->end() ) {
 	  std::string tvs  = it->second->Value()->Name();
 	  long        wght = it->second->Weight(); // absolute frequency.
@@ -234,14 +234,14 @@ class Classifier {
 	//
 	but_last_word( classification.cl, classification.cl );
 	Tokenize( classification.cl, words, ' ' );
-	
+
 	classification.answer = "DIST";
 	classification.md  = 0;
 	classification.mal = false;
 	classification.cnt = 0;
 	classification.distr_count = words.size();
 
-	++classification_count;  
+	++classification_count;
 
 	std::vector<std::string>::iterator it;
 	std::vector<md2_elem>::iterator itf;
@@ -255,7 +255,7 @@ class Classifier {
 	//it = unique (words.begin(), words.end());
 	//words.resize( it - words.begin() );
 
-	it = words.begin();      
+	it = words.begin();
 	while ( it != words.end() ) {
 	  std::string tvs  = *it;
 	  if ( tvs != "_" ) { // check here for if it is a double?
@@ -276,7 +276,7 @@ class Classifier {
 	      }
 	    }
 	  }
-	  ++it;	  
+	  ++it;
 	} //while
 
       } //type == 2
@@ -290,14 +290,14 @@ class Classifier {
   // For the gated classifiers.
   //
   bool classify_one( const std::string& a_line ) {
-    
+
     classification.cl = a_line;
     last_word( classification.cl, classification.target );
 
     classification.distr.clear();
     classification.prob = 0;
 
-#ifdef TIMBL    
+#ifdef TIMBL
     tv = My_Experiment->Classify( classification.cl, vd );
     if ( ! tv ) {
       return false;
@@ -310,15 +310,15 @@ class Classifier {
 
     classification.md  = My_Experiment->matchDepth();
     classification.mal = My_Experiment->matchedAtLeaf();
-    
+
     ++classification_count;
     classification.cnt = vd->size(); // size of distr.
-    classification.distr_count = vd->totalSize(); // sum of freqs in distr. 
+    classification.distr_count = vd->totalSize(); // sum of freqs in distr.
     classification.entropy = 0.0;
 
     // Timbl distr is unsorted...
     Timbl::ValueDistribution::dist_iterator it = vd->begin();
-    long classification_freq;
+    long classification_freq = 0.0;
     std::map<long, long, std::greater<long> > dfreqs;
     /*
       To get MRR, make hash with freq->count.
@@ -351,7 +351,7 @@ class Classifier {
       classification.entropy -= ( p * log2(p) );
       ++it;
     }
-    
+
     long idx = 1;
     classification.idx = 0;
     classification.mrr = 0.0;
@@ -380,9 +380,9 @@ class Classifier {
       ++score_ic;
     }
 #endif
-    return true; 
+    return true;
   }
-  
+
   void close_file() {
     file_in.close();
   }
