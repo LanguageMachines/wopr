@@ -383,7 +383,7 @@ namespace Sockets {
   bool ServerSocket::accept( ServerSocket& newSocket ){
     newSocket.sock = -1;
     struct sockaddr_storage cli_addr;
-    TIMBL_SOCKLEN_T clilen = sizeof(cli_addr);
+    socklen_t clilen = sizeof(cli_addr);
     int newsock = ::accept( sock, (struct sockaddr *)&cli_addr, &clilen );
     if( newsock < 0 ){
       if ( errno == EINTR )
@@ -511,7 +511,6 @@ namespace Sockets {
   bool ServerSocket::accept( ServerSocket& newSocket ){
     newSocket.sock = -1;
     struct sockaddr_storage cli_addr;
-    //TIMBL_SOCKLEN_T
     socklen_t clilen = sizeof(cli_addr);
     int newsock = ::accept( sock, (struct sockaddr *)&cli_addr, &clilen );
     if( newsock < 0 ){
@@ -524,7 +523,6 @@ namespace Sockets {
     else {
       string clientname;
       struct sockaddr_in rem;
-      //TIMBL_SOCKLEN_T
       socklen_t remlen = sizeof(rem);
       if ( getpeername( newsock, (struct sockaddr *)&rem, &remlen ) >= 0 ){
 	struct hostent *host = gethostbyaddr( (char *)&rem.sin_addr,

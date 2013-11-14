@@ -117,56 +117,7 @@ AS_IF([test "x$with_timbl" != xno],
 #])
 AC_DEFINE_UNQUOTED(TIMBLSERVER,"yes",[ Have TimblServer ])
 
-dnl ------ socklen_t
-dnl We check for socklen_t by making prototypes with the
-dnl various types. First socklen_t, then size_t, finally int.
-dnl If the prototype succeeds, we are probably safe.
-dnl That works if accept is not preprocessor defined (such sa AIX)
-AC_MSG_CHECKING([for socklen_t])
-AC_CACHE_VAL(ac_cv_check_socklen_t,[ac_cv_check_socklen_t=''
-        AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
-#define try 1
-#ifdef AIX
-#if AIX >= 51
-#define try 0
-#endif
-#endif
-#if try
-extern int accept(int, struct sockaddr *, socklen_t *);
-#endif
-#ifdef __cplusplus
-}
-#endif
-        ],,[ac_cv_check_socklen_t=socklen_t],[
-                AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
-#define try 1
-#ifdef AIX
-#if AIX >= 42
-#define try 0
-#endif
-#endif
-#if try
-extern int accept(int, struct sockaddr *, size_t t *);
-#endif
-#ifdef __cplusplus
-}
-#endif
-],,[ac_cv_check_socklen_t=size_t],[ac_cv_check_socklen_t=int])
-                ])
-        ])
-AC_MSG_RESULT($ac_cv_check_socklen_t)
-AC_DEFINE_UNQUOTED(TIMBL_SOCKLEN_T,$ac_cv_check_socklen_t, "sock_len" )
-
+AX_TYPE_SOCKLEN_T
 
 AC_CHECK_HEADER([pthread.h],
        [AC_DEFINE([PTHREADS], [1], [pthreads]) LIBS="-lpthread $LIBS"])
