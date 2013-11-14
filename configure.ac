@@ -26,15 +26,15 @@ AC_TYPE_UINT32_T
 
 #check headers
 AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECK_HEADERS([fcntl.h,limits.h,stddef.h,syslog.h])
+AC_CHECK_HEADERS([fcntl.h limits.h stddef.h syslog.h])
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([netdb.h])
 AC_CHECK_HEADERS([sys/socket.h])
 
 #check functions
-AC_CHECK_FUNCS([gethostbyaddr,gethostbyname,gethostname,gettimeofday,inet_ntoa])
-AC_CHECK_FUNCS([memset,pow,regcomp,select,setlocale,socket,strchr,strerror])
+AC_CHECK_FUNCS([gethostbyaddr gethostbyname gethostname gettimeofday inet_ntoa])
+AC_CHECK_FUNCS([memset pow regcomp select setlocale socket strchr strerror])
 AC_CHECK_FUNCS([sqrt])
 AC_FUNC_FORK
 AC_FUNC_MKTIME
