@@ -32,6 +32,10 @@ OS X
 
 ./configure --with-timbl=/Users/pberck/install/
 
+If needed, point to Homebrew unicode libs:
+
+export DYLD_LIBRARY_PATH=/usr/local/Cellar/icu4c/50.1/lib/:$DYLD_LIBRARY_PATH
+
 Debian 
 ======
 

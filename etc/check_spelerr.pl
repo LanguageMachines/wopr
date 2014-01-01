@@ -37,9 +37,9 @@ use Getopt::Std;
 #
 #------------------------------------------------------------------------------
 
-use vars qw/ $opt_a $opt_c $opt_n $opt_o $opt_s $opt_t $opt_v/;
+use vars qw/ $opt_a $opt_c $opt_n $opt_o $opt_s $opt_t $opt_v $opt_i/;
 
-getopts('ac:o:ns:tv:');
+getopts('ac:o:ns:tv:i');
 
 my $acc       = $opt_a || 0; #print accuracy, f-score, etc
 my $no_output = $opt_n || 0; #produce no errs and errs1 output
@@ -48,6 +48,7 @@ my $sc_file   = $opt_s || "";   #wopr output
 my $top_only  = $opt_t || 0;    #top-answer can be correct only 
 my $v         = $opt_v || 0;    #verbosity
 my $conf_file = $opt_c || 0; #sets with confusibles, ignore others
+my $do_info   = $opt_i || 1; #print label in normal mode.
 my $oneliner = 1;
 
 my %confusibles;
@@ -294,6 +295,9 @@ if ( $acc ) {
   #print "a TP+FN=",$TP+$FN,", FP+TN=", $FP+$TN,", TP+FP=", $TP+$FP,",FN+TN=", $FN+$TN, "\n";
   #print "d TP+FN=",$dTP+$dFN,", FP+TN=", $dFP+$dTN,", TP+FP=", $dTP+$dFP,",FN+TN=", $dFN+$dTN, "\n";
   #print "c TP+FN=",$cTP+$cFN,", FP+TN=", $cFP+$cTN,", TP+FP=", $cTP+$cFP,",FN+TN=", $cFN+$cTN, "\n";
+  if ( $do_info ) {
+	print "lines errors good_sugg bad_sugg wrong_sugg no_sugg (d|c) TP FN FP TN PRC RCL ACC F1S\n";
+  }
   my $out = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $TP, $FN, $FP, $TN, $PRC, $RCL, $ACC, $F1S);
   my $dout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $dTP, $dFN, $dFP, $dTN, $dPRC, $dRCL, $dACC, $dF1S);
   my $cout = sprintf("%i %i %i %i %.2f %.2f %.2f %.2f", $cTP, $cFN, $cFP, $cTN, $cPRC, $cRCL, $cACC, $cF1S);
@@ -305,6 +309,9 @@ if ( $acc ) {
 
 } elsif ($oneliner) {
   #print "l:$clines e:$errors gs:$good_sugg bs:$bad_sugg ws:$wrong_sugg ns:$no_sugg\n";
+  if ( $do_info ) {
+	print "lines errors good_sugg bad_sugg wrong_sugg no_sugg (\%ages)\n";
+  }
   print "$lines $errors $good_sugg $bad_sugg $wrong_sugg $no_sugg ";
   if ($errors != 0) {
    my $out = sprintf("%.2f %.2f %.2f %.2f", ($good_sugg/$errors*100),($bad_sugg/$errors*100),($wrong_sugg/$errors*100),($no_sugg/$errors*100));
