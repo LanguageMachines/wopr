@@ -20,6 +20,9 @@ WRONGSUGG sight -> cite (should be: site)
 ERROR: they're should be there
 WRONGSUGG they're -> their (should be: there)
 BADSUGG than -> then (should be: than)
+
+Update 2014-01-06 option to show acc/pre/recall instead, choice is not implemented yet
+
 '''
 
 # Hold the info for a confusible
@@ -33,6 +36,7 @@ class Matrix():
         #print "MATRIX:", word
         self.corrected_from = []
         self.corrected_as = []
+        self.outputformat = 1 #0=gs/ws, 1=acc/rec
     def add_GS(self, error):
         # GOODSUGG being -> begin
         # add the original error to list
@@ -51,10 +55,50 @@ class Matrix():
     def total(self):
         return self.GS+self.WS+self.NS
     def get_stats(self, show_bs):
-        if show_bs:
-            return (self.total(), self.GS, self.WS, self.NS, self.BS)
+        """
+        my $TP = $good_sugg;
+        my $FN = $wrong_sugg + $no_sugg;
+        my $FP = $bad_sugg;
+        my $TN = $clines - $TP - $FN - $FP; #Niks gedaan als niks moest
+
+        my $RCL = 0;
+        if ( $TP+$FN > 0 ) {
+          $RCL = ($TP*100)/($TP+$FN);           #TPR
+        }
+        my $ACC = (100*($TP+$TN))/($clines);
+
+        my $PRC = 0;
+        if ( $TP+$FP > 0 ) {
+          $PRC = (100*$TP)/($TP+$FP);           #PPV
+        }
+        my $FPR = 0;
+        if ( $FP+$TN > 0 ) {
+          $FPR = (100*$FP)/($FP+$TN);
+        }
+        my $F1S = (100*2*$TP)/((2*$TP)+$FP+$FN);
+        """
+        if self.outputformat == 1:
+            TP = self.GS
+            FN = self.WS + self.NS
+            FP = self.BS
+            ALL = self.GS+self.WS+self.NS+self.BS #self.total() + self.BS
+            TN = ALL - TP - FN - FP
+            RCL = 0
+            ACC = 0
+            if TP + FN > 0:
+                RCL = (TP*100.0)/(TP+FN)
+            if ALL > 0:
+                ACC = (100.0*(TP+TN))/(ALL)
+            PRC = 0
+            if TP+FP > 0:
+                PRC = (100.0*TP)/(TP+FP)
+            return (self.total(), ACC, PRC, RCL)
         else:
-            return (self.total(), self.GS, self.WS, self.NS)
+            if show_bs:
+                return (self.total(), self.GS, self.WS, self.NS, self.BS)
+            else:
+                return (self.total(), self.GS, self.WS, self.NS)
+        
     def to_str(self, show_bs):
         if show_bs:
             ans = self.confusible+": TOT:"+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)+" BS:"+str(self.BS)
@@ -62,19 +106,37 @@ class Matrix():
             ans = self.confusible+": TOT:"+str(self.total())+" GS:"+str(self.GS)+" WS:"+str(self.WS)+" NS:"+str(self.NS)
         return ans
     def to_latex(self, show_bs):
-        if show_bs:
-            ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"} & \\tnum{"+str(self.BS)+"}"
+        if self.outputformat == 1:
+            TP = self.GS
+            FN = self.WS + self.NS
+            FP = self.BS
+            ALL = self.GS+self.WS+self.NS+self.BS #self.total() + self.BS
+            TN = ALL - TP - FN - FP
+            RCL = 0
+            ACC = 0
+            if TP + FN > 0:
+                RCL = (TP*100.0)/(TP+FN)
+            if ALL > 0:
+                ACC = (100.0*(TP+TN))/(ALL)
+            PRC = 0
+            if TP+FP > 0:
+                PRC = (100.0*TP)/(TP+FP) #"{0:6.2f}".format(2.34567)
+            ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+"{0:.2f}".format(ACC)+"} & \\tnum{"+"{0:.2f}".format(PRC)+"} & \\tnum{"+"{0:.2f}".format(RCL)+"}"
         else:
-            ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"}"
+            if show_bs:
+                ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"} & \\tnum{"+str(self.BS)+"}"
+            else:
+                ans = self.confusible+" & \\tnum{"+str(self.total())+"} & \\tnum{"+str(self.GS)+"} & \\tnum{"+str(self.WS)+"} & \\tnum{"+str(self.NS)+"}"
         return ans
     
 all_files = None
 cfile = None
 show_bs = False
 text_only = False
+outputformat = 1 #shows acc/pre/rec instead of gs/ws/...
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "bc:f:t", ["file="])
+    opts, args = getopt.getopt(sys.argv[1:], "bc:f:o:t", ["file="])
 except getopt.GetoptError, err:
     #print str(err)
     sys.exit(2)
@@ -85,6 +147,8 @@ for o, a in opts:
         cfile = a 
     elif o in ("-b", "--showbs"):
         show_bs = True
+    elif o in ("-o", "--outputformat"):
+        outputformat = int(a)
     elif o in ("-t", "--textonly"):
         text_only = True
     else:
@@ -119,10 +183,10 @@ for filename in all_files:
     w_error = None
     w_orig = None
     for line in file_lines:
-        matched   = False
+        matched = False
         # Match for 
-         #ERROR: they're should be there
-         #GOODSUGG there -> their
+        #ERROR: they're should be there
+        #GOODSUGG there -> their
         m = re.match( "ERROR: (.*?) should be (.*?)$", line )
         if m:
             #print m.groups()
@@ -195,25 +259,34 @@ for m in cf_info:
     total += cf_info[m].total()
 print total
 
-if show_bs:
-    print '{0:<10} {1:>3} {2:>3} {3:>3} {4:>3} {5:>3}   {0:<10} {1:>3} {2:>3} {3:>3} {4:>3} {5:>3}'.format( "C", "T", "gs", "ws", "ns", "bs" )
+if outputformat == 1:
+    print '{0:<10} {1:>3} {2:>6} {3:>6} {4:>6}   {0:<10} {1:>3} {2:>6} {3:>6} {4:>6}'.format("C", "T", "acc", "pre", "rec" )
 else:
-    print '{0:<10} {1:>3} {2:>3} {3:>3} {4:>3}   {0:<10} {1:>3} {2:>3} {3:>3} {4:>3}'.format("C", "T", "gs", "ws", "ns" )
+    if show_bs:
+        print '{0:<10} {1:>3} {2:>3} {3:>3} {4:>3} {5:>3}   {0:<10} {1:>3} {2:>3} {3:>3} {4:>3} {5:>3}'.format( "C", "T", "gs", "ws", "ns", "bs" )
+    else:
+        print '{0:<10} {1:>3} {2:>3} {3:>3} {4:>3}   {0:<10} {1:>3} {2:>3} {3:>3} {4:>3}'.format("C", "T", "gs", "ws", "ns" )
 for cf_set in confusibles:
     l = len(cf_set)
     out = ""
     for cf in cf_set:
         if cf in cf_info:
             stats = cf_info[cf].get_stats(show_bs)
-            if show_bs:
-                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, *stats )
+            if outputformat == 1:
+                out += '{0:<10} {1:3n} {2:6.2f} {3:6.2f} {4:6.2f}   '.format( cf, *stats )
             else:
-                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, *stats )
+                if show_bs:
+                    out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, *stats )
+                else:
+                    out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, *stats )
         else:
-            if show_bs:
-                out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, 0, 0, 0, 0, 0 )
-            else:
+            if outputformat == 1:
                 out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, 0, 0, 0, 0 )
+            else:
+                if show_bs:
+                    out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, 0, 0, 0, 0, 0 )
+                else:
+                    out += '{0:<10} {1:3n} {2:6.2f} {3:6.2f} {4:6.2f}   '.format( cf, 0, 0, 0, 0 )
     print out
 
 if text_only:
@@ -228,14 +301,19 @@ print '''
 \\centering
 \\vspace{\\baselineskip}
 %\\fit{%'''
-if show_bs:
-    print "\\begin{tabular}{@{} l r r r r r l r r r r r @{}} %\n"
-    print "\\toprule\n"
-    print " & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\\n"
-else:
+if outputformat == 1:
     print "\\begin{tabular}{@{} l r r r r l r r r r @{}} %\n"
     print "\\toprule\n"
-    print " & total & \\gs{} & \\ws{} & \\ns{} &  & total & \\gs{} & \\ws{} & \\ns{} \\\\\n"
+    print " & total & \\acc{} & \\pre{} & \\rec{} &  & total & \\acc{} & \\pre{} & \\rec{} \\\\\n"
+else:
+    if show_bs:
+        print "\\begin{tabular}{@{} l r r r r r l r r r r r @{}} %\n"
+        print "\\toprule\n"
+        print " & total & \\gs{} & \\ws{} & \\ns{} & \\bs{} &  & total & \\gs{} & \\ws{} & \\ns{} & \\bs{}\\\\\n"
+    else:
+        print "\\begin{tabular}{@{} l r r r r l r r r r @{}} %\n"
+        print "\\toprule\n"
+        print " & total & \\gs{} & \\ws{} & \\ns{} &  & total & \\gs{} & \\ws{} & \\ns{} \\\\\n"
 print "\\midrule\n"
 
 for cf_set in confusibles:

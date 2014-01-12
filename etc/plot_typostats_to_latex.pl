@@ -68,8 +68,8 @@ my $f1s = $offset + 8;
 
 my $prev_alg = "";
 
-open(FHD, $data_file) || die "Can't open file.";
-open(FHS, $stat_file) || die "Can't open file.";
+open(FHD, $data_file) || die "Can't open file. ".$data_file;
+open(FHS, $stat_file) || die "Can't open file. ".$stat_file;
 
 # precision: PPV
 # recall:    TPR

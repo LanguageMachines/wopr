@@ -35,6 +35,7 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <tr1/unordered_set>
 
 #include <cmath>
 #include <cstdio>
@@ -566,18 +567,16 @@ void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& tar
 	// LD shortcut, if stringlength differs more than mld, we don't need to try
     int         ld   = lev_distance( target, tvs, mld, cs ); // LD with target (word in text)
 
-	// Checks if to be included here.
+	// Checks if distribution value is to be included here.
 	// Levenshtein within bounds, or ld:0 to ignore
 	//
     if ( ((ld > 0) && (ld <= mld)) || (mld == 0) ) {
-
-	  // other tests here, min ratio &c.
-
+	  // min_df is minimum distribution frequency of token in distr.
 	  if ( (min_df == 0) || (wght >= min_df) ) { // min_df==0, ignore, else check
 		distr_elem* d = new distr_elem();
 		d->name = tvs;
 		d->freq = wght; //was ld. Freq not so useful, can be low for even
-		d->ld = ld;     // a correct to the point classification
+		d->ld = ld;     // a correct, to the point, classification
 		tvsfi = wfreqs.find( tvs );
 		if ( tvsfi == wfreqs.end() ) {
 		  d->lexfreq = 0;
@@ -613,6 +612,7 @@ int correct( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
+  const std::string& trigger_filename = c.get_value( "triggerfile", "" );
   const std::string& timbl            = c.get_value( "timbl" );
   const int          hapax            = stoi( c.get_value( "hpx", "0" ));
   const int          mode             = stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
@@ -665,6 +665,7 @@ int correct( Logfile& l, Config& c ) {
   l.log( "ibasefile:  "+ibasefile );
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
+  l.log( "triggerfile:"+trigger_filename );
   l.log( "timbl:      "+timbl );
   l.log( "id:         "+id );
   l.log( "hapax:      "+to_str(hapax) );
@@ -725,6 +726,26 @@ int correct( Logfile& l, Config& c ) {
   if ( numfiles == 0 ) {
     l.log( "All output files already exists, skipping." );
     return 0;
+  }
+
+  std::tr1::unordered_set<std::string> triggers;
+  int trigger_count = 0;
+  if ( trigger_filename != "" ) {
+	std::ifstream file_triggers( trigger_filename.c_str() );
+	if ( ! file_triggers ) {
+	  l.log( "NOTICE: cannot load specified triggerfile." );
+	  //return -1;
+	} else {
+	  l.log( "Reading triggers." );
+	  std::string a_word;
+	  while ( file_triggers >> a_word ) {
+		triggers.insert(a_word);
+		++trigger_count;
+	  }
+	  
+	  file_triggers.close();
+	  l.log( "Read triggers (total_count="+to_str(trigger_count)+")." );
+	}
   }
 
   try {
@@ -914,6 +935,20 @@ int correct( Logfile& l, Config& c ) {
 		  target_lexprob = (double)target_lexfreq / (double)total_count;
 		}
 
+		// If triggers, do naught if not a trigger
+		//
+		if ( trigger_count > 0 ) {
+		  if ( triggers.find(target) == triggers.end() ) {
+			file_out << a_line << " (" << target << ") "
+					 << 0 << ' ' /*<< info << ' '*/ << 0 << ' ';
+			file_out << 0 << ' ';
+			file_out << 0 << " [ ";
+			file_out << "]";
+			file_out << std::endl;
+			continue;
+		  }
+		}
+
 		// What does Timbl think?
 		// Do we change this answer to what is in the distr. (if it is?)
 		//
@@ -1004,8 +1039,8 @@ int correct( Logfile& l, Config& c ) {
 		// Confidence, after Skype call 20131101
 		// frequency of top-1, the answer / sum(frequences rest of distribution)
 		double the_confidence = -1; // -1 as shortcut to infinity
-		if ( cnt > 1 ) { // then there are more, with frequency, so we don't divide by 0
-		  the_confidence = answer_f / (distr_count - answer_f);
+		if ( distr_count > 1 ) { // then there are more, with frequency, so we don't divide by 0
+		  the_confidence = answer_f / distr_count;
 		}
 
 		// If correct: if target in distr, we take that prob, else
@@ -1035,7 +1070,7 @@ int correct( Logfile& l, Config& c ) {
 		//
 		std::vector<distr_elem*> distr_vec;
 		if ( md >= min_md ) {
-		  if ((cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
+		  if ((cnt <= max_distr) && (target.length() >= mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
 			if ( (typo_only && target_unknown) || ( ! typo_only) ) {
 			  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 				distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
@@ -1142,6 +1177,7 @@ int tcorrect( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
+  const std::string& trigger_filename = c.get_value( "triggerfile", "" );
   const std::string& timbl            = c.get_value( "timbl" );
   const int          hapax            = stoi( c.get_value( "hpx", "0" ));
   const int          mode             = stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
@@ -1174,6 +1210,8 @@ int tcorrect( Logfile& l, Config& c ) {
   std::string        result;
   double             distance;
 
+  std::tr1::unordered_set<std::string> triggers;
+
   // No slash at end of dirname.
   //
   if ( (dirname != "") && (dirname.substr(dirname.length()-1, 1) == "/") ) {
@@ -1189,6 +1227,7 @@ int tcorrect( Logfile& l, Config& c ) {
   l.log( "ibasefile:  "+ibasefile );
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
+  l.log( "triggerfile:"+trigger_filename );
   l.log( "timbl:      "+timbl );
   l.log( "id:         "+id );
   l.log( "hapax:      "+to_str(hapax) );
@@ -1247,6 +1286,25 @@ int tcorrect( Logfile& l, Config& c ) {
   if ( numfiles == 0 ) {
     l.log( "All output files already exists, skipping." );
     return 0;
+  }
+
+  int trigger_count = 0;
+  if ( trigger_filename != "" ) {
+	std::ifstream file_triggers( trigger_filename.c_str() );
+	if ( ! file_triggers ) {
+	  l.log( "NOTICE: cannot load specified triggerfile." );
+	  //return -1;
+	} else {
+	  l.log( "Reading triggers." );
+	  std::string a_word;
+	  while ( file_triggers >> a_word ) {
+		triggers.insert(a_word);
+		++trigger_count;
+	  }
+	  
+	  file_triggers.close();
+	  l.log( "Read triggers (total_count="+to_str(trigger_count)+")." );
+	}
   }
 
   try {
@@ -1444,6 +1502,20 @@ int tcorrect( Logfile& l, Config& c ) {
 		  target_lexprob = (double)target_lexfreq / (double)total_count;
 		}
 
+		// If triggers, do naught if not a trigger
+		//
+		if ( trigger_count > 0 ) {
+		  if ( triggers.find(target) == triggers.end() ) {
+			file_out << a_line << " (" << target << ") "
+					 << 0 << ' ' /*<< info << ' '*/ << 0 << ' ';
+			file_out << 0 << ' ';
+			file_out << 0 << " [ ";
+			file_out << "]";
+			file_out << std::endl;
+			continue;
+		  }
+		}
+
 		// What does Timbl think?
 		// Do we change this answer to what is in the distr. (if it is?)
 		//
@@ -1561,26 +1633,25 @@ int tcorrect( Logfile& l, Config& c ) {
 		//l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
 
 		// I we didn't have the correct answer in the distro, we take ld=1
-		// Skip words shorter than mwl.
 		//
 		std::vector<distr_elem*> distr_vec;
 		// Several conditions, AND
 		log_out << a_line << std::endl;
 		if ( md >= min_md ) { // match depth ok?
-		  log_out << "md >= min_md " << md << " " << min_md << std::endl;
+		  log_out << "md [" << md << "] >= min_md [" << min_md << "]" << std::endl;
 		  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) { // confidence OK?
-			log_out << "the_confidence >= confidence or the_confidence < 0: " << the_confidence << " " << confidence << std::endl;
+			log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
 			if ( (cnt < max_distr) || (max_distr == 0) ) {//size of distibution ok, 0 is fall thru
-			  log_out << "cnt < max_distr or max_distr == 0: " <<  cnt << " " << max_distr << std::endl;
+			  log_out << "cnt [" << cnt << "] < max_distr [" << max_distr << "] or max_distr == 0" << std::endl;
 			  if ( (entropy < max_ent) || (max_ent < 0) ) { // entropy OK, -1 is fall thru
-				log_out << "entropy < max_ent or max_ent < 0: " <<  entropy << " " << max_ent << std::endl;
-				tdistr_spelcorr( vd, target, wfreqs, distr_vec, mld, cs, min_df, confidence);
-				log_out << "tdistr size: " << distr_vec.size() << std::endl;
+				log_out << "entropy [" <<  entropy << "] < max_ent [" << max_ent << "] or max_ent < 0" << std::endl;
+				tdistr_spelcorr( vd, target, wfreqs, distr_vec, mld, cs, min_df, confidence); // filter the distro, could return []
+				log_out << "tdistr size: " << distr_vec.size() << std::endl; // the number of answers returned.
 			  }
 			}
 		  }
 		} else {
-		  // not clearing means using the distribution as spelling correction anyway.
+		  // not clearing means using the distribution as spelling correction anyway!
 		  distr_vec.clear();
 		}
 		log_out << std::endl;
@@ -2007,7 +2078,7 @@ int server_sc( Logfile& l, Config& c ) {
 
 	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	    if ( cnt < max_distr ) {
-	      if ( (target.length() > mwl) && (in_distr == false) ) {
+	      if ( (target.length() >= mwl) && (in_distr == false) ) {
 		while ( it != vd->end() ) {
 
 		  // 20100111: freq voorspelde woord : te voorspellen woord > 1
@@ -2460,7 +2531,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
 	  // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	  if ( cnt < max_distr ) {
-	    if ( (target.length() > mwl) && (in_distr == false) ) {
+	    if ( (target.length() >= mwl) && (in_distr == false) ) {
 	      while ( it != vd->end() ) {
 
 			// 20100111: freq voorspelde woord : te voorspellen woord > 1
@@ -2623,7 +2694,7 @@ int mcorrect( Logfile& l, Config& c ) {
   bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
   bool               bl               = stoi( c.get_value( "bl", "0" )) == 1; //run baseline
-  // Ratio between top-1 frequency and sum of rest of distribution frequencies
+  // Ratio between top-1 frequency and sum of distribution frequencies
   double             confidence      = stod( c.get_value( "confidence", "0" ));
 
   Timbl::TimblAPI   *My_Experiment;
@@ -3042,10 +3113,10 @@ int mcorrect( Logfile& l, Config& c ) {
 		target_distprob = (double)target_freq / (double)distr_count;
 
 		// Confidence, after Skype call 20131101
-		// frequency of top-1, the answer / sum(frequences rest of distribution)
+		// frequency of top-1, the answer / sum(frequencies rest of distribution)
 		double the_confidence = -1; // -1 as shortcut to infinity
-		if ( cnt > 1 ) { // then there are more, with frequency, so we don't divide by 0
-		  the_confidence = answer_f / (distr_count - answer_f);
+		if ( distr_count > 0 ) { // then there are more, with frequency, so we don't divide by 0
+		  the_confidence = answer_f / distr_count;
 		}
 
 		// If correct: if target in distr, we take that prob, else
@@ -3074,7 +3145,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		// Skip words shorter than mwl.
 		//
 		std::vector<distr_elem*> distr_vec;
-		if ( (cnt <= max_distr) && (target.length() > mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
+		if ( (cnt <= max_distr) && (target.length() >= mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
 		  if ( (typo_only && target_unknown) || ( ! typo_only) ) {
 			distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
 		  }
