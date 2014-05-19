@@ -1161,11 +1161,6 @@ int correct( Logfile& l, Config& c ) {
 }
 #endif
 
-
-
-
-
-
 // Test version of correct, PARAMETERS ARE DEFAULT "OFF"
 //
 #ifdef TIMBL
@@ -1195,6 +1190,8 @@ int tcorrect( Logfile& l, Config& c ) {
   double             max_ent          = stod( c.get_value( "max_ent", "-1" ) );
   // maximum distributie (guess added if <= max_distr), 0 to ignore
   int                max_distr        = stoi( c.get_value( "max_distr", "0" ));
+  // minimum sum freqs distribution (guess added if >= min_dsum)
+  int                min_dsum         = stoi( c.get_value( "min_dsum", "0" ));
   // minimum frequency of words in the distribution to be included, 0 is ignore
   int                min_df           = stoi( c.get_value( "min_df", "0" ));
   int                skip             = 0;
@@ -1238,6 +1235,7 @@ int tcorrect( Logfile& l, Config& c ) {
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
   l.log( "max_distr:  "+to_str(max_distr) );
+  l.log( "min_dsum:   "+to_str(min_dsum) );
   l.log( "min_df:     "+to_str(min_df) );
   l.log( "cs:         "+to_str(cs) );
   l.log( "confidence  "+to_str(confidence) );
@@ -1637,18 +1635,21 @@ int tcorrect( Logfile& l, Config& c ) {
 		std::vector<distr_elem*> distr_vec;
 		// Several conditions, AND
 		log_out << a_line << std::endl;
-		if ( md >= min_md ) { // match depth ok?
-		  log_out << "md [" << md << "] >= min_md [" << min_md << "]" << std::endl;
-		  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) { // confidence OK?
-			log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
-			if ( (cnt < max_distr) || (max_distr == 0) ) {//size of distibution ok, 0 is fall thru
-			  log_out << "cnt [" << cnt << "] < max_distr [" << max_distr << "] or max_distr == 0" << std::endl;
-			  if ( (entropy < max_ent) || (max_ent < 0) ) { // entropy OK, -1 is fall thru
-				log_out << "entropy [" <<  entropy << "] < max_ent [" << max_ent << "] or max_ent < 0" << std::endl;
-				tdistr_spelcorr( vd, target, wfreqs, distr_vec, mld, cs, min_df, confidence); // filter the distro, could return []
-				log_out << "tdistr size: " << distr_vec.size() << std::endl; // the number of answers returned.
-			  }
+		if ( distr_count >= min_dsum ) {
+		  log_out << "dsum [" << distr_count << "] >= min_dsum [" << min_dsum << "]" << std::endl;
+		  if ( md >= min_md ) { // match depth ok?
+		    log_out << "md [" << md << "] >= min_md [" << min_md << "]" << std::endl;
+		    if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) { // confidence OK?
+		      log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
+		      if ( (cnt < max_distr) || (max_distr == 0) ) {//size of distibution ok, 0 is fall thru
+			log_out << "cnt [" << cnt << "] < max_distr [" << max_distr << "] or max_distr == 0" << std::endl;
+			if ( (entropy < max_ent) || (max_ent < 0) ) { // entropy OK, -1 is fall thru
+			  log_out << "entropy [" <<  entropy << "] < max_ent [" << max_ent << "] or max_ent < 0" << std::endl;
+			  tdistr_spelcorr( vd, target, wfreqs, distr_vec, mld, cs, min_df, confidence); // filter the distro, could return []
+			  log_out << "tdistr size: " << distr_vec.size() << std::endl; // the number of answers returned.
 			}
+		      }
+		    }
 		  }
 		} else {
 		  // not clearing means using the distribution as spelling correction anyway!
@@ -2682,6 +2683,8 @@ int mcorrect( Logfile& l, Config& c ) {
   int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
   int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  // minimum sum freqs distribution (guess added if >= min_dsum)
+  int                min_dsum         = stoi( c.get_value( "min_dsum", "0" ));
   // ratio target_lexfreq:tvs_lexfreq
   double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
   // maximum target frequency (word under scrutiny is not in dist or (<=) very low freq)
@@ -2696,6 +2699,8 @@ int mcorrect( Logfile& l, Config& c ) {
   bool               bl               = stoi( c.get_value( "bl", "0" )) == 1; //run baseline
   // Ratio between top-1 frequency and sum of distribution frequencies
   double             confidence      = stod( c.get_value( "confidence", "0" ));
+  // Minimum max-depth of timbl answer
+  int                min_md           = stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -2728,6 +2733,7 @@ int mcorrect( Logfile& l, Config& c ) {
   l.log( "mld:        "+to_str(mld) );
   l.log( "max_ent:    "+to_str(max_ent) );
   l.log( "max_distr:  "+to_str(max_distr) );
+  l.log( "min_dsum:   "+to_str(min_dsum) );
   l.log( "min_ratio:  "+to_str(min_ratio) );
   l.log( "max_tf:     "+to_str(max_tf) );
   l.log( "min_df:     "+to_str(min_df) );
@@ -2735,6 +2741,7 @@ int mcorrect( Logfile& l, Config& c ) {
   l.log( "cs:         "+to_str(cs) );
   l.log( "bl:         "+to_str(bl) );
   l.log( "confidence  "+to_str(confidence) );
+  l.log( "min_md      "+to_str(min_md) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -3046,6 +3053,12 @@ int mcorrect( Logfile& l, Config& c ) {
 		std::string answer = tv->Name();
 		//l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
+		// Check match-depth, if too undeep, we are probably
+		// unsure.
+		//
+		size_t md  = 0; //My_Experiment->matchDepth();
+		bool   mal = 0; //My_Experiment->matchedAtLeaf();
+
 		if ( target == answer ) {
 		  ++correct;
 		  correct_answer = true;
@@ -3080,7 +3093,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		double entropy         = 0.0;
 		bool in_distr          = false;
 		cnt = vd->size();
-		distr_count = vd->totalSize();
+		distr_count = vd->totalSize(); //sum of freqs, for min_dsum
 		double answer_f = 0;
 
 		// Check if target word is in the distribution.
@@ -3113,7 +3126,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		target_distprob = (double)target_freq / (double)distr_count;
 
 		// Confidence, after Skype call 20131101
-		// frequency of top-1, the answer / sum(frequencies rest of distribution)
+		// frequency of top-1, the answer / sum(frequencies distribution)
 		double the_confidence = -1; // -1 as shortcut to infinity
 		if ( distr_count > 0 ) { // then there are more, with frequency, so we don't divide by 0
 		  the_confidence = answer_f / distr_count;
@@ -3128,13 +3141,13 @@ int mcorrect( Logfile& l, Config& c ) {
 		  logprob = log2( target_distprob );
 		} else {
 		  if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-			logprob = log2( target_lexprob ); // SMOOTHED here, see above
+		    logprob = log2( target_lexprob ); // SMOOTHED here, see above
 		  } else {
-			//
-			// What to do here? We have an 'unknown' target, i.e. not in the
-			// lexicon.
-			//
-			logprob = log2( p0 /*0.0001*/ ); // Foei!
+		    //
+		    // What to do here? We have an 'unknown' target, i.e. not in the
+		    // lexicon.
+		    //
+		    logprob = log2( p0 /*0.0001*/ ); // Foei!
 		  }
 		}
 		sum_logprob += logprob;
@@ -3144,12 +3157,31 @@ int mcorrect( Logfile& l, Config& c ) {
 		// I we didn't have the correct answer in the distro, we take ld=1
 		// Skip words shorter than mwl.
 		//
+		/* 2014-04-13
 		std::vector<distr_elem*> distr_vec;
 		if ( (cnt <= max_distr) && (target.length() >= mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent) ) {
 		  if ( (typo_only && target_unknown) || ( ! typo_only) ) {
 			distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
 		  }
 		}
+		*/
+		// from L1084
+		std::vector<distr_elem*> distr_vec;
+		if ( distr_count >= min_dsum ) {
+		  if ( md >= min_md ) {
+		    if ((cnt <= max_distr) && (target.length() >= mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
+		      if ( (typo_only && target_unknown) || ( ! typo_only) ) {
+			if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
+			  distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
+			}
+		      }
+		    }
+		  }
+		} else {
+		  // not clearing means using the distribution as spelling corection anyway.
+		  //distr_vec.clear();
+		}
+
 
 		// Word logprob (ref. Antal's mail 21/11/08)
 		// 2 ^ (-logprob(w))
@@ -3161,7 +3193,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		// distribution returned, and the top-10 (or less) of the distribution.
 		//
 		file_out << a_line << " (" << answer << ") "
-				 << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+			 << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
 		file_out << word_lp << ' ';
 		int cntr = 0;
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)

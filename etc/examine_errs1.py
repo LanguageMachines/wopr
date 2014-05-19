@@ -23,6 +23,12 @@ BADSUGG than -> then (should be: than)
 
 Update 2014-01-06 option to show acc/pre/recall instead, choice is not implemented yet
 
+2014-04-06
+Example:
+python examine_errs1.py -f utexas.10e6.dt3.t1e5d.cf350.l2r2_ML00000.sc.errs1 -c goldingroth3.txt
+
+2014-04-08
+stats on all confusibels, not only the errored ones.
 '''
 
 # Hold the info for a confusible
@@ -237,7 +243,7 @@ for filename in all_files:
                 m = Matrix(w_orig)
                 cf_info[w_orig] = m
                 m.add_WS(w_error)
-                #NOSUGG they're (should be: their)
+        #NOSUGG they're (should be: their)
         m = re.match( "NOSUGG (.*?) \(should be: (.*?)\)", line )
         if m:
             #print line
@@ -279,12 +285,12 @@ for cf_set in confusibles:
                     out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, *stats )
                 else:
                     out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, *stats )
-        else:
+        else: #cf not in cf_info
             if outputformat == 1:
                 out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n}   '.format( cf, 0, 0, 0, 0 )
             else:
                 if show_bs:
-                    out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format( cf, 0, 0, 0, 0, 0 )
+                    out += '{0:<10} {1:3n} {2:3n} {3:3n} {4:3n} {5:3n}   '.format(cf, 0, 0, 0, 0, 0)
                 else:
                     out += '{0:<10} {1:3n} {2:6.2f} {3:6.2f} {4:6.2f}   '.format( cf, 0, 0, 0, 0 )
     print out
@@ -323,7 +329,11 @@ for cf_set in confusibles:
         if cf in cf_info:
             out += cf_info[cf].to_latex(show_bs) + " & "
         else:
-            out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
+            #here is the error
+            if show_bs:
+                out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
+            else:
+                out += cf + " & \\tnum{0} & \\tnum{0} & \\tnum{0} & \\tnum{0} & "
     if l == 2:
         print out[:-2],"\\\\"
     else:

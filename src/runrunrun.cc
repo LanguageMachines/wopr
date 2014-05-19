@@ -1387,6 +1387,22 @@ int window( std::string a_line, std::string target_str,
 		--factor;
 	  }
 	}
+	if ( it == 3 ) { //normal l2r2 windowing but target from another file ("l2t3r2")
+	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
+		if ( fi != si ) {
+		  //spacer = (*fi == "") ? "" : " ";
+		  windowed_line = windowed_line + *fi + " ";
+		}
+	  }
+	  windowed_line = windowed_line + *(ti+offset); // target. function to make target?
+	  res.push_back( windowed_line );
+	  windowed_line.clear();
+	  si++;
+	  ti++;
+	  if ( factor > 0 ) {
+		--factor;
+	  }
+	}
 	if ( it == 1 ) {
 	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
 		if ( fi != si ) {
@@ -1634,6 +1650,9 @@ int window_lr( Logfile& l, Config& c ) {
 		std::getline( tfile_in, t_line );
 	  }
 	  if ( it == 1 ) {
+		window( a_line, t_line, lc, rc, it, false, results ); // line 1317
+	  }
+	  if ( it == 3 ) {
 		window( a_line, t_line, lc, rc, it, false, results ); // line 1317
 	  }
 	  if ( it == 2 ) {
