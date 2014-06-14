@@ -1,7 +1,7 @@
 // $Id$
 
 /*****************************************************************************
- * Copyright 2005 - 2011 Peter Berck                                         *
+ * Copyright 2005 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of Wopr.                                                *
  *                                                                           *
@@ -476,7 +476,7 @@ void Tokenize_punc(const std::string& buffer, std::vector<std::string>& tokens )
     // split on "',./ only
     std::string buildup = "";
 
-    for ( int i = 0; i < a_word.length(); i++ ) {
+    for ( size_t i = 0; i < a_word.length(); i++ ) {
       std::string c = a_word.substr(i, 1);
       if ( (c == ".") || (c == "'") || (c == "\"") ) {
 	if ( buildup == "" ) {
@@ -538,7 +538,7 @@ std::string Tokenize_str(const std::string& buffer ) {
 
 void Tokenize(const std::string& buffer, std::vector<std::string>& tokens,
               const char delimiter) {
-  int pos = 0, pos_ant = 0;
+  size_t pos = 0, pos_ant = 0;
 
   if ( buffer == "" ) {
     return;
@@ -590,7 +590,7 @@ std::string trim(std::string const& source, char const* delims ) {
 }
 
 bool is_numeric( std::string s ) {
-  for ( int i = 0; i < s.length(); i++ ) {
+  for ( size_t i = 0; i < s.length(); i++ ) {
     char c = s.at(i);
     if ( isdigit(c) || (c == '.') || (c == ',') || (c == '+') ||
 	 (c == '-') ) {

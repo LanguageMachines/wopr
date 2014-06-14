@@ -52,7 +52,7 @@ namespace Sockets {
 
   Socket::~Socket() {
     if ( sock >= 0 ) ::close(sock);
-  };
+  }
 
   void milli_wait( int m_secs ){
     struct timespec tv;
@@ -227,7 +227,7 @@ namespace Sockets {
     if ( !mess.empty() )
       m += ": " + mess;
     return mess;
-  };
+  }
 
   bool Socket::setBlocking( ) {
     int opts = fcntl( sock, F_GETFL );
