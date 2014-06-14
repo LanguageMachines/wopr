@@ -133,7 +133,7 @@ int make_ibase( Logfile& l, Config& c ) {
     std::string t_ext = "";
     std::vector<std::string> t_bits;
     Tokenize( timbl, t_bits );
-    for ( int i = 0; i < t_bits.size(); i++ ) {
+    for ( size_t i = 0; i < t_bits.size(); i++ ) {
       std::string t_bit = t_bits.at(i);
       if ( t_bit.substr(0, 2) != "-k" ) {
 	t_ext += t_bit;
@@ -247,7 +247,7 @@ int script(Logfile& l, Config& c)  {
     std::vector<std::string>cmds;
     std::vector<std::string>kv_pairs;
 
-    int pos = a_line.find( ':', 0 );
+    size_t pos = a_line.find( ':', 0 );
     if ( pos != std::string::npos ) {
       std::string lhs = trim(a_line.substr( 0, pos ));
       std::string rhs = trim(a_line.substr( pos+1 ));
@@ -264,7 +264,7 @@ int script(Logfile& l, Config& c)  {
       }
       if ( lhs == "params" ) {
 	Tokenize( rhs, kv_pairs, ',' );
-	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  //
 	  // Can override params in script from cmdline if false.
 	  // This works because override is NOT (false) allowed and
@@ -279,7 +279,7 @@ int script(Logfile& l, Config& c)  {
       if ( lhs == "msg" ) {
 	Tokenize( rhs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
-	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string chunk = kv_pairs.at(j);
 	  if ( chunk.substr(0, 1) == "$" ) {
 	    std::string var = chunk.substr(1, chunk.length()-1);
@@ -298,7 +298,7 @@ int script(Logfile& l, Config& c)  {
 	//
 	Tokenize( rhs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
-	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string chunk = kv_pairs.at(j);
 	  if ( chunk.substr(0, 1) == "$" ) {
 	    std::string var = chunk.substr(1, chunk.length()-1);
@@ -315,7 +315,7 @@ int script(Logfile& l, Config& c)  {
       if ( lhs == "extern2" ) {
 	Tokenize( rhs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
-	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string chunk = kv_pairs.at(j);
 	  if ( chunk.substr(0, 1) == "$" ) {
 	    std::string var = chunk.substr(1, chunk.length()-1);
@@ -349,7 +349,7 @@ int script(Logfile& l, Config& c)  {
 	// set foo = foo + "t" ? (or add foo "t")
 	Tokenize( rhs, kv_pairs, ',' );
 	std::string kv = kv_pairs.at(0);
-	int pos = kv.find( ':', 0 );
+	size_t pos = kv.find( ':', 0 );
 	if ( pos != std::string::npos ) {
           std::string lhs = trim(kv.substr( 0, pos ));
           std::string rhs = trim(kv.substr( pos+1 ));
@@ -374,7 +374,7 @@ int script(Logfile& l, Config& c)  {
       if ( lhs == "add" ) {
 	Tokenize( rhs, kv_pairs, ',' );
 	std::string kv = kv_pairs.at(0);
-	int pos = kv.find( ':', 0 );
+	size_t pos = kv.find( ':', 0 );
 	if ( pos != std::string::npos ) {
           std::string lhs = trim(kv.substr( 0, pos ));
           std::string rhs = trim(kv.substr( pos+1 ));
@@ -863,7 +863,7 @@ int window_s( Logfile& l, Config& c ) {
     a_line = pre_s + a_line + suf_s;
 
     window( a_line, a_line, ws, 0, 0, false, results );
-    if ( (skip == 0) || (results.size() >= ws) ) {
+    if ( (skip == 0) || (results.size() >= (size_t)ws) ) {
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
@@ -1210,7 +1210,7 @@ int window_line(Logfile& l, Config& c) {
       int  sum      = 0;
       int  d_size   = 0;
       int  target_f = 0;
-      for ( int i = 1; i < distribution.size(); i++ ) {
+      for ( size_t i = 1; i < distribution.size(); i++ ) {
 	std::string token = distribution.at(i);
 	if ( (token == "{") || (token == "}")) {
 	  continue;
@@ -1368,7 +1368,7 @@ int window( std::string a_line, std::string target_str,
   if ( var == true ) {
     factor = lc;
   }
-  for ( int i = offset; i < words.size(); i++ ) {
+  for ( size_t i = offset; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
 
 	if ( it == 0 ) {
@@ -1493,7 +1493,7 @@ int window( std::string a_line, std::string target_str,
   if ( var == true ) {
     factor = lc;
   }
-  for ( int i = 0; i < words.size(); i++ ) {
+  for ( size_t i = 0; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
 
     for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
@@ -1549,7 +1549,7 @@ int window( std::string a_line, std::string target_str,
   std::string windowed_line = "";
   si = full.begin()+lc; // first word of the instance
   int factor = lc; // lc for variable length instances.
-  for ( int i = 0; i < words.size(); i++ ) {
+  for ( size_t i = 0; i < words.size(); i++ ) {
     for ( fi = si-lc; fi != si-bo; fi++ ) { // context around si
       if ( fi != si ) {
 	windowed_line = windowed_line + *fi + " ";
@@ -1708,7 +1708,7 @@ int hapax_line( const std::string& a_line, const std::map<std::string,int>& wfre
 
   res.clear();
   std::string wrd;
-  for ( int i = 0; i < words.size()-1; i++ ) {
+  for ( size_t i = 0; i < words.size()-1; i++ ) {
     wrd = words.at( i );
     if ( wrd == "_" ) { // skip
        res = res + wrd + " ";
@@ -1827,7 +1827,7 @@ int unk_pred( Logfile& l, Config& c ) {
       // Tokenize the line of data, check for unknowns.
       //
       Tokenize( a_line, words, ' ' );
-      for ( int i = 0; i < words.size(); i++ ) {
+      for ( size_t i = 0; i < words.size(); i++ ) {
 
 	std::string word = words.at(i);
 
@@ -1924,7 +1924,7 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
 
   // Or fill with empty context?
   //
-  if ( words.size() < n ) {
+  if ( words.size() < (size_t)n ) {
     return 1;
   }
 
@@ -1933,7 +1933,7 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
 
   std::string w_line = "";
   wi = words.begin(); // first word of sentence.
-  for ( int i = 0; i < words.size()-n+1; i++ ) {
+  for ( size_t i = 0; i < words.size()-n+1; i++ ) {
 
     for ( ngri= wi; ngri < wi+n-1; ngri++ ) {
       w_line = w_line + *ngri + " "; // no out of bounds checking.
@@ -2231,7 +2231,7 @@ int hapax(Logfile& l, Config& c)  {
     //
     // The features.
     //
-    for ( int i = 0; i < words.size()-1; i++ ) {
+    for ( size_t i = 0; i < words.size()-1; i++ ) {
       //
       // Words not in the wfreqs vector are "HAPAX"ed.
       // (The actual freq is not checked here anymore.)
@@ -2364,7 +2364,7 @@ int hapax_txt(Logfile& l, Config& c)  {
     //
     // The features and class
     //
-    for ( int i = 0; i < words.size(); i++ ) {
+    for ( size_t i = 0; i < words.size(); i++ ) {
       //
       // Words not in the wfreqs vector are "HAPAX"ed.
       // (The actual freq is not checked here anymore.)
@@ -2435,7 +2435,7 @@ int hapax_line_OLD(Logfile& l, Config& c)  {
   std::string res;
   Tokenize( a_line, words, ' ' );
 
-  for ( int i = 0; i < words.size()-1; i++ ) {
+  for ( size_t i = 0; i < words.size()-1; i++ ) {
     //
     // NB: unknown words and "_" are hapaxed as well.
     // Words not in the wfreqs vector are "HAPAX"ed.
@@ -3251,7 +3251,7 @@ int pplx( Logfile& l, Config& c ) {
 
     window( a_line, a_line, ws, 0, false, results );
 
-    if ( (skip == 0) || (results.size() >= ws) ) {
+    if ( (skip == 0) || (results.size() >= (size_t)ws) ) {
       for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
@@ -4332,7 +4332,7 @@ bool file_exists( Logfile& l, Config& c, const std::string& fn ) {
 }
 
 bool contains_id( const std::string& str, const std::string& id  ) {
-  int pos = str.find( id, 0 );
+  size_t pos = str.find( id, 0 );
   if ( pos != std::string::npos ) {
     return true;
   }
