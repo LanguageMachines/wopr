@@ -137,7 +137,7 @@ class History {
   }
 
   void dump() {
-    for ( int i = 0; i < his.size(); i++ ) {
+    for ( size_t i = 0; i < his.size(); i++ ) {
       std::cerr << the_time() << ": (dump)(" << i << ")=" << his.at(i)->toString() << std::endl;
     }
   }
