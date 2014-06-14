@@ -895,7 +895,7 @@ int correct( Logfile& l, Config& c ) {
 	    cls.push_back( classify_line );
 	  }
 
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 		words.clear();
 	    a_line = cls.at(i);
@@ -1069,8 +1069,8 @@ int correct( Logfile& l, Config& c ) {
 		// Skip words shorter than mwl.
 		//
 		std::vector<distr_elem*> distr_vec;
-		if ( md >= min_md ) {
-		  if ((cnt <= max_distr) && (target.length() >= mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
+		if ( md >= (size_t)min_md ) {
+		  if ((cnt <= max_distr) && (target.length() >= (size_t)mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
 			if ( (typo_only && target_unknown) || ( ! typo_only) ) {
 			  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 				distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);
@@ -1459,7 +1459,7 @@ int tcorrect( Logfile& l, Config& c ) {
 	    cls.push_back( classify_line );
 	  }
 
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 		words.clear();
 	    a_line = cls.at(i);
@@ -1637,7 +1637,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		log_out << a_line << std::endl;
 		if ( distr_count >= min_dsum ) {
 		  log_out << "dsum [" << distr_count << "] >= min_dsum [" << min_dsum << "]" << std::endl;
-		  if ( md >= min_md ) { // match depth ok?
+		  if ( md >= (size_t)min_md ) { // match depth ok?
 		    log_out << "md [" << md << "] >= min_md [" << min_md << "]" << std::endl;
 		    if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) { // confidence OK?
 		      log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
@@ -1940,7 +1940,7 @@ int server_sc( Logfile& l, Config& c ) {
 	  //
 	  std::vector<std::string> words;
 	  probs.clear();
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 	    classify_line = cls.at(i);
 
@@ -2079,7 +2079,7 @@ int server_sc( Logfile& l, Config& c ) {
 
 	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	    if ( cnt < max_distr ) {
-	      if ( (target.length() >= mwl) && (in_distr == false) ) {
+	      if ( (target.length() >= (size_t)mwl) && (in_distr == false) ) {
 		while ( it != vd->end() ) {
 
 		  // 20100111: freq voorspelde woord : te voorspellen woord > 1
@@ -2388,7 +2388,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		//
 		std::vector<std::string> words;
 		probs.clear();
-		for ( int i = 0; i < cls.size(); i++ ) {
+		for ( size_t i = 0; i < cls.size(); i++ ) {
 
 		  classify_line = cls.at(i);
 
@@ -2532,7 +2532,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
 	  // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	  if ( cnt < max_distr ) {
-	    if ( (target.length() >= mwl) && (in_distr == false) ) {
+	    if ( (target.length() >= (size_t)mwl) && (in_distr == false) ) {
 	      while ( it != vd->end() ) {
 
 			// 20100111: freq voorspelde woord : te voorspellen woord > 1
@@ -2851,7 +2851,7 @@ int mcorrect( Logfile& l, Config& c ) {
 	  e->set_timbl( timbl );
 	  e->init();
 	  int hi_freq = 0;
-	  for ( int i = 1; i < words.size(); i++ ) {
+	  for ( size_t i = 1; i < words.size(); i++ ) {
 		std::string tr = words[i];
 		triggers[ tr ] = e;
 		called[ tr ] = 0;
@@ -2974,7 +2974,7 @@ int mcorrect( Logfile& l, Config& c ) {
 	    cls.push_back( classify_line );
 	  }
 
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 		words.clear();
 	    a_line = cls.at(i);
@@ -3168,8 +3168,8 @@ int mcorrect( Logfile& l, Config& c ) {
 		// from L1084
 		std::vector<distr_elem*> distr_vec;
 		if ( distr_count >= min_dsum ) {
-		  if ( md >= min_md ) {
-		    if ((cnt <= max_distr) && (target.length() >= mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
+		  if ( md >= (size_t)min_md ) {
+		    if ((cnt <= max_distr) && (target.length() >= (size_t)mwl) && ((in_distr == false)||(target_freq<=max_tf)) && (entropy <= max_ent)) {
 		      if ( (typo_only && target_unknown) || ( ! typo_only) ) {
 			if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 			  distr_spelcorr( vd, target, wfreqs, distr_vec, mld, min_ratio, target_lexfreq, cs, min_df, confidence);

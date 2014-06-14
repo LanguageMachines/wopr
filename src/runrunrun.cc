@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2013 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -2546,7 +2546,7 @@ int window_usenet( Logfile& l, Config& c ) {
       //window data with target
       if ( data.size() > 0 ) {
 	std::vector<std::string>  window(ws, "_");
-	for ( int i = 0; i < data.size(); i++ ) {
+	for ( size_t i = 0; i < data.size(); i++ ) {
 	  std::copy( window.begin(), window.end(), output );
 	  file_out << target << std::endl;
 	  copy( window.begin()+1, window.end(), window.begin() );
@@ -3052,7 +3052,7 @@ int smooth(Logfile& l, Config& c)  {
     //
     // The features.
     //
-    for ( int i = 0; i < words.size()-1; i++ ) {
+    for ( size_t i = 0; i < words.size()-1; i++ ) {
       //
     }
     //

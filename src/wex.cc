@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2013 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -293,7 +293,7 @@ int read_kv_from_file( std::ifstream& file,
     if ( a_line.length() == 0 ) {
       continue;
     }
-    int pos = a_line.find( ':', 0 );
+    size_t pos = a_line.find( ':', 0 );
     if ( pos != std::string::npos ) {
       std::string lhs = trim(a_line.substr( 0, pos ));
       std::string rhs = trim(a_line.substr( pos+1 ));
@@ -322,7 +322,7 @@ int read_classifiers_from_file( std::ifstream& file,
     if ( a_line.length() == 0 ) {
       continue;
     }
-    int pos = a_line.find( ':', 0 );
+    size_t pos = a_line.find( ':', 0 );
     if ( pos != std::string::npos ) {
       std::string lhs = trim(a_line.substr( 0, pos ));
       std::string rhs = trim(a_line.substr( pos+1 ));
@@ -1196,7 +1196,7 @@ int multi_gated( Logfile& l, Config& c ) {
     if ( mode == 1 ) {
       int cnt = multidist.cnt;
       std::string tmp;
-      if ( (cnt <= max_distr) && (target.length() > mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) {
+      if ( (cnt <= max_distr) && (target.length() > (size_t)mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) {
 		std::vector<distr_elem*> distr_vec;
 		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true, 0, -1);
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );

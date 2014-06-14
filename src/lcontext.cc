@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -391,7 +391,7 @@ int lcontext( Logfile& l, Config& c ) {
       // before the instance. We should have a start-pause (# of instances)
       // before we start adding gc?
     }
-    for( int i = start; i < words.size(); i++ ) {
+    for( size_t i = start; i < words.size(); i++ ) {
 
       std::string wrd = words.at(i);
 
@@ -672,7 +672,7 @@ int occgaps( Logfile& l, Config& c ) {
       double ogrps = 0; // single large gaps are a group
       double sgaps = 0; // small gaps
       double lgaps = 0; // large gaps
-      for( int i = 0; i < vv.size()-1; i++ ) {
+      for( size_t i = 0; i < vv.size()-1; i++ ) {
 	// only if gap < 200 for the stats?
 	long this_gap = vv.at(i+1)-vv.at(i)-1;
 	if ( this_gap < gap ) {
@@ -735,8 +735,8 @@ int occgaps( Logfile& l, Config& c ) {
 	   (
 	    (r1 >= min_r) &&
 	    (r1 < max_r) &&
-	    (vv.size() >= min_f) &&
-	    (vv.size() < max_f) &&
+	    (vv.size() >= (size_t)min_f) &&
+	    (vv.size() < (size_t)max_f) &&
 	    (p1 >= min_p) &&
 	    (p1 < max_p) &&
 	    (ave_sg >= min_a) &&

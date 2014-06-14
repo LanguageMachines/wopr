@@ -102,7 +102,7 @@ std::string Node::info() {
 void Node::dump() {
   std::string d = get_dist();
   std::cout << d << ":["<< arcs.size() << "]\n";
-  for ( int i = 0; i < arcs.size(); i++ ) {
+  for ( size_t i = 0; i < arcs.size(); i++ ) {
     Arc* a = arcs[i];
     std::cout << a->get_label() << std::endl;
     Node* n = a->get_node();
@@ -123,7 +123,7 @@ void Node::dump( std::map<int, std::string>& classes,
   // We need a place to insert our smoothed values.
   //
   int sum = 0;
-  for ( int i = 0; i < dist.size(); i += 2 ) {
+  for ( size_t i = 0; i < dist.size(); i += 2 ) {
     sum += (int)dist[i+1];
   }
 
@@ -131,7 +131,7 @@ void Node::dump( std::map<int, std::string>& classes,
 
     //os << "Dflt: " << classes[ classhash ] << std::endl; //PJB ??
 
-    for ( int i = 0; i < dist.size(); i += 2 ) {
+    for ( size_t i = 0; i < dist.size(); i += 2 ) {
       std::string the_class = classes[ dist[i] ];
       int class_freq = (int)dist[i+1]; // INSERT smoothed value here <---
       float class_prob = (float)(class_freq / (float)sum);
@@ -143,7 +143,7 @@ void Node::dump( std::map<int, std::string>& classes,
     }
   }
 
-  for ( int i = 0; i < arcs.size(); i++ ) {
+  for ( size_t i = 0; i < arcs.size(); i++ ) {
     Arc* a = arcs[i];
     //std::cout << features[ a->get_label() ] << std::endl;
     Node* n = a->get_node();
@@ -169,14 +169,14 @@ void Node::dump( std::map<int, std::string>& classes,
   double o_sum = 0.0;
   std::vector<double> sdist(dist.size()); // dist: [c1, f1, ...]
   smooth_dist( smooth, sdist );
-  for ( int i = 0; i < sdist.size(); i += 2 ) {
+  for ( size_t i = 0; i < sdist.size(); i += 2 ) {
     sum += (double)sdist[i+1];
     o_sum += (double)dist[i+1];
   }
 
   if ( d == 0 ) { // d is depth, we are at the 'end' here.
     // Generate a pattern for each class in the dist.
-    for ( int i = 0; i < sdist.size(); i += 2 ) {
+    for ( size_t i = 0; i < sdist.size(); i += 2 ) {
       std::string the_class = classes[ (int)sdist[i] ];
       double class_freq = (double)sdist[i+1];
       if ( (int)class_freq == 0 ) {
@@ -188,7 +188,7 @@ void Node::dump( std::map<int, std::string>& classes,
     }
   }
 
-  for ( int i = 0; i < arcs.size(); i++ ) {
+  for ( size_t i = 0; i < arcs.size(); i++ ) {
     Arc* a = arcs[i];
     Node* n = a->get_node();
     std::string new_pat = features[ a->get_label() ] + " " + pat;
@@ -198,7 +198,7 @@ void Node::dump( std::map<int, std::string>& classes,
 
 std::string Node::get_dist() {
   std::string res;
-  for ( int i = 0; i < dist.size(); i++ ) {
+  for ( size_t i = 0; i < dist.size(); i++ ) {
     res += to_str((int)dist[i])+" ";
   }
   return res;
@@ -215,7 +215,7 @@ van patroon. Nee.
 void Node::smooth_dist( std::map<int, double>& smooth, // count -> count*
 			std::vector<double>& res ) {
   // dist: [ class1, f1, class2, f2,..., classn, fn ]
-  for ( int i = 0; i < dist.size(); i +=2 ) {
+  for ( size_t i = 0; i < dist.size(); i +=2 ) {
     int     f = (int)dist[i+1];
     double sf = (double)smooth[f];
     res[i] = dist[i];

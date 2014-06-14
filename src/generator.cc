@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -192,7 +192,7 @@ int generate( Logfile& l, Config& c ) {
       }
       total_choices += cnt;
 
-      int rnd_idx;
+      unsigned int rnd_idx;
       if ( mode == 0 ) {
 	rnd_idx = mtrand.randInt( cnt-1 ); // % 3; // Extra "% max" ?
       } else {
@@ -206,11 +206,11 @@ int generate( Logfile& l, Config& c ) {
       //
       it = vd->begin();
       if ( mode == 0 ) {
-	for ( int i = 0; i < rnd_idx; i++ ) {
+	for ( unsigned int i = 0; i < rnd_idx; i++ ) {
 	  ++it;
 	}
       } else {
-	for ( int i = 0; i < rnd_idx; i++ ) {
+	for ( unsigned int i = 0; i < rnd_idx; i++ ) {
 	  sum += it->second->Weight();
 	  if ( sum > rnd_idx ) {
 	    break;
@@ -398,7 +398,7 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     cnt = vd->size();
     int distr_count = vd->totalSize();
 
-    int rnd_idx;
+    unsigned int rnd_idx;
     if ( mode == 0 ) {
       rnd_idx = mtrand.randInt( cnt-1 ); //  % 3;
     } else {
@@ -411,12 +411,12 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     //
     it = vd->begin();
     if ( mode == 0 ) {
-      for ( int i = 0; i < rnd_idx; i++ ) {
+      for ( unsigned int i = 0; i < rnd_idx; i++ ) {
 	std::string tvs  = it->second->Value()->Name();
 	++it;
       }
     } else {
-      for ( int i = 0; i < rnd_idx; i++ ) {
+      for ( unsigned int i = 0; i < rnd_idx; i++ ) {
         sum += it->second->Weight();
         if ( sum > rnd_idx ) {
           break;

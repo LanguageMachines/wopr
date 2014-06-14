@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007, 2013 Peter Berck                                          *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -255,7 +255,7 @@ int server2(Logfile& l, Config& c) {
 		  if ( tmp_buf.substr( 0, 5 ) == "file:" ) {
 
 			l.log( "NOTICE: file mode in socket!" );
-			int pos = tmp_buf.find( ':', 0 );
+			size_t pos = tmp_buf.find( ':', 0 );
 			if ( pos != std::string::npos ) {
 			  std::string lhs = trim(tmp_buf.substr( 0, pos ));
 			  std::string rhs = trim(tmp_buf.substr( pos+1 ));
@@ -568,7 +568,7 @@ std::string json_safe( const std::string& s ) {
 
 std::string str_clean( const std::string& s ) {
   std::string clean;
-  for ( int i = 0; i < s.length(); i++ ) {
+  for ( size_t i = 0; i < s.length(); i++ ) {
     char c = s.at(i);
     if ( c < 32 ) {
       continue;// make it: c = 32, then fall through rest?
@@ -628,7 +628,7 @@ int parse_distribution( std::string dist, std::map<std::string, double>& res ) {
   int  target_f = 0;
   std::string a_class;
 
-  for ( int i = 1; i < distribution.size(); i++ ) {
+  for ( size_t i = 1; i < distribution.size(); i++ ) {
     std::string token = distribution.at(i);
     if ( (token == "{") || (token == "}")) {
       continue;
@@ -1114,7 +1114,7 @@ int server4(Logfile& l, Config& c) {
 	  std::vector<std::string> words;
 
 	  probs.clear();
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 	    classify_line = cls.at(i);
 
@@ -1231,7 +1231,7 @@ int server4(Logfile& l, Config& c) {
 	  //l.log( "Probs: "+ to_str(probs.size() ));
 
 	  double ave_pl10 = 0.0;
-	  for ( int p = 0; p < probs.size(); p++ ) {
+	  for ( size_t p = 0; p < probs.size(); p++ ) {
 	    double prob = probs.at(p);
 	    ave_pl10 += prob;
 	  }
@@ -1852,7 +1852,7 @@ int mbmt(Logfile& l, Config& c) {
 	  //
 	  std::vector<std::string> words;
 	  probs.clear();
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 	    classify_line = cls.at(i);
 
@@ -1953,7 +1953,7 @@ int mbmt(Logfile& l, Config& c) {
 	    //l.log( "Probs: "+ to_str(probs.size() ));
 
 	    double ave_pl10 = 0.0;
-	    for ( int p = 0; p < probs.size(); p++ ) {
+	    for ( size_t p = 0; p < probs.size(); p++ ) {
 	      double prob = probs.at(p);
 	      ave_pl10 += prob;
 	    }
@@ -2021,7 +2021,7 @@ int hapax_vector( std::vector<std::string>& words, const std::map<std::string,in
   int changes = 0;
 
   std::string wrd;
-  for ( int i = 0; i < words.size()-1; i++ ) {
+  for ( size_t i = 0; i < words.size()-1; i++ ) {
     wrd = words.at( i );
     if ( wrd == "_" ) { // skip
        continue;
@@ -2228,7 +2228,7 @@ int webdemo(Logfile& l, Config& c) {
 	}
 	xml = "<instances>";
 	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
-	for ( int i = 0; i < cls.size(); i++ ) {
+	for ( size_t i = 0; i < cls.size(); i++ ) {
 	  classify_line = cls.at(i);
 
 	  std::string lw;
@@ -2705,7 +2705,7 @@ int server_mg( Logfile& l, Config& c ) {
 	  //
 	  std::vector<std::string> words;
 	  probs.clear();
-	  for ( int i = 0; i < cls.size(); i++ ) {
+	  for ( size_t i = 0; i < cls.size(); i++ ) {
 
 	    classify_line = cls.at(i);
 
@@ -2800,7 +2800,7 @@ int server_mg( Logfile& l, Config& c ) {
 	  //newSock->write( to_str(multidist.prob) );
 
 	  double ave_pl10 = 0.0;
-	    for ( int p = 0; p < probs.size(); p++ ) {
+	    for ( size_t p = 0; p < probs.size(); p++ ) {
 	      double prob = probs.at(p);
 	      ave_pl10 += prob;
 	    }

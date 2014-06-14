@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007-2013 Peter Berck                                           *
+ * Copyright 2007-2014 Peter Berck                                           *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -193,7 +193,7 @@ int main( int argc, char* argv[] ) {
       }
       if ( strncmp(long_options[option_index].name, "params", 6) == 0 ) {
 	Tokenize( optarg, kv_pairs, ',' );
-	for ( int i = 0; i < kv_pairs.size(); i++ ) {
+	for ( size_t i = 0; i < kv_pairs.size(); i++ ) {
 	  co.process_line( kv_pairs.at(i), false );
 	}
 	kv_pairs.clear();
@@ -230,7 +230,7 @@ int main( int argc, char* argv[] ) {
 
     case 'p':
       Tokenize( optarg, kv_pairs, ',' );
-      for ( int i = 0; i < kv_pairs.size(); i++ ) {
+      for ( size_t i = 0; i < kv_pairs.size(); i++ ) {
 	co.process_line( kv_pairs.at(i), false );
       }
       kv_pairs.clear();
@@ -280,10 +280,10 @@ int main( int argc, char* argv[] ) {
 	wopr_log << " ";
 	std::string s = std::string( argv[i] );
 	Tokenize( s, kv_pairs, ',' );
-	for ( int j = 0; j < kv_pairs.size(); j++ ) {
+	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string kv = kv_pairs.at(j);
 	  if ( kv.find( ' ', 0 ) != std::string::npos ) { // contains space
-	    int pos = kv.find( ':', 0 );
+	    size_t pos = kv.find( ':', 0 );
 	    if ( pos != std::string::npos ) {
 	      std::string lhs = trim(kv.substr( 0, pos ));
 	      std::string rhs = trim(kv.substr( pos+1 ));
@@ -317,7 +317,7 @@ int main( int argc, char* argv[] ) {
   std::vector<std::string>funs;
   std::string fun_list = co.get_value( "run" );
   Tokenize( fun_list, funs, ',' );
-  for ( int i = 0; i < funs.size(); i++ ) {
+  for ( size_t i = 0; i < funs.size(); i++ ) {
     l.log( "Running: "+funs.at(i) );
     int(*pt2Func2)(Logfile&, Config&) = get_function( funs.at(i) );
     int res = pt2Func2(l, co);

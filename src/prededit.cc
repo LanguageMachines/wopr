@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -139,16 +139,16 @@ int pdt( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  int length = pel; // length of each predicted string
+  size_t length = pel; // length of each predicted string
   std::vector<int> depths(length+1, 1);
   if ( ped.size() > length ) {
     ped = ped.substr(0, length );
   }
-  for( int i = 0; i < ped.size(); i++) {
+  for( size_t i = 0; i < ped.size(); i++) {
     depths.at(length-i) = stoi( ped.substr(i, 1), 32 ); // V=31
   }
   std::string tmp = "n"+to_str(length)+"ds";
-  for ( int i = length; i > 0; i-- ) {
+  for ( size_t i = length; i > 0; i-- ) {
     if ( (length-i) < ped.size() ) {
       tmp = tmp + ped[length-i];
     } else {
@@ -268,7 +268,7 @@ int pdt( Logfile& l, Config& c ) {
     //
     long sentenceksaved = 0; // key presses saved in this sentence
     long sentencewsaved = 0; // words saved in this sentence
-    for ( int i = 0; i < words.size(); i++ ) {
+    for ( size_t i = 0; i < words.size(); i++ ) {
 
       token = words.at(i);
 
@@ -349,13 +349,13 @@ int pdt( Logfile& l, Config& c ) {
 
 	// Skip if not > minmatch (to skip silly matches like comma's)
 	//
-	if ( count_keys(matched)-1 < minmatch ) {
+	if ( count_keys(matched)-1 < (size_t)minmatch ) {
 	  matched = "";
 	}
 
 	// We take largest number of presses, not words. Same result.
 	//
-	if ( count_keys(matched) > savedhere+1 ) {
+	if ( count_keys(matched) > (size_t)savedhere+1 ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
 	  savedhere = count_keys(matched)-1;
@@ -448,22 +448,22 @@ int pdt2( Logfile& l, Config& c ) {
   int length0 = 1; // hardcoded
   std::string ped0 = dl;
   std::vector<int> depths0(length0+1, 1);
-  for( int i = 0; i < ped0.size(); i++) {
+  for( size_t i = 0; i < ped0.size(); i++) {
     depths0.at(length0-i) = stoi( ped0.substr(i, 1), 32 ); // V=31
   }
   //
-  int length = pel; // length of each predicted string
+  size_t length = pel; // length of each predicted string
   std::vector<int> depths(length+1, 1);
   if ( ped.size() > length ) {
     ped = ped.substr(0, length );
   }
-  for( int i = 0; i < ped.size(); i++) {
+  for( size_t i = 0; i < ped.size(); i++) {
     depths.at(length-i) = stoi( ped.substr(i, 1), 32 ); // V=31
   }
 
   std::string tmp = "dl"+dl;
   tmp = tmp + "_n"+to_str(length)+"ds";
-  for ( int i = length; i > 0; i-- ) {
+  for ( size_t i = length; i > 0; i-- ) {
     if ( (length-i) < ped.size() ) {
       tmp = tmp + ped[length-i];
     } else {
@@ -611,7 +611,7 @@ int pdt2( Logfile& l, Config& c ) {
     long sentencewsaved = 0; // words saved in this sentence
     long sletterssaved  = 0; // letter keys saved in this sentence
 
-    for ( int i = 0; i < words.size(); i++ ) {
+    for ( size_t i = 0; i < words.size(); i++ ) {
 
       token = words.at(i);
 
@@ -633,7 +633,7 @@ int pdt2( Logfile& l, Config& c ) {
 	// We need to skip the letter context as well now.
 	//
 	(void)explode( token, letters );
-	for ( int j = 0; j < letters.size(); j++ ) {
+	for ( size_t j = 0; j < letters.size(); j++ ) {
 	  letter = letters.at(j);
 	  ctx0.push( letter );
 	}
@@ -660,7 +660,7 @@ int pdt2( Logfile& l, Config& c ) {
       (void)explode( token, letters );
       int lsaved = 0;
       //l.log( "Inside "+token+", letters="+to_str(letters.size()) );
-      for ( int j = 0; j < letters.size(); j++ ) {
+      for ( size_t j = 0; j < letters.size(); j++ ) {
 
 	// get the letter we "typed", and add it to the context used
 	// to predict the rest of the word.
@@ -684,7 +684,7 @@ int pdt2( Logfile& l, Config& c ) {
 
 	generate_tree( My_Experiment0, ctx0, strs0, length0, depths0, length0, t0 );
 
-	for ( int s = 0; s < strs0.size(); s++ ) {
+	for ( size_t s = 0; s < strs0.size(); s++ ) {
 	  std::string lpred = strs0.at(s).substr(1, strs0.at(s).length()-1);
 	  //l.log( "pred="+to_str(s)+"/"+lpred );
 
@@ -725,7 +725,7 @@ int pdt2( Logfile& l, Config& c ) {
 
 	    // We need to shift our ctx0 with the predicted letters.
 	    //
-	    for ( int j1 = j+1; j1 < letters.size(); j1++ ) {
+	    for ( size_t j1 = j+1; j1 < letters.size(); j1++ ) {
 	      letter = letters.at(j1);
 	      ctx0.push( letter );
 	    }
@@ -810,7 +810,7 @@ int pdt2( Logfile& l, Config& c ) {
 
 	// We take largest number of presses, not words. Same result.
 	//
-	if ( matched.size() > savedhere+1 ) {
+	if ( matched.size() > (size_t)savedhere+1 ) {
 	  //if ( words_matched > skip ) {
 	  skip = words_matched;
 	  savedhere = matched.size()-1; // -1 for space.
@@ -1094,7 +1094,7 @@ void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<
   std::vector<std::string> words;
   std::vector<std::string>::iterator wi;
   Tokenize( a_line, words );
-  int i;
+  size_t i;
   for ( i = 0; i < words.size(); i++ ) { // each word
     // If not the first word, insert a "space" before the words (or after the previous).
     // Also, redict the "current" word after the space.
@@ -1757,11 +1757,11 @@ int pdt2web( Logfile& l, Config& c ) {
 	l.log("LPOS: "+ to_str(pdt->lpos));
 	int lpos = pdt->lpos;
 	std::vector<std::string> letters;
-	for ( int i = 2; i < buf_tokens.size(); i++ ) {
+	for ( size_t i = 2; i < buf_tokens.size(); i++ ) {
 	  l.log("FEED: "+ buf_tokens.at(i));
 	  (void)explode( buf_tokens.at(i), letters );
 
-	  for ( int j = lpos; j < letters.size(); j++ ) {
+	  for ( size_t j = lpos; j < letters.size(); j++ ) {
 	    if ( letters.at(j) == " " ) {
 	      pdt->add_spc();
 	    } else {
@@ -1785,7 +1785,7 @@ int pdt2web( Logfile& l, Config& c ) {
 	std::vector<std::string>::iterator li;
 	(void)explode( buf_tokens.at(2), letters );
 	// need a space before?
-	for ( int j = 0; j < letters.size(); j++ ) {
+	for ( size_t j = 0; j < letters.size(); j++ ) {
 	  pdt->add_ltr( letters.at(j) );
 	}
 	newSock->write( ok_doc_str );

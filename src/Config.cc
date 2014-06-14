@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2005-2009 Peter Berck                                           *
+ * Copyright 2005-2014 Peter Berck                                           *
  *                                                                           *
  * This file is part of wpred.                                               *
  *                                                                           *
@@ -98,7 +98,7 @@ void Config::read_file( const std::string& filename ) {
 }
 
 void Config::process_line( const std::string& a_line, bool force ) {
-  int pos = a_line.find( ':', 0 );
+  size_t pos = a_line.find( ':', 0 );
   if ( pos != std::string::npos ) {
     std::string lhs = trim(a_line.substr( 0, pos ));
     std::string rhs = trim(a_line.substr( pos+1 ));

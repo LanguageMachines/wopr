@@ -548,7 +548,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	replace( a_line.begin(), a_line.end(), '\t', ' ' );
 	Tokenize( a_line, results );
 	ngram.clear();
-	int i;
+	size_t i;
 	for ( i = 0; i < results.size()-offset; i++ ) {
 	  ngram = ngram + results.at(i) + " ";
 	}
