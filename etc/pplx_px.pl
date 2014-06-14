@@ -49,12 +49,16 @@ my @vsum;
 for ( my $i = 0; $i < 6; $i++ ) {
   $vsum[$i] = 0;
 }
+# instance+target classification log2prob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])
+# _ _ An `` -8.92516 8.24174 486.117 cd k 1 0 9103 107918 0.0196078 [ `` 14787 The 10598 But 4149 ]
+#     0  1  2        3       4       5  6 7 8 9    10     11        12
+
 my @vsum_txt = ( "unk", "match leaf", "cg", "cd", "ig" );
 my %word_score;			#cg,cd,ic counts
 my $log2prob_pos  = $lc + $rc + $gcs + 2;
 my $target_pos    = $lc + $rc + $gcs + 0;
 my $class_pos     = $lc + $rc + $gcs + 1; #classification
-my $classtype_pos = $lc + $rc + $gcs + 5;
+my $classtype_pos = $lc + $rc + $gcs + 5; #cd/cg/uic
 my $unknown_pos   = $lc + $rc + $gcs + 6;
 my $md_pos        = $lc + $rc + $gcs + 7;  #match depth
 my $ml_pos        = $lc + $rc + $gcs + 8;  #matched at leaf

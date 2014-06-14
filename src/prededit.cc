@@ -1227,15 +1227,18 @@ int pdt2( Logfile& l, Config& c ) {
 
 int pe_init( PDT& pdt ) {
   //pdt.reset(); //resets contexts
+  return 0;
 }
 
 int pe_type( PDT& pdt, std::string& l ) {
   //pdt.ltr_ctx.push( l );
+  return 0;
 }
 
 int pe_complete( PDT& pdt ) {
   // like pdt2, maybe delegate to PDT.complete()
   //generate_tree( My_Experiment0, c, ctx0, strs0, length0, depths0, t0 );
+  return 0;
 }
 
 #include "wopr/tinyxml.h"

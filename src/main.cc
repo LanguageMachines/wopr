@@ -173,31 +173,32 @@ int main( int argc, char* argv[] ) {
     switch ( c ) {
 
     case 0:
-      if ( long_options[option_index].name == "verbose" ) {
+      //if ( long_options[option_index].name == "verbose" ) {
+      if ( strncmp(long_options[option_index].name, "verbose", 7) == 0 ) {
 	verbose = 1;
       }
-      if ( long_options[option_index].name == "version" ) {
+      if ( strncmp(long_options[option_index].name, "version", 7) == 0 ) {
 	return 0;
       }
-      if ( long_options[option_index].name == "log" ) {
+      if ( strncmp(long_options[option_index].name, "log", 3) == 0 ) {
 	log = 1;
       }
-      if ( long_options[option_index].name == "config" ) {
+      if ( strncmp(long_options[option_index].name, "config", 6) == 0 ) {
 	co.read_file( optarg );
 	// Note that one can override settings by having them after.
       }
-      if ( long_options[option_index].name == "script" ) {
+      if ( strncmp(long_options[option_index].name, "script", 6) == 0 ) {
 	co.add_kv( "script_filename", optarg );
 	co.add_kv( "run", "script" ); // NB, -s implies "-r script".
       }
-      if ( long_options[option_index].name == "params" ) {
+      if ( strncmp(long_options[option_index].name, "params", 6) == 0 ) {
 	Tokenize( optarg, kv_pairs, ',' );
 	for ( int i = 0; i < kv_pairs.size(); i++ ) {
 	  co.process_line( kv_pairs.at(i), false );
 	}
 	kv_pairs.clear();
       }
-      if ( long_options[option_index].name == "run" ) {
+      if ( strncmp(long_options[option_index].name, "run", 3) == 0 ) {
 	co.add_kv( "run", optarg );
 	// Note that one can override settings by having them after.
 	// Depending on the force parameter, which is false here, and

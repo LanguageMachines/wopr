@@ -2116,7 +2116,7 @@ int load_lexicon(Logfile& l, Config& c)  {
   l.log( "lexicon:  "+lexicon_filename );
   l.log( "SET: word_entropy" );
   l.dec_prefix();
-
+  return 0;
 }
 
 unsigned long long anahash( std::string& s ) {
