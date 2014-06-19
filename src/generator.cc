@@ -85,13 +85,13 @@ int generate( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
   const std::string  end              = c.get_value( "end", "." );
-  int                ws               = stoi( c.get_value( "ws", "3" ));
-  int                mode             = stoi( c.get_value( "mode", "1" ));
-  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
-  bool               show_counts      = stoi( c.get_value( "sc", "0" )) == 1;
+  int                ws               = my_stoi( c.get_value( "ws", "3" ));
+  int                mode             = my_stoi( c.get_value( "mode", "1" ));
+  bool               to_lower         = my_stoi( c.get_value( "lc", "0" )) == 1;
+  bool               show_counts      = my_stoi( c.get_value( "sc", "0" )) == 1;
   std::string        output_filename  = filename + ".gen";
-  int                len              = stoi( c.get_value( "len", "50" ) );
-  int                n                = stoi( c.get_value( "n", "10" ) );
+  int                len              = my_stoi( c.get_value( "len", "50" ) );
+  int                n                = my_stoi( c.get_value( "n", "10" ) );
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -473,11 +473,11 @@ int generate_server( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
   const std::string& end              = c.get_value( "end", "" );
-  int                lc               = stoi( c.get_value( "lc", "2" ));
-  int                rc               = stoi( c.get_value( "rc", "0" ));
-  int                len              = stoi( c.get_value( "len", "50" ) );
-  const int          verbose          = stoi( c.get_value( "verbose", "0" ));
-  int                n                = stoi( c.get_value( "n", "10" ) );
+  int                lc               = my_stoi( c.get_value( "lc", "2" ));
+  int                rc               = my_stoi( c.get_value( "rc", "0" ));
+  int                len              = my_stoi( c.get_value( "len", "50" ) );
+  const int          verbose          = my_stoi( c.get_value( "verbose", "0" ));
+  int                n                = my_stoi( c.get_value( "n", "10" ) );
   Timbl::TimblAPI   *My_Experiment;
 
   int ws = lc+rc;

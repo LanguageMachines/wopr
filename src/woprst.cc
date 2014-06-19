@@ -81,20 +81,20 @@ int main( int argc, char* argv[] ) {
     if (c == -1) {
       break;
     }
-
+ 
     switch ( c ) {
 
     case 0:
-      if ( long_options[option_index].name == "verbose" ) {
+      if ( strncmp(long_options[option_index].name, "verbose", 7) == 0 ) {
 	verbose = 1;
       }
-      if ( long_options[option_index].name == "port" ) {
+      if ( strncmp(long_options[option_index].name, "port", 4) == 0 ) {
 	port = optarg;
       }
-      if ( long_options[option_index].name == "host" ) {
+      if ( strncmp(long_options[option_index].name, "host", 4) == 0 ) {
 	host = optarg;
       }
-      if ( long_options[option_index].name == "file" ) {
+      if ( strncmp(long_options[option_index].name, "file", 4) == 0 ) {
 	filename = optarg;
       }
       break;
@@ -408,6 +408,7 @@ int run_file( Logfile& l, const std::string& filename,
   l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
 
   infile.close();
+  return 0;
 }
 
 int run_cache( Logfile& l, const std::string& filename ) {
@@ -469,6 +470,7 @@ int run_cache( Logfile& l, const std::string& filename ) {
   l.log( "microseconds/"+to_str(lines)+": "+to_str((u_secs1-u_secs0)/lines) );
 
   infile2.close();
+  return 0;
 }
 
 // Preted te be a load balancer
@@ -502,4 +504,5 @@ int run_ping( Logfile& l, const std::string& host, const std::string& port) {
   std::cout << u_secs1 << std::endl;
   l.log( "End test..." );
   l.log( "microseconds: "+to_str(u_secs1-u_secs0) );
+  return 0;
 }

@@ -66,8 +66,8 @@ struct lex_elem {
 int range_from_lex( Logfile& l, Config& c ) {
   l.log( "range_from_lex" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  int                m                = stoi( c.get_value( "m", "10" ));
-  int                n                = stoi( c.get_value( "n", "20" ));
+  int                m                = my_stoi( c.get_value( "m", "10" ));
+  int                n                = my_stoi( c.get_value( "n", "20" ));
   std::string        range_filename   = lexicon_filename + ".r"+to_str(m)+"n"+to_str(n);
 
   l.inc_prefix();
@@ -208,7 +208,7 @@ int range_from_lex( Logfile& l, Config& c ) {
 struct gc_elem {
   std::string word;
   int         strength;
-  unsigned long long hv;
+  int64_t hv;
   bool operator<(const gc_elem& rhs) const {
     return strength > rhs.strength;
   }
@@ -221,13 +221,13 @@ int lcontext( Logfile& l, Config& c ) {
   l.log( "lcontext" );
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& rng_filename    = c.get_value( "range" );
-  int                gcs             = stoi( c.get_value( "gcs",  "3" ));
-  int                gcd             = stoi( c.get_value( "gcd", "50" ));
-  int                gct             = stoi( c.get_value( "gct",  "0" ));
-  int                gco             = stoi( c.get_value( "gco",  "0" ));
-  bool               from_data       = stoi( c.get_value( "fd", "1" )) == 1;
+  int                gcs             = my_stoi( c.get_value( "gcs",  "3" ));
+  int                gcd             = my_stoi( c.get_value( "gcd", "50" ));
+  int                gct             = my_stoi( c.get_value( "gct",  "0" ));
+  int                gco             = my_stoi( c.get_value( "gco",  "0" ));
+  bool               from_data       = my_stoi( c.get_value( "fd", "1" )) == 1;
   std::string        id              = c.get_value( "id", "" );
-  bool               gc_sep          = stoi(c.get_value( "gc_sep", "1" )) == 1;
+  bool               gc_sep          = my_stoi(c.get_value( "gc_sep", "1" )) == 1;
 
   std::string gc_space = " ";
   if ( gc_sep == false ) {
@@ -363,7 +363,7 @@ int lcontext( Logfile& l, Config& c ) {
   empty.strength = 999999;
   std::deque<gc_elem> global_context(gcs+1, empty); // hmmm, like this?
   std::deque<gc_elem>::iterator di;
-  unsigned long long gc_hash = 0;
+  int64_t gc_hash = 0;
 
   std::string lc_str = "";
   di = global_context.begin()+gcs;
@@ -409,7 +409,7 @@ int lcontext( Logfile& l, Config& c ) {
 	gce.hv = 0;
 	if ( wrd != "_" ) {
 	  // Need to add one to pos, to avoid 0.
-	  gce.hv = (unsigned long long)pow((unsigned long long)(pos+1),5);
+	  gce.hv = (int64_t)pow((int64_t)(pos+1),5);
 	  //std::cerr << "hv(" << wrd << ") = " << pos << "," << gce.hv << std::endl;
 	}
 
@@ -528,24 +528,24 @@ int occgaps( Logfile& l, Config& c ) {
   const std::string& filename     = c.get_value( "filename" ); // dataset
   const std::string& lex_filename = c.get_value( "lexicon" );
   std::string        id           = c.get_value( "id", "" );
-  int                gap          = stoi( c.get_value( "gap", "200" ));
+  int                gap          = my_stoi( c.get_value( "gap", "200" ));
 
-  bool               filter       = stoi( c.get_value( "filter", "0" )) == 1;
+  bool               filter       = my_stoi( c.get_value( "filter", "0" )) == 1;
   // parameters for token frequency
-  long               min_f        = stoi( c.get_value( "min_f", "1" ));
-  long               max_f        = stoi( c.get_value( "max_f", "0" ));
+  long               min_f        = my_stoi( c.get_value( "min_f", "1" ));
+  long               max_f        = my_stoi( c.get_value( "max_f", "0" ));
   // parameters for small gap/gaps ratio
-  float              min_r        = stod( c.get_value( "min_r", "0.0" ));
-  float              max_r        = stod( c.get_value( "max_r", "1.1" ));
+  float              min_r        = my_stod( c.get_value( "min_r", "0.0" ));
+  float              max_r        = my_stod( c.get_value( "max_r", "1.1" ));
   // min_a/max_a: parameters for average small gap
-  long               min_a        = stoi( c.get_value( "min_a", "0" ));
-  long               max_a        = stoi( c.get_value( "max_a", "0" ));
+  long               min_a        = my_stoi( c.get_value( "min_a", "0" ));
+  long               max_a        = my_stoi( c.get_value( "max_a", "0" ));
   // parameters for groups/potential groups ratio
-  float              min_p        = stod( c.get_value( "min_p", "0.0" ));
-  float              max_p        = stod( c.get_value( "max_p", "1.1" ));
+  float              min_p        = my_stod( c.get_value( "min_p", "0.0" ));
+  float              max_p        = my_stod( c.get_value( "max_p", "1.1" ));
   // parameters for ave_lg:ave_sg ratio (note order)
-  float              min_g        = stod( c.get_value( "min_g", "0.0" ));
-  float              max_g        = stod( c.get_value( "max_g", "99999999" ));
+  float              min_g        = my_stod( c.get_value( "min_g", "0.0" ));
+  float              max_g        = my_stod( c.get_value( "max_g", "99999999" ));
 
   if ( max_f == 0 ) {
     max_f = std::numeric_limits<long>::max();

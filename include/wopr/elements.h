@@ -1,7 +1,7 @@
 // $Id$
 
 /*****************************************************************************
- * Copyright 2008 - 2013 Peter Berck                                         *
+ * Copyright 2008 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -57,7 +57,7 @@ class distr_elem_cmp_ptr {
   bool operator() (const distr_elem* de1, const distr_elem* de2) const {
     return de1->freq < de2->freq;
   } 
-}; 
+};
 
 class distr_elem_cmprev_ptr {
  public:

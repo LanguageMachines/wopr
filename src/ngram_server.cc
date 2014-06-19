@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -71,15 +71,15 @@ int ngram_server(Logfile& l, Config& c) {
 
   const std::string& ngl_filename    = c.get_value( "ngl" );
   const std::string& counts_filename = c.get_value( "counts" );
-  int                n               = stoi( c.get_value( "n", "3" ));
+  int                n               = my_stoi( c.get_value( "n", "3" ));
   std::string        id              = c.get_value( "id", "" );
   const std::string  port            = c.get_value( "port", "1984" );
-  //const int mode                     = stoi( c.get_value( "mode", "0" ));
-  const int resm                     = stoi( c.get_value( "resm", "0" ));
-  const int verbose                  = stoi( c.get_value( "verbose", "0" ));
-  const int keep                     = stoi( c.get_value( "keep", "0" ));
-  const int sos                      = stoi( c.get_value( "sos", "0" ));
-  const int eos                      = stoi( c.get_value( "eos", "0" ));
+  //const int mode                     = my_stoi( c.get_value( "mode", "0" ));
+  const int resm                     = my_stoi( c.get_value( "resm", "0" ));
+  const int verbose                  = my_stoi( c.get_value( "verbose", "0" ));
+  const int keep                     = my_stoi( c.get_value( "keep", "0" ));
+  const int sos                      = my_stoi( c.get_value( "sos", "0" ));
+  const int eos                      = my_stoi( c.get_value( "eos", "0" ));
 
   l.inc_prefix();
 
@@ -117,12 +117,12 @@ int ngram_server(Logfile& l, Config& c) {
 
   // format: ngram freq prob
   // ngram can contain spaces. freq is ignored at the mo.
-  // NB: input and stod are not checked for errors (TODO).
+  // NB: input and my_stod are not checked for errors (TODO).
   //
   while( std::getline( file_ngl, a_line ) ) {
     pos      = a_line.rfind(' ');
     prob_str = a_line.substr(pos+1);
-    prob     = stod( prob_str );
+    prob     = my_stod( prob_str );
 
     pos1     = a_line.rfind(' ', pos-1);
     //freq_str = a_line.substr(pos1+1, pos-pos1-1);

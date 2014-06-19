@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2013 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -614,35 +614,35 @@ int correct( Logfile& l, Config& c ) {
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& trigger_filename = c.get_value( "triggerfile", "" );
   const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = stoi( c.get_value( "hpx", "0" ));
-  const int          mode             = stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
-  const int          lc               = stoi( c.get_value( "lc", "2" ));
-  const int          rc               = stoi( c.get_value( "rc", "0" ));
+  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = my_stoi( c.get_value( "lc", "2" ));
+  const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl)
-  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
-  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  int                mld              = my_stoi( c.get_value( "mld", "1" ) );
   // max entropy (guess added if <= max_entropy)
-  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  int                max_ent          = my_stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
-  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  int                max_distr        = my_stoi( c.get_value( "max_distr", "10" ));
   // ratio target_lexfreq:tvs_lexfreq
-  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  double             min_ratio        = my_stod( c.get_value( "min_ratio", "0" ));
   // maximum target frequency (word under scrutiny is not in dist or (<=) very low freq)
-  int                max_tf           = stoi( c.get_value( "max_tf", "1" )); //for confusibles
+  int                max_tf           = my_stoi( c.get_value( "max_tf", "1" )); //for confusibles
   // minimum frequency of words in the distribution to be included, 0 is ignore
-  int                min_df           = stoi( c.get_value( "min_df", "0" ));
+  int                min_df           = my_stoi( c.get_value( "min_df", "0" ));
   int                skip             = 0;
-  bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
-  bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
+  bool               cs               = my_stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
+  bool               typo_only        = my_stoi( c.get_value( "typos", "0" )) == 1;// typos only
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
-  double             confidence      = stod( c.get_value( "confidence", "0" ));
+  double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
-  int                min_md           = stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
+  int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -1174,32 +1174,32 @@ int tcorrect( Logfile& l, Config& c ) {
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& trigger_filename = c.get_value( "triggerfile", "" );
   const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = stoi( c.get_value( "hpx", "0" ));
-  const int          mode             = stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
-  const int          lc               = stoi( c.get_value( "lc", "2" ));
-  const int          rc               = stoi( c.get_value( "rc", "0" ));
+  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = my_stoi( c.get_value( "lc", "2" ));
+  const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl), ignored if 0.
-  int                mwl              = stoi( c.get_value( "mwl", "0" ) );
+  int                mwl              = my_stoi( c.get_value( "mwl", "0" ) );
   // maximum levenshtein distance (guess added if <= mld), or if 0 (ignores setting)
-  int                mld              = stoi( c.get_value( "mld", "0" ) ); 
+  int                mld              = my_stoi( c.get_value( "mld", "0" ) ); 
   // max entropy (guess added if <= max_entropy), -1 to ignore
-  double             max_ent          = stod( c.get_value( "max_ent", "-1" ) );
+  double             max_ent          = my_stod( c.get_value( "max_ent", "-1" ) );
   // maximum distributie (guess added if <= max_distr), 0 to ignore
-  int                max_distr        = stoi( c.get_value( "max_distr", "0" ));
+  int                max_distr        = my_stoi( c.get_value( "max_distr", "0" ));
   // minimum sum freqs distribution (guess added if >= min_dsum)
-  int                min_dsum         = stoi( c.get_value( "min_dsum", "0" ));
+  int                min_dsum         = my_stoi( c.get_value( "min_dsum", "0" ));
   // minimum frequency of words in the distribution to be included, 0 is ignore
-  int                min_df           = stoi( c.get_value( "min_df", "0" ));
+  int                min_df           = my_stoi( c.get_value( "min_df", "0" ));
   int                skip             = 0;
-  bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
+  bool               cs               = my_stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
-  double             confidence      = stod( c.get_value( "confidence", "0" ));
+  double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
-  int                min_md           = stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
+  int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -1754,22 +1754,22 @@ int server_sc( Logfile& l, Config& c ) {
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const int verbose             = stoi( c.get_value( "verbose", "0" ));
-  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
+  const int keep                = my_stoi( c.get_value( "keep", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const long cachesize          = stoi( c.get_value( "cs", "100000" ));
+  const long cachesize          = my_stoi( c.get_value( "cs", "100000" ));
 
-  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
-  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  int                mld              = my_stoi( c.get_value( "mld", "1" ) );
   // max entropy (guess added if <= max_entropy)
-  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  int                max_ent          = my_stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
-  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  int                max_distr        = my_stoi( c.get_value( "max_distr", "10" ));
   // ratio target_lexfreq:tvs_lexfreq
-  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  double             min_ratio        = my_stod( c.get_value( "min_ratio", "0" ));
   const std::string empty        = c.get_value( "empty", "__EMPTY__" );
-  const int hapax                   = stoi( c.get_value( "hpx", "0" ));
+  const int hapax                   = my_stoi( c.get_value( "hpx", "0" ));
 
   l.inc_prefix();
   l.log( "ibasefile:  "+ibasefile );
@@ -2215,22 +2215,22 @@ int server_sc_nf( Logfile& l, Config& c ) {
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const int verbose             = stoi( c.get_value( "verbose", "0" ));
-  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
+  const int keep                = my_stoi( c.get_value( "keep", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
 
-  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
-  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  int                mld              = my_stoi( c.get_value( "mld", "1" ) );
   // max entropy (guess added if <= max_entropy)
-  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  int                max_ent          = my_stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
-  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  int                max_distr        = my_stoi( c.get_value( "max_distr", "10" ));
   // ratio target_lexfreq:tvs_lexfreq
-  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  double             min_ratio        = my_stod( c.get_value( "min_ratio", "0" ));
   const std::string empty        = c.get_value( "empty", "__EMPTY__" );
 
-  const long cachesize            = stoi( c.get_value( "cs", "100000" ));
+  const long cachesize            = my_stoi( c.get_value( "cs", "100000" ));
 
   l.inc_prefix();
   l.log( "ibasefile:  "+ibasefile );
@@ -2667,40 +2667,40 @@ int mcorrect( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = stoi( c.get_value( "hpx", "0" ));
-  const int          mode             = stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
-  const int          lc               = stoi( c.get_value( "lc", "2" ));
-  const int          rc               = stoi( c.get_value( "rc", "0" ));
+  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = my_stoi( c.get_value( "lc", "2" ));
+  const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl)
-  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
-  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  int                mld              = my_stoi( c.get_value( "mld", "1" ) );
   // max entropy (guess added if <= max_entropy)
-  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  int                max_ent          = my_stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
-  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  int                max_distr        = my_stoi( c.get_value( "max_distr", "10" ));
   // minimum sum freqs distribution (guess added if >= min_dsum)
-  int                min_dsum         = stoi( c.get_value( "min_dsum", "0" ));
+  int                min_dsum         = my_stoi( c.get_value( "min_dsum", "0" ));
   // ratio target_lexfreq:tvs_lexfreq
-  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  double             min_ratio        = my_stod( c.get_value( "min_ratio", "0" ));
   // maximum target frequency (word under scrutiny is not in dist or (<=) very low freq)
-  int                max_tf           = stoi( c.get_value( "max_tf", "1" ));
+  int                max_tf           = my_stoi( c.get_value( "max_tf", "1" ));
   // minimum frequency of all words in the distribution
-  int                min_df           = stoi( c.get_value( "min_df", "0" ));
+  int                min_df           = my_stoi( c.get_value( "min_df", "0" ));
   // offset for triggerpos, from the right, so 0 is the target position
-  int                offset           = stoi( c.get_value( "offset", "0" ));
+  int                offset           = my_stoi( c.get_value( "offset", "0" ));
   int                skip             = 0;
-  bool               cs               = stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
-  bool               typo_only        = stoi( c.get_value( "typos", "0" )) == 1;// typos only
-  bool               bl               = stoi( c.get_value( "bl", "0" )) == 1; //run baseline
+  bool               cs               = my_stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
+  bool               typo_only        = my_stoi( c.get_value( "typos", "0" )) == 1;// typos only
+  bool               bl               = my_stoi( c.get_value( "bl", "0" )) == 1; //run baseline
   // Ratio between top-1 frequency and sum of distribution frequencies
-  double             confidence      = stod( c.get_value( "confidence", "0" ));
+  double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
-  int                min_md           = stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
+  int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;

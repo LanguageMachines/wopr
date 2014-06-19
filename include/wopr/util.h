@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -35,10 +35,10 @@
 // ----------------------------------------------------------------------------
 
 
-int stoi(const std::string& );
-int stoi(const std::string&, int );
-long stol(const std::string& );
-double stod(const std::string& );
+int my_stoi(const std::string& );
+int my_stoi(const std::string&, int );
+long my_stol(const std::string& );
+double my_stod(const std::string& );
 std::string secs_to_str(long);
 std::string secs_to_str(long, long);
 std::string to_str(int);

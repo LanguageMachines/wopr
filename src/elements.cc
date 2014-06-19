@@ -1,7 +1,7 @@
 // $Id$
 
 /*****************************************************************************
- * Copyright 2008-2013 Peter Berck                                           *
+ * Copyright 2008-2014 Peter Berck                                           *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -38,7 +38,7 @@
 // ----------------------------------------------------------------------------
 
 distr_elem::distr_elem() {
-};
+}
 
 distr_elem::distr_elem( const std::string& s, double d1, double d2) {
   name = s;

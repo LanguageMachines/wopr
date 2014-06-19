@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -80,11 +80,11 @@ int gen_test( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  int                topn             = stoi( c.get_value( "topn", "0" ) );
-  int                cache_size       = stoi( c.get_value( "cache", "3" ) );
-  int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
+  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
+  int                cache_size       = my_stoi( c.get_value( "cache", "3" ) );
+  int                cache_threshold  = my_stoi( c.get_value( "cth", "25000" ) );
   int                skip             = 0;
-  int                cs               = stoi( c.get_value( "cs", "10000" ) );
+  int                cs               = my_stoi( c.get_value( "cs", "10000" ) );
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -257,7 +257,7 @@ int gen_test( Logfile& l, Config& c ) {
     }
     long timbl_time = 0;
 
-    while( std::getline( file_in, a_line )) { ///// GETLINE <---------- \\\\\\ \
+    while( std::getline( file_in, a_line )) { 
 
       words.clear();
       a_line = trim( a_line );

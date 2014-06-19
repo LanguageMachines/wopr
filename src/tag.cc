@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2008 Peter Berck                                                *
+ * Copyright 2008-2014 Peter Berck                                           *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -234,7 +234,7 @@ int read_digits( std::ifstream& f ) {
   }
   f.putback( chr );
 
-  return stoi( res );
+  return my_stoi( res );
 }
 
 void read_dist( Node* n, std::ifstream& f, int d, std::vector<int>& counts ) {
@@ -338,8 +338,8 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
 int tag( Logfile& l, Config& c ) {
 
   const std::string& ibase_filename = c.get_value( "ibasefile" );
-  const int precision = stoi( c.get_value( "precision", "6" ));
-  const int n = stoi( c.get_value( "n", "3" ));
+  const int precision = my_stoi( c.get_value( "precision", "6" ));
+  const int n = my_stoi( c.get_value( "n", "3" ));
   const std::string& counts_filename = c.get_value( "counts", "" );
   const std::string arpa_filename = ibase_filename + ".arpa";
 
@@ -417,7 +417,7 @@ int tag( Logfile& l, Config& c ) {
       }
       file_ibase >> name;
       //l.log( hashname + " " + name );
-      classes[stoi(hashname)] = name;
+      classes[my_stoi(hashname)] = name;
     }
     if ( mode == 2 ) {
       char chr;
@@ -432,7 +432,7 @@ int tag( Logfile& l, Config& c ) {
       }
       file_ibase >> name;
       //l.log( hashname + " " + name );
-      features[stoi(hashname)] = name;
+      features[my_stoi(hashname)] = name;
     }
 
     if ( mode == 3 ) {

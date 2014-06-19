@@ -554,7 +554,7 @@ pt2Func2 get_function( const std::string& a_fname ) {
 int cut(Logfile& l, Config& c) {
   l.log( "cut" );
   const std::string& filename = c.get_value( "filename" );
-  unsigned long lines = stol( c.get_value( "lines", "0" ));
+  unsigned long lines = my_stol( c.get_value( "lines", "0" ));
   std::string output_filename = filename + ".cl";
   if ( lines > 0 ) {
     output_filename = output_filename + to_str(lines);
@@ -601,7 +601,7 @@ int cut(Logfile& l, Config& c) {
 int flatten(Logfile& l, Config& c) {
   l.log( "flatten" );
   const std::string& filename = c.get_value( "filename" );
-  unsigned long lines = stol( c.get_value( "lines", "0" ));
+  unsigned long lines = my_stol( c.get_value( "lines", "0" ));
   std::string output_filename = filename + ".fl";
   if ( lines > 0 ) {
     output_filename = output_filename + to_str(lines);
@@ -739,8 +739,8 @@ int letters(Logfile& l, Config& c) {
 int window( Logfile& l, Config& c ) {
   l.log( "window" );
   const std::string& filename        = c.get_value( "filename" );
-  int                ws              = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  int                ws              = my_stoi( c.get_value( "ws", "3" ));
+  bool               to_lower        = my_stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename = filename + ".ws" + to_str(ws);
   l.inc_prefix();
   l.log( "filename:  "+filename );
@@ -803,8 +803,8 @@ int window( Logfile& l, Config& c ) {
 int window_s( Logfile& l, Config& c ) {
   l.log( "window_s" );
   const std::string& filename        = c.get_value( "filename" );
-  int                ws              = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower        = stoi( c.get_value( "lc", "0" )) == 1;
+  int                ws              = my_stoi( c.get_value( "ws", "3" ));
+  bool               to_lower        = my_stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename = filename + ".ws" + to_str(ws);
   std::string        pre_s           = c.get_value( "pre_s", "" );
   std::string        suf_s           = c.get_value( "suf_s", "" );
@@ -887,7 +887,7 @@ int window_s( Logfile& l, Config& c ) {
 int ngram( Logfile& l, Config& c ) {
   l.log( "ngram" );
   const std::string& filename        = c.get_value( "filename" );
-  int                ws              = stoi( c.get_value( "ws", "3" ));
+  int                ws              = my_stoi( c.get_value( "ws", "3" ));
   std::string        output_filename = filename + ".ng" + to_str(ws);
   l.inc_prefix();
   l.log( "filename:  "+filename );
@@ -951,7 +951,7 @@ int ngram( Logfile& l, Config& c ) {
 int ngram_s( Logfile& l, Config& c ) {
   l.log( "ngram_s" );
   const std::string& filename        = c.get_value( "filename" );
-  int                ws              = stoi( c.get_value( "ws", "3" ));
+  int                ws              = my_stoi( c.get_value( "ws", "3" ));
   std::string        output_filename = filename + ".ng" + to_str(ws);
   l.inc_prefix();
   l.log( "filename:  "+filename );
@@ -1067,8 +1067,8 @@ int arpa( Logfile& l, Config& c ) {
   l.log( "arpa" );
   const std::string& filename        = c.get_value( "filename" );
   std::string        output_filename = filename + ".arpa";
-  const int          precision       = stoi( c.get_value( "precision", "6" ));
-  int                ws              = stoi( c.get_value( "ws", "3" ));
+  const int          precision       = my_stoi( c.get_value( "precision", "6" ));
+  int                ws              = my_stoi( c.get_value( "ws", "3" ));
 
   l.inc_prefix();
   l.log( "filename:  "+filename );
@@ -1146,7 +1146,7 @@ int window_line(Logfile& l, Config& c) {
   //
   // Have target as argument?
   //
-  int ws = stoi( c.get_value( "ws", "7" ));
+  int ws = my_stoi( c.get_value( "ws", "7" ));
   std::string              a_word;
   std::vector<std::string> words; // input.
   std::vector<std::string> res;
@@ -1220,13 +1220,13 @@ int window_line(Logfile& l, Config& c) {
 	  if ( token == a_word ) {
 	    token = "In distro: "+token; //(would have been) the correct prediction.
 	    l.log( token + " / " + distribution.at(i+1) );
-	    target_f = stoi(distribution.at(i+1));
+	    target_f = my_stoi(distribution.at(i+1));
 	    ++possible;
 	  }
 	  //l.log_begin( token );
 	} else {
 	  token = token.substr(0, token.length()-1);
-	  sum += stoi( token );
+	  sum += my_stoi( token );
 	  //l.log_end( " - "+token );
 	}
 	is_class = ( ! is_class );
@@ -1574,10 +1574,10 @@ int window( std::string a_line, std::string target_str,
 int window_lr( Logfile& l, Config& c ) {
   l.log( "window_lr" );
   std::string        filename        = c.get_value( "filename" );
-  int                lc              = stoi( c.get_value( "lc", "2" ));
-  int                rc              = stoi( c.get_value( "rc", "0" ));
-  int                to              = stoi( c.get_value( "to", "0" ));
-  int                it              = stoi( c.get_value( "it", "0" )); //include target (at end? in place?)
+  int                lc              = my_stoi( c.get_value( "lc", "2" ));
+  int                rc              = my_stoi( c.get_value( "rc", "0" ));
+  int                to              = my_stoi( c.get_value( "to", "0" ));
+  int                it              = my_stoi( c.get_value( "it", "0" )); //include target (at end? in place?)
   std::string        targetfile      = c.get_value( "targetfile", "" ); // file to read targets from, same format/tokenizing
   std::string        output_filename = filename + ".l" + to_str(lc) +
                                                   "r" + to_str(rc);
@@ -2119,8 +2119,8 @@ int load_lexicon(Logfile& l, Config& c)  {
   return 0;
 }
 
-unsigned long long anahash( std::string& s ) {
-  unsigned long long res = 0;
+int64_t anahash( std::string& s ) {
+  int64_t res = 0;
 
 #ifndef HAVE_ICU
   for ( int i = 0; i < s.length(); i++ ) {
@@ -2129,7 +2129,7 @@ unsigned long long anahash( std::string& s ) {
 #else
   UnicodeString ustr = UnicodeString::fromUTF8(s);
   for ( int i = 0; i < ustr.length(); i++ ) {
-    res += (unsigned long long)pow(ustr.charAt(i),5);
+    res += (int64_t)pow(ustr.charAt(i),5);
   }
 #endif
   return res;
@@ -2145,7 +2145,7 @@ int hapax(Logfile& l, Config& c)  {
   l.log( "hapax" );
 
   const std::string& filename = c.get_value( "filename" );
-  int hapax = stoi( c.get_value( "hpx", "1" ));
+  int hapax = my_stoi( c.get_value( "hpx", "1" ));
 
   if ( hapax <= 0 ) {
     l.log( "WARNING: not doing hapax <=0" );
@@ -2282,7 +2282,7 @@ int hapax_txt(Logfile& l, Config& c)  {
   l.log( "hapax_txt" );
 
   const std::string& filename = c.get_value( "filename" );
-  int hapax = stoi( c.get_value( "hpx", "1" ));
+  int hapax = my_stoi( c.get_value( "hpx", "1" ));
 
   if ( hapax <= 0 ) {
     l.log( "WARNING: not doing hapax <=0" );
@@ -2391,7 +2391,7 @@ int hapax_txt(Logfile& l, Config& c)  {
 //
 int hapax_line_OLD(Logfile& l, Config& c)  {
   l.log( "hapax_line" );
-  int hapax = stoi( c.get_value( "hpx", "1" ));
+  int hapax = my_stoi( c.get_value( "hpx", "1" ));
   const std::string& lexicon_filename = c.get_value("lexicon");
   const std::string& a_line = c.get_value("classify", "error");
 
@@ -2510,7 +2510,7 @@ int testfile(Logfile& l, Config& c)  {
 int window_usenet( Logfile& l, Config& c ) {
   l.log( "window_usenet" );
   const std::string& filename        = c.get_value( "filename" );
-  int                ws              = stoi( c.get_value( "ws", "3" ));
+  int                ws              = my_stoi( c.get_value( "ws", "3" ));
   std::string        output_filename = filename + ".ws" + to_str(ws);
   l.inc_prefix();
   l.log( "filename: "+filename );
@@ -2757,8 +2757,8 @@ double word_entropy( std::map<std::string,int>& wfreqs ) {
 int smooth_old( Logfile& l, Config& c ) {
   l.log( "smooth" );
   const std::string& counts_filename = c.get_value( "counts" );
-  const int precision = stoi( c.get_value( "precision", "6" ));
-  int k = stoi( c.get_value( "k", "10" ));
+  const int precision = my_stoi( c.get_value( "precision", "6" ));
+  int k = my_stoi( c.get_value( "k", "10" ));
   std::string gt_filename = counts_filename + ".gts";
   l.inc_prefix();
   l.log( "counts: " + counts_filename );
@@ -2897,8 +2897,8 @@ l.log( "c="+to_str(i)+" Nc="+to_str(Nc)+" Nc+1="+to_str(Ncp1)+" c*="+to_str(c_st
 int smooth_old_LEX( Logfile& l, Config& c ) {
   l.log( "smooth" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int precision = stoi( c.get_value( "precision", "6" ));
-  const int k = stoi( c.get_value( "k", "10" ));
+  const int precision = my_stoi( c.get_value( "precision", "6" ));
+  const int k = my_stoi( c.get_value( "k", "10" ));
   l.inc_prefix();
   l.log( "lexicon: " + lexicon_filename );
   l.log( "k:       " + to_str(k) );
@@ -3166,8 +3166,8 @@ int pplx( Logfile& l, Config& c ) {
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& timbl            = c.get_value( "timbl" );
-  int                ws               = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  int                ws               = my_stoi( c.get_value( "ws", "3" ));
+  bool               to_lower         = my_stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".px" + to_str(ws);
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
@@ -3362,18 +3362,18 @@ int pplx_simple( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& timbl            = c.get_value( "timbl" );
-  int                hapax            = stoi( c.get_value( "hpx", "0" ));
+  int                hapax            = my_stoi( c.get_value( "hpx", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  int                ws               = stoi( c.get_value( "ws", "3" ));
-  int                lc               = stoi( c.get_value( "lc", "0" ));
-  int                rc               = stoi( c.get_value( "rc", "0" ));
-  int                topn             = stoi( c.get_value( "topn", "0" ) );
-  int                cache_size       = stoi( c.get_value( "cache", "3" ) );
-  int                cache_threshold  = stoi( c.get_value( "cth", "25000" ) );
-  bool               inc_sen          = stoi( c.get_value( "is", "0" )) == 1;
+  int                ws               = my_stoi( c.get_value( "ws", "3" ));
+  int                lc               = my_stoi( c.get_value( "lc", "0" ));
+  int                rc               = my_stoi( c.get_value( "rc", "0" ));
+  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
+  int                cache_size       = my_stoi( c.get_value( "cache", "3" ) );
+  int                cache_threshold  = my_stoi( c.get_value( "cth", "25000" ) );
+  bool               inc_sen          = my_stoi( c.get_value( "is", "0" )) == 1;
   int                skip             = 0;
-  int                bl               = stoi( c.get_value( "bl", "0" )); //baseline
-  int                log_base         = stoi( c.get_value( "log", "2" ) ); // default like log2 before
+  int                bl               = my_stoi( c.get_value( "bl", "0" )); //baseline
+  int                log_base         = my_stoi( c.get_value( "log", "2" ) ); // default like log2 before
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -4377,7 +4377,7 @@ int test_wopr( Logfile& l, Config& c ) {
 
   std::string a_word = c.get_value( "w" );
   std::string cmd = c.get_value( "c" );
-  int n = stoi(c.get_value( "n", "0" ));
+  int n = my_stoi(c.get_value( "n", "0" ));
 
   //std::string                        a_word = "wöåd and エイ ひ.";
   std::vector<std::string>           results;

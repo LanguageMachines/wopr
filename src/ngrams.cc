@@ -59,11 +59,11 @@
 int ngram_list( Logfile& l, Config& c ) {
   l.log( "ngl" );
   const std::string& filename        = c.get_value( "filename" );
-  int                n               = stoi( c.get_value( "n", "3" ));
-  int                fco             = stoi( c.get_value( "fco", "0" ));
+  int                n               = my_stoi( c.get_value( "n", "3" ));
+  int                fco             = my_stoi( c.get_value( "fco", "0" ));
   std::string        output_filename = filename + ".ngl" + to_str(n) +
                                                   "f"+to_str(fco);
-  int                log_base        = stoi( c.get_value( "log", "0" ) );
+  int                log_base        = my_stoi( c.get_value( "log", "0" ) );
 
   typedef double(*pt2log)(double);
   pt2log mylog = &log2;
@@ -210,8 +210,8 @@ int ngram_list( Logfile& l, Config& c ) {
 int OFF_ngram_list( Logfile& l, Config& c ) {
   l.log( "ngl" );
   const std::string& filename        = c.get_value( "filename" );
-  int                n               = stoi( c.get_value( "n", "3" ));
-  int                fco             = stoi( c.get_value( "fco", "0" ));
+  int                n               = my_stoi( c.get_value( "n", "3" ));
+  int                fco             = my_stoi( c.get_value( "fco", "0" ));
   std::string        output_filename = filename + ".ngl" + to_str(n) +
                                                   "f"+to_str(fco);
   l.inc_prefix();
@@ -394,12 +394,12 @@ int ngram_test( Logfile& l, Config& c ) {
   l.log( "ngt" );
   const std::string& filename        = c.get_value( "testfile" );//filename?
   const std::string& ngl_filename    = c.get_value( "ngl" );
-  int                n               = stoi( c.get_value( "n", "3" ));
+  int                n               = my_stoi( c.get_value( "n", "3" ));
   std::string        id              = c.get_value( "id", "" );
-  int                topn            = stoi( c.get_value( "topn", "0" ) );
+  int                topn            = my_stoi( c.get_value( "topn", "0" ) );
   std::string        mode            = c.get_value( "mode", "wopr" );
   const std::string& ngc_filename    = c.get_value( "ngc" ); //srilm ngram counts ?
-  int                log_base        = stoi( c.get_value( "log", "0" ) );
+  int                log_base        = my_stoi( c.get_value( "log", "0" ) );
 
   std::string        ngt_filename    = filename;
   std::string        ngp_filename    = filename;
@@ -503,7 +503,7 @@ int ngram_test( Logfile& l, Config& c ) {
 
   // format: ngram freq prob
   // ngram can contain spaces.
-  // NB: input and stod are not checked for errors (TODO).
+  // NB: input and my_stod are not checked for errors (TODO).
   //
   // he sat 10 0.000467006  -> probs, not l10probs, unless log:10 parameter
   // he sat at 1 0.1
@@ -555,7 +555,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	ngram = ngram + results.at(i);
 
 	++i;
-	freq = stol( results.at(i) );
+	freq = my_stol( results.at(i) );
 	srilm_ngrams[ngram] = freq;
 	//l.log( ngram + " / " + to_str(freq) );
 
@@ -592,7 +592,7 @@ int ngram_test( Logfile& l, Config& c ) {
       std::string rp;
       split_tab( a_line, lp, ngram, rp );
       //l.log( lp+"/"+ngram+"/"+rp );
-      l10prob = stod( lp );
+      l10prob = my_stod( lp );
       prob = pow( 10, l10prob );
       l2prob = l10prob * 0.3010299957;
       sngi = srilm_ngrams.find( ngram );
@@ -613,7 +613,7 @@ int ngram_test( Logfile& l, Config& c ) {
       // It needs to be specified with the log:10 parameter.
       //
       if ( log_base == 10 ) {
-	l10prob = stod( prob_str );
+	l10prob = my_stod( prob_str );
 	if ( l10prob > 0 ) {
 	  l.log( a_line );
 	  l.log( "ERROR, not a valid log10." );
@@ -623,7 +623,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	prob   = pow(10, l10prob );
 	l2prob = l10prob / 0.3010299957;
       } else if ( log_base == 2 ) {
-	l2prob = stod( prob_str );
+	l2prob = my_stod( prob_str );
 	if ( l2prob > 0 ) {
 	  l.log( a_line );
 	  l.log( "ERROR, not a valid log2." );
@@ -633,7 +633,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	l10prob = l2prob * 0.3010299957;
 	prob    = pow(2, l2prob );
       } else {
-	prob    = stod( prob_str );
+	prob    = my_stod( prob_str );
 	if ( prob < 0 ) {
 	  l.log( a_line );
 	  l.log( "ERROR, not a valid probability." );
@@ -646,7 +646,7 @@ int ngram_test( Logfile& l, Config& c ) {
 
       pos1     = a_line.rfind(' ', pos-1);
       freq_str = a_line.substr(pos1+1, pos-pos1-1);
-      freq     = stol( freq_str );
+      freq     = my_stol( freq_str );
       ngram    = a_line.substr(0, pos1);
       //l.log( ngram+": "+freq_str+"/"+to_str(prob)+","+to_str(l10prob) );
 

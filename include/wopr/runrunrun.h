@@ -76,7 +76,7 @@ int server( Logfile&, Config& );
 int test( Logfile&, Config& );
 int smooth_old( Logfile&, Config& );
 int smooth( Logfile&, Config& );
-unsigned long long anahash( std::string& );
+int64_t anahash( std::string& );
 double word_entropy( std::map<std::string,int>& );
 int read_a3( Logfile&, Config& );
 int pplx( Logfile&, Config& );

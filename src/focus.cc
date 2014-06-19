@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2013 Peter Berck                                         *
+ * Copyright 2007 - 2014 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -63,17 +63,17 @@ int focus( Logfile& l, Config& c ) {
 
   const std::string& filename        = c.get_value( "filename" ); // dataset
   const std::string& focus_filename  = c.get_value( "focus" );
-  int                fco             = stoi( c.get_value( "fco", "0" ));
-  int                fmode           = stoi( c.get_value( "fcm", "0" ));
+  int                fco             = my_stoi( c.get_value( "fco", "0" ));
+  int                fmode           = my_stoi( c.get_value( "fcm", "0" ));
   // Freqs below ffc are skipped.
-  int                ffc             = stoi( c.get_value( "ffc", "0" ));
+  int                ffc             = my_stoi( c.get_value( "ffc", "0" ));
   // Freqs above ffm are skipped
-  int                ffm             = stoi( c.get_value( "ffm", "0" ));
-  int                numeric_files   = stoi( c.get_value( "nf", "-1" ));
+  int                ffm             = my_stoi( c.get_value( "ffm", "0" ));
+  int                numeric_files   = my_stoi( c.get_value( "nf", "-1" ));
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
   std::string        timbl           = c.get_value( "timbl", "no" );
-  bool               skip_create     = stoi( c.get_value( "sc", "0" )) == 1;
+  bool               skip_create     = my_stoi( c.get_value( "sc", "0" )) == 1;
 
   std::string        output_filename = filename + ".fcs"+to_str(fco);
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
@@ -140,7 +140,7 @@ int focus( Logfile& l, Config& c ) {
     words.clear();
     Tokenize( a_line, words, ' ' );
     if ( words.size() > 1 ) {
-      int freq = stoi(words[1]);
+      int freq = my_stoi(words[1]);
       if ( freq >= ffc ) {
 		if ( (ffm == 0) || ((ffm > 0) && (freq < ffm)) ) {
 		  std::string a_word = words[0]; //assume first is the word, then freq

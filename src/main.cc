@@ -125,9 +125,6 @@ int main( int argc, char* argv[] ) {
 #endif
 #ifdef TIMBL
   l.log( "Timbl support built in." );
-  if ( TIMBL != "yes" ) {
-    l.log( TIMBL );
-  }
   l.log( "Based on "+Timbl::VersionName() );
 #endif
 #ifdef HAVE_FOLIA

@@ -120,12 +120,12 @@ int pdt( Logfile& l, Config& c ) {
   const std::string  filename        = c.get_value( "filename", to_str(getpid()) ); // "test"file
   const std::string& ibasefile       = c.get_value( "ibasefile" );
   const std::string& timbl           = c.get_value( "timbl" );
-  int                lc              = stoi( c.get_value( "lc", "2" ));
-  int                rc              = stoi( c.get_value( "rc", "0" )); // should be 0
+  int                lc              = my_stoi( c.get_value( "lc", "2" ));
+  int                rc              = my_stoi( c.get_value( "rc", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
-  int                pel             = stoi( c.get_value( "n", "3" )); // length
-  bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
-  int                minmatch        = stoi( c.get_value( "mm", "0" )); // minimum saving to count as useful
+  int                pel             = my_stoi( c.get_value( "n", "3" )); // length
+  bool               matchesonly     = my_stoi( c.get_value( "mo", "0" )) == 1; // show only matches
+  int                minmatch        = my_stoi( c.get_value( "mm", "0" )); // minimum saving to count as useful
   std::string        id              = c.get_value( "id", to_str(getpid()) );
 
   Timbl::TimblAPI   *My_Experiment;
@@ -145,7 +145,7 @@ int pdt( Logfile& l, Config& c ) {
     ped = ped.substr(0, length );
   }
   for( size_t i = 0; i < ped.size(); i++) {
-    depths.at(length-i) = stoi( ped.substr(i, 1), 32 ); // V=31
+    depths.at(length-i) = my_stoi( ped.substr(i, 1), 32 ); // V=31
   }
   std::string tmp = "n"+to_str(length)+"ds";
   for ( size_t i = length; i > 0; i-- ) {
@@ -422,16 +422,16 @@ int pdt2( Logfile& l, Config& c ) {
   const std::string& timbl0          = c.get_value( "timbl0" );
   const std::string& ibasefile1      = c.get_value( "ibasefile1" );
   const std::string& timbl1          = c.get_value( "timbl1" );
-  int                lc0             = stoi( c.get_value( "lc0", "2" ));
-  int                rc0             = stoi( c.get_value( "rc0", "0" )); // should be 0
-  int                lc1             = stoi( c.get_value( "lc1", "2" ));
-  int                rc1             = stoi( c.get_value( "rc1", "0" )); // should be 0
+  int                lc0             = my_stoi( c.get_value( "lc0", "2" ));
+  int                rc0             = my_stoi( c.get_value( "rc0", "0" )); // should be 0
+  int                lc1             = my_stoi( c.get_value( "lc1", "2" ));
+  int                rc1             = my_stoi( c.get_value( "rc1", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
-  int                pel             = stoi( c.get_value( "n", "3" )); // length
+  int                pel             = my_stoi( c.get_value( "n", "3" )); // length
   std::string        dl              = c.get_value( "dl", "3" ); // letter depth
-  bool               matchesonly     = stoi( c.get_value( "mo", "0" )) == 1; // show only matches
+  bool               matchesonly     = my_stoi( c.get_value( "mo", "0" )) == 1; // show only matches
   std::string        id              = c.get_value( "id", to_str(getpid()) );
-  int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
+  int                mlm             = my_stoi( c.get_value( "mlm", "0" )); // minimum letter match
 
   Timbl::TimblAPI   *My_Experiment0;
   Timbl::TimblAPI   *My_Experiment1;
@@ -449,7 +449,7 @@ int pdt2( Logfile& l, Config& c ) {
   std::string ped0 = dl;
   std::vector<int> depths0(length0+1, 1);
   for( size_t i = 0; i < ped0.size(); i++) {
-    depths0.at(length0-i) = stoi( ped0.substr(i, 1), 32 ); // V=31
+    depths0.at(length0-i) = my_stoi( ped0.substr(i, 1), 32 ); // V=31
   }
   //
   size_t length = pel; // length of each predicted string
@@ -458,7 +458,7 @@ int pdt2( Logfile& l, Config& c ) {
     ped = ped.substr(0, length );
   }
   for( size_t i = 0; i < ped.size(); i++) {
-    depths.at(length-i) = stoi( ped.substr(i, 1), 32 ); // V=31
+    depths.at(length-i) = my_stoi( ped.substr(i, 1), 32 ); // V=31
   }
 
   std::string tmp = "dl"+dl;
@@ -956,7 +956,6 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::string result;
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
 
   // generate top-n, for each, recurse one down.
   // Need a different res in generate_next, and keep another (kind of) res
@@ -1113,9 +1112,9 @@ void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<
 int window_letters( Logfile& l, Config& c ) {
   l.log( "window_letters" );
   const std::string& filename        = c.get_value( "filename" );
-  int                lc              = stoi( c.get_value( "lc", "2" ));
+  int                lc              = my_stoi( c.get_value( "lc", "2" ));
   int                rc              = 0;
-  int                mode            = stoi( c.get_value( "lm", "0" )); // lettering mode 0=shift, 1=empty for new sentence
+  int                mode            = my_stoi( c.get_value( "lm", "0" )); // lettering mode 0=shift, 1=empty for new sentence
 
   if ( (mode < 0) || (mode > 1) ) {
     l.log( "NOTICE: wrong lm parameter, setting to 0." );
@@ -1224,7 +1223,7 @@ int pdt2( Logfile& l, Config& c ) {
 */
 
 // code to make a PDT
-
+/* Not used.
 int pe_init( PDT& pdt ) {
   //pdt.reset(); //resets contexts
   return 0;
@@ -1240,7 +1239,7 @@ int pe_complete( PDT& pdt ) {
   //generate_tree( My_Experiment0, c, ctx0, strs0, length0, depths0, t0 );
   return 0;
 }
-
+*/
 #include "wopr/tinyxml.h"
 
 void add_element(TiXmlElement* ele, const std::string& t, const std::string& v) {
@@ -1345,22 +1344,22 @@ int pdt2web( Logfile& l, Config& c ) {
 #endif
 
   const std::string port        = c.get_value( "port", "1984" );
-  const int verbose             = stoi( c.get_value( "verbose", "1" ));
-  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int verbose             = my_stoi( c.get_value( "verbose", "1" ));
+  const int keep                = my_stoi( c.get_value( "keep", "0" ));
 
   const std::string& ibasefile0      = c.get_value( "ibasefile0" );
   const std::string& timbl0          = c.get_value( "timbl0" );
   const std::string& ibasefile1      = c.get_value( "ibasefile1" );
   const std::string& timbl1          = c.get_value( "timbl1" );
-  int                lc0             = stoi( c.get_value( "lc0", "2" ));
-  int                rc0             = stoi( c.get_value( "rc0", "0" )); // should be 0
-  int                lc1             = stoi( c.get_value( "lc1", "2" ));
-  int                rc1             = stoi( c.get_value( "rc1", "0" )); // should be 0
+  int                lc0             = my_stoi( c.get_value( "lc0", "2" ));
+  int                rc0             = my_stoi( c.get_value( "rc0", "0" )); // should be 0
+  int                lc1             = my_stoi( c.get_value( "lc1", "2" ));
+  int                rc1             = my_stoi( c.get_value( "rc1", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
-  int                pel             = stoi( c.get_value( "n", "3" )); // length. implicit in ds!
+  int                pel             = my_stoi( c.get_value( "n", "3" )); // length. implicit in ds!
   std::string        dl              = c.get_value( "dl", "3" ); // letter depth
-  int                mlm             = stoi( c.get_value( "mlm", "0" )); // minimum letter match
-  int                users           = stoi( c.get_value( "users", "5" )); // number of users/connections
+  int                mlm             = my_stoi( c.get_value( "mlm", "0" )); // minimum letter match
+  int                users           = my_stoi( c.get_value( "users", "5" )); // number of users/connections
 
   if ( (users < 1) || (users > 10) ) {
     users = 5;
@@ -1619,7 +1618,7 @@ int pdt2web( Logfile& l, Config& c ) {
     if ( buf_tokens.size() > 1 ) {
 
       std::string cmd = buf_tokens.at(0);
-      int pdt_idx = stoi(buf_tokens.at(1));
+      int pdt_idx = my_stoi(buf_tokens.at(1));
       PDT *pdt = NULL;
       if ( pdt_idx < 0 ) {
 	l.log( "-2 index requested at "+buf_tokens.at(1) );

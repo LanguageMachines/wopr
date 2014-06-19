@@ -228,7 +228,7 @@ class PDT {
     wrd_depths.clear();
     wrd_depths.resize( n+1, 1 );
     for( int i = 0; i < n; i++) {
-      wrd_depths.at(n-i) = stoi( ds.substr(i, 1), 32 ); // V=31
+      wrd_depths.at(n-i) = my_stoi( ds.substr(i, 1), 32 ); // V=31
     }
     touch();
   }
@@ -237,7 +237,7 @@ class PDT {
   // need the vector for generate_tree().
   //
   void set_ltr_dl( std::string s ) {
-    dl = stoi( s, 32 );
+    dl = my_stoi( s, 32 );
     ltr_depths.clear();
     ltr_depths.resize( 2, 1 );
     ltr_depths.at(1) = dl;

@@ -110,16 +110,16 @@ int server2(Logfile& l, Config& c) {
 
   const std::string& timbl  = c.get_value( "timbl" );
   const std::string port    = c.get_value( "port", "1984" );
-  const int precision = stoi( c.get_value( "precision", "10" )); // c++ output
+  const int precision = my_stoi( c.get_value( "precision", "10" )); // c++ output
                                                                  // precision
-  const int output = stoi( c.get_value( "output", "1" ));
-  const int hpx_t  = stoi( c.get_value( "hpx_t", "0" )); // Hapax target
+  const int output = my_stoi( c.get_value( "output", "1" ));
+  const int hpx_t  = my_stoi( c.get_value( "hpx_t", "0" )); // Hapax target
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  int ws = stoi( c.get_value( "ws", "7" ));
-  int hapax = stoi( c.get_value( "hpx", "0" ));
+  int ws = my_stoi( c.get_value( "ws", "7" ));
+  int hapax = my_stoi( c.get_value( "hpx", "0" ));
   std::string hpx_sym = c.get_value("hpx_sym", "<unk>"); // not used, hardcoded in hapax_line
-  double unk_prob = stod( c.get_value( "unk_prob", "0.000001" ));
-  const int sentence = stoi( c.get_value( "sentence", "1" ));
+  double unk_prob = my_stod( c.get_value( "unk_prob", "0.000001" ));
+  const int sentence = my_stoi( c.get_value( "sentence", "1" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+c.get_value("ibasefile") );
@@ -169,7 +169,7 @@ int server2(Logfile& l, Config& c) {
 
   // Init message queue.
   //
-  key_t wopr_id = (key_t)stoi( c.get_value( "id", "88" ));
+  key_t wopr_id = (key_t)my_stoi( c.get_value( "id", "88" ));
   int   msqid   = msgget( wopr_id, 0666 | IPC_CREAT );
 
   std::string distrib;
@@ -638,12 +638,12 @@ int parse_distribution( std::string dist, std::map<std::string, double>& res ) {
       a_class = token;
     } else { // the frequency, absolute count.
       token = token.substr(0, token.length()-1);
-      int i_token = stoi( token );
+      int i_token = my_stoi( token );
       if ( i_token > 0 ) {
 	sum += i_token; // als +G, this is 0
-	res[a_class] = stoi( token );
+	res[a_class] = my_stoi( token );
       } else {
-	res[a_class] = stod( token );
+	res[a_class] = my_stod( token );
       }
     }
     is_class = ( ! is_class );
@@ -675,10 +675,10 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 		 std::map<std::string,int>& wfreqs,
 		 unsigned long total_count) {
 
-  int ws = stoi( c.get_value( "ws", "7" ));
+  int ws = my_stoi( c.get_value( "ws", "7" ));
   const std::string& timbl  = c.get_value( "timbl" );
-  double unk_prob = stod( c.get_value( "unk_prob", "0.000001" ));
-  const int precision = stoi( c.get_value( "precision", "10" )); // c++ output
+  double unk_prob = my_stod( c.get_value( "unk_prob", "0.000001" ));
+  const int precision = my_stoi( c.get_value( "precision", "10" )); // c++ output
 
   std::string fo = fn + ".wopr";
   std::string fr = fo + ".ready";
@@ -916,18 +916,18 @@ int server4(Logfile& l, Config& c) {
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const int mode                = stoi( c.get_value( "mode", "0" ));
-  const int resm                = stoi( c.get_value( "resm", "0" ));
-  const int verbose             = stoi( c.get_value( "verbose", "0" ));
-  const int keep                = stoi( c.get_value( "keep", "0" ));
-  const int moses               = stoi( c.get_value( "moses", "0" ));
-  const int lb                  = stoi( c.get_value( "lb", "0" ));
-  const int lc                  = stoi( c.get_value( "lc", "2" ));
-  const int rc                  = stoi( c.get_value( "rc", "0" ));
+  const int mode                = my_stoi( c.get_value( "mode", "0" ));
+  const int resm                = my_stoi( c.get_value( "resm", "0" ));
+  const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
+  const int keep                = my_stoi( c.get_value( "keep", "0" ));
+  const int moses               = my_stoi( c.get_value( "moses", "0" ));
+  const int lb                  = my_stoi( c.get_value( "lb", "0" ));
+  const int lc                  = my_stoi( c.get_value( "lc", "2" ));
+  const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int hapax               = stoi( c.get_value( "hpx", "0" ));
-  const bool skip_sm            = stoi( c.get_value( "skm", "0" )) == 1;
-  const long cachesize          = stoi( c.get_value( "cs", "100000" ));
+  const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
+  const bool skip_sm            = my_stoi( c.get_value( "skm", "0" )) == 1;
+  const long cachesize          = my_stoi( c.get_value( "cs", "100000" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -1140,7 +1140,7 @@ int server4(Logfile& l, Config& c) {
 	      if ( verbose > 2 ) {
 		l.log( "Found in cache." );
 	      }
-	      res_pl10 = stod(cache_ans); // stod() slows it down?
+	      res_pl10 = my_stod(cache_ans); // my_stod() slows it down?
 	    } else {
 
 	      // if we take target from a pre-non-hapaxed vector, we
@@ -1316,15 +1316,15 @@ int xmlserver(Logfile& l, Config& c) {
   const std::string port        = c.get_value( "port", "1984" );
   const int mode                = 1; // hard coded
   const int resm                = 0; // hard coded
-  const int verbose             = stoi( c.get_value( "verbose", "0" ));
-  const int keep                = stoi( c.get_value( "keep", "0" ));
+  const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
+  const int keep                = my_stoi( c.get_value( "keep", "0" ));
   const int moses               = 0; // hardcoded
-  const int lb                  = stoi( c.get_value( "lb", "0" ));
-  const int lc                  = stoi( c.get_value( "lc", "2" ));
-  const int rc                  = stoi( c.get_value( "rc", "0" ));
+  const int lb                  = my_stoi( c.get_value( "lb", "0" ));
+  const int lc                  = my_stoi( c.get_value( "lc", "2" ));
+  const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int hapax               = stoi( c.get_value( "hpx", "0" ));
-  const bool skip_sm            = stoi( c.get_value( "skm", "0" )) == 1;
+  const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
+  const bool skip_sm            = my_stoi( c.get_value( "skm", "0" )) == 1;
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -1681,16 +1681,16 @@ int mbmt(Logfile& l, Config& c) {
   const std::string port        = c.get_value( "port", "1984" );
   const int mode = 1; // hardcoded 1 for PBMBMT
   const int resm = 0; // hardcoded 0 for PBMBMT
-  const int verbose             = stoi( c.get_value( "verbose", "0" ));
+  const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
   const int keep = 1; // hardcoded 1 for PBMBMT
   const int moses = 0; // hardcoded 0 for PBMBMT
-  const int lb                  = stoi( c.get_value( "lb", "0" ));
-  const int lc                  = stoi( c.get_value( "lc", "2" ));
-  const int rc                  = stoi( c.get_value( "rc", "0" ));
+  const int lb                  = my_stoi( c.get_value( "lb", "0" ));
+  const int lc                  = my_stoi( c.get_value( "lc", "2" ));
+  const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int hapax               = stoi( c.get_value( "hpx", "0" ));
+  const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm = false;  // hardcoded for PBMBMT
-  const long cachesize          = stoi( c.get_value( "cs", "1000000" ));
+  const long cachesize          = my_stoi( c.get_value( "cs", "1000000" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -1879,7 +1879,7 @@ int mbmt(Logfile& l, Config& c) {
 	      if ( verbose > 2 ) {
 		l.log( "Found in cache." );
 	      }
-	      res_pl10 = stod(cache_ans); // stod() slows it down?
+	      res_pl10 = my_stod(cache_ans); // my_stod() slows it down?
 	    } else {
 
 	      // if we take target from a pre-non-hapaxed vector, we
@@ -2047,10 +2047,10 @@ int webdemo(Logfile& l, Config& c) {
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   const std::string lexicon     = c.get_value( "lexicon" );
-  const int lc                  = stoi( c.get_value( "lc", "2" ));
-  const int rc                  = stoi( c.get_value( "rc", "0" ));
+  const int lc                  = my_stoi( c.get_value( "lc", "2" ));
+  const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& filterfile = c.get_value( "filterfile" );
-  const bool tok                = stoi( c.get_value( "tok", "0" )) == 1;
+  const bool tok                = my_stoi( c.get_value( "tok", "0" )) == 1;
 
   char hostname[256];
   gethostname( hostname, 256 );
@@ -2494,19 +2494,19 @@ int server_mg( Logfile& l, Config& c ) {
   const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
 
-  const int mode                      = stoi( c.get_value( "mode", "0" ));
-  const int verbose                   = stoi( c.get_value( "verbose", "0" ));
-  const int lc                      = stoi( c.get_value( "lc", "2" ));
-  const int rc                      = stoi( c.get_value( "rc", "0" ));
-  const int hapax                   = stoi( c.get_value( "hpx", "0" ));
-  const bool skip_sm                  = stoi( c.get_value( "skm", "0" )) == 1;
-  const int keep                      = stoi( c.get_value( "keep", "0" ));
-  const int resm                      = stoi( c.get_value( "resm", "0" ));
-  const int lb                        = stoi( c.get_value( "lb", "0" ));
-  const int moses                     = stoi( c.get_value( "moses", "0" ));
+  const int mode                      = my_stoi( c.get_value( "mode", "0" ));
+  const int verbose                   = my_stoi( c.get_value( "verbose", "0" ));
+  const int lc                      = my_stoi( c.get_value( "lc", "2" ));
+  const int rc                      = my_stoi( c.get_value( "rc", "0" ));
+  const int hapax                   = my_stoi( c.get_value( "hpx", "0" ));
+  const bool skip_sm                  = my_stoi( c.get_value( "skm", "0" )) == 1;
+  const int keep                      = my_stoi( c.get_value( "keep", "0" ));
+  const int resm                      = my_stoi( c.get_value( "resm", "0" ));
+  const int lb                        = my_stoi( c.get_value( "lb", "0" ));
+  const int moses                     = my_stoi( c.get_value( "moses", "0" ));
 
-  int                topn             = stoi( c.get_value( "topn", "1" ) );
-  int                fco              = stoi( c.get_value( "fco", "0" ));
+  int                topn             = my_stoi( c.get_value( "topn", "1" ) );
+  int                fco              = my_stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
 
   std::string        distrib;

@@ -58,7 +58,7 @@ extern "C" void* watcher( void *params ) {
 
   // Init message queue.
   //
-  key_t wopr_id = (key_t)stoi( c->get_value( "id", "88" ));
+  key_t wopr_id = (key_t)my_stoi( c->get_value( "id", "88" ));
   int   msqid   = msgget( wopr_id, 0666 | IPC_CREAT );
   struct wopr_msgbuf wmb = {2, 0, 0}; // verbosity, stop
 

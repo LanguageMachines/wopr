@@ -58,13 +58,13 @@
 /*!
   Converts a string to an integer (atoi)
 */
-int stoi(const std::string& str ) {
+int my_stoi(const std::string& str ) {
   //int i = atoi( str.c_str() );
   int i = (int)strtoimax( str.c_str(), NULL, 10 );
   return( i );
 }
 
-int stoi(const std::string& str, int b) {
+int my_stoi(const std::string& str, int b) {
   //int i = atoi( str.c_str() );
   int i = (int)strtoimax( str.c_str(), NULL, b );
   return( i );
@@ -73,7 +73,7 @@ int stoi(const std::string& str, int b) {
 /*!
   Converts a string to a long.
 */
-long stol(const std::string& str) {
+long my_stol(const std::string& str) {
   long i = atol( str.c_str() );
   return( i );
 }
@@ -82,7 +82,7 @@ long stol(const std::string& str) {
 /*!
   Converts a string to a double.
 */
-double stod(const std::string& str) {
+double my_stod(const std::string& str) {
   double i = strtod( str.c_str(), NULL );
   return( i );
 }
@@ -308,19 +308,19 @@ std::string the_date_time_utc(long s) {
 */
 long parse_date_time(const std::string& d) {
   if ( d.length() == 5 ) { // time only
-    int hh = stoi( d.substr(0, 2) );
-    int mm = stoi( d.substr(3, 2) );
+    int hh = my_stoi( d.substr(0, 2) );
+    int mm = my_stoi( d.substr(3, 2) );
     long s = hh * 3600L + mm * 60L;
     return s;
   }
   if ( d.length() < 16 ) {
     return  0L ;
   }
-  int yy = stoi( d.substr(0, 4) );
-  int mm = stoi( d.substr(5, 2) );
-  int dd = stoi( d.substr(8, 2) );
-  int hh = stoi( d.substr(11, 2) );
-  int mn = stoi( d.substr(14, 2) );
+  int yy = my_stoi( d.substr(0, 4) );
+  int mm = my_stoi( d.substr(5, 2) );
+  int dd = my_stoi( d.substr(8, 2) );
+  int hh = my_stoi( d.substr(11, 2) );
+  int mn = my_stoi( d.substr(14, 2) );
 
   struct tm t_s;
   extern time_t timezone;
@@ -598,6 +598,7 @@ bool is_numeric( std::string s ) {
     }
     return false;
   }
+  return true;
 }
 
 long clock_u_secs() {

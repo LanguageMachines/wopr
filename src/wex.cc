@@ -67,8 +67,8 @@ int multi( Logfile& l, Config& c ) {
   const std::string& kvs_filename     = c.get_value( "kvs" );
   const std::string& timbl            = c.get_value( "timbl" );
   // PJB: Should be a context string, also l2r2 &c.
-  int                ws               = stoi( c.get_value( "ws", "3" ));
-  bool               to_lower         = stoi( c.get_value( "lc", "0" )) == 1;
+  int                ws               = my_stoi( c.get_value( "ws", "3" ));
+  bool               to_lower         = my_stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".px" + to_str(ws);
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
@@ -347,7 +347,7 @@ int read_classifiers_from_file( std::ifstream& file,
       } else if ( lhs == "ws" ) {
 	// store this window size
 	if ( c != NULL) {
-	    c->set_ws( stoi(rhs) );
+	    c->set_ws( my_stoi(rhs) );
 	}
       } else if ( lhs == "timbl" ) {
 	// e.g: "-a1 +vdb +D +G"
@@ -360,11 +360,11 @@ int read_classifiers_from_file( std::ifstream& file,
 	}
       } else if ( lhs == "weight" ) {
 	if ( c != NULL) {
-	  c->set_weight( stod(rhs) );
+	  c->set_weight( my_stod(rhs) );
 	}
       } else if ( lhs == "distprob" ) {
 	if ( c != NULL) {
-	  c->set_distprob( stod(rhs) );
+	  c->set_distprob( my_stod(rhs) );
 	}
       } else if ( lhs == "distfile" ) {
 	if ( c != NULL) {
@@ -378,7 +378,7 @@ int read_classifiers_from_file( std::ifstream& file,
 	}
       } else if ( lhs == "gatepos" ) {
 	if ( c != NULL) {
-	  c->set_gatepos( stoi(rhs) );
+	  c->set_gatepos( my_stoi(rhs) );
 	  c->set_type( 3 );
 	}
       } else if ( lhs == "gatedefault" ) {
@@ -413,7 +413,7 @@ int multi_dist( Logfile& l, Config& c ) {
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  int                topn             = stoi( c.get_value( "topn", "1" ) );
+  int                topn             = my_stoi( c.get_value( "topn", "1" ) );
 
   if ( contains_id(filename, id) == true ) {
     id = "";
@@ -677,8 +677,8 @@ int multi_dist2( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
-  bool               do_combined      = stoi( c.get_value( "c", "0" )) == 1;
-  int                topn             = stoi( c.get_value( "topn", "1" ) );
+  bool               do_combined      = my_stoi( c.get_value( "c", "0" )) == 1;
+  int                topn             = my_stoi( c.get_value( "topn", "1" ) );
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   std::string        output_filename  = kvs_filename + "_" + id + ".mc";
 
@@ -912,22 +912,22 @@ int multi_gated( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& filename         = c.get_value( "filename" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
-  int                topn             = stoi( c.get_value( "topn", "1" ) );
-  int                fco              = stoi( c.get_value( "fco", "0" ));
+  int                topn             = my_stoi( c.get_value( "topn", "1" ) );
+  int                fco              = my_stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
 
   // Spell corr, see levenshtein.cc
-  int                mode             = stoi( c.get_value( "mode", "0" ));
+  int                mode             = my_stoi( c.get_value( "mode", "0" ));
   // minimum word length (guess added if > mwl)
-  int                mwl              = stoi( c.get_value( "mwl", "5" ) );
+  int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
-  int                mld              = stoi( c.get_value( "mld", "1" ) );
+  int                mld              = my_stoi( c.get_value( "mld", "1" ) );
   // max entropy (guess added if <= max_entropy)
-  int                max_ent          = stoi( c.get_value( "max_ent", "5" ) );
+  int                max_ent          = my_stoi( c.get_value( "max_ent", "5" ) );
   // maximum distributie (guess added if <= max_distr)
-  int                max_distr        = stoi( c.get_value( "max_distr", "10" ));
+  int                max_distr        = my_stoi( c.get_value( "max_distr", "10" ));
   // ratio target_lexfreq:tvs_lexfreq
-  double             min_ratio        = stod( c.get_value( "min_ratio", "0" ));
+  double             min_ratio        = my_stod( c.get_value( "min_ratio", "0" ));
 
   std::string output_filename;
   std::string mode_str = "";
