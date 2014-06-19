@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
-AC_INIT(wopr, 1.39.2)
+AC_INIT(wopr, 1.39.3)
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
@@ -175,6 +175,10 @@ else
 	AC_DEFINE(TRANSPLD2, 1, we want transpose to be LD:2 )
 fi
 # ---
+
+# Check for a hash table implementation
+AC_CXX_HEADER_TR1_UNORDERED_MAP
+AC_CXX_HEADER_TR1_UNORDERED_SET
 
 AC_CONFIG_FILES([Makefile
                  include/Makefile
