@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2015 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -543,6 +543,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &pdt2web;
   } else if ( a_fname == "kvs" ) { // keyword:value string
     return &kvs;
+  } else if ( a_fname == "cmcorrect" ) { // from levenshtein.cc
+    return &cmcorrect;
   }
   return &tst;
 }

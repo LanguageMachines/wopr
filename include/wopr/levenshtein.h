@@ -2,7 +2,7 @@
 //
 
 /*****************************************************************************
- * Copyright 2008 - 2013 Peter Berck                                         *
+ * Copyright 2008 - 2015 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -38,5 +38,6 @@ int lev_distance(const std::string&, const std::string&, int, bool);
 int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
 int mcorrect( Logfile&, Config& );
+int cmcorrect( Logfile&, Config& );
 
 #endif

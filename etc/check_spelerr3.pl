@@ -8,6 +8,7 @@ use Getopt::Std;
 # User options
 #
 # Cleaner version of check_spelerr.pl
+# 2015-03-01 Made same as m2scorer score
 #
 #------------------------------------------------------------------------------
 
@@ -143,8 +144,11 @@ while ( my $ls = <FHS> ) {
   my $corrections = $#ps - $c - 1; #position of words between [ ]
   
   my $have_corrections = 0;
-  if ( substr($ls, -3) ne "[ ]" ) {
-	$have_corrections = 1;
+  #if ( substr($ls, -3) ne "[ ]" ) {
+	#$have_corrections = 1;
+  #}
+  if ( $test_target ne $classification ) { #this makes it equal m2scorer
+      $have_corrections = 1;
   }
   #print substr($ls, -3), $have_corrections;
   #print "\n";

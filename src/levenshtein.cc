@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2015 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -1721,7 +1721,7 @@ int tcorrect( Logfile& l, Config& c ) {
       l.log( "pplx = " + to_str( pplx ) );
     }
 
-	log_out.close();
+    log_out.close();
     file_out.close();
     file_in.close();
 
@@ -2839,50 +2839,50 @@ int mcorrect( Logfile& l, Config& c ) {
 
   if ( configfile != "" ) {
     l.log( "Reading classifiers." );
-	std::string a_line;
-	std::vector<std::string> words;
+    std::string a_line;
+    std::vector<std::string> words;
     std::ifstream ifs_config( configfile.c_str() );
     if ( ! ifs_config ) {
       l.log( "ERROR: cannot load configfile." );
       return -1;
     }
-	while( std::getline( ifs_config, a_line )) {
-	  if ( a_line.length() == 0 ) {
-		continue;
-	  }
-	  if ( a_line.at(0) == '#' ) {
-		continue;
-	  }
-	  words.clear();
-	  Tokenize( a_line, words, ' ' );
-	  if ( words.size() < 2 ) {
-		continue;
-	  }
-	  std::string ibf = words[0]; // name of ibasefile to read
-	  l.log( "EXPERT: "+ibf );
-	  Expert *e = new Expert("a", 1);
-	  e->set_ibasefile(ibf);
-	  e->set_timbl( timbl );
-	  e->init();
-	  int hi_freq = 0;
-	  for ( size_t i = 1; i < words.size(); i++ ) {
-		std::string tr = words[i];
-		triggers[ tr ] = e;
-		called[ tr ] = 0;
-		l.log( "TRIGGER: "+tr );
-		// lookup if baseline
-		if ( bl == true ) {
-		  std::map<std::string,int>::iterator wfi = wfreqs.find( tr );
-		  if ( wfi != wfreqs.end() ) {
-			int tr_freq = (int)(*wfi).second;
-			if ( tr_freq > hi_freq ) {
-			  e->set_highest( tr );
-			  e->set_highest_f( tr_freq );
-			}
-		  }
-		}
+    while( std::getline( ifs_config, a_line )) {
+      if ( a_line.length() == 0 ) {
+	continue;
+      }
+      if ( a_line.at(0) == '#' ) {
+	continue;
+      }
+      words.clear();
+      Tokenize( a_line, words, ' ' );
+      if ( words.size() < 2 ) {
+	continue;
+      }
+      std::string ibf = words[0]; // name of ibasefile to read
+      l.log( "EXPERT: "+ibf );
+      Expert *e = new Expert("a", 1);
+      e->set_ibasefile(ibf);
+      e->set_timbl( timbl );
+      e->init();
+      int hi_freq = 0;
+      for ( size_t i = 1; i < words.size(); i++ ) {
+	std::string tr = words[i];
+	triggers[ tr ] = e;
+	called[ tr ] = 0;
+	l.log( "TRIGGER: "+tr );
+	// lookup if baseline
+	if ( bl == true ) {
+	  std::map<std::string,int>::iterator wfi = wfreqs.find( tr );
+	  if ( wfi != wfreqs.end() ) {
+	    int tr_freq = (int)(*wfi).second;
+	    if ( tr_freq > hi_freq ) {
+	      e->set_highest( tr );
+	      e->set_highest_f( tr_freq );
+	    }
 	  }
 	}
+      }
+    }
   }
   l.log( "Instance bases loaded." );
 
@@ -3279,6 +3279,552 @@ int mcorrect( Logfile& l, Config& c ) {
 }
 #else
 int mcorrect( Logfile& l, Config& c ) {
+  l.log( "No TIMBL support." );
+  return -1;
+}
+#endif
+
+// 2015-03 confidence/mcorrect
+#ifdef TIMBL
+int cmcorrect( Logfile& l, Config& c ) {
+  l.log( "correct" );
+  const std::string& filename         = c.get_value( "filename" );
+  const std::string& configfile       = c.get_value( "configfile" );
+  std::string        dirname          = c.get_value( "dir", "" );
+  std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
+  const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const std::string& counts_filename  = c.get_value( "counts" );
+  const std::string& timbl            = c.get_value( "timbl" );
+  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = my_stoi( c.get_value( "lc", "2" ));
+  const int          rc               = my_stoi( c.get_value( "rc", "0" ));
+  std::string        id               = c.get_value( "id", to_str(getpid()) );
+  //std::string        output_filename  = filename + id + ".sc";
+  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  // offset for triggerpos, from the right, so 0 is the target position
+  int                offset           = my_stoi( c.get_value( "offset", "0" ));
+  int                skip             = 0;
+  // Ratio between top-1 frequency and sum of distribution frequencies
+  double             confidence      = my_stod( c.get_value( "confidence", "0" ));
+  // Minimum max-depth of timbl answer
+  int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
+
+  Timbl::TimblAPI   *My_Experiment;
+  std::string        distrib;
+  std::vector<std::string> distribution;
+  std::string        result;
+  double             distance;
+
+  // No slash at end of dirname.
+  //
+  if ( (dirname != "") && (dirname.substr(dirname.length()-1, 1) == "/") ) {
+    dirname = dirname.substr(0, dirname.length()-1);
+  }
+
+  l.inc_prefix();
+  if ( dirname != "" ) {
+    l.log( "dir:             "+dirname );
+    l.log( "dirmatch:        "+dirmatch );
+  }
+  //l.log( "filename:   "+filename )
+  l.log( "configfile: "+configfile );
+  l.log( "lexicon:    "+lexicon_filename );
+  l.log( "counts:     "+counts_filename );
+  l.log( "timbl:      "+timbl );
+  l.log( "id:         "+id );
+  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "mode:       "+to_str(mode) );
+  l.log( "lc:         "+to_str(lc) ); // left context size for windowing
+  l.log( "rc:         "+to_str(rc) ); // right context size for windowing
+  l.log( "offset:     "+to_str(offset) );
+  l.log( "confidence  "+to_str(confidence) );
+  l.log( "min_md      "+to_str(min_md) );
+  //l.log( "OUTPUT:     "+output_filename );
+  l.dec_prefix();
+
+  // One file, as before, or the whole globbed dir. Check if
+  // they exists.
+  //
+  std::vector<std::string> filenames;
+  std::vector<std::string>::iterator fi;
+  if ( dirname == "" ) {
+    filenames.push_back( filename );
+  } else {
+    get_dir( dirname, filenames, dirmatch );
+  }
+  l.log( "Processing "+to_str(filenames.size())+" files." );
+  size_t numfiles = filenames.size();
+  if ( numfiles == 0 ) {
+    l.log( "No files found. Skipping." );
+    return 0;
+  }
+
+  if ( contains_id(filenames[0], id) == true ) {
+    id = "";
+  } else {
+    id = "_"+id;
+  }
+
+  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
+    std::string a_file = *fi;
+    std::string output_filename  = a_file + id + ".sc";
+    std::string outlog_filename  = a_file + id + ".lg"; //LOG
+    
+    if (file_exists(l,c,output_filename)) {
+      //l.log( "Output for "+a_file+" exists, removing from list." );
+      --numfiles;
+    }
+  }
+  if ( numfiles == 0 ) {
+    l.log( "All output files already exists, skipping." );
+    return 0;
+  }
+
+  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  //
+  int wfreq;
+  unsigned long total_count = 0;
+  unsigned long N_1 = 0; // Count for p0 estimate.
+  unsigned long hpx_entries = 0;
+  std::map<std::string,int> wfreqs; // whole lexicon
+  std::map<std::string,int> hpxfreqs; // hapaxed list
+  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  if ( ! file_lexicon ) {
+    l.log( "NOTICE: cannot load lexicon file." );
+    //return -1;
+  } else {
+    // Read the lexicon with word frequencies.
+    // We need a hash with frequence - countOfFrequency, ffreqs.
+    //
+    l.log( "Reading lexicon." );
+    std::string a_word;
+    while ( file_lexicon >> a_word >> wfreq ) {
+      wfreqs[a_word] = wfreq;
+      total_count += wfreq;
+      if ( wfreq == 1 ) {
+	++N_1;
+      }
+      if ( wfreq > hapax ) {
+	hpxfreqs[a_word] = wfreq;
+	++hpx_entries;
+      }
+    }
+    file_lexicon.close();
+    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  }
+  
+  // Read configfile with ibase definitions
+  // --------------------------------------
+  
+  std::vector<Expert*> exs;
+  std::vector<Expert*>::iterator exi;
+  std::map<std::string,Expert*> triggers; // reverse list, trigger to expert
+  std::map<std::string,int> called; // counter
+  
+  if ( configfile != "" ) {
+    l.log( "Reading classifiers." );
+    std::string a_line;
+    std::vector<std::string> words;
+    std::ifstream ifs_config( configfile.c_str() );
+    if ( ! ifs_config ) {
+      l.log( "ERROR: cannot load configfile." );
+      return -1;
+    }
+    while( std::getline( ifs_config, a_line )) {
+      if ( a_line.length() == 0 ) {
+	continue;
+      }
+      if ( a_line.at(0) == '#' ) {
+	continue;
+      }
+      words.clear();
+      Tokenize( a_line, words, ' ' );
+      if ( words.size() < 2 ) {
+	continue;
+      }
+      std::string ibf = words[0]; // name of ibasefile to read
+      l.log( "EXPERT: "+ibf );
+      Expert *e = new Expert("a", 1);
+      e->set_ibasefile(ibf);
+      e->set_timbl( timbl );
+      e->init();
+      int hi_freq = 0;
+      for ( size_t i = 1; i < words.size(); i++ ) {
+	std::string tr = words[i];
+	triggers[ tr ] = e;
+	called[ tr ] = 0;
+	l.log( "TRIGGER: "+tr );
+      }
+    }
+  }
+  l.log( "Instance bases loaded." );
+
+  // If we want smoothed counts, we need this file...
+  // Make mapping <int, double> from c to c* ?
+  //
+  std::map<int,double> c_stars;
+  int Nc0;
+  double Nc1; // this is c*
+  int count;
+  std::ifstream file_counts( counts_filename.c_str() );
+  if ( ! file_counts ) {
+    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
+  } else {
+    while( file_counts >> count >> Nc0 >> Nc1 ) {
+      c_stars[count] = Nc1;
+    }
+    file_counts.close();
+  }
+
+  // The P(new_word) according to GoodTuring-3.pdf
+  // We need the filename.cnt for this, because we really need to
+  // discount the rest if we assign probability to the unseen words.
+  //
+  // We need to esitmate the total number of unseen words. Same as
+  // vocab, i.e assume we saw half? Ratio of N_1 to total_count?
+  //
+  // We need to load .cnt file as well...
+  //
+  double p0 = 0.00001; // Arbitrary low probability for unknown words.
+  if ( total_count > 0 ) { // Better estimate if we have a lexicon
+    p0 = (double)N_1 / ((double)total_count * total_count);
+  }
+  //l.log( "P(new_particular) = " + to_str(p0) );
+
+  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
+    std::string a_file = *fi;
+    std::string output_filename  = a_file + id + ".sc";
+    std::string outlog_filename  = a_file + id + ".lg"; //LOG
+    
+    l.log( "Processing: "+a_file );
+    l.log( "OUTPUT:     "+output_filename );
+    l.log( "OUTPUT:     "+outlog_filename );
+    
+    if ( file_exists(l,c,output_filename) ) {
+      l.log( "OUTPUT files exist, not overwriting." );
+      c.add_kv( "sc_file", output_filename );
+      l.log( "SET sc_file to "+output_filename );
+      continue;
+    }
+
+    l.inc_prefix();
+
+    std::ifstream file_in( a_file.c_str() );
+    if ( ! file_in ) {
+      l.log( "ERROR: cannot load inputfile." );
+      return -1;
+    }
+    std::ofstream file_out( output_filename.c_str(), std::ios::out );
+    if ( ! file_out ) {
+      l.log( "ERROR: cannot write output file." );
+      return -1;
+    }
+    std::ofstream log_out( outlog_filename.c_str(), std::ios::out );
+    if ( ! log_out ) {
+      l.log( "ERROR: cannot write log file." );
+      return -1;
+    }
+
+    std::vector<std::string>::iterator vi;
+    std::ostream_iterator<std::string> output( file_out, " " );
+
+    std::string a_line;
+	std::string classify_line;
+    std::vector<std::string> results;
+    std::vector<std::string> targets;
+    std::vector<std::string>::iterator ri;
+    const Timbl::ValueDistribution *vd;
+    const Timbl::TargetValue *tv;
+    std::vector<std::string> words;
+    int correct = 0;
+    int wrong   = 0;
+    int correct_unknown = 0;
+    int correct_distr = 0;
+
+    // Recognise <s> or similar, reset pplx calculations.
+    // Output results on </s> or similar.
+    // Or a divisor which is not processed?
+    //
+    double sentence_prob      = 0.0;
+    double sum_logprob        = 0.0;
+    int    sentence_wordcount = 0;
+
+    std::vector<std::string> cls;
+    
+    std::map<std::string, Expert*>::iterator tsi; //triggers
+    Expert *e = NULL; // Expert used
+    int pos;
+    std::string trigger;
+    
+    while( std::getline( file_in, classify_line )) {
+      
+      cls.clear();
+      words.clear();
+      classify_line = trim( classify_line );
+      
+      if ( mode == 1 ) { // plain text, must be windowed
+	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+      } else {
+	cls.push_back( classify_line );
+      }
+      
+      for ( size_t i = 0; i < cls.size(); i++ ) {
+	
+	words.clear();
+	a_line = cls.at(i);
+	a_line = trim( a_line );
+	
+	Tokenize( a_line, words, ' ' );
+	
+	if ( hapax > 0 ) {
+	  int c = hapax_vector( words, hpxfreqs, hapax );
+	  vector_to_string(words, a_line);
+	  a_line = trim( a_line );
+	  words.clear();
+	  Tokenize( a_line, words, ' ' );
+	}
+	
+	std::string target = words.at( words.size()-1 );
+	
+	++sentence_wordcount;
+	
+	// Is the target in the lexicon? We could calculate a smoothed
+	// value here if we load the .cnt file too...
+	//
+	std::map<std::string,int>::iterator wfi = wfreqs.find( target );
+	bool   target_unknown = false;
+	bool   correct_answer = false;
+	double target_lexfreq = 0.0;// should be double because smoothing
+	double target_lexprob = 0.0;
+	if ( wfi == wfreqs.end() ) {
+	  target_unknown = true;
+	} else {
+	  target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
+	  std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
+	  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
+	    target_lexfreq = (double)(*cfi).second;
+	    //l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
+	  }
+	  target_lexprob = (double)target_lexfreq / (double)total_count;
+	}
+	
+	// Do we Timbl, check triggers.
+	pos     = words.size()-1-offset;
+	pos     = (pos < 0) ? 0 : pos;
+	trigger = words[pos];
+	//l.log( "trigger: "+trigger);
+	
+	tsi = triggers.find( trigger );
+	if ( tsi != triggers.end() ) {
+	  e = (*tsi).second;
+	} else { // the default classifier.
+	  e = NULL;
+	}
+	
+	if ( e == NULL ) {
+	  // We print a dummy line, same format as normal experiments.
+	  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
+	  continue;
+	}
+	
+	// What does Timbl think?
+	// Do we change this answer to what is in the distr. (if it is?)
+	//
+	tv = e->My_Experiment->Classify( a_line, vd );
+	e->call();
+	called[trigger] += 1; //we know it exists
+	if ( ! tv ) {
+	  l.log( "ERROR: Timbl returned a classification error, aborting." );
+	  l.log( "ERROR: "+a_line );
+	  break;
+	}
+	std::string answer = tv->Name();
+	//l.log( "Answer: '" + answer + "' / '" + target + "'" );
+	
+	// Check match-depth, if too undeep, we are probably
+	// unsure.
+	//
+	size_t md  = 0; //My_Experiment->matchDepth();
+	bool   mal = 0; //My_Experiment->matchedAtLeaf();
+	
+	if ( target == answer ) {
+	  ++correct;
+	  correct_answer = true;
+	} else {
+	  ++wrong;
+	}
+	
+	// Loop over distribution returned by Timbl.
+	//
+	Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	int cnt = 0;
+	int distr_count = 0;
+	int target_freq = 0;
+	int answer_freq = 0;
+	double prob            = 0.0;
+	double target_distprob = 0.0;
+	double answer_prob     = 0.0;
+	double entropy         = 0.0;
+	bool in_distr          = false;
+	cnt = vd->size();
+	distr_count = vd->totalSize(); //sum of freqs, for min_dsum
+	double answer_f = 0;
+	
+	// Check if target word is in the distribution.
+	//
+	while ( it != vd->end() ) {
+	  //const Timbl::TargetValue *tv = it->second->Value();
+	  
+	  std::string tvs  = it->second->Value()->Name();
+	  double      wght = it->second->Weight();
+	  
+	  // Prob. of this item in distribution.
+	  //
+	  prob     = (double)wght / (double)distr_count;
+	  entropy -= ( prob * log2(prob) );
+	  
+	  if ( tvs == target ) { // The correct answer was in the distribution!
+	    target_freq = wght;
+	    in_distr = true;
+	    if ( correct_answer == false ) {
+	      ++correct_distr;
+	      --wrong; // direct answer wrong, but right in distr. compensate count
+	    }
+	  }
+	  if ( tvs == answer ) { // Get the frequency to be able to calculate confidence
+	    answer_f = wght;
+	  }
+	  
+	  ++it;
+	}
+	target_distprob = (double)target_freq / (double)distr_count;
+	
+	// Confidence, after Skype call 20131101
+	// frequency of top-1, the answer / sum(frequencies distribution)
+	double the_confidence = -1; // -1 as shortcut to infinity
+	if ( distr_count > 0 ) { // then there are more, with frequency, so we don't divide by 0
+	  the_confidence = answer_f / distr_count;
+	}
+	
+	// If correct: if target in distr, we take that prob, else
+	// the lexical prob.
+	// Unknown words?
+	//
+	double logprob = 0.0;
+	if ( target_freq > 0 ) { // Right answer was in distr.
+	  logprob = log2( target_distprob );
+	} else {
+	  if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+	    logprob = log2( target_lexprob ); // SMOOTHED here, see above
+	  } else {
+	    //
+	    // What to do here? We have an 'unknown' target, i.e. not in the
+	    // lexicon.
+	    //
+	    logprob = log2( p0 /*0.0001*/ ); // Foei!
+	  }
+	}
+	sum_logprob += logprob;
+	
+	//l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
+
+	// Simplified for cmcorrect, with only md and confidence.
+	//
+	std::vector<distr_elem*> distr_vec;
+	bool fail = true;
+	log_out << a_line << std::endl;
+	if ( md >= (size_t)min_md ) {
+	  log_out << "md [" << md << "] >= min_md [" << min_md << "]" << std::endl;
+	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
+	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
+	    fail = false;
+	    // this is our classification
+	    double word_lp = pow( 2, -logprob );
+	    file_out << a_line << " (" << answer << ") "
+		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+	    file_out << word_lp << ' ';
+	    int cntr = 0;
+	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
+	    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	    file_out << cnt << " [ ";
+	    while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+	      file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+	      delete *fi;
+	      fi++;
+	    }
+	    distr_vec.clear();
+	    file_out << "]";
+	    file_out << std::endl;
+	  } // confidence
+	}// md
+	if ( fail == true ) {
+	  log_out << "FAIL the_confidence [" << the_confidence << "] < confidence [" << confidence << "]" << std::endl;
+	  // no classification, leave the text as it is
+	  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
+	}
+
+	log_out << std::endl;
+	
+	// End of sentence (sort of)
+	//
+	if ( target == "</s>" ) {
+	  l.log( " sum_logprob = " + to_str( sum_logprob) );
+	  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
+	  double foo  = sum_logprob / (double)sentence_wordcount;
+	  double pplx = pow( 2, -foo );
+	  l.log( " pplx = " + to_str( pplx ) );
+	  sum_logprob = 0.0;
+	  sentence_wordcount = 0;
+	  l.log( "--" );
+	}
+	
+      } // i.cls loop
+      
+    } // while getline()
+    
+    if ( sentence_wordcount > 0 ) { // Overgebleven zooi (of alles).
+      l.log( "sum_logprob = " + to_str( sum_logprob) );
+      l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
+      double foo  = sum_logprob / (double)sentence_wordcount;
+      double pplx = pow( 2, -foo );
+      l.log( "pplx = " + to_str( pplx ) );
+    }
+
+    log_out.close();
+    file_out.close();
+    file_in.close();
+    
+    l.log( "Correct:       " + to_str(correct) );
+    l.log( "Correct Distr: " + to_str(correct_distr) );
+    int correct_total = correct_distr+correct;
+    l.log( "Correct Total: " + to_str(correct_total) );
+    l.log( "Wrong:         " + to_str(wrong) );
+    if ( sentence_wordcount > 0 ) {
+      l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+    }
+    
+    // print call statistics for triggers.
+    //
+    std::map<std::string,int>::const_iterator ci = called.begin();
+    while ( ci != called.end() ) {
+      l.log( ci->first+": "+to_str(ci->second) );
+      ci++;
+    }
+    
+    c.add_kv( "sc_file", output_filename );
+    l.log( "SET sc_file to "+output_filename );
+    
+    l.dec_prefix();
+    
+  }
+  
+  return 0;
+}
+#else
+int cmcorrect( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }
