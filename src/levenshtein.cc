@@ -3856,7 +3856,6 @@ int ccorrect( Logfile& l, Config& c ) {
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
-  int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -3893,7 +3892,6 @@ int ccorrect( Logfile& l, Config& c ) {
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
   l.log( "confidence  "+to_str(confidence) );
-  l.log( "min_md      "+to_str(min_md) );
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -3949,13 +3947,53 @@ int ccorrect( Logfile& l, Config& c ) {
     } else {
       l.log( "Reading triggers." );
       std::string a_word;
-      while ( file_triggers >> a_word ) {
+      while ( file_triggers >> a_word ) { // should skip #
 	triggers.insert(a_word);
 	++trigger_count;
       }
       
       file_triggers.close();
       l.log( "Read triggers (total_count="+to_str(trigger_count)+")." );
+    }
+  }
+
+  // PJB we need as sets, with other member to be able to do
+  // selective ML.
+  // vector of sets, set of sets, vector of vectors...
+  // triggerword -> [ indexes in array with other set members ]
+  // 0) read in each line as vector, Tokenize( a_line, words, ' ' )
+  // 1) store these
+  //
+  // Read as sets
+  std::vector<std::string> words;
+  // their -> [their, there, they're]
+  std::map<std::string,std::vector<std::string>> c_sets;
+  if ( trigger_filename != "" ) {
+    std::ifstream file_triggers( trigger_filename.c_str() );
+    if ( ! file_triggers ) {
+      l.log( "NOTICE: cannot load confusibles." );
+      //return -1;
+    } else {
+      l.log( "Reading confusibles." );
+      std::string a_line;
+      std::vector<std::string>::iterator wi;
+      while( std::getline( file_triggers, a_line )) {
+	if ( a_line[0] != '#' ) {
+	  std::string a_word;
+	  words.clear();
+	  Tokenize( a_line, words );
+	  std::vector<std::string> c_set;
+	  for ( wi = words.begin(); wi != words.end(); wi++ ) {	  
+	    c_set.push_back(*wi);
+	    l.log( (*wi)+" "+a_line);
+	  }
+	  for ( wi = words.begin(); wi != words.end(); wi++ ) {	  
+	    c_sets[*wi] = c_set;
+	  }
+	}
+      }
+      file_triggers.close();
+      l.log( "Read sets (total_count="+to_str(trigger_count)+")." );
     }
   }
   
@@ -4069,8 +4107,8 @@ int ccorrect( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot write output file." );
       return -1;
     }
-    std::ofstream log_out( outlog_filename.c_str(), std::ios::out );
-    if ( ! log_out ) {
+    std::ofstream log_out( outlog_filename.c_str(), std::ios::out ); 
+   if ( ! log_out ) {
       l.log( "ERROR: cannot write log file." );
       return -1;
     }
@@ -4079,13 +4117,12 @@ int ccorrect( Logfile& l, Config& c ) {
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
-	std::string classify_line;
+    std::string classify_line;
     std::vector<std::string> results;
     std::vector<std::string> targets;
     std::vector<std::string>::iterator ri;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
-    std::vector<std::string> words;
     int correct = 0;
     int wrong   = 0;
     int correct_unknown = 0;
@@ -4154,7 +4191,7 @@ int ccorrect( Logfile& l, Config& c ) {
 	  target_lexprob = (double)target_lexfreq / (double)total_count;
 	}
 	
-	// If triggers, do naught if not a trigger
+	// Do nothing if not a trigger, write default line.
 	//
 	if ( trigger_count > 0 ) {
 	  if ( triggers.find(target) == triggers.end() ) {
@@ -4167,7 +4204,7 @@ int ccorrect( Logfile& l, Config& c ) {
 	    continue;
 	  }
 	}
-	
+
 	// What does Timbl think?
 	// Do we change this answer to what is in the distr. (if it is?)
 	//
@@ -4184,10 +4221,6 @@ int ccorrect( Logfile& l, Config& c ) {
 	//
 	size_t md  = My_Experiment->matchDepth();
 	bool   mal = My_Experiment->matchedAtLeaf();
-	//l.log( "md/mal: " + to_str(md) + " / " + to_str(mal) );
-	
-	// we could skip here without calculating the rest of the stats if md < min_md
-	// (but we don't)
 	
 	if ( target == answer ) {
 	  ++correct;
@@ -4241,8 +4274,6 @@ int ccorrect( Logfile& l, Config& c ) {
 	}
 	target_distprob = (double)target_freq / (double)distr_count;
 	
-	// Confidence, after Skype call 20131203
-	// frequency of top-1 (the answer) / sum(all frequencies), 0:50 is 50-50.
 	double the_confidence = -1; // -1 as shortcut to infinity
 	if ( distr_count > 0 ) { 
 	  the_confidence = answer_f / distr_count;
@@ -4274,31 +4305,67 @@ int ccorrect( Logfile& l, Config& c ) {
 	bool fail = false;
 	// Several conditions, AND
 	log_out << a_line << std::endl;
-	if ( md >= (size_t)min_md ) { 
-	  log_out << "md [" << md << "] >= min_md [" << min_md << "]" << std::endl;
-	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) { // confidence OK?
-	      log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
-	      fail = false;
-	      //tdistr_spelcorr( vd, target, wfreqs, distr_vec, mld, cs, min_df, confidence); // filter the distro, could return []
 
-	      double word_lp = pow( 2, -logprob );
-	      file_out << a_line << " (" << answer << ") "
-		       << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
-	      file_out << word_lp << ' ';
-	      int cntr = 0;
-	      sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
-	      std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
-	      file_out << cnt << " [ ";
-	      while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
-		delete *fi;
-		fi++;
+	// Filter distro, recalc connfidence
+	std::vector<std::string> c_set = c_sets[target];
+	//l.log( to_str(vd->size())+" "+to_str(c_set.size()) );
+	std::vector<std::string>::iterator si;
+	std::string top_c;
+	double top_f = -1;
+	double sum_f = 0;
+	int cc = 0;
+	it = vd->begin();
+	while ( it != vd->end() ) { // loop over distribution
+	  std::string tvs  = it->second->Value()->Name(); // distr.elem
+	  double      wght = it->second->Weight(); // frequency
+	  for ( si = c_set.begin(); si != c_set.end(); si++ ) {
+	    if ( *si == tvs ) {
+	      sum_f += wght;
+	      if ( wght > top_f ) {
+		top_f = wght;
+		top_c = tvs;
 	      }
-	      distr_vec.clear();
-	      file_out << "]";
-	      file_out << std::endl;
-	  } // confidence
-	} // md
+	      ++cc;
+	    }
+	  } // si
+	  ++it;		
+	} // it, vd->end()  
+
+	the_confidence = -1;
+	if ( sum_f > 0 ) {
+	  the_confidence = top_f / sum_f;
+	}
+	
+	if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
+	  log_out << "found " << cc << " in distribution of " << vd->size() << std::endl;
+	  log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
+	  fail = false;
+	      
+	  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	  std::map<std::string,int>::iterator tvsfi;
+	  std::map<std::string,int>::iterator wfi;
+	  double factor = 0.0;
+	      
+	  // This is our answer, the stats are on whole distr. 
+	  answer = top_c;
+	  
+	  double word_lp = pow( 2, -logprob );
+	  file_out << a_line << " (" << answer << ") "
+		   << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+	  file_out << word_lp << ' ';
+	  int cntr = 0;
+	  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
+	  std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	  file_out << cnt << " [ ";
+	  while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+	    file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
+	    delete *fi;
+	    fi++;
+	  }
+	  distr_vec.clear();
+	  file_out << "]";
+	  file_out << std::endl;
+	} // confidence
 	if ( fail == true ) {
 	  log_out << "FAIL the_confidence [" << the_confidence << "] < confidence [" << confidence << "]" << std::endl;
 	  // no classification, leave the text as it is
