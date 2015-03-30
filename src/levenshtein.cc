@@ -3835,8 +3835,8 @@ int cmcorrect( Logfile& l, Config& c ) {
 // Confidence only. Add modes for examining distribution?
 //
 #ifdef TIMBL
-int ccorrect( Logfile& l, Config& c ) {
-  l.log( "ccorrect" );
+int sml( Logfile& l, Config& c ) {
+  l.log( "sml" );
   const std::string& filename         = c.get_value( "filename" );
   std::string        dirname          = c.get_value( "dir", "" );
   std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
@@ -3855,8 +3855,8 @@ int ccorrect( Logfile& l, Config& c ) {
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
-  // Minimum max-depth of timbl answer
-
+  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
+  
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -3889,9 +3889,11 @@ int ccorrect( Logfile& l, Config& c ) {
   l.log( "id:         "+id );
   l.log( "hapax:      "+to_str(hapax) );
   l.log( "mode:       "+to_str(mode) );
+  l.log( "topn:       "+to_str(topn) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
   l.log( "confidence  "+to_str(confidence) );
+  
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -3971,21 +3973,23 @@ int ccorrect( Logfile& l, Config& c ) {
   if ( trigger_filename != "" ) {
     std::ifstream file_triggers( trigger_filename.c_str() );
     if ( ! file_triggers ) {
-      l.log( "NOTICE: cannot load confusibles." );
+      l.log( "NOTICE: cannot load sets." );
       //return -1;
     } else {
-      l.log( "Reading confusibles." );
+      l.log( "Reading sets." );
       std::string a_line;
+      int set_count = 0;
       std::vector<std::string>::iterator wi;
       while( std::getline( file_triggers, a_line )) {
 	if ( a_line[0] != '#' ) {
 	  std::string a_word;
 	  words.clear();
+	  ++set_count;
 	  Tokenize( a_line, words );
 	  std::vector<std::string> c_set;
 	  for ( wi = words.begin(); wi != words.end(); wi++ ) {	  
 	    c_set.push_back(*wi);
-	    l.log( (*wi)+" "+a_line);
+	    //l.log( (*wi)+" "+a_line);
 	  }
 	  for ( wi = words.begin(); wi != words.end(); wi++ ) {	  
 	    c_sets[*wi] = c_set;
@@ -3993,7 +3997,7 @@ int ccorrect( Logfile& l, Config& c ) {
 	}
       }
       file_triggers.close();
-      l.log( "Read sets (total_count="+to_str(trigger_count)+")." );
+      l.log( "Read sets ("+to_str(set_count)+")." );
     }
   }
   
@@ -4306,20 +4310,24 @@ int ccorrect( Logfile& l, Config& c ) {
 	// Several conditions, AND
 	log_out << a_line << std::endl;
 
-	// Filter distro, recalc connfidence
-	std::vector<std::string> c_set = c_sets[target];
-	//l.log( to_str(vd->size())+" "+to_str(c_set.size()) );
+	// Filter distro, recalc confidence
+	std::vector<std::string> c_set = c_sets[target]; //check error(?)
 	std::vector<std::string>::iterator si;
 	std::string top_c;
 	double top_f = -1;
 	double sum_f = 0;
 	int cc = 0;
-	it = vd->begin();
+	std::vector<distr_elem*> filtered_distr_vec;
+	it = vd->begin(); // sort first?
 	while ( it != vd->end() ) { // loop over distribution
 	  std::string tvs  = it->second->Value()->Name(); // distr.elem
 	  double      wght = it->second->Weight(); // frequency
 	  for ( si = c_set.begin(); si != c_set.end(); si++ ) {
 	    if ( *si == tvs ) {
+	      if ( topn > 0 ) {
+		distr_elem *d = new distr_elem(tvs, wght, 0);
+		filtered_distr_vec.push_back(d);
+	      }
 	      sum_f += wght;
 	      if ( wght > top_f ) {
 		top_f = wght;
@@ -4353,16 +4361,17 @@ int ccorrect( Logfile& l, Config& c ) {
 	  file_out << a_line << " (" << answer << ") "
 		   << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
 	  file_out << word_lp << ' ';
-	  int cntr = 0;
-	  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
-	  std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	  int cntr = topn;
+	  sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
+	  std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
 	  file_out << cnt << " [ ";
-	  while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-	    file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
+	  while ( (fi != filtered_distr_vec.end()) && (--cntr != 0) ) {
+	    file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
 	    delete *fi;
 	    fi++;
 	  }
 	  distr_vec.clear();
+	  filtered_distr_vec.clear();
 	  file_out << "]";
 	  file_out << std::endl;
 	} // confidence
@@ -4423,7 +4432,7 @@ int ccorrect( Logfile& l, Config& c ) {
   return 0;
 }
 #else
-int tcorrect( Logfile& l, Config& c ) {
+int sml( Logfile& l, Config& c ) {
   l.log( "No TIMBL support." );
   return -1;
 }

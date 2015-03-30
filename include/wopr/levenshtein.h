@@ -39,6 +39,6 @@ int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
 int mcorrect( Logfile&, Config& );
 int cmcorrect( Logfile&, Config& );
-int ccorrect( Logfile&, Config& );
+int sml( Logfile&, Config& );
 
 #endif

@@ -545,8 +545,8 @@ pt2Func2 get_function( const std::string& a_fname ) {
     return &kvs;
   } else if ( a_fname == "cmcorrect" ) { // from levenshtein.cc
     return &cmcorrect;
-  } else if ( a_fname == "ccorrect" ) { // from levenshtein.cc
-    return &ccorrect;
+  } else if ( a_fname == "sml" ) { // from levenshtein.cc
+    return &sml;
   }
   return &tst;
 }
