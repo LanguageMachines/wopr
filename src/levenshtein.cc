@@ -3940,6 +3940,7 @@ int sml( Logfile& l, Config& c ) {
     return 0;
   }
 
+  // NB reads commented lines
   int trigger_count = 0;
   if ( trigger_filename != "" ) {
     std::ifstream file_triggers( trigger_filename.c_str() );
@@ -4303,11 +4304,8 @@ int sml( Logfile& l, Config& c ) {
 	}
 	sum_logprob += logprob;
 	
-	// I we didn't have the correct answer in the distro, we take ld=1
-	//
 	std::vector<distr_elem*> distr_vec;
-	bool fail = false;
-	// Several conditions, AND
+	bool fail = true;
 	log_out << a_line << std::endl;
 
 	// Filter distro, recalc confidence
@@ -4322,8 +4320,8 @@ int sml( Logfile& l, Config& c ) {
 	while ( it != vd->end() ) { // loop over distribution
 	  std::string tvs  = it->second->Value()->Name(); // distr.elem
 	  double      wght = it->second->Weight(); // frequency
-	  for ( si = c_set.begin(); si != c_set.end(); si++ ) {
-	    if ( *si == tvs ) {
+	  for ( si = c_set.begin(); si != c_set.end(); si++ ) { //should be outer loop
+	    if ( (*si) == tvs ) {
 	      if ( topn > 0 ) {
 		distr_elem *d = new distr_elem(tvs, wght, 0);
 		filtered_distr_vec.push_back(d);
@@ -4344,7 +4342,7 @@ int sml( Logfile& l, Config& c ) {
 	  the_confidence = top_f / sum_f;
 	}
 
-	if ( cc > 0 ) {
+	if ( cc > 0 ) { // found 1 or more elements from set
 	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 	    log_out << "found " << cc << " in distribution of " << vd->size() << std::endl;
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
@@ -4376,14 +4374,15 @@ int sml( Logfile& l, Config& c ) {
 	    file_out << "]";
 	    file_out << std::endl;
 	  } // confidence
-	} // cc > 0
+	} else { // cc > 0
+	  log_out << "FAIL No elements found in distribution." << std::endl;
+	}
 	if ( fail == true ) {
 	  log_out << "FAIL the_confidence [" << the_confidence << "] < confidence [" << confidence << "]" << std::endl;
 	  // no classification, leave the text as it is
 	  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
 	}
 	log_out << std::endl;
-	
 	
 	// End of sentence (sort of)
 	//
