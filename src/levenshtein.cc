@@ -4343,38 +4343,40 @@ int sml( Logfile& l, Config& c ) {
 	if ( sum_f > 0 ) {
 	  the_confidence = top_f / sum_f;
 	}
-	
-	if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
-	  log_out << "found " << cc << " in distribution of " << vd->size() << std::endl;
-	  log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
-	  fail = false;
-	      
-	  Timbl::ValueDistribution::dist_iterator it = vd->begin();
-	  std::map<std::string,int>::iterator tvsfi;
-	  std::map<std::string,int>::iterator wfi;
-	  double factor = 0.0;
-	      
-	  // This is our answer, the stats are on whole distr. 
-	  answer = top_c;
-	  
-	  double word_lp = pow( 2, -logprob );
-	  file_out << a_line << " (" << answer << ") "
-		   << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
-	  file_out << word_lp << ' ';
-	  int cntr = topn;
-	  sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
-	  std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
-	  file_out << cnt << " [ ";
-	  while ( (fi != filtered_distr_vec.end()) && (--cntr != 0) ) {
-	    file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-	    delete *fi;
-	    fi++;
-	  }
-	  distr_vec.clear();
-	  filtered_distr_vec.clear();
-	  file_out << "]";
-	  file_out << std::endl;
-	} // confidence
+
+	if ( cc > 0 ) {
+	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
+	    log_out << "found " << cc << " in distribution of " << vd->size() << std::endl;
+	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
+	    fail = false;
+	    
+	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	    std::map<std::string,int>::iterator tvsfi;
+	    std::map<std::string,int>::iterator wfi;
+	    double factor = 0.0;
+	    
+	    // This is our answer, the stats are on whole distr. 
+	    answer = top_c;
+	    
+	    double word_lp = pow( 2, -logprob );
+	    file_out << a_line << " (" << answer << ") "
+		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+	    file_out << word_lp << ' ';
+	    int cntr = topn;
+	    sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
+	    std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
+	    file_out << cnt << " [ ";
+	    while ( (fi != filtered_distr_vec.end()) && (--cntr != 0) ) {
+	      file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+	      delete *fi;
+	      fi++;
+	    }
+	    distr_vec.clear();
+	    filtered_distr_vec.clear();
+	    file_out << "]";
+	    file_out << std::endl;
+	  } // confidence
+	} // cc > 0
 	if ( fail == true ) {
 	  log_out << "FAIL the_confidence [" << the_confidence << "] < confidence [" << confidence << "]" << std::endl;
 	  // no classification, leave the text as it is
