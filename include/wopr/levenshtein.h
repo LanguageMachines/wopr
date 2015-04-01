@@ -39,6 +39,7 @@ int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
 int mcorrect( Logfile&, Config& );
 int cmcorrect( Logfile&, Config& );
+double filter_dist( const Timbl::ValueDistribution*, std::vector<std::string>&, std::vector<distr_elem*>&);
 int sml( Logfile&, Config& );
 
 #endif

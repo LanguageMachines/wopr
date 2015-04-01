@@ -104,7 +104,7 @@ std::string toLowerCase( std::string const& s ) {
 
 int min3( int a, int b, int c ) {
   int mi;
-
+  
   mi = a;
   if (b < mi) {
     mi = b;
@@ -132,7 +132,7 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
   // Short cut, we ignore LDs > mld, so if the words differ so many characters
   // we already know enough. The value returned is an approximation...
   if ( abs(n-m) > mld ) {
-	return abs(n-m);
+    return abs(n-m);
   }
 
   typedef std::vector< std::vector<int> > Tmatrix;
@@ -170,19 +170,19 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
       // Step 5
 
       int cost;
-	  if ( cs ) { //case sensitive
-		if (s_i == t_j) {
-		  cost = 0;
-		} else {
-		  cost = 1;
-		}
-	  } else {
-		if ( toLowerCase(s_i) == toLowerCase(t_j) ) {
-		  cost = 0;
-		} else {
-		  cost = 1;
-		}
-	  }
+      if ( cs ) { //case sensitive
+	if (s_i == t_j) {
+	  cost = 0;
+	} else {
+	  cost = 1;
+	}
+      } else {
+	if ( toLowerCase(s_i) == toLowerCase(t_j) ) {
+	  cost = 0;
+	} else {
+	  cost = 1;
+	}
+      }
 
       // Step 6
 
@@ -205,39 +205,39 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
 	// Code gives LD:2 to a transposition. If TRANSPLD2
 	// is not defined, a transposition is LD:1
 #ifdef TRANSPLD2
-		if ( cs ) { // case sensitive
-		  if ( source[i-2] != t_j ) {
-			trans++;
-		  }
-		  if ( s_i != target[j-2] ) {
-			trans++;
-		  }
-		} else {
-		  if ( toLowerCase(source[i-2]) != toLowerCase(t_j) ) {
-			trans++;
-		  }
-		  if ( toLowerCase(s_i) != toLowerCase(target[j-2]) ) {
-			trans++;
-		  }
-		}
+	if ( cs ) { // case sensitive
+	  if ( source[i-2] != t_j ) {
+	    trans++;
+	  }
+	  if ( s_i != target[j-2] ) {
+	    trans++;
+	  }
+	} else {
+	  if ( toLowerCase(source[i-2]) != toLowerCase(t_j) ) {
+	    trans++;
+	  }
+	  if ( toLowerCase(s_i) != toLowerCase(target[j-2]) ) {
+	    trans++;
+	  }
+	}
 #endif
-		if ( cs ) { // case sensitive
-		  if ( source[i-2] != t_j ) {
-			if ( s_i != target[j-2] ) {
-			  trans++;
-			}
-		  }
-		} else {
-		  if ( toLowerCase(source[i-2]) != toLowerCase(t_j) ) {
-			if ( toLowerCase(s_i) != toLowerCase(target[j-2]) ) {
-			  trans++;
-			}
-		  }
-		}
+	if ( cs ) { // case sensitive
+	  if ( source[i-2] != t_j ) {
+	    if ( s_i != target[j-2] ) {
+	      trans++;
+	    }
+	  }
+	} else {
+	  if ( toLowerCase(source[i-2]) != toLowerCase(t_j) ) {
+	    if ( toLowerCase(s_i) != toLowerCase(target[j-2]) ) {
+	      trans++;
+	    }
+	  }
+	}
 
         if ( cell > trans ) {
-		  cell = trans;
-		}
+	  cell = trans;
+	}
       }
 
       matrix[i][j] = cell;
@@ -269,7 +269,7 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
   // Short cut, we ignore LDs > mld, so if the words differ so many characters
   // we already know enough. The value returned is an approximation...
   if ( abs(n-m) > mld ) {
-	return abs(n-m);
+    return abs(n-m);
   }
 
   typedef std::vector< std::vector<int> > Tmatrix;
@@ -307,20 +307,20 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
       // Step 5
 
       int cost;
-	  if ( cs ) { // case sensitive
-		if (s_i == t_j) {
-		  cost = 0;
-		} else {
-		  cost = 1;
-		}
-	  } else {
-		//UChar32 	u_foldCase (UChar32 c, uint32_t options)
-		if (u_foldCase(s_i, 0) == u_foldCase(t_j, 0)) {
-		  cost = 0;
-		} else {
-		  cost = 1;
-		}
-	  }
+      if ( cs ) { // case sensitive
+	if (s_i == t_j) {
+	  cost = 0;
+	} else {
+	  cost = 1;
+	}
+      } else {
+	//UChar32 	u_foldCase (UChar32 c, uint32_t options)
+	if (u_foldCase(s_i, 0) == u_foldCase(t_j, 0)) {
+	  cost = 0;
+	} else {
+	  cost = 1;
+	}
+      }
 
       // Step 6
 
@@ -344,39 +344,39 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
 	// Code gives LD:2 to a transposition. If TRANSPLD2
 	// is not defined, a transposition is LD:1
 
-		if ( cs ) { // case sensitive
-		  if ( u_source.charAt(i-2) != t_j ) {
-			//std::cerr << char(t_j) << char(u_source.charAt(i-2)) << std::endl;
-			trans++;
-		  }
-		  if ( s_i != u_target.charAt(j-2) ) {
-			trans++;
-		  }
+	if ( cs ) { // case sensitive
+	  if ( u_source.charAt(i-2) != t_j ) {
+	    //std::cerr << char(t_j) << char(u_source.charAt(i-2)) << std::endl;
+	    trans++;
+	  }
+	  if ( s_i != u_target.charAt(j-2) ) {
+	    trans++;
+	  }
 
-		  if ( u_source.charAt(i-2) != t_j ) {
-			if ( s_i != u_target.charAt(j-2) ) {
-			  trans++;
-			}
-		  }
-		} else { // not cs
-		  if ( u_foldCase(u_source.charAt(i-2), 0) != u_foldCase(t_j, 0) ) {
-			//std::cerr << char(t_j) << char(u_source.charAt(i-2)) << std::endl;
-			trans++;
-		  }
-		  if ( u_foldCase(s_i, 0) != u_foldCase(u_target.charAt(j-2), 0) ) {
-			trans++;
-		  }
+	  if ( u_source.charAt(i-2) != t_j ) {
+	    if ( s_i != u_target.charAt(j-2) ) {
+	      trans++;
+	    }
+	  }
+	} else { // not cs
+	  if ( u_foldCase(u_source.charAt(i-2), 0) != u_foldCase(t_j, 0) ) {
+	    //std::cerr << char(t_j) << char(u_source.charAt(i-2)) << std::endl;
+	    trans++;
+	  }
+	  if ( u_foldCase(s_i, 0) != u_foldCase(u_target.charAt(j-2), 0) ) {
+	    trans++;
+	  }
 
-		  if ( u_foldCase(u_source.charAt(i-2), 0) != u_foldCase(t_j, 0) ) {
-			if ( u_foldCase(s_i, 0) != u_foldCase(u_target.charAt(j-2), 0) ) {
-			  trans++;
-			}
-		  }
-		}
+	  if ( u_foldCase(u_source.charAt(i-2), 0) != u_foldCase(t_j, 0) ) {
+	    if ( u_foldCase(s_i, 0) != u_foldCase(u_target.charAt(j-2), 0) ) {
+	      trans++;
+	    }
+	  }
+	}
 
         if ( cell > trans ) {
-		  cell = trans;
-		}
+	  cell = trans;
+	}
       }
 #endif
       matrix[i][j] = cell;
@@ -487,7 +487,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 
     std::string tvs  = it->second->Value()->Name(); // element in distribution
     double      wght = it->second->Weight(); // frequency of distr. element
-	// LD shortcut, if stringlength differs more than mld, we don't need to try
+    // LD shortcut, if stringlength differs more than mld, we don't need to try
     int         ld   = lev_distance( target, tvs, mld, cs ); // LD with target (word in text)
 
     // If the ld of the word is less than the maximum ld (mld parameter),
@@ -510,8 +510,8 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
       wfi = wfreqs.find( tvs );
       // if we find distr. element in lexicon, and target is in lexicon
       if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-		tvs_lf =  (int)(*wfi).second;
-		factor = tvs_lf / target_lexfreq;
+	tvs_lf =  (int)(*wfi).second;
+	factor = tvs_lf / target_lexfreq;
       }
       //
       // std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
@@ -521,22 +521,22 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
       // this possible correction.
       //
       if ( (target_lexfreq == 0) || (factor >= min_ratio) ) {
-		//
-		distr_elem* d = new distr_elem();
-		d->name = tvs;
-		d->freq = wght; //was ld. Freq not so useful, can be low for even
-		d->ld = ld;     // a correct to the point classification
-		tvsfi = wfreqs.find( tvs );
-		if ( tvsfi == wfreqs.end() ) {
-		  d->lexfreq = 0;
-		} else {
-		  d->lexfreq = (double)(*tvsfi).second;
-		}
-
-		distr_vec.push_back( d );
+	//
+	distr_elem* d = new distr_elem();
+	d->name = tvs;
+	d->freq = wght; //was ld. Freq not so useful, can be low for even
+	d->ld = ld;     // a correct to the point classification
+	tvsfi = wfreqs.find( tvs );
+	if ( tvsfi == wfreqs.end() ) {
+	  d->lexfreq = 0;
+	} else {
+	  d->lexfreq = (double)(*tvsfi).second;
+	}
+	
+	distr_vec.push_back( d );
       } // factor>=min_ratio
     }
-
+    
     ++it;
   }
 }
@@ -3832,6 +3832,38 @@ int cmcorrect( Logfile& l, Config& c ) {
 
 // 2015-03-28
 
+// Only leave in distr_vec what is in vd and a_set.
+// Used in sml.
+double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>& a_set, std::vector<distr_elem*>& distr_vec) {
+
+  int    cnt         = 0;
+  double distr_count = 0;
+  
+  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  std::vector<std::string>::iterator si;
+  
+  while ( it != vd->end() ) { // loop over distribution
+    std::string tvs  = it->second->Value()->Name(); // element in distribution
+    double      wght = it->second->Weight(); // frequency of distr. element
+
+    for ( si = a_set.begin(); si != a_set.end(); si++ ) { //should be outer
+      if ( (*si) == tvs ) {
+	distr_elem *d = new distr_elem(tvs, wght, 0); //last index?
+	distr_vec.push_back( d );
+	++cnt;
+	distr_count += wght;
+      }
+    } // si
+    // Ready if same number found (all unique)
+    if ( distr_vec.size() == a_set.size() ) {
+      break;
+    }
+    ++it;
+  }
+  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
+  return distr_count; //cnt is size()
+}
+
 // Confidence only. Add modes for examining distribution?
 //
 #ifdef TIMBL
@@ -3855,7 +3887,7 @@ int sml( Logfile& l, Config& c ) {
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
-  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
+  int                topn            = my_stoi( c.get_value( "topn", "0" ) );
   
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
@@ -4314,35 +4346,23 @@ int sml( Logfile& l, Config& c ) {
 	std::string top_c;
 	double top_f = -1;
 	double sum_f = 0;
-	int cc = 0;
+	size_t cc = 0;
 	std::vector<distr_elem*> filtered_distr_vec;
-	it = vd->begin(); // sort first?
-	while ( it != vd->end() ) { // loop over distribution
-	  std::string tvs  = it->second->Value()->Name(); // distr.elem
-	  double      wght = it->second->Weight(); // frequency
-	  for ( si = c_set.begin(); si != c_set.end(); si++ ) { //should be outer loop
-	    if ( (*si) == tvs ) {
-	      if ( topn > 0 ) {
-		distr_elem *d = new distr_elem(tvs, wght, 0);
-		filtered_distr_vec.push_back(d);
-	      }
-	      sum_f += wght;
-	      if ( wght > top_f ) {
-		top_f = wght;
-		top_c = tvs;
-	      }
-	      ++cc;
-	    }
-	  } // si
-	  ++it;		
-	} // it, vd->end()  
-
+	std::vector<distr_elem*>::const_iterator fi;
+	
+	sum_f = filter_dist( vd, c_set, filtered_distr_vec);
+	cc = filtered_distr_vec.size();
+	
+	/*
+[pberck@margretetorp cmcorrect]$ ~/uvt/wopr/src/wopr -l -r sml -p ibasefile:utexas.10e6.dt3.100000.l2r2_-a1+D.ibase,timbl:"-a1 +D",filename:utexas.10e6.dt3.t1e5d.cf350.l2r2,triggerfile:goldingroth3a.txt,lc:2,rc:2,confidence:0,id:SML4F
+	*/
 	the_confidence = -1;
-	if ( sum_f > 0 ) {
-	  the_confidence = top_f / sum_f;
-	}
-
 	if ( cc > 0 ) { // found 1 or more elements from set
+	  if ( sum_f > 0 ) { // it should be...
+	    top_c = filtered_distr_vec[0]->name;
+	    top_f = filtered_distr_vec[0]->freq;
+	    the_confidence = top_f / sum_f;
+	  }
 	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 	    log_out << "found " << cc << " in distribution of " << vd->size() << std::endl;
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
@@ -4361,10 +4381,11 @@ int sml( Logfile& l, Config& c ) {
 		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
 	    file_out << word_lp << ' ';
 	    int cntr = topn;
-	    sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
-	    std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
+	    //sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp) //is returned sorted
+	    //std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
+	    fi = filtered_distr_vec.begin();
 	    file_out << cnt << " [ ";
-	    while ( (fi != filtered_distr_vec.end()) && (--cntr != 0) ) {
+	    while ( (fi != filtered_distr_vec.end()) && (cntr-- != 0) ) {
 	      file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
 	      delete *fi;
 	      fi++;
