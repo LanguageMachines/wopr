@@ -3854,6 +3854,9 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
 	distr_count += wght;
       }
     } // si
+    if ( distr_vec.size() == a_set.size() ) {
+      break;
+    }
     ++it;
   }
   sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );

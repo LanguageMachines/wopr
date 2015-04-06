@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
-AC_INIT(wopr, 1.40.3)
+AC_INIT(wopr, 1.40.4)
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
