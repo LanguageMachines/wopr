@@ -3735,6 +3735,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	// Simplified for cmcorrect, with only md and confidence.
 	//
 	std::vector<distr_elem*> distr_vec;
+	std::vector<distr_elem*>::const_iterator fi;
 	bool fail = true;
 	log_out << a_line << std::endl;
 	if ( md >= (size_t)min_md ) {
@@ -3751,16 +3752,21 @@ int cmcorrect( Logfile& l, Config& c ) {
 	    file_out << cnt << " [ ";
 	    if ( topn > 0 ) {
 	      int cntr = topn;
+	      fi = distr_vec.begin();
 	      //sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
-	      std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 	      while ( (fi != distr_vec.end()) && (cntr-- != 0) ) {
 		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
 		fi++;
 	      }
 	    }
-	    distr_vec.clear();
 	    file_out << "]";
 	    file_out << std::endl;
+	    fi = distr_vec.begin();
+	    while ( fi != distr_vec.end() ) {
+	      delete *fi;
+	      fi++;
+	    }
+	    distr_vec.clear();
 	  } // confidence
 	}// md
 	if ( fail == true ) {
@@ -4362,7 +4368,6 @@ int sml( Logfile& l, Config& c ) {
 	}
 	sum_logprob += logprob;
 	
-	std::vector<distr_elem*> distr_vec;
 	bool fail = true;
 	log_out << a_line << std::endl;
 
@@ -4414,14 +4419,17 @@ int sml( Logfile& l, Config& c ) {
 	      fi = filtered_distr_vec.begin();
 	      while ( (fi != filtered_distr_vec.end()) && (cntr-- != 0) ) {
 		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-		delete *fi;
 		fi++;
 	      }
-	    }
-	    distr_vec.clear();
-	    filtered_distr_vec.clear();
+	    } // topn
 	    file_out << "]";
 	    file_out << std::endl;
+	    fi = filtered_distr_vec.begin();
+	    while ( fi != filtered_distr_vec.end() ) {
+	      delete *fi;
+	      fi++;
+	    }
+	    filtered_distr_vec.clear();
 	  } // confidence
 	} else { // cc > 0
 	  log_out << "FAIL No elements found in distribution." << std::endl;
