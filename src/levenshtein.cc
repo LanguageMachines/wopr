@@ -3310,7 +3310,8 @@ int cmcorrect( Logfile& l, Config& c ) {
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
-
+  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
+    
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -3336,6 +3337,7 @@ int cmcorrect( Logfile& l, Config& c ) {
   l.log( "id:         "+id );
   l.log( "hapax:      "+to_str(hapax) );
   l.log( "mode:       "+to_str(mode) );
+  l.log( "topn:       "+to_str(topn) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
   l.log( "offset:     "+to_str(offset) );
@@ -3740,19 +3742,21 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
 	    fail = false;
+	    double sum_f = copy_dist( vd, distr_vec); // to output [ ... ]
 	    // this is our classification
 	    double word_lp = pow( 2, -logprob );
 	    file_out << a_line << " (" << answer << ") "
 		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
 	    file_out << word_lp << ' ';
-	    int cntr = 0;
-	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
-	    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 	    file_out << cnt << " [ ";
-	    while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-	      file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-	      delete *fi;
-	      fi++;
+	    if ( topn > 0 ) {
+	      int cntr = topn;
+	      //sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
+	      std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	      while ( (fi != distr_vec.end()) && (cntr-- != 0) ) {
+		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+		fi++;
+	      }
 	    }
 	    distr_vec.clear();
 	    file_out << "]";
@@ -3857,6 +3861,29 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
     if ( distr_vec.size() == a_set.size() ) {
       break;
     }
+    ++it;
+  }
+  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
+  return distr_count; //cnt is size()
+}
+
+// for cmcorrect
+double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& distr_vec) {
+  int    cnt         = 0;
+  double distr_count = 0;
+  
+  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  std::vector<std::string>::iterator si;
+  
+  while ( it != vd->end() ) { // loop over distribution
+    std::string tvs  = it->second->Value()->Name(); // element in distribution
+    double      wght = it->second->Weight(); // frequency of distr. element
+
+    distr_elem *d = new distr_elem(tvs, wght, 0); //last index?
+    distr_vec.push_back( d );
+    ++cnt;
+    distr_count += wght;
+
     ++it;
   }
   sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
@@ -4379,15 +4406,17 @@ int sml( Logfile& l, Config& c ) {
 	    file_out << a_line << " (" << answer << ") "
 		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
 	    file_out << word_lp << ' ';
-	    int cntr = topn;
-	    //sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp) //is returned sorted
-	    //std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
-	    fi = filtered_distr_vec.begin();
 	    file_out << cnt << " [ ";
-	    while ( (fi != filtered_distr_vec.end()) && (cntr-- != 0) ) {
-	      file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-	      delete *fi;
-	      fi++;
+	    if ( topn > 0 ) {
+	      int cntr = topn;
+	      //sort( filtered_distr_vec.begin(), filtered_distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp) //is returned sorted
+	      //std::vector<distr_elem*>::const_iterator fi = filtered_distr_vec.begin();
+	      fi = filtered_distr_vec.begin();
+	      while ( (fi != filtered_distr_vec.end()) && (cntr-- != 0) ) {
+		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
+		delete *fi;
+		fi++;
+	      }
 	    }
 	    distr_vec.clear();
 	    filtered_distr_vec.clear();
