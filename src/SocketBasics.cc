@@ -365,7 +365,7 @@ namespace Sockets {
 	    val = 1;
 	    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY,
 			     (void *)&val, sizeof(val) ) == 0 ){
-	      if ( bind( sock, res->ai_addr, res->ai_addrlen ) == 0 ){
+	      if ( ::bind( sock, res->ai_addr, res->ai_addrlen ) == 0 ){
 		break;
 	      }
 	    }
@@ -500,7 +500,7 @@ namespace Sockets {
       serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
       int TCP_PORT = my_stoi(port);
       serv_addr.sin_port = htons(TCP_PORT);
-      if ( bind( sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr) ) < 0 ){
+      if ( ::bind( sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr) ) < 0 ){
 	mess = string( "ServerSocket connect: bind failed (" )
 	  + strerror( errno ) + ")";
       }
