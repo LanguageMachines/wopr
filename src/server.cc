@@ -54,6 +54,10 @@
 #include <sys/msg.h>
 
 #ifdef HAVE_FOLIA
+#include <set>
+#include "ticcutils/StringOps.h"
+#include "libfolia/foliautils.h"
+#include "libfolia/folia.h"
 #include "libfolia/document.h"
 #endif
 
@@ -2867,4 +2871,3 @@ int server_mg( Logfile& l, Config& c ) {
   return -1;
 }
 #endif
-
