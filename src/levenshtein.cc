@@ -1868,7 +1868,7 @@ int server_sc( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -2333,7 +2333,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
