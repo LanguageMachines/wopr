@@ -197,7 +197,7 @@ int server2(Logfile& l, Config& c) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -1002,7 +1002,7 @@ int server4(Logfile& l, Config& c) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -1390,7 +1390,7 @@ int xmlserver(Logfile& l, Config& c) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -1765,7 +1765,7 @@ int mbmt(Logfile& l, Config& c) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -2111,7 +2111,7 @@ int webdemo(Logfile& l, Config& c) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -2320,7 +2320,7 @@ int one(Logfile& l, Config& c) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -2624,7 +2624,7 @@ int server_mg( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
       return 1;
     }
-    if ( ! server.listen(  ) < 0 ) {
+    if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
