@@ -37,7 +37,7 @@
 #include "wopr/cache.h"
 
 #ifdef TIMBLSERVER
-#include "wopr/SocketBasics.h"
+#include "ticcutils/SocketBasics.h"
 #endif
 
 int run_file( Logfile&, const std::string&,

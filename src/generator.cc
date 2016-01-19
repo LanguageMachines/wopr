@@ -70,7 +70,7 @@
 #endif
 
 #ifdef TIMBLSERVER
-#include "wopr/SocketBasics.h"
+#include "ticcutils/SocketBasics.h"
 #endif
 
 

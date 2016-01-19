@@ -4,7 +4,7 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 AM_CXXFLAGS = -std=c++0x
 
-bin_PROGRAMS = wopr woprsm woprst
+bin_PROGRAMS = wopr 
 
 wopr_SOURCES = Classifier.cc \
 	generator.cc \
@@ -25,18 +25,9 @@ wopr_SOURCES = Classifier.cc \
 	tr.cc \
 	focus.cc \
 	ngrams.cc \
-	SocketBasics.cc  \
 	util.cc \
 	general_test.cc \
 	ngram_server.cc \
 	tag.cc \
         watcher.cc
 
-woprsm_SOURCES = \
-	woprsm.cc
-
-woprst_SOURCES = \
-	qlog.cc \
-	util.cc \
-	SocketBasics.cc \
-	woprst.cc

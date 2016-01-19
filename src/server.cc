@@ -92,7 +92,7 @@
 #include <signal.h>
 
 #ifdef TIMBLSERVER
-#include "wopr/SocketBasics.h"
+#include "ticcutils/SocketBasics.h"
 #endif
 
 #define BACKLOG 5     // how many pending connections queue will hold
