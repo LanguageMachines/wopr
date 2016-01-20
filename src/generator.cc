@@ -95,7 +95,6 @@ int generate( Logfile& l, Config& c ) {
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
-  double             distance;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -143,10 +142,6 @@ int generate( Logfile& l, Config& c ) {
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
-  int correct = 0;
-  int wrong   = 0;
-  int correct_unknown = 0;
-  int correct_distr = 0;
   Timbl::ValueDistribution::dist_iterator it;
   int cnt;
   int distr_count;
@@ -219,7 +214,6 @@ int generate( Logfile& l, Config& c ) {
 	}
       }
       std::string tvs  = it->second->Value()->Name();
-      double      wght = it->second->Weight();
       answer = tvs;
 
       result = result + answer;
@@ -305,7 +299,6 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
       ++it;
     }
     std::string tvs  = it->second->Value()->Name();
-    double      wght = it->second->Weight();
     answer = tvs;
 
     result = result + answer + " ";
