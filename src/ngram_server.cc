@@ -108,8 +108,7 @@ int ngram_server(Logfile& l, Config& c) {
 
   std::string ngram;
   std::string prob_str;
-  std::string freq_str;
-  long   freq;
+  //std::string freq_str;
   double prob;
   size_t pos, pos1;
 
@@ -175,7 +174,7 @@ int ngram_server(Logfile& l, Config& c) {
 
       std::vector<ngram_elem> best_ngrams;
       std::vector<std::string> results;
-      int foo = ngram_one_line( buf, n, ngrams, best_ngrams, results, l );
+      (void)ngram_one_line( buf, n, ngrams, best_ngrams, results, l );
 
       double sum_l10probs = 0.0;
       int wc = 0;

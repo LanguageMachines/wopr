@@ -355,7 +355,6 @@ class Classifier {
     long idx = 1;
     classification.idx = 0;
     classification.mrr = 0.0;
-    long num_ranks = dfreqs.size();
     std::map<long, long>::iterator dfi = dfreqs.begin();
     while ( dfi != dfreqs.end() ) {
       if ( dfi->first == classification_freq ) {

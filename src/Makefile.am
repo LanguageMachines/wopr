@@ -2,7 +2,7 @@
 # $URL: https://ilk.uvt.nl/svn/sources/tscan/trunk/src/Makefile.am $
 
 AM_CPPFLAGS = -I@top_srcdir@/include
-AM_CXXFLAGS = -std=c++0x
+AM_CXXFLAGS = -std=c++0x -Wall
 
 bin_PROGRAMS = wopr 
 

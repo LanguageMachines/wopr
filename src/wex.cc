@@ -72,12 +72,9 @@ int multi( Logfile& l, Config& c ) {
   std::string        output_filename  = filename + ".px" + to_str(ws);
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
-  int                skip             = 0;
-  Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -252,7 +249,6 @@ int multi( Logfile& l, Config& c ) {
 	std::string answer = tv->Name();
 
 	int cnt = vd->size();
-	int distr_count = vd->totalSize();
 
 	l.log( to_str(multi_idx) + ": " + cl + "/" + answer + " "+to_str(cnt) );
 
@@ -422,11 +418,9 @@ int multi_dist( Logfile& l, Config& c ) {
   }
   std::string        output_filename  = filename + id + ".md";
 
-  Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -580,7 +574,6 @@ int multi_dist( Logfile& l, Config& c ) {
       size_t md  = timbl->matchDepth();
       bool   mal = timbl->matchedAtLeaf();
 
-      int cnt = vd->size(); // size of distr.
       int distr_count = vd->totalSize(); // sum of freqs in distr.
       distr_counts[classifier_idx] = distr_count;
 
@@ -655,7 +648,6 @@ int multi_dist( Logfile& l, Config& c ) {
   file_in.close();
 
   for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
-    Classifier *classifier = *cli;
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) );
   }
   l.log( "Combined: "+to_str(combined_correct) );
@@ -685,7 +677,6 @@ int multi_dist2( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
@@ -887,7 +878,6 @@ int multi_dist2( Logfile& l, Config& c ) {
   file_out.close();
 
   for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
-    Classifier *classifier = *cli;
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
 	   to_str((*cli)->get_cc()) );
   }
@@ -956,7 +946,6 @@ int multi_gated( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   // specify default to be able to choose default classifier?
 
@@ -1063,7 +1052,6 @@ int multi_gated( Logfile& l, Config& c ) {
   int gates_triggered = 0;
 
   md2    multidist;
-  double classifier_weight;
   int    type;
   int    subtype;
   std::vector<md2_elem>::iterator dei;

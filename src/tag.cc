@@ -338,7 +338,6 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
 int tag( Logfile& l, Config& c ) {
 
   const std::string& ibase_filename = c.get_value( "ibasefile" );
-  const int precision = my_stoi( c.get_value( "precision", "6" ));
   const int n = my_stoi( c.get_value( "n", "3" ));
   const std::string& counts_filename = c.get_value( "counts", "" );
   const std::string arpa_filename = ibase_filename + ".arpa";
@@ -420,7 +419,6 @@ int tag( Logfile& l, Config& c ) {
       classes[my_stoi(hashname)] = name;
     }
     if ( mode == 2 ) {
-      char chr;
       // parse and store features
       here = file_ibase.tellg();
       file_ibase >> hashname;
