@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2015 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -1071,7 +1067,6 @@ int arpa( Logfile& l, Config& c ) {
   l.log( "arpa" );
   const std::string& filename        = c.get_value( "filename" );
   std::string        output_filename = filename + ".arpa";
-  const int          precision       = my_stoi( c.get_value( "precision", "6" ));
   int                ws              = my_stoi( c.get_value( "ws", "3" ));
 
   l.inc_prefix();
@@ -1174,8 +1169,6 @@ int window_line(Logfile& l, Config& c) {
     std::string result;
     double distance;
     double total_prplx = 0.0;
-    const Timbl::ValueDistribution *vd;
-    const Timbl::TargetValue *tv;
 
     //window.at(ws-1) = words.at(0); // shift in the first word
     //                      +1 in the above case.
@@ -1805,9 +1798,6 @@ int unk_pred( Logfile& l, Config& c ) {
   std::vector<std::string> words;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   int unknown_count = 0;
   int skipped_num = 0;
   int skipped_ent = 0;
@@ -2086,7 +2076,7 @@ int lexicon(Logfile& l, Config& c) {
   }
   counts_out << 0 << " " << 0 << " " << 0 << "\n";
   for( std::map<int,int>::iterator iter = ffreqs.begin(); iter != ffreqs.end(); iter++ ) {
-    double pMLE = (double)(*iter).first / total_count;
+    //double pMLE = (double)(*iter).first / total_count;
     int cnt = (*iter).first;
     counts_out << cnt << " " << (*iter).second << " " << cnt << "\n";
   }
@@ -2417,8 +2407,6 @@ int hapax_line_OLD(Logfile& l, Config& c)  {
   }
 
   std::vector<std::string>words;
-  unsigned long lcount = 0;
-  unsigned long wcount = 0;
   std::string a_word;
   int wfreq;
   std::map<std::string,int> wfreqs;
@@ -2778,10 +2766,8 @@ int smooth_old( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string>words;
-  unsigned long lcount = 0;
 
   std::string a_word;
-  int wfreq;
   std::map<std::string,int> wfreqs;
   std::map<int,int> ffreqs; // sort order?
 
@@ -2916,7 +2902,6 @@ int smooth_old_LEX( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string>words;
-  unsigned long lcount = 0;
   unsigned long total_count = 0;
   std::string a_word;
   int wfreq;
@@ -2995,7 +2980,6 @@ int smooth(Logfile& l, Config& c)  {
   unsigned long total_count = 0;
   unsigned long word_count = 0;
   std::string a_word;
-  int wfreq;
   std::map<std::string,int> pcounts; // pattern counter
   std::map<int,int> ffreqs; // frequency of frequencies
 
@@ -3062,7 +3046,7 @@ int smooth(Logfile& l, Config& c)  {
     //
     // The target.
     //
-    int idx = words.size()-1; // Target
+    //int idx = words.size()-1; // Target
   }
   file_in.close();
 
@@ -3180,7 +3164,6 @@ int pplx( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -3375,14 +3358,12 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                cache_size       = my_stoi( c.get_value( "cache", "3" ) );
   int                cache_threshold  = my_stoi( c.get_value( "cth", "25000" ) );
   bool               inc_sen          = my_stoi( c.get_value( "is", "0" )) == 1;
-  int                skip             = 0;
   int                bl               = my_stoi( c.get_value( "bl", "0" )); //baseline
   int                log_base         = my_stoi( c.get_value( "log", "2" ) ); // default like log2 before
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   typedef double(*pt2log)(double);
   pt2log mylog = &log2;
@@ -3650,14 +3631,13 @@ int pplx_simple( Logfile& l, Config& c ) {
     std::vector<double> w_pplx;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob       = 0.0;
+    //double sentence_prob       = 0.0;
     double sum_logprob         = 0.0;
     double sum_wlp             = 0.0; // word level pplx
     int    sentence_wordcount  = 0;
@@ -3828,12 +3808,9 @@ int pplx_simple( Logfile& l, Config& c ) {
       Timbl::ValueDistribution::dist_iterator it = vd->begin();
       int cnt = 0;
       int distr_count = 0;
-      double smoothed_distr_count = 0.0;
       int target_freq = 0;
-      int answer_freq = 0;
       double prob            = 0.0;
       double target_distprob = 0.0;
-      double answer_prob     = 0.0;
       double entropy         = 0.0;
       int    rank            = 1;
       double class_mrr       = 0.0;
