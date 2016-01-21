@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id: $
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -116,7 +112,7 @@ void window_words_letters(std::string, int, Context&, std::vector<std::string>&)
 
 int pdt( Logfile& l, Config& c ) {
   l.log( "predictive editing" );
-  const std::string& start           = c.get_value( "start", "" );
+  //const std::string& start           = c.get_value( "start", "" );
   const std::string  filename        = c.get_value( "filename", to_str(getpid()) ); // "test"file
   const std::string& ibasefile       = c.get_value( "ibasefile" );
   const std::string& timbl           = c.get_value( "timbl" );
@@ -131,7 +127,6 @@ int pdt( Logfile& l, Config& c ) {
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
-  double             distance;
 
   if ( contains_id(filename, id) == true ) {
     id = "";
@@ -203,19 +198,11 @@ int pdt( Logfile& l, Config& c ) {
   std::vector<std::string> results;
   std::vector<std::string> targets;
   std::vector<std::string>::iterator ri;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   std::vector<std::string> words;
   std::vector<std::string>::iterator wi;
   std::vector<std::string> predictions;
   std::vector<std::string>::iterator pi;
-  int correct = 0;
-  int wrong   = 0;
-  int correct_unknown = 0;
-  int correct_distr = 0;
   Timbl::ValueDistribution::dist_iterator it;
-  int cnt;
-  int distr_count;
 
   MTRand mtrand;
 
@@ -416,7 +403,7 @@ int pdt( Logfile& l, Config& c ) {
 //
 int pdt2( Logfile& l, Config& c ) {
   l.log( "predictive editing2" );
-  const std::string& start           = c.get_value( "start", "" );
+  //const std::string& start           = c.get_value( "start", "" );
   const std::string  filename        = c.get_value( "filename", to_str(getpid()) ); // "test"file
   const std::string& ibasefile0      = c.get_value( "ibasefile0" );
   const std::string& timbl0          = c.get_value( "timbl0" );
@@ -431,13 +418,12 @@ int pdt2( Logfile& l, Config& c ) {
   std::string        dl              = c.get_value( "dl", "3" ); // letter depth
   bool               matchesonly     = my_stoi( c.get_value( "mo", "0" )) == 1; // show only matches
   std::string        id              = c.get_value( "id", to_str(getpid()) );
-  int                mlm             = my_stoi( c.get_value( "mlm", "0" )); // minimum letter match
+  //int                mlm             = my_stoi( c.get_value( "mlm", "0" )); // minimum letter match
 
   Timbl::TimblAPI   *My_Experiment0;
   Timbl::TimblAPI   *My_Experiment1;
   std::string        distrib;
   std::vector<std::string> distribution;
-  double             distance;
 
   if ( contains_id(filename, id) == true ) {
     id = "";
@@ -540,21 +526,13 @@ int pdt2( Logfile& l, Config& c ) {
   std::vector<std::string> results;
   std::vector<std::string> targets;
   std::vector<std::string>::iterator ri;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   std::vector<std::string> words;
   std::vector<std::string> letters;
   std::vector<std::string>::iterator wi;
   std::vector<std::string>::iterator li;
   std::vector<std::string> predictions;
   std::vector<std::string>::iterator pi;
-  int correct = 0;
-  int wrong   = 0;
-  int correct_unknown = 0;
-  int correct_distr = 0;
   Timbl::ValueDistribution::dist_iterator it;
-  int cnt;
-  int distr_count;
 
   MTRand mtrand;
 
@@ -898,7 +876,6 @@ void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::v
   std::string distrib;
   std::vector<std::string> distribution;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::string result;
@@ -910,13 +887,6 @@ void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::v
   }
 
   result = tv->Name();
-  size_t res_freq = tv->ValFreq();
-
-  double res_p = -1;
-  bool target_in_dist = false;
-  int target_freq = 0;
-  int cnt = vd->size();
-  int distr_count = vd->totalSize();
 
   // Grok the distribution returned by Timbl.
   //
@@ -953,8 +923,6 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
 
   //std::cerr << "gen_tree: ctx=" << ctx.toString() << " / l=" << length << ", t=" << t << std::endl;
 
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   std::string result;
 
   // generate top-n, for each, recurse one down.
@@ -1113,7 +1081,6 @@ int window_letters( Logfile& l, Config& c ) {
   l.log( "window_letters" );
   const std::string& filename        = c.get_value( "filename" );
   int                lc              = my_stoi( c.get_value( "lc", "2" ));
-  int                rc              = 0;
   int                mode            = my_stoi( c.get_value( "lm", "0" )); // lettering mode 0=shift, 1=empty for new sentence
 
   if ( (mode < 0) || (mode > 1) ) {
@@ -1345,20 +1312,17 @@ int pdt2web( Logfile& l, Config& c ) {
 
   const std::string port        = c.get_value( "port", "1984" );
   const int verbose             = my_stoi( c.get_value( "verbose", "1" ));
-  const int keep                = my_stoi( c.get_value( "keep", "0" ));
 
   const std::string& ibasefile0      = c.get_value( "ibasefile0" );
   const std::string& timbl0          = c.get_value( "timbl0" );
   const std::string& ibasefile1      = c.get_value( "ibasefile1" );
   const std::string& timbl1          = c.get_value( "timbl1" );
   int                lc0             = my_stoi( c.get_value( "lc0", "2" ));
-  int                rc0             = my_stoi( c.get_value( "rc0", "0" )); // should be 0
   int                lc1             = my_stoi( c.get_value( "lc1", "2" ));
-  int                rc1             = my_stoi( c.get_value( "rc1", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
-  int                pel             = my_stoi( c.get_value( "n", "3" )); // length. implicit in ds!
+  //int                pel             = my_stoi( c.get_value( "n", "3" )); // length. implicit in ds!
   std::string        dl              = c.get_value( "dl", "3" ); // letter depth
-  int                mlm             = my_stoi( c.get_value( "mlm", "0" )); // minimum letter match
+  //int                mlm             = my_stoi( c.get_value( "mlm", "0" )); // minimum letter match
   int                users           = my_stoi( c.get_value( "users", "5" )); // number of users/connections
 
   if ( (users < 1) || (users > 10) ) {
