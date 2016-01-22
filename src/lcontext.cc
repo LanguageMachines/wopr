@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -87,7 +83,6 @@ int range_from_lex( Logfile& l, Config& c ) {
   // Load lexicon.
   //
   int wfreq;
-  unsigned long total_count = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   std::vector<lex_elem> lex_vec;
   std::ifstream file_lexicon( lexicon_filename.c_str() );
@@ -459,7 +454,6 @@ int lcontext( Logfile& l, Config& c ) {
       // Create the new global context.
       //
       di = global_context.begin()+gcs;
-      int cnt = gcs;
       lc_str = "";
       gc_hash = 0;
       do {

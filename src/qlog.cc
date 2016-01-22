@@ -1,7 +1,5 @@
-// $Id$
-
 /*****************************************************************************
- * Copyright 2005 Peter Berck                                                *
+ * Copyright 2005-2016 Peter Berck                                           *
  *                                                                           *
  * This file is part of wpred.                                               *
  *                                                                           *
@@ -82,9 +80,6 @@ Logfile::~Logfile() {
 // Thousands are automatically added.
 //
 void Logfile::init() {
-  char      timestring[32];
-  struct tm *t;
-
   time_format = std::string("%H:%M:%S");
 }
 
@@ -274,11 +269,7 @@ void Logfile::unlock() {
 }
 
 void Logfile::get_raw( timeval& tv ) {
-  char      timestring[32];
-  //timeval   tv;
-
   gettimeofday( &tv, 0 );
-  //return tv;
 }
 
 void Logfile::DBG( const std::string& s ) {
