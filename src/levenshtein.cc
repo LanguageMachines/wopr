@@ -425,7 +425,6 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
   int cnt = 0;
   int distr_count = 0;
   int target_freq = 0;
-  int answer_freq = 0;
   double prob            = 0.0;
   double target_distprob = 0.0;
   //double entropy         = 0.0;
@@ -467,11 +466,6 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 
   int    cnt             = 0;
   int    distr_count     = 0;
-  int    target_freq     = 0;
-  int    answer_freq     = 0;
-  double prob            = 0.0;
-  double target_distprob = 0.0;
-  double answer_prob     = 0.0;
   //double target_lexfreq  = 0.0; // now parameter
 
   cnt = vd->size();
@@ -480,7 +474,6 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::map<std::string,int>::iterator tvsfi;
   std::map<std::string,int>::iterator wfi;
-  double factor = 0.0;
 
   // NB some of the test are outside this loop (max_distr, in_distr)
   while ( it != vd->end() ) { // loop over distribution
@@ -549,11 +542,6 @@ void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& tar
 
   int    cnt             = 0;
   int    distr_count     = 0;
-  int    target_freq     = 0;
-  int    answer_freq     = 0;
-  double prob            = 0.0;
-  double target_distprob = 0.0;
-  double answer_prob     = 0.0;
   //double target_lexfreq  = 0.0; // now parameter
 
   cnt = vd->size();
@@ -562,7 +550,6 @@ void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& tar
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::map<std::string,int>::iterator tvsfi;
   std::map<std::string,int>::iterator wfi;
-  double factor = 0.0;
 
   // NB some of the test are outside this loop (max_distr, in_distr)
   while ( it != vd->end() ) { // loop over distribution
@@ -641,7 +628,6 @@ int correct( Logfile& l, Config& c ) {
   int                max_tf           = my_stoi( c.get_value( "max_tf", "1" )); //for confusibles
   // minimum frequency of words in the distribution to be included, 0 is ignore
   int                min_df           = my_stoi( c.get_value( "min_df", "0" ));
-  int                skip             = 0;
   bool               cs               = my_stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = my_stoi( c.get_value( "typos", "0" )) == 1;// typos only
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
@@ -653,7 +639,6 @@ int correct( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   // No slash at end of dirname.
   //
@@ -880,14 +865,12 @@ int correct( Logfile& l, Config& c ) {
     std::vector<std::string> words;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob      = 0.0;
     double sum_logprob        = 0.0;
     int    sentence_wordcount = 0;
 
@@ -914,7 +897,7 @@ int correct( Logfile& l, Config& c ) {
 		Tokenize( a_line, words, ' ' );
 
 		if ( hapax > 0 ) {
-		  int c = hapax_vector( words, hpxfreqs, hapax );
+		  (void)hapax_vector( words, hpxfreqs, hapax );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
 		  words.clear();
@@ -974,7 +957,7 @@ int correct( Logfile& l, Config& c ) {
 		// unsure.
 		//
 		size_t md  = My_Experiment->matchDepth();
-		bool   mal = My_Experiment->matchedAtLeaf();
+		//bool   mal = My_Experiment->matchedAtLeaf();
 		//l.log( "md/mal: " + to_str(md) + " / " + to_str(mal) );
 
 		// we could skip here without calculating the rest of the stats if md < min_md
@@ -1007,10 +990,8 @@ int correct( Logfile& l, Config& c ) {
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
-		int answer_freq = 0;
 		double prob            = 0.0;
 		double target_distprob = 0.0;
-		double answer_prob     = 0.0;
 		double entropy         = 0.0;
 		bool in_distr          = false;
 		cnt = vd->size();
@@ -1204,7 +1185,6 @@ int tcorrect( Logfile& l, Config& c ) {
   int                min_dsum         = my_stoi( c.get_value( "min_dsum", "0" ));
   // minimum frequency of words in the distribution to be included, 0 is ignore
   int                min_df           = my_stoi( c.get_value( "min_df", "0" ));
-  int                skip             = 0;
   bool               cs               = my_stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
@@ -1215,7 +1195,6 @@ int tcorrect( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
 #if defined(HAVE_TR1_UNORDERED_SET)
   std::tr1::unordered_set<std::string> triggers;
@@ -1448,14 +1427,12 @@ int tcorrect( Logfile& l, Config& c ) {
     std::vector<std::string> words;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob      = 0.0;
     double sum_logprob        = 0.0;
     int    sentence_wordcount = 0;
 
@@ -1482,7 +1459,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		Tokenize( a_line, words, ' ' );
 
 		if ( hapax > 0 ) {
-		  int c = hapax_vector( words, hpxfreqs, hapax );
+		  (void)hapax_vector( words, hpxfreqs, hapax );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
 		  words.clear();
@@ -1543,7 +1520,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		// unsure.
 		//
 		size_t md  = My_Experiment->matchDepth();
-		bool   mal = My_Experiment->matchedAtLeaf();
+		//bool   mal = My_Experiment->matchedAtLeaf();
 		//l.log( "md/mal: " + to_str(md) + " / " + to_str(mal) );
 
 		// we could skip here without calculating the rest of the stats if md < min_md
@@ -1576,10 +1553,8 @@ int tcorrect( Logfile& l, Config& c ) {
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
-		int answer_freq = 0;
 		double prob            = 0.0;
 		double target_distprob = 0.0;
-		double answer_prob     = 0.0;
 		double entropy         = 0.0;
 		bool in_distr          = false;
 		cnt = vd->size();
@@ -1962,7 +1937,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    Tokenize( classify_line, words, ' ' );
 
 	    if ( hapax > 0 ) {
-	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      (void)hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
@@ -2000,10 +1975,10 @@ int server_sc( Logfile& l, Config& c ) {
 	    // Check match-depth, if too undeep, we are probably
 	    // unsure.
 	    //
-	    size_t md  = My_Experiment->matchDepth();
-	    bool   mal = My_Experiment->matchedAtLeaf();
+	    //size_t md  = My_Experiment->matchDepth();
+	    //bool   mal = My_Experiment->matchedAtLeaf();
 
-	    size_t      res_freq = tv->ValFreq();
+	    //size_t      res_freq = tv->ValFreq();
 	    std::string answer   = tv->Name();
 	    if ( verbose > 1 ) {
 	      l.log( "timbl("+classify_line+")="+answer );
@@ -2016,13 +1991,10 @@ int server_sc( Logfile& l, Config& c ) {
 	    int cnt         = 0;
 	    int distr_count = 0;
 	    int target_freq = 0;
-	    int answer_freq = 0;
 
 	    double prob            = 0.0;
 	    double target_distprob = 0.0;
-	    double answer_prob     = 0.0;
 	    double entropy         = 0.0;
-	    double sentence_prob   = 0.0;
 	    double sum_logprob     = 0.0;
 
 	    bool in_distr          = false;
@@ -2089,7 +2061,6 @@ int server_sc( Logfile& l, Config& c ) {
 	    it = vd->begin();
 	    std::vector<distr_elem*> distr_vec;
 	    std::map<std::string,int>::iterator tvsfi;
-	    double factor = 0.0;
 
 	    // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	    if ( cnt < max_distr ) {
@@ -2156,7 +2127,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    // Word logprob (ref. Antal's mail 21/11/08)
 	    // 2 ^ (-logprob(w))
 	    //
-	    double word_lp = pow( 2, -logprob );
+	    //double word_lp = pow( 2, -logprob );
 	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 
 	    // Return all, seperated by sep (tab).
@@ -2456,7 +2427,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    break;
 	  }
 
-	  size_t      res_freq = tv->ValFreq();
+	  //size_t      res_freq = tv->ValFreq();
 	  std::string answer   = tv->Name();
 	  if ( verbose > 1 ) {
 	    l.log( "timbl("+classify_line+")="+answer );
@@ -2469,13 +2440,10 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  int cnt         = 0;
 	  int distr_count = 0;
 	  int target_freq = 0;
-	  int answer_freq = 0;
 
 	  double prob            = 0.0;
 	  double target_distprob = 0.0;
-	  double answer_prob     = 0.0;
 	  double entropy         = 0.0;
-	  double sentence_prob   = 0.0;
 	  double sum_logprob     = 0.0;
 
 	  bool in_distr          = false;
@@ -2542,7 +2510,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  it = vd->begin();
 	  std::vector<distr_elem*> distr_vec;
 	  std::map<std::string,int>::iterator tvsfi;
-	  double factor = 0.0;
 
 	  // if in_distr==true, we can look if att ld=1, and then at freq.factor!
 	  if ( cnt < max_distr ) {
@@ -2608,7 +2575,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  // Word logprob (ref. Antal's mail 21/11/08)
 	  // 2 ^ (-logprob(w))
 	  //
-	  double word_lp = pow( 2, -logprob );
+	  //double word_lp = pow( 2, -logprob );
 	  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 
 	  // Return all, seperated by sep (tab).
@@ -2707,7 +2674,6 @@ int mcorrect( Logfile& l, Config& c ) {
   int                min_df           = my_stoi( c.get_value( "min_df", "0" ));
   // offset for triggerpos, from the right, so 0 is the target position
   int                offset           = my_stoi( c.get_value( "offset", "0" ));
-  int                skip             = 0;
   bool               cs               = my_stoi( c.get_value( "cs", "1" )) == 1; //case insensitive levenshtein cs:0
   bool               typo_only        = my_stoi( c.get_value( "typos", "0" )) == 1;// typos only
   bool               bl               = my_stoi( c.get_value( "bl", "0" )) == 1; //run baseline
@@ -2716,11 +2682,10 @@ int mcorrect( Logfile& l, Config& c ) {
   // Minimum max-depth of timbl answer
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
-  Timbl::TimblAPI   *My_Experiment;
+  //Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   // No slash at end of dirname.
   //
@@ -2958,14 +2923,12 @@ int mcorrect( Logfile& l, Config& c ) {
     std::vector<std::string> words;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob      = 0.0;
     double sum_logprob        = 0.0;
     int    sentence_wordcount = 0;
 
@@ -2997,7 +2960,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		Tokenize( a_line, words, ' ' );
 
 		if ( hapax > 0 ) {
-		  int c = hapax_vector( words, hpxfreqs, hapax );
+		  (void)hapax_vector( words, hpxfreqs, hapax );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
 		  words.clear();
@@ -3071,7 +3034,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		// unsure.
 		//
 		size_t md  = 0; //My_Experiment->matchDepth();
-		bool   mal = 0; //My_Experiment->matchedAtLeaf();
+		//bool   mal = 0; //My_Experiment->matchedAtLeaf();
 
 		if ( target == answer ) {
 		  ++correct;
@@ -3100,10 +3063,8 @@ int mcorrect( Logfile& l, Config& c ) {
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
-		int answer_freq = 0;
 		double prob            = 0.0;
 		double target_distprob = 0.0;
-		double answer_prob     = 0.0;
 		double entropy         = 0.0;
 		bool in_distr          = false;
 		cnt = vd->size();
@@ -3305,18 +3266,16 @@ int cmcorrect( Logfile& l, Config& c ) {
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // offset for triggerpos, from the right, so 0 is the target position
   int                offset           = my_stoi( c.get_value( "offset", "0" ));
-  int                skip             = 0;
   // Ratio between top-1 frequency and sum of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
   int                topn             = my_stoi( c.get_value( "topn", "0" ) );
     
-  Timbl::TimblAPI   *My_Experiment;
+  //Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   // No slash at end of dirname.
   //
@@ -3452,7 +3411,6 @@ int cmcorrect( Logfile& l, Config& c ) {
       e->set_ibasefile(ibf);
       e->set_timbl( timbl );
       e->init();
-      int hi_freq = 0;
       for ( size_t i = 1; i < words.size(); i++ ) {
 	std::string tr = words[i];
 	triggers[ tr ] = e;
@@ -3542,14 +3500,12 @@ int cmcorrect( Logfile& l, Config& c ) {
     std::vector<std::string> words;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob      = 0.0;
     double sum_logprob        = 0.0;
     int    sentence_wordcount = 0;
 
@@ -3581,7 +3537,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	Tokenize( a_line, words, ' ' );
 	
 	if ( hapax > 0 ) {
-	  int c = hapax_vector( words, hpxfreqs, hapax );
+	  (void)hapax_vector( words, hpxfreqs, hapax );
 	  vector_to_string(words, a_line);
 	  a_line = trim( a_line );
 	  words.clear();
@@ -3649,7 +3605,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	// unsure.
 	//
 	size_t md  = 0; //My_Experiment->matchDepth();
-	bool   mal = 0; //My_Experiment->matchedAtLeaf();
+	//bool   mal = 0; //My_Experiment->matchedAtLeaf();
 	
 	if ( target == answer ) {
 	  ++correct;
@@ -3664,10 +3620,8 @@ int cmcorrect( Logfile& l, Config& c ) {
 	int cnt = 0;
 	int distr_count = 0;
 	int target_freq = 0;
-	int answer_freq = 0;
 	double prob            = 0.0;
 	double target_distprob = 0.0;
-	double answer_prob     = 0.0;
 	double entropy         = 0.0;
 	bool in_distr          = false;
 	cnt = vd->size();
@@ -3743,7 +3697,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
 	    fail = false;
-	    double sum_f = copy_dist( vd, distr_vec); // to output [ ... ]
+	    //double sum_f = copy_dist( vd, distr_vec); // to output [ ... ]
 	    // this is our classification
 	    double word_lp = pow( 2, -logprob );
 	    file_out << a_line << " (" << answer << ") "
@@ -3925,7 +3879,6 @@ int sml( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
 #if defined(HAVE_TR1_UNORDERED_SET)
   std::tr1::unordered_set<std::string> triggers;
@@ -4194,14 +4147,12 @@ int sml( Logfile& l, Config& c ) {
     const Timbl::TargetValue *tv;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob      = 0.0;
     double sum_logprob        = 0.0;
     int    sentence_wordcount = 0;
 
@@ -4228,7 +4179,7 @@ int sml( Logfile& l, Config& c ) {
 	Tokenize( a_line, words, ' ' );
 	
 	if ( hapax > 0 ) {
-	  int c = hapax_vector( words, hpxfreqs, hapax );
+	  (void)hapax_vector( words, hpxfreqs, hapax );
 	  vector_to_string(words, a_line);
 	  a_line = trim( a_line );
 	  words.clear();
@@ -4288,8 +4239,8 @@ int sml( Logfile& l, Config& c ) {
 	// Check match-depth, if too undeep, we are probably
 	// unsure.
 	//
-	size_t md  = My_Experiment->matchDepth();
-	bool   mal = My_Experiment->matchedAtLeaf();
+	//size_t md  = My_Experiment->matchDepth();
+	//bool   mal = My_Experiment->matchedAtLeaf();
 	
 	if ( target == answer ) {
 	  ++correct;
@@ -4304,10 +4255,8 @@ int sml( Logfile& l, Config& c ) {
 	int cnt = 0;
 	int distr_count = 0;
 	int target_freq = 0;
-	int answer_freq = 0;
 	double prob            = 0.0;
 	double target_distprob = 0.0;
-	double answer_prob     = 0.0;
 	double entropy         = 0.0;
 	bool in_distr          = false;
 	cnt = vd->size();
@@ -4399,10 +4348,9 @@ int sml( Logfile& l, Config& c ) {
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
 	    fail = false;
 	    
-	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	    //Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	    std::map<std::string,int>::iterator tvsfi;
 	    std::map<std::string,int>::iterator wfi;
-	    double factor = 0.0;
 	    
 	    // This is our answer, the stats are on whole distr. 
 	    answer = top_c;
