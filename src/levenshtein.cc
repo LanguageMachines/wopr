@@ -423,9 +423,6 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
   double prob            = 0.0;
   //double entropy         = 0.0;
 
-  cnt = vd->size();
-  distr_count = vd->totalSize();
-
   // Check if target word is in the distribution.
   //
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
@@ -442,21 +439,17 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
 
     if ( tvs == target ) { // The correct answer was in the distribution!
       target_freq = wght;
-      in_distr = true;
     }
 
     ++it;
   }
-  target_distprob = (double)target_freq / (double)distr_count;
+  //target_distprob = (double)target_freq / (double)distr_count;
 }
 
 // The core, do the spelling correction on the distribution.
 // tv = My_Experiment->Classify( a_line, vd );
 //
 void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs, std::vector<distr_elem*>& distr_vec, int mld, double min_ratio, double target_lexfreq, bool cs, int min_df, double confidence) {
-
-  cnt = vd->size();
-  distr_count = vd->totalSize();
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::map<std::string,int>::iterator tvsfi;
@@ -474,10 +467,10 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
     // we include the result in our output.
     //
     if (
-	( ld > 0 ) &&
-	( ld <= mld ) &&
-	( (min_df == 0) || (wght >= min_df) )
-	) {
+		( ld > 0 ) &&
+		( ld <= mld ) &&
+		( (min_df == 0) || (wght >= min_df) )
+		) {
       //
       // So here we check frequency of element from the distr. with
       // frequency of the target. As parameter, we prolly already know it?
@@ -490,8 +483,8 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
       wfi = wfreqs.find( tvs );
       // if we find distr. element in lexicon, and target is in lexicon
       if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-	tvs_lf =  (int)(*wfi).second;
-	factor = tvs_lf / target_lexfreq;
+		tvs_lf =  (int)(*wfi).second;
+		factor = tvs_lf / target_lexfreq;
       }
       //
       // std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
@@ -525,9 +518,6 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 // Elements are added distr_vec
 //
 void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs, std::vector<distr_elem*>& distr_vec, int mld, bool cs,	int min_df, double confidence) {
-
-  cnt = vd->size();
-  distr_count = vd->totalSize();
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::map<std::string,int>::iterator tvsfi;
@@ -1557,7 +1547,6 @@ int tcorrect( Logfile& l, Config& c ) {
 
 		  if ( tvs == target ) { // The correct answer was in the distribution!
 			target_freq = wght;
-			in_distr = true;
 			if ( correct_answer == false ) {
 			  ++correct_distr;
 			  --wrong; // direct answer wrong, but right in distr. compensate count
@@ -1964,9 +1953,9 @@ int server_sc( Logfile& l, Config& c ) {
 	      l.log( "timbl("+classify_line+")="+answer );
 	    }
 
-	    if ( target == answer ) {
+	    /*if ( target == answer ) {
 	      correct_answer = true;
-	    }
+		  }*/
 
 	    int cnt         = 0;
 	    int distr_count = 0;
@@ -2412,9 +2401,9 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    l.log( "timbl("+classify_line+")="+answer );
 	  }
 
-	  if ( target == answer ) {
+	  /*if ( target == answer ) {
 	    correct_answer = true;
-	  }
+		}*/
 
 	  int cnt         = 0;
 	  int distr_count = 0;
@@ -3621,7 +3610,6 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    target_freq = wght;
-	    in_distr = true;
 	    if ( correct_answer == false ) {
 	      ++correct_distr;
 	      --wrong; // direct answer wrong, but right in distr. compensate count
@@ -4255,7 +4243,6 @@ int sml( Logfile& l, Config& c ) {
 	  
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    target_freq = wght;
-	    in_distr = true;
 	    if ( correct_answer == false ) {
 	      ++correct_distr;
 	      --wrong; // direct answer wrong, but right in distr. compensate count

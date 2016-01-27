@@ -1173,7 +1173,6 @@ int server4(Logfile& l, Config& c) {
 			
 			if ( tvs == target ) { // The correct answer was in the distribution!
 			  target_freq = wght;
-			  target_in_dist = true;
 			  if ( verbose > 1 ) {
 				l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
 			  }
@@ -1904,7 +1903,6 @@ int mbmt(Logfile& l, Config& c) {
 
 		if ( tvs == target ) { // The correct answer was in the distribution!
 		  target_freq = wght;
-		  target_in_dist = true;
 		  break;
 		}
 
@@ -2725,8 +2723,6 @@ int server_mg( Logfile& l, Config& c ) {
 	  cl->classify_one( classify_line );
 
 	  multidist = cl->classification;
-	  type      = cl->get_type();
-	  subtype   = cl->get_subtype();
 
 	  if ( verbose > 1 ) {
 	    l.log( "ans:"+multidist.answer+" prob:"+to_str(multidist.prob) );

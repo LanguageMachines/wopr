@@ -1095,8 +1095,8 @@ int multi_gated( Logfile& l, Config& c ) {
     cl->classify_one( a_line );
 
     multidist = cl->classification;
-    type      = cl->get_type();
-    subtype   = cl->get_subtype();
+    //type      = cl->get_type();
+    //subtype   = cl->get_subtype();
 
     //l.log( multidist.answer + " : " + to_str(multidist.prob) );
 
