@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2015 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -422,13 +418,10 @@ int levenshtein( Logfile& l, Config& c ) {
 
 void distr_examine( const Timbl::ValueDistribution *vd, const std::string target,
 		    double& entropy) {
-  int cnt = 0;
   int distr_count = 0;
   int target_freq = 0;
   double prob            = 0.0;
-  double target_distprob = 0.0;
   //double entropy         = 0.0;
-  bool in_distr          = false;
 
   cnt = vd->size();
   distr_count = vd->totalSize();
@@ -460,13 +453,7 @@ void distr_examine( const Timbl::ValueDistribution *vd, const std::string target
 // The core, do the spelling correction on the distribution.
 // tv = My_Experiment->Classify( a_line, vd );
 //
-void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
-					 std::vector<distr_elem*>& distr_vec, int mld, double min_ratio, double target_lexfreq, bool cs,
-					 int min_df, double confidence) {
-
-  int    cnt             = 0;
-  int    distr_count     = 0;
-  //double target_lexfreq  = 0.0; // now parameter
+void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs, std::vector<distr_elem*>& distr_vec, int mld, double min_ratio, double target_lexfreq, bool cs, int min_df, double confidence) {
 
   cnt = vd->size();
   distr_count = vd->totalSize();
@@ -537,12 +524,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 // test version paired with tcorrect.
 // Elements are added distr_vec
 //
-void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
-					 std::vector<distr_elem*>& distr_vec, int mld, bool cs,	int min_df, double confidence) {
-
-  int    cnt             = 0;
-  int    distr_count     = 0;
-  //double target_lexfreq  = 0.0; // now parameter
+void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs, std::vector<distr_elem*>& distr_vec, int mld, bool cs,	int min_df, double confidence) {
 
   cnt = vd->size();
   distr_count = vd->totalSize();
@@ -1556,7 +1538,6 @@ int tcorrect( Logfile& l, Config& c ) {
 		double prob            = 0.0;
 		double target_distprob = 0.0;
 		double entropy         = 0.0;
-		bool in_distr          = false;
 		cnt = vd->size();
 		distr_count = vd->totalSize();
 		double answer_f = 0;
@@ -1956,7 +1937,6 @@ int server_sc( Logfile& l, Config& c ) {
 	    //
 	    std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	    bool   target_unknown = false;
-	    bool   correct_answer = false;
 	    double target_lexfreq = 0.0;
 	    double target_lexprob = 0.0;
 	    if ( wfi == wfreqs.end() ) {
@@ -2411,7 +2391,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		  //
 	  std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	  bool   target_unknown = false;
-	  bool   correct_answer = false;
 	  double target_lexfreq = 0.0;
 	  double target_lexprob = 0.0;
 	  if ( wfi == wfreqs.end() ) {
@@ -3623,7 +3602,6 @@ int cmcorrect( Logfile& l, Config& c ) {
 	double prob            = 0.0;
 	double target_distprob = 0.0;
 	double entropy         = 0.0;
-	bool in_distr          = false;
 	cnt = vd->size();
 	distr_count = vd->totalSize(); //sum of freqs, for min_dsum
 	double answer_f = 0;
@@ -4258,7 +4236,6 @@ int sml( Logfile& l, Config& c ) {
 	double prob            = 0.0;
 	double target_distprob = 0.0;
 	double entropy         = 0.0;
-	bool in_distr          = false;
 	cnt = vd->size();
 	distr_count = vd->totalSize();
 	double answer_f = 0;

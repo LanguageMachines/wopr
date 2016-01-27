@@ -1143,19 +1143,18 @@ int server4(Logfile& l, Config& c) {
 
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
 	      if ( ! tv ) {
-		l.log( "ERROR: Timbl returned a classification error, aborting." );
-		break;
+			l.log( "ERROR: Timbl returned a classification error, aborting." );
+			break;
 	      }
-
+		  
 	      result = tv->Name();
 	      size_t res_freq = tv->ValFreq();
-
+		  
 	      if ( verbose > 1 ) {
-		l.log( "timbl("+classify_line+")="+result );
+			l.log( "timbl("+classify_line+")="+result );
 	      }
-
+		  
 	      double res_p = -1;
-	      bool target_in_dist = false;
 	      int target_freq = 0;
 	      int distr_count = vd->totalSize();
 		  
@@ -1888,7 +1887,6 @@ int mbmt(Logfile& l, Config& c) {
 	      size_t res_freq = tv->ValFreq();
 
 	      double res_p = -1;
-	      bool target_in_dist = false;
 	      int target_freq = 0;
 	      int distr_count = vd->totalSize();
 		  
@@ -2584,8 +2582,6 @@ int server_mg( Logfile& l, Config& c ) {
   int gates_triggered = 0;
 
   md2    multidist;
-  int    type;
-  int    subtype;
   std::vector<md2_elem>::iterator dei;
   Classifier* cl = NULL; // classifier used.
   std::map<std::string,int>::iterator wfi;

@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -151,10 +147,12 @@ int multi( Logfile& l, Config& c ) {
   //
   // We need to load .cnt file as well...
   //
+  /*
   double p0 = 0.00001; // Arbitrary low probability for unknown words.
   if ( total_count > 0 ) { // Better estimate if we have a lexicon
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
+  */
 
   // read kvs
   //
@@ -497,10 +495,12 @@ int multi_dist( Logfile& l, Config& c ) {
   //
   // We need to load .cnt file as well...
   //
+  /*
   double p0 = 0.00001; // Arbitrary low probability for unknown words.
   if ( total_count > 0 ) { // Better estimate if we have a lexicon
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
+  */
 
   // read kvs
   // in multi_dist we don't need the size, we read a testfile instead.
@@ -1052,8 +1052,6 @@ int multi_gated( Logfile& l, Config& c ) {
   int gates_triggered = 0;
 
   md2    multidist;
-  int    type;
-  int    subtype;
   std::vector<md2_elem>::iterator dei;
   Classifier* cl = NULL; // classifier used.
   std::map<std::string,int>::iterator wfi;
