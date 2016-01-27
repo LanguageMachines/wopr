@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -180,7 +176,6 @@ int server2(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -206,7 +201,6 @@ int server2(Logfile& l, Config& c) {
 
     // loop
     int  verbose = 0;
-    struct wopr_msgbuf wmb = {2, verbose, 8}; // children get copy.
 
     while ( c.get_status() != 0 ) {  // main accept() loop
 
@@ -229,7 +223,7 @@ int server2(Logfile& l, Config& c) {
 
       // Measure processing time.
       //
-      long f1 = l.clock_mu_secs();
+      //long f1 = l.clock_mu_secs();
 
       if ( c.get_status() && ( ! fork() )) { // this is the child process
 
@@ -356,7 +350,7 @@ int server2(Logfile& l, Config& c) {
 			std::vector<std::string> lcs; // left context, last word.
 			Tokenize( cl, lcs, ' ' );
 			std::string lc = lcs.at(ws-1);
-			std::map<std::string,int>::iterator wfi = wfreqs.find(lc);
+			//std::map<std::string,int>::iterator wfi = wfreqs.find(lc);
 			bool lc_unknown = false;
 			/*
 			  if ( ( lc != "_") && (wfi == wfreqs.end()) ) {
@@ -596,7 +590,6 @@ int parse_distribution2( const Timbl::ValueDistribution* vd,
 			 std::map<std::string, double>& res ) {
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
-  int cnt = vd->size();
   int distr_count = vd->totalSize();
 
   while ( it != vd->end() ) {
@@ -629,7 +622,6 @@ int parse_distribution( std::string dist, std::map<std::string, double>& res ) {
   bool is_class = true;
   int  sum      = 0;
   int  d_size   = 0;
-  int  target_f = 0;
   std::string a_class;
 
   for ( size_t i = 1; i < distribution.size(); i++ ) {
@@ -680,9 +672,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 		 unsigned long total_count) {
 
   int ws = my_stoi( c.get_value( "ws", "7" ));
-  const std::string& timbl  = c.get_value( "timbl" );
   double unk_prob = my_stod( c.get_value( "unk_prob", "0.000001" ));
-  const int precision = my_stoi( c.get_value( "precision", "10" )); // c++ output
 
   std::string fo = fn + ".wopr";
   std::string fr = fo + ".ready";
@@ -708,7 +698,6 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -985,7 +974,6 @@ int server4(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -1126,7 +1114,7 @@ int server4(Logfile& l, Config& c) {
 	    Tokenize( classify_line, words, ' ' );
 
 	    if ( hapax > 0 ) {
-	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      (void)hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
@@ -1169,11 +1157,10 @@ int server4(Logfile& l, Config& c) {
 	      double res_p = -1;
 	      bool target_in_dist = false;
 	      int target_freq = 0;
-	      int cnt = vd->size();
 	      int distr_count = vd->totalSize();
-
+		  
 	      if ( result == target ) {
-		res_p = res_freq / distr_count;
+			res_p = res_freq / distr_count;
 	      }
 	      //
 	      // Grok the distribution returned by Timbl.
@@ -1181,57 +1168,57 @@ int server4(Logfile& l, Config& c) {
 	      std::map<std::string, double> res;
 	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
-
-		std::string tvs  = it->second->Value()->Name();
-		double      wght = it->second->Weight(); // absolute frequency.
-
-		if ( tvs == target ) { // The correct answer was in the distribution!
-		  target_freq = wght;
-		  target_in_dist = true;
-		  if ( verbose > 1 ) {
-		    l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
-		  }
-		}
-
-		++it;
+			
+			std::string tvs  = it->second->Value()->Name();
+			double      wght = it->second->Weight(); // absolute frequency.
+			
+			if ( tvs == target ) { // The correct answer was in the distribution!
+			  target_freq = wght;
+			  target_in_dist = true;
+			  if ( verbose > 1 ) {
+				l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
+			  }
+			}
+			
+			++it;
 	      } // end loop distribution
-
+		  
 	      if ( target_freq > 0 ) { //distr_count allways > 0.
-		res_p = (double)target_freq / (double)distr_count;
+			res_p = (double)target_freq / (double)distr_count;
 	      }
-
+		  
 	      if ( resm == 2 ) {
-		res_pl10 = 0; // average w/o OOV words
+			res_pl10 = 0; // average w/o OOV words
 	      }
 	      if ( res_p > 0 ) {
-		res_pl10 = log10( res_p );
+			res_pl10 = log10( res_p );
 	      } else {
-		// fall back to lex freq. of correct answer.
-		std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-		if  (wfi != wfreqs.end()) {
-		  res_p = (int)(*wfi).second / (double)total_count ;
-		  res_pl10 = log10( res_p );
-		  if ( verbose > 1 ) {
-		    l.log( "Fall back to lex freq of Timbl answer." );
-		  }
-		}
+			// fall back to lex freq. of correct answer.
+			std::map<std::string,int>::iterator wfi = wfreqs.find(target);
+			if  (wfi != wfreqs.end()) {
+			  res_p = (int)(*wfi).second / (double)total_count ;
+			  res_pl10 = log10( res_p );
+			  if ( verbose > 1 ) {
+				l.log( "Fall back to lex freq of Timbl answer." );
+			  }
+			}
 	      }
-
+		  
 	      if ( verbose > 1 ) {
-		l.log( "lprob10("+target+")="+to_str(res_pl10) );
+			l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	      }
-
+		  
 	      if ( verbose > 2 ) {
-                l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
-              }
-              icache->add( classify_line, to_str(res_pl10) );
-
+			l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
+		  }
+		  icache->add( classify_line, to_str(res_pl10) );
+		  
 	    } // end not in cache
-
+		
 	    probs.push_back( res_pl10 ); // store for later.
-
+		
 	  } // i loop
-
+	  
 	  //l.log( "Probs: "+ to_str(probs.size() ));
 
 	  double ave_pl10 = 0.0;
@@ -1683,17 +1670,17 @@ int mbmt(Logfile& l, Config& c) {
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const int mode = 1; // hardcoded 1 for PBMBMT
+  //const int mode = 1; // hardcoded 1 for PBMBMT
   const int resm = 0; // hardcoded 0 for PBMBMT
   const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
   const int keep = 1; // hardcoded 1 for PBMBMT
-  const int moses = 0; // hardcoded 0 for PBMBMT
+  //const int moses = 0; // hardcoded 0 for PBMBMT
   const int lb                  = my_stoi( c.get_value( "lb", "0" ));
   const int lc                  = my_stoi( c.get_value( "lc", "2" ));
   const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
-  const bool skip_sm = false;  // hardcoded for PBMBMT
+  //const bool skip_sm = false;  // hardcoded for PBMBMT
   const long cachesize          = my_stoi( c.get_value( "cs", "1000000" ));
 
   l.inc_prefix();
@@ -1748,7 +1735,6 @@ int mbmt(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -1864,7 +1850,7 @@ int mbmt(Logfile& l, Config& c) {
 	    Tokenize( classify_line, words, ' ' );
 
 	    if ( hapax > 0 ) {
-	      int c = hapax_vector( words, hpxfreqs, hapax );
+	      (void)hapax_vector( words, hpxfreqs, hapax );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
@@ -1881,11 +1867,11 @@ int mbmt(Logfile& l, Config& c) {
 	    std::string cache_ans = icache->get( classify_line );
 	    if ( cache_ans != "" ) {
 	      if ( verbose > 2 ) {
-		l.log( "Found in cache." );
+			l.log( "Found in cache." );
 	      }
 	      res_pl10 = my_stod(cache_ans); // my_stod() slows it down?
 	    } else {
-
+		  
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
 	      // that for the instances-without-target
@@ -1894,8 +1880,8 @@ int mbmt(Logfile& l, Config& c) {
 
 	      tv = My_Experiment->Classify( classify_line, vd, distance );
 	      if ( ! tv ) {
-		l.log( "ERROR: Timbl returned a classification error, aborting." );
-		break;
+			l.log( "ERROR: Timbl returned a classification error, aborting." );
+			break;
 	      }
 
 	      result = tv->Name();
@@ -1904,11 +1890,10 @@ int mbmt(Logfile& l, Config& c) {
 	      double res_p = -1;
 	      bool target_in_dist = false;
 	      int target_freq = 0;
-	      int cnt = vd->size();
 	      int distr_count = vd->totalSize();
-
+		  
 	      if ( result == target ) {
-		res_p = res_freq / distr_count;
+			res_p = res_freq / distr_count;
 	      }
 	      //
 	      // Grok the distribution returned by Timbl.
@@ -2060,7 +2045,6 @@ int webdemo(Logfile& l, Config& c) {
   gethostname( hostname, 256 );
   std::string info_str = std::string(hostname)+":"+port;
 
-  int hapax = 0;
   int verbose = 1;
 
   l.inc_prefix();
@@ -2097,7 +2081,6 @@ int webdemo(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -2198,7 +2181,7 @@ int webdemo(Logfile& l, Config& c) {
 	if ( skip == false ) {
 	  tv = My_Experiment->Classify( classify_line, vd, distance );
 	  size_t md  = My_Experiment->matchDepth();
-	  bool   mal = My_Experiment->matchedAtLeaf();
+	  //bool   mal = My_Experiment->matchedAtLeaf();
 
 	  xml = xml + "<timbl md=\""+to_str(md)+"\" mal=\""+to_str(md)+"\" />";
 
@@ -2293,7 +2276,6 @@ int one(Logfile& l, Config& c) {
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
 
-  int hapax = 0;
   int verbose = 1;
 
   l.inc_prefix();
@@ -2306,7 +2288,6 @@ int one(Logfile& l, Config& c) {
   std::vector<std::string> distribution;
   std::string result;
   double distance;
-  double total_prplx = 0.0;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -2378,9 +2359,6 @@ int one(Logfile& l, Config& c) {
 	l.log( "timbl("+classify_line+")="+result+" f="+to_str(res_freq) );
       }
 
-      double res_p = -1;
-      bool target_in_dist = false;
-      int target_freq = 0;
       int cnt = vd->size();
       int distr_count = vd->totalSize();
 
@@ -2516,7 +2494,6 @@ int server_mg( Logfile& l, Config& c ) {
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   // specify default to be able to choose default classifier?
 
@@ -2607,7 +2584,6 @@ int server_mg( Logfile& l, Config& c ) {
   int gates_triggered = 0;
 
   md2    multidist;
-  double classifier_weight;
   int    type;
   int    subtype;
   std::vector<md2_elem>::iterator dei;
