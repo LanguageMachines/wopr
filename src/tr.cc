@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2011 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -94,7 +90,6 @@ int tr( Logfile& l, Config& c ) {
   std::string a_line;
   std::string target;
   std::string a_str;
-  int         pos;
   std::map<std::string, int>::iterator ri;
 
   while( std::getline( file_in, a_line ) ) {
@@ -103,14 +98,14 @@ int tr( Logfile& l, Config& c ) {
     Tokenize( a_line, words, ' ' );
     int t_pos = words.size()-1; // Target position
     for ( int i=0; i < t_pos; i++ ) {
-
+	  
       char c = words.at(i)[0];
       if ( (c >= '0') && (c <= '9') ) {
-	file_out << "<num> ";
+		file_out << "<num> ";
       } else {
-	file_out << words.at(i) << " ";
+		file_out << words.at(i) << " ";
       }
-
+	  
     }
     file_out << words.at(t_pos) << std::endl;
   }

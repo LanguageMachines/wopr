@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2016 Peter Berck                                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -83,14 +79,12 @@ int gen_test( Logfile& l, Config& c ) {
   int                topn             = my_stoi( c.get_value( "topn", "0" ) );
   int                cache_size       = my_stoi( c.get_value( "cache", "3" ) );
   int                cache_threshold  = my_stoi( c.get_value( "cth", "25000" ) );
-  int                skip             = 0;
   int                cs               = my_stoi( c.get_value( "cs", "10000" ) );
 
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
   std::string        result;
-  double             distance;
 
   Cache *cache = new Cache(cs);
 
@@ -221,17 +215,12 @@ int gen_test( Logfile& l, Config& c ) {
     std::vector<std::string> words;
     int correct = 0;
     int wrong   = 0;
-    int correct_unknown = 0;
     int correct_distr = 0;
 
     // Recognise <s> or similar, reset pplx calculations.
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sentence_prob      = 0.0;
-    double sum_logprob        = 0.0;
-    double sum_wlp            = 0.0; // word level pplx
-    int    sentence_count     = 0;
     double sum_rrank          = 0.0;
 
     // Cache a map(string:freq) of the top-n distributions returned
@@ -289,14 +278,14 @@ int gen_test( Logfile& l, Config& c ) {
 
       std::string answer = tv->Name();
       if ( vd == NULL ) {
-	l.log( "Classify( a_line, vd ) was null, skipping current line." );
-	file_out << a_line << ' ' << answer << " ERROR" << std::endl;
-	//continue;
-	file_out.close();
-	file_in.close();
-	return 1; // Abort
+		l.log( "Classify( a_line, vd ) was null, skipping current line." );
+		file_out << a_line << ' ' << answer << " ERROR" << std::endl;
+		//continue;
+		file_out.close();
+		file_in.close();
+		return 1; // Abort
       }
-
+	  
       size_t md  = My_Experiment->matchDepth();
       bool   mal = My_Experiment->matchedAtLeaf();
 
@@ -307,12 +296,9 @@ int gen_test( Logfile& l, Config& c ) {
       Timbl::ValueDistribution::dist_iterator it = vd->begin();
       int cnt = 0;
       int distr_count = 0;
-      double smoothed_distr_count = 0.0;
       int target_freq = 0;
-      int answer_freq = 0;
       double prob            = 0.0;
       double target_distprob = 0.0;
-      double answer_prob     = 0.0;
       double entropy         = 0.0;
       int    rank            = 1;
       std::vector<distr_elem> distr_vec;// see correct in levenshtein.
