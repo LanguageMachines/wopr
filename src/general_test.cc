@@ -256,8 +256,8 @@ int gen_test( Logfile& l, Config& c ) {
       //
       std::string cache_ans = cache->get( a_line );
       if ( cache_ans != "" ) {
-	file_out << cache_ans << std::endl;
-	continue;
+		file_out << cache_ans << std::endl;
+		continue;
       }
 
       Tokenize( a_line, words, ' ' );
@@ -270,8 +270,8 @@ int gen_test( Logfile& l, Config& c ) {
       long us0 = clock_u_secs();
       tv = My_Experiment->Classify( a_line, vd );
       if ( ! tv ) {
-	l.log( "ERROR: Timbl returned a classification error, aborting." );
-	break;
+		l.log( "ERROR: Timbl returned a classification error, aborting." );
+		break;
       }
       long us1 = clock_u_secs();
       timbl_time += (us1-us0);
@@ -298,35 +298,34 @@ int gen_test( Logfile& l, Config& c ) {
       int distr_count = 0;
       int target_freq = 0;
       double prob            = 0.0;
-      double target_distprob = 0.0;
       double entropy         = 0.0;
       int    rank            = 1;
       std::vector<distr_elem> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
-
+	  
       // Check cache/size/presence. Note it assumes that each size
       // only occurs once...
       //
       int cache_idx = -1;
       cached_distr* cd = NULL;
       for ( int i = 0; i < cache_size; i++ ) {
-	if ( distr_cache.at(i).cnt == cnt ) {
-	  if ( distr_cache.at(i).sum_freqs == distr_count ) {
-	    cache_idx = i; // it's cached already!
-	    cd = &distr_cache.at(i);
-	    break;
-	  }
-	}
+		if ( distr_cache.at(i).cnt == cnt ) {
+		  if ( distr_cache.at(i).sum_freqs == distr_count ) {
+			cache_idx = i; // it's cached already!
+			cd = &distr_cache.at(i);
+			break;
+		  }
+		}
       }
       if ( (cache_size > 0) && (cache_idx == -1) ) { // It should be cached, if not present.
-	if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
-	  cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
-	  cd->cnt = cnt;
-	  cd->sum_freqs  = distr_count;
-	  (cd->distr_vec).clear();
-	}
+		if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
+		  cd = &distr_cache.at( cache_size-1 ); // the lowest.
+		  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt) );
+		  cd->cnt = cnt;
+		  cd->sum_freqs  = distr_count;
+		  (cd->distr_vec).clear();
+		}
       }
       // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
       // cache_idx == -1 && cd != null: not cached, want to cache it.
@@ -335,87 +334,87 @@ int gen_test( Logfile& l, Config& c ) {
       // 0, 1, 2, 3
       //
       int cache_level = -1; // see above.
-
+	  
       if (cache_idx == -1) {
-	if ( cd == NULL ) {
-	  cache_level = 0;
-	} else {
-	  cache_level = 1; // want to cache
-	}
+		if ( cd == NULL ) {
+		  cache_level = 0;
+		} else {
+		  cache_level = 1; // want to cache
+		}
       } else if (cache_idx != -1) {
-	if ( cd != NULL ) {
-	  cache_level = 3;
-	} else {
-	  cache_level = 2;// play mission impossible theme
-	}
+		if ( cd != NULL ) {
+		  cache_level = 3;
+		} else {
+		  cache_level = 2;// play mission impossible theme
+		}
       }
-
+	  
       // ----
-
+	  
       if ( cache_level == 3 ) { // Use the cache, Luke.
-	std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
-	if ( wfi != (cd->freqs).end() ) {
-	  target_freq = (long)(*wfi).second;
-	  target_in_dist = true;
-	}
-	entropy = cd->entropy;
-	distr_vec = cd->distr_vec; // the [distr] we print
+		std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
+		if ( wfi != (cd->freqs).end() ) {
+		  target_freq = (long)(*wfi).second;
+		  target_in_dist = true;
+		}
+		entropy = cd->entropy;
+		distr_vec = cd->distr_vec; // the [distr] we print
       }
       if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
-
-	int rank_counter = 1;
-	while ( it != vd->end() ) {
-	  //const Timbl::TargetValue *tv = it->second->Value();
-
-	  std::string tvs  = it->second->Value()->Name();
-	  double      wght = it->second->Weight(); // absolute frequency.
-
-	  if ( topn > 0 ) { // only save if we want to sort/print them later.
-	    distr_elem  d;
-	    d.name   = tvs;
-	    d.freq   = wght;
-	    d.s_freq = wght;
-	    distr_vec.push_back( d );
-	  }
-
-	  if ( tvs == target ) { // The correct answer was in the distribution!
-	    target_freq = wght;
-	    target_in_dist = true;
-	    rank = rank_counter;
-	  }
-
-	  // Save it in the cache?
-	  //
-	  if ( cache_level == 1 ) {
-	    cd->freqs[tvs] = wght;
-	  }
-
-	  // Entropy of whole distr. Cache.
-	  //
-	  prob     = (double)wght / (double)distr_count;
-	  entropy -= ( prob * log2(prob) );
-
-	  ++rank_counter;
-	  ++it;
-	} // end loop distribution
-	if ( cache_level == 1 ) {
-	  cd->entropy = entropy;
-	}
+		
+		int rank_counter = 1;
+		while ( it != vd->end() ) {
+		  //const Timbl::TargetValue *tv = it->second->Value();
+		  
+		  std::string tvs  = it->second->Value()->Name();
+		  double      wght = it->second->Weight(); // absolute frequency.
+		  
+		  if ( topn > 0 ) { // only save if we want to sort/print them later.
+			distr_elem  d;
+			d.name   = tvs;
+			d.freq   = wght;
+			d.s_freq = wght;
+			distr_vec.push_back( d );
+		  }
+		  
+		  if ( tvs == target ) { // The correct answer was in the distribution!
+			target_freq = wght;
+			target_in_dist = true;
+			rank = rank_counter;
+		  }
+		  
+		  // Save it in the cache?
+		  //
+		  if ( cache_level == 1 ) {
+			cd->freqs[tvs] = wght;
+		  }
+		  
+		  // Entropy of whole distr. Cache.
+		  //
+		  prob     = (double)wght / (double)distr_count;
+		  entropy -= ( prob * log2(prob) );
+		  
+		  ++rank_counter;
+		  ++it;
+		} // end loop distribution
+		if ( cache_level == 1 ) {
+		  cd->entropy = entropy;
+		}
       } // cache_level == 1 or 0
-
-
+	  
+	  
       // Counting correct guesses
       //
       if ( answer == target ) {
-	++correct;
+		++correct;
       } else if ( (answer != target) && (target_in_dist == true) ) {
-	++correct_distr;
-	sum_rrank += (1.0 / rank); // THESE are unsorted!
+		++correct_distr;
+		sum_rrank += (1.0 / rank); // THESE are unsorted!
       } else {
-	++wrong;
+		++wrong;
       }
 
-      target_distprob = (double)target_freq / (double)distr_count;
+      //target_distprob = (double)target_freq / (double)distr_count;
 
       // What do we want in the output file? Write the pattern and answer,
       // the logprob, followed by the entropy (of distr.), the size of the
@@ -427,14 +426,14 @@ int gen_test( Logfile& l, Config& c ) {
 
       out << /*a_line << ' ' <<*/ target
 	       << ' ' << answer << ' '
-	/*<< entropy << ' '*/ ;
+		/*<< entropy << ' '*/ ;
 
       if ( answer == target ) {
-	out << "cg "; // correct guess
+		out << "cg "; // correct guess
       } else if ( (answer != target) && (target_in_dist == true) ) {
-	out << "cd "; // correct distr.
+		out << "cd "; // correct distr.
       } else {
-	out << "ic "; // incorrect
+		out << "ic "; // incorrect
       }
 
       // New in 1.10.0, the matchDepth and matchedAtLeaf
@@ -442,49 +441,49 @@ int gen_test( Logfile& l, Config& c ) {
       out << md << ' ' << mal << ' ';
 
       if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
-	int cntr = topn;
-	sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-	std::vector<distr_elem>::iterator fi;
-	fi = distr_vec.begin();
-	out << cnt << ' ' << distr_count << " [ ";
-	while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
-	  out << (*fi).name << ' ' << (*fi).freq << ' ';
-	  if ( cache_level == 1 ) {
-	    distr_elem d;
-	    d.name = (*fi).name;
-	    d.freq = (*fi).freq;
-	    (cd->distr_vec).push_back( d );
-	  }
-	  fi++;
-	}
-	out << "]";
+		int cntr = topn;
+		sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+		std::vector<distr_elem>::iterator fi;
+		fi = distr_vec.begin();
+		out << cnt << ' ' << distr_count << " [ ";
+		while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
+		  out << (*fi).name << ' ' << (*fi).freq << ' ';
+		  if ( cache_level == 1 ) {
+			distr_elem d;
+			d.name = (*fi).name;
+			d.freq = (*fi).freq;
+			(cd->distr_vec).push_back( d );
+		  }
+		  fi++;
+		}
+		out << "]";
       }
-
+	  
       std::string out_str = out.str();
       file_out << out_str << std::endl;
       cache->add( a_line, out_str );
-
+	  
       // Find new lowest here. Overdreven om sort te gebruiken?
       //
       if ( cache_level == 1 ) {
-	sort( distr_cache.begin(), distr_cache.end() );
-	lowest_cache = distr_cache.at(cache_size-1).cnt;
-	//}
-	lowest_cache = 1000000; // hmmm.....
-	for ( int i = 0; i < cache_size; i++ ) {
-	  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
-	    lowest_cache = (distr_cache.at(i)).cnt;
-	  }
-	}
+		sort( distr_cache.begin(), distr_cache.end() );
+		lowest_cache = distr_cache.at(cache_size-1).cnt;
+		//}
+		lowest_cache = 1000000; // hmmm.....
+		for ( int i = 0; i < cache_size; i++ ) {
+		  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
+			lowest_cache = (distr_cache.at(i)).cnt;
+		  }
+		}
       }
-
+	  
     } // while getline() ///////////// <-------------- \\\\\\\\\\\\\\\\/7
-
+	
     file_out.close();
     file_in.close();
-
+	
     l.log( cache->stat() );
-
+	
     if ( cs == 0 ) {
       double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
       l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
