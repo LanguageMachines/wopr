@@ -1146,18 +1146,18 @@ int server4(Logfile& l, Config& c) {
 			l.log( "ERROR: Timbl returned a classification error, aborting." );
 			break;
 	      }
-		  
+
 	      result = tv->Name();
 	      size_t res_freq = tv->ValFreq();
-		  
+
 	      if ( verbose > 1 ) {
 			l.log( "timbl("+classify_line+")="+result );
 	      }
-		  
+
 	      double res_p = -1;
 	      int target_freq = 0;
 	      int distr_count = vd->totalSize();
-		  
+
 	      if ( result == target ) {
 			res_p = res_freq / distr_count;
 	      }
@@ -1167,24 +1167,24 @@ int server4(Logfile& l, Config& c) {
 	      std::map<std::string, double> res;
 	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
-			
+
 			std::string tvs  = it->second->Value()->Name();
 			double      wght = it->second->Weight(); // absolute frequency.
-			
+
 			if ( tvs == target ) { // The correct answer was in the distribution!
 			  target_freq = wght;
 			  if ( verbose > 1 ) {
 				l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
 			  }
 			}
-			
+
 			++it;
 	      } // end loop distribution
-		  
+
 	      if ( target_freq > 0 ) { //distr_count allways > 0.
 			res_p = (double)target_freq / (double)distr_count;
 	      }
-		  
+
 	      if ( resm == 2 ) {
 			res_pl10 = 0; // average w/o OOV words
 	      }
@@ -1201,22 +1201,22 @@ int server4(Logfile& l, Config& c) {
 			  }
 			}
 	      }
-		  
+
 	      if ( verbose > 1 ) {
 			l.log( "lprob10("+target+")="+to_str(res_pl10) );
 	      }
-		  
+
 	      if ( verbose > 2 ) {
 			l.log( "Add to instance cache: ["+classify_line+"]("+to_str(res_pl10)+")" );
 		  }
 		  icache->add( classify_line, to_str(res_pl10) );
-		  
+
 	    } // end not in cache
-		
+
 	    probs.push_back( res_pl10 ); // store for later.
-		
+
 	  } // i loop
-	  
+
 	  //l.log( "Probs: "+ to_str(probs.size() ));
 
 	  double ave_pl10 = 0.0;
@@ -1470,11 +1470,16 @@ int xmlserver(Logfile& l, Config& c) {
 	  doc.declare( folia::AnnotationType::METRIC,
 		       "metricset",
 		       "annotator='wopr'" );
-	  folia::Text *text = new folia::Text( &doc, "id='wopr.t'" );
+	  folia::Text *text =
+	    new folia::Text( &doc,
+			     folia::getArgs( "id='wopr.t'") );
 	  doc.append( text );
-	  folia::Paragraph *p = new folia::Paragraph( &doc, "id='wopr.t.p'" );
+	  folia::Paragraph *p
+	    = new folia::Paragraph( &doc,
+				    folia::getArgs( "id='wopr.t.p'" ));
 	  text->append( p );
-	  folia::Sentence *s = new folia::Sentence( &doc, "id='wopr.t.p.s'" );
+	  folia::Sentence *s =
+	    new folia::Sentence( &doc, folia::getArgs("id='wopr.t.p.s'") );
 	  p->append( s );
 	  l.log( "folia document created." );
 
@@ -1571,8 +1576,9 @@ int xmlserver(Logfile& l, Config& c) {
 	    folia::FoliaElement *w = new folia::Word( &doc, args );
 	    s->append( w );
 	    w->settext( target );
-	    folia::MetricAnnotation *m = new folia::MetricAnnotation( &doc,
-								      "class='lprob10', value='" + to_str(res_pl10) + "'" );
+	    folia::MetricAnnotation *m =
+	      new folia::MetricAnnotation( &doc,
+					   folia::getArgs( "class='lprob10', value='" + to_str(res_pl10) + "'" ) );
 	    w->append( m );
 
 	    if ( verbose > 1 ) {
@@ -1611,16 +1617,13 @@ int xmlserver(Logfile& l, Config& c) {
 	  std::string perpl = to_str(perplexity);
 	  folia::MetricAnnotation *m
 	    = new folia::MetricAnnotation( &doc,
-					   "class='avg_prob10', value='"
-					   + avg10 + "'" );
+					   folia::getArgs( "class='avg_prob10', value='" + avg10 + "'" ) );
 	  s->append( m );
 	  m = new folia::MetricAnnotation( &doc,
-					   "class='entropy', value='" +
-					   entro + "'" );
+					   folia::getArgs( "class='entropy', value='" + entro + "'" ) );
 	  s->append( m );
 	  m = new folia::MetricAnnotation( &doc,
-					   "class='perplexity', value='" +
-					   perpl + "'" );
+					   folia::getArgs( "class='perplexity', value='" + perpl + "'" ) );
 	  s->append( m );
 	  std::ostringstream os;
 	  os << doc << std::endl;
@@ -1869,7 +1872,7 @@ int mbmt(Logfile& l, Config& c) {
 	      }
 	      res_pl10 = my_stod(cache_ans); // my_stod() slows it down?
 	    } else {
-		  
+
 	      // if we take target from a pre-non-hapaxed vector, we
 	      // can hapax the whole sentence in the beginning and use
 	      // that for the instances-without-target
@@ -1888,7 +1891,7 @@ int mbmt(Logfile& l, Config& c) {
 	      double res_p = -1;
 	      int target_freq = 0;
 	      int distr_count = vd->totalSize();
-		  
+
 	      if ( result == target ) {
 			res_p = res_freq / distr_count;
 	      }
