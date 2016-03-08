@@ -1471,15 +1471,13 @@ int xmlserver(Logfile& l, Config& c) {
 		       "metricset",
 		       "annotator='wopr'" );
 	  folia::Text *text =
-	    new folia::Text( &doc,
-			     folia::getArgs( "id='wopr.t'") );
+	    new folia::Text( folia::getArgs( "id='wopr.t'"), &doc );
 	  doc.append( text );
 	  folia::Paragraph *p
-	    = new folia::Paragraph( &doc,
-				    folia::getArgs( "id='wopr.t.p'" ));
+	    = new folia::Paragraph( folia::getArgs( "id='wopr.t.p'" ), &doc );
 	  text->append( p );
 	  folia::Sentence *s =
-	    new folia::Sentence( &doc, folia::getArgs("id='wopr.t.p.s'") );
+	    new folia::Sentence( folia::getArgs("id='wopr.t.p.s'"), &doc );
 	  p->append( s );
 	  l.log( "folia document created." );
 
@@ -1573,12 +1571,12 @@ int xmlserver(Logfile& l, Config& c) {
 	    entropy += res_p * log2(res_p);
 	    folia::KWargs args;
 	    args["generate_id"] = "wopr.t.p.s";
-	    folia::FoliaElement *w = new folia::Word( &doc, args );
+	    folia::FoliaElement *w = new folia::Word( args, &doc );
 	    s->append( w );
 	    w->settext( target );
 	    folia::MetricAnnotation *m =
-	      new folia::MetricAnnotation( &doc,
-					   folia::getArgs( "class='lprob10', value='" + to_str(res_pl10) + "'" ) );
+	      new folia::MetricAnnotation( folia::getArgs( "class='lprob10', value='" + to_str(res_pl10) + "'" ),
+					    &doc );
 	    w->append( m );
 
 	    if ( verbose > 1 ) {
@@ -1616,14 +1614,14 @@ int xmlserver(Logfile& l, Config& c) {
 	  std::string entro = to_str(entropy);
 	  std::string perpl = to_str(perplexity);
 	  folia::MetricAnnotation *m
-	    = new folia::MetricAnnotation( &doc,
-					   folia::getArgs( "class='avg_prob10', value='" + avg10 + "'" ) );
+	    = new folia::MetricAnnotation( folia::getArgs( "class='avg_prob10', value='" + avg10 + "'" ),
+					   &doc );
 	  s->append( m );
-	  m = new folia::MetricAnnotation( &doc,
-					   folia::getArgs( "class='entropy', value='" + entro + "'" ) );
+	  m = new folia::MetricAnnotation( folia::getArgs( "class='entropy', value='" + entro + "'" ),
+					   &doc );
 	  s->append( m );
-	  m = new folia::MetricAnnotation( &doc,
-					   folia::getArgs( "class='perplexity', value='" + perpl + "'" ) );
+	  m = new folia::MetricAnnotation( folia::getArgs( "class='perplexity', value='" + perpl + "'" ),
+					    &doc );
 	  s->append( m );
 	  std::ostringstream os;
 	  os << doc << std::endl;
