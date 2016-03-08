@@ -50,11 +50,8 @@
 #include <sys/msg.h>
 
 #ifdef HAVE_FOLIA
-#include <set>
 #include "ticcutils/StringOps.h"
-#include "libfolia/foliautils.h"
 #include "libfolia/folia.h"
-#include "libfolia/document.h"
 #endif
 
 #include "wopr/qlog.h"

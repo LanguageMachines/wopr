@@ -54,7 +54,6 @@
 #ifdef HAVE_FOLIA
 #include <set>
 #include "ticcutils/StringOps.h"
-#include "libfolia/foliautils.h"
 #include "libfolia/folia.h"
 #endif
 
