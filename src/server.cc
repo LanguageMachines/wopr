@@ -1571,9 +1571,9 @@ int xmlserver(Logfile& l, Config& c) {
 	    folia::FoliaElement *w = new folia::Word( args, &doc );
 	    s->append( w );
 	    w->settext( target );
-	    folia::MetricAnnotation *m =
-	      new folia::MetricAnnotation( folia::getArgs( "class='lprob10', value='" + to_str(res_pl10) + "'" ),
-					    &doc );
+	    folia::Metric *m =
+	      new folia::Metric( folia::getArgs( "class='lprob10', value='" + to_str(res_pl10) + "'" ),
+				 &doc );
 	    w->append( m );
 
 	    if ( verbose > 1 ) {
@@ -1610,15 +1610,15 @@ int xmlserver(Logfile& l, Config& c) {
 	  std::string avg10 = to_str(ave_pl10);
 	  std::string entro = to_str(entropy);
 	  std::string perpl = to_str(perplexity);
-	  folia::MetricAnnotation *m
-	    = new folia::MetricAnnotation( folia::getArgs( "class='avg_prob10', value='" + avg10 + "'" ),
-					   &doc );
+	  folia::Metric *m
+	    = new folia::Metric( folia::getArgs( "class='avg_prob10', value='" + avg10 + "'" ),
+				 &doc );
 	  s->append( m );
-	  m = new folia::MetricAnnotation( folia::getArgs( "class='entropy', value='" + entro + "'" ),
-					   &doc );
+	  m = new folia::Metric( folia::getArgs( "class='entropy', value='" + entro + "'" ),
+				 &doc );
 	  s->append( m );
-	  m = new folia::MetricAnnotation( folia::getArgs( "class='perplexity', value='" + perpl + "'" ),
-					    &doc );
+	  m = new folia::Metric( folia::getArgs( "class='perplexity', value='" + perpl + "'" ),
+				 &doc );
 	  s->append( m );
 	  std::ostringstream os;
 	  os << doc << std::endl;
