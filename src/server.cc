@@ -1377,6 +1377,7 @@ int xmlserver(Logfile& l, Config& c) {
       return 1;
     };
 
+    size_t connections = 0;
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
@@ -1389,9 +1390,11 @@ int xmlserver(Logfile& l, Config& c) {
 	  return 1;
 	}
       }
+      ++connections;
       if ( verbose > 0 ) {
-	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	l.log( "Created Connection " + to_str(newSock->getSockId()) + "/"
 	       + std::string(newSock->getClientName()) );
+	l.log( to_str(connections) + " active connections" );
       }
 
       //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
@@ -1640,6 +1643,12 @@ int xmlserver(Logfile& l, Config& c) {
 	l.log( "Error forking." );
 	perror("fork");
 	return(1);
+      }
+      --connections;
+      if ( verbose > 0 ) {
+	l.log( "Ending Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
+	l.log( to_str(connections) + " active connections" );
       }
       delete newSock;
 
