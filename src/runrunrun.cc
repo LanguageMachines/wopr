@@ -1688,40 +1688,25 @@ int window_lr( Logfile& l, Config& c ) {
 // This is called from server2 and server4 - do not use otherwise.
 //
 int hapax_line( const std::string& a_line, const std::map<std::string,int>& wfreqs,
-		int hpx, int hpx_t, std::string& res ) {
+		std::string& res ) {
   std::vector<std::string> words;
   Tokenize( a_line, words, ' ' );
-  std::vector<std::string>::iterator wi;
-  std::map<std::string, int>::const_iterator wfi;
-  std::string hpx_sym = "<unk>"; //c.get_value("hpx_sym", "<unk>");
 
-  //  replace_if with bind2nd( .. )
-
-  /*
-  wfreqs["_"]    = hpx+1;
-  wfreqs["<s>"]  = hpx+1;
-  wfreqs["</s>"] = hpx+1;
-  */
+  std::string hpx_sym = "<unk>";
 
   res.clear();
-  std::string wrd;
   for ( size_t i = 0; i < words.size()-1; i++ ) {
-    wrd = words.at( i );
+    std::string wrd = words.at( i );
     if ( wrd == "_" ) { // skip
        res = res + wrd + " ";
        continue;
     }
-    wfi = wfreqs.find( wrd );
-
+    std::map<std::string, int>::const_iterator wfi = wfreqs.find( wrd );
     if ( wfi == wfreqs.end() ) { // not found in lexicon
       res = res + hpx_sym + " ";
-    } else {
-      //int f = (*wfi).second;
-      //if ( f > hpx ) {
+    }
+    else {
       res = res + wrd + " ";
-	//} else {
-	//res = res + hpx_sym + " ";
-	//}
     }
   }
 

@@ -1,8 +1,5 @@
-// $Id$
-//
-
 /*****************************************************************************
- * Copyright 2005 - 2011-2010 Peter Berck                                           *
+ * Copyright 2005 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -60,7 +57,7 @@ int window( std::string, std::string, int, int, bool, int, std::vector<std::stri
 int window_line( Logfile&, Config& );
 int window_lr( Logfile&, Config& );
 int window_line2( Logfile&, Config& );
-int hapax_line( const std::string&, const std::map<std::string,int>&, int, int, std::string& );
+int hapax_line( const std::string&, const std::map<std::string,int>&, std::string& );
 int unk_pred( Logfile& , Config& );
 int ngram_line( std::string, int, std::vector<std::string>& );
 int ngram( std::string, int, std::vector<std::string>& );

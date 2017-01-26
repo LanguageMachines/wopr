@@ -100,7 +100,7 @@ std::string toLowerCase( std::string const& s ) {
 
 int min3( int a, int b, int c ) {
   int mi;
-  
+
   mi = a;
   if (b < mi) {
     mi = b;
@@ -505,11 +505,11 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 	} else {
 	  d->lexfreq = (double)(*tvsfi).second;
 	}
-	
+
 	distr_vec.push_back( d );
       } // factor>=min_ratio
     }
-    
+
     ++it;
   }
 }
@@ -709,7 +709,7 @@ int correct( Logfile& l, Config& c ) {
 		triggers.insert(a_word);
 		++trigger_count;
 	  }
-	  
+
 	  file_triggers.close();
 	  l.log( "Read triggers (total_count="+to_str(trigger_count)+")." );
 	}
@@ -869,7 +869,7 @@ int correct( Logfile& l, Config& c ) {
 		Tokenize( a_line, words, ' ' );
 
 		if ( hapax > 0 ) {
-		  (void)hapax_vector( words, hpxfreqs, hapax );
+		  (void)hapax_vector( words, hpxfreqs );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
 		  words.clear();
@@ -1148,7 +1148,7 @@ int tcorrect( Logfile& l, Config& c ) {
   // minimum word length (guess added if > mwl), ignored if 0.
   int                mwl              = my_stoi( c.get_value( "mwl", "0" ) );
   // maximum levenshtein distance (guess added if <= mld), or if 0 (ignores setting)
-  int                mld              = my_stoi( c.get_value( "mld", "0" ) ); 
+  int                mld              = my_stoi( c.get_value( "mld", "0" ) );
   // max entropy (guess added if <= max_entropy), -1 to ignore
   double             max_ent          = my_stod( c.get_value( "max_ent", "-1" ) );
   // maximum distributie (guess added if <= max_distr), 0 to ignore
@@ -1264,7 +1264,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		triggers.insert(a_word);
 		++trigger_count;
 	  }
-	  
+
 	  file_triggers.close();
 	  l.log( "Read triggers (total_count="+to_str(trigger_count)+")." );
 	}
@@ -1431,7 +1431,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		Tokenize( a_line, words, ' ' );
 
 		if ( hapax > 0 ) {
-		  (void)hapax_vector( words, hpxfreqs, hapax );
+		  (void)hapax_vector( words, hpxfreqs );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
 		  words.clear();
@@ -1563,7 +1563,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		// Confidence, after Skype call 20131203
 		// frequency of top-1 (the answer) / sum(all frequencies), 0:50 is 50-50.
 		double the_confidence = -1; // -1 as shortcut to infinity
-		if ( distr_count > 0 ) { 
+		if ( distr_count > 0 ) {
 		  the_confidence = answer_f / distr_count;
 		}
 
@@ -1907,7 +1907,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    Tokenize( classify_line, words, ' ' );
 
 	    if ( hapax > 0 ) {
-	      (void)hapax_vector( words, hpxfreqs, hapax );
+	      (void)hapax_vector( words, hpxfreqs );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
@@ -2361,7 +2361,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		  Tokenize( classify_line, words, ' ' );
 
 		  /*if ( hapax > 0 ) {
-			int c = hapax_vector( words, hpxfreqs, hapax );
+			int c = hapax_vector( words, hpxfreqs );
 			std::string t;
 			vector_to_string(words, t);
 			classify_line = t;
@@ -2928,7 +2928,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		Tokenize( a_line, words, ' ' );
 
 		if ( hapax > 0 ) {
-		  (void)hapax_vector( words, hpxfreqs, hapax );
+		  (void)hapax_vector( words, hpxfreqs );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
 		  words.clear();
@@ -3239,7 +3239,7 @@ int cmcorrect( Logfile& l, Config& c ) {
   // Minimum max-depth of timbl answer
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
   int                topn             = my_stoi( c.get_value( "topn", "0" ) );
-    
+
   //Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -3300,7 +3300,7 @@ int cmcorrect( Logfile& l, Config& c ) {
     std::string a_file = *fi;
     std::string output_filename  = a_file + id + ".sc";
     std::string outlog_filename  = a_file + id + ".lg"; //LOG
-    
+
     if (file_exists(l,c,output_filename)) {
       //l.log( "Output for "+a_file+" exists, removing from list." );
       --numfiles;
@@ -3343,15 +3343,15 @@ int cmcorrect( Logfile& l, Config& c ) {
     file_lexicon.close();
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
-  
+
   // Read configfile with ibase definitions
   // --------------------------------------
-  
+
   std::vector<Expert*> exs;
   std::vector<Expert*>::iterator exi;
   std::map<std::string,Expert*> triggers; // reverse list, trigger to expert
   std::map<std::string,int> called; // counter
-  
+
   if ( configfile != "" ) {
     l.log( "Reading classifiers." );
     std::string a_line;
@@ -3425,11 +3425,11 @@ int cmcorrect( Logfile& l, Config& c ) {
     std::string a_file = *fi;
     std::string output_filename  = a_file + id + ".sc";
     std::string outlog_filename  = a_file + id + ".lg"; //LOG
-    
+
     l.log( "Processing: "+a_file );
     l.log( "OUTPUT:     "+output_filename );
     l.log( "OUTPUT:     "+outlog_filename );
-    
+
     if ( file_exists(l,c,output_filename) ) {
       l.log( "OUTPUT files exist, not overwriting." );
       c.add_kv( "sc_file", output_filename );
@@ -3478,44 +3478,44 @@ int cmcorrect( Logfile& l, Config& c ) {
     int    sentence_wordcount = 0;
 
     std::vector<std::string> cls;
-    
+
     std::map<std::string, Expert*>::iterator tsi; //triggers
     Expert *e = NULL; // Expert used
     int pos;
     std::string trigger;
-    
+
     while( std::getline( file_in, classify_line )) {
-      
+
       cls.clear();
       words.clear();
       classify_line = trim( classify_line );
-      
+
       if ( mode == 1 ) { // plain text, must be windowed
 	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
       } else {
 	cls.push_back( classify_line );
       }
-      
+
       for ( size_t i = 0; i < cls.size(); i++ ) {
-	
+
 	words.clear();
 	a_line = cls.at(i);
 	a_line = trim( a_line );
-	
+
 	Tokenize( a_line, words, ' ' );
-	
+
 	if ( hapax > 0 ) {
-	  (void)hapax_vector( words, hpxfreqs, hapax );
+	  (void)hapax_vector( words, hpxfreqs );
 	  vector_to_string(words, a_line);
 	  a_line = trim( a_line );
 	  words.clear();
 	  Tokenize( a_line, words, ' ' );
 	}
-	
+
 	std::string target = words.at( words.size()-1 );
-	
+
 	++sentence_wordcount;
-	
+
 	// Is the target in the lexicon? We could calculate a smoothed
 	// value here if we load the .cnt file too...
 	//
@@ -3535,26 +3535,26 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  }
 	  target_lexprob = (double)target_lexfreq / (double)total_count;
 	}
-	
+
 	// Do we Timbl, check triggers.
 	pos     = words.size()-1-offset;
 	pos     = (pos < 0) ? 0 : pos;
 	trigger = words[pos];
 	//l.log( "trigger: "+trigger);
-	
+
 	tsi = triggers.find( trigger );
 	if ( tsi != triggers.end() ) {
 	  e = (*tsi).second;
 	} else { // the default classifier.
 	  e = NULL;
 	}
-	
+
 	if ( e == NULL ) {
 	  // We print a dummy line, same format as normal experiments.
 	  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
 	  continue;
 	}
-	
+
 	// What does Timbl think?
 	// Do we change this answer to what is in the distr. (if it is?)
 	//
@@ -3568,20 +3568,20 @@ int cmcorrect( Logfile& l, Config& c ) {
 	}
 	std::string answer = tv->Name();
 	//l.log( "Answer: '" + answer + "' / '" + target + "'" );
-	
+
 	// Check match-depth, if too undeep, we are probably
 	// unsure.
 	//
 	size_t md  = 0; //My_Experiment->matchDepth();
 	//bool   mal = 0; //My_Experiment->matchedAtLeaf();
-	
+
 	if ( target == answer ) {
 	  ++correct;
 	  correct_answer = true;
 	} else {
 	  ++wrong;
 	}
-	
+
 	// Loop over distribution returned by Timbl.
 	//
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
@@ -3594,20 +3594,20 @@ int cmcorrect( Logfile& l, Config& c ) {
 	cnt = vd->size();
 	distr_count = vd->totalSize(); //sum of freqs, for min_dsum
 	double answer_f = 0;
-	
+
 	// Check if target word is in the distribution.
 	//
 	while ( it != vd->end() ) {
 	  //const Timbl::TargetValue *tv = it->second->Value();
-	  
+
 	  std::string tvs  = it->second->Value()->Name();
 	  double      wght = it->second->Weight();
-	  
+
 	  // Prob. of this item in distribution.
 	  //
 	  prob     = (double)wght / (double)distr_count;
 	  entropy -= ( prob * log2(prob) );
-	  
+
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    target_freq = wght;
 	    if ( correct_answer == false ) {
@@ -3618,18 +3618,18 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  if ( tvs == answer ) { // Get the frequency to be able to calculate confidence
 	    answer_f = wght;
 	  }
-	  
+
 	  ++it;
 	}
 	target_distprob = (double)target_freq / (double)distr_count;
-	
+
 	// Confidence, after Skype call 20131101
 	// frequency of top-1, the answer / sum(frequencies distribution)
 	double the_confidence = -1; // -1 as shortcut to infinity
 	if ( distr_count > 0 ) { // then there are more, with frequency, so we don't divide by 0
 	  the_confidence = answer_f / distr_count;
 	}
-	
+
 	// If correct: if target in distr, we take that prob, else
 	// the lexical prob.
 	// Unknown words?
@@ -3649,7 +3649,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  }
 	}
 	sum_logprob += logprob;
-	
+
 	//l.log( "Target: "+target+" target_lexfreq: "+to_str(target_lexfreq) );
 
 	// Simplified for cmcorrect, with only md and confidence.
@@ -3696,7 +3696,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  distr_vec.clear();
 	}
 	log_out << std::endl;
-	
+
 	// End of sentence (sort of)
 	//
 	if ( target == "</s>" ) {
@@ -3709,11 +3709,11 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  sentence_wordcount = 0;
 	  l.log( "--" );
 	}
-	
+
       } // i.cls loop
-      
+
     } // while getline()
-    
+
     if ( sentence_wordcount > 0 ) { // Overgebleven zooi (of alles).
       l.log( "sum_logprob = " + to_str( sum_logprob) );
       l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
@@ -3725,7 +3725,7 @@ int cmcorrect( Logfile& l, Config& c ) {
     log_out.close();
     file_out.close();
     file_in.close();
-    
+
     l.log( "Correct:       " + to_str(correct) );
     l.log( "Correct Distr: " + to_str(correct_distr) );
     int correct_total = correct_distr+correct;
@@ -3735,7 +3735,7 @@ int cmcorrect( Logfile& l, Config& c ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
       l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
     }
-    
+
     // print call statistics for triggers.
     //
     std::map<std::string,int>::const_iterator ci = called.begin();
@@ -3743,14 +3743,14 @@ int cmcorrect( Logfile& l, Config& c ) {
       l.log( ci->first+": "+to_str(ci->second) );
       ci++;
     }
-    
+
     c.add_kv( "sc_file", output_filename );
     l.log( "SET sc_file to "+output_filename );
-    
+
     l.dec_prefix();
-    
+
   }
-  
+
   return 0;
 }
 #else
@@ -3768,10 +3768,10 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
 
   int    cnt         = 0;
   double distr_count = 0;
-  
+
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::vector<std::string>::iterator si;
-  
+
   while ( it != vd->end() ) { // loop over distribution
     std::string tvs  = it->second->Value()->Name(); // element in distribution
     double      wght = it->second->Weight(); // frequency of distr. element
@@ -3797,10 +3797,10 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
 double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& distr_vec) {
   int    cnt         = 0;
   double distr_count = 0;
-  
+
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::vector<std::string>::iterator si;
-  
+
   while ( it != vd->end() ) { // loop over distribution
     std::string tvs  = it->second->Value()->Name(); // element in distribution
     double      wght = it->second->Weight(); // frequency of distr. element
@@ -3840,7 +3840,7 @@ int sml( Logfile& l, Config& c ) {
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   int                topn            = my_stoi( c.get_value( "topn", "0" ) );
-  
+
   Timbl::TimblAPI   *My_Experiment;
   std::string        distrib;
   std::vector<std::string> distribution;
@@ -3876,7 +3876,7 @@ int sml( Logfile& l, Config& c ) {
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
   l.log( "confidence  "+to_str(confidence) );
-  
+
   //l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
@@ -3937,7 +3937,7 @@ int sml( Logfile& l, Config& c ) {
 	triggers.insert(a_word);
 	++trigger_count;
       }
-      
+
       file_triggers.close();
       l.log( "Read triggers (total_count="+to_str(trigger_count)+")." );
     }
@@ -3971,11 +3971,11 @@ int sml( Logfile& l, Config& c ) {
 	  ++set_count;
 	  Tokenize( a_line, words );
 	  std::vector<std::string> c_set;
-	  for ( wi = words.begin(); wi != words.end(); wi++ ) {	  
+	  for ( wi = words.begin(); wi != words.end(); wi++ ) {
 	    c_set.push_back(*wi);
 	    //l.log( (*wi)+" "+a_line);
 	  }
-	  for ( wi = words.begin(); wi != words.end(); wi++ ) {	  
+	  for ( wi = words.begin(); wi != words.end(); wi++ ) {
 	    c_sets[*wi] = c_set;
 	  }
 	}
@@ -3984,7 +3984,7 @@ int sml( Logfile& l, Config& c ) {
       l.log( "Read sets ("+to_str(set_count)+")." );
     }
   }
-  
+
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
@@ -4051,7 +4051,7 @@ int sml( Logfile& l, Config& c ) {
     }
     file_counts.close();
   }
-  
+
   // The P(new_word) according to GoodTuring-3.pdf
   // We need the filename.cnt for this, because we really need to
   // discount the rest if we assign probability to the unseen words.
@@ -4095,7 +4095,7 @@ int sml( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot write output file." );
       return -1;
     }
-    std::ofstream log_out( outlog_filename.c_str(), std::ios::out ); 
+    std::ofstream log_out( outlog_filename.c_str(), std::ios::out );
    if ( ! log_out ) {
       l.log( "ERROR: cannot write log file." );
       return -1;
@@ -4129,34 +4129,34 @@ int sml( Logfile& l, Config& c ) {
       cls.clear();
       words.clear();
       classify_line = trim( classify_line );
-      
+
       if ( mode == 1 ) { // plain text, must be windowed
 	window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
       } else {
 	cls.push_back( classify_line );
       }
-      
+
       for ( size_t i = 0; i < cls.size(); i++ ) {
-	
+
 	words.clear();
 	a_line = cls.at(i);
 	a_line = trim( a_line );
-	
+
 	Tokenize( a_line, words, ' ' );
-	
+
 	if ( hapax > 0 ) {
-	  (void)hapax_vector( words, hpxfreqs, hapax );
+	  (void)hapax_vector( words, hpxfreqs );
 	  vector_to_string(words, a_line);
 	  a_line = trim( a_line );
 	  words.clear();
 	  Tokenize( a_line, words, ' ' );
 	}
-	
+
 	// The answer we are after, last feature value in instance.
 	std::string target = words.at( words.size()-1 );
-	
+
 	++sentence_wordcount;
-	
+
 	// Is the target in the lexicon? We could calculate a smoothed
 	// value here if we load the .cnt file too...
 	//
@@ -4176,7 +4176,7 @@ int sml( Logfile& l, Config& c ) {
 	  }
 	  target_lexprob = (double)target_lexfreq / (double)total_count;
 	}
-	
+
 	// Do nothing if not a trigger, write default line.
 	//
 	if ( trigger_count > 0 ) {
@@ -4201,20 +4201,20 @@ int sml( Logfile& l, Config& c ) {
 	}
 	std::string answer = tv->Name();
 	//l.log( "Answer: '" + answer + "' / '" + target + "'" );
-	
+
 	// Check match-depth, if too undeep, we are probably
 	// unsure.
 	//
 	//size_t md  = My_Experiment->matchDepth();
 	//bool   mal = My_Experiment->matchedAtLeaf();
-	
+
 	if ( target == answer ) {
 	  ++correct;
 	  correct_answer = true;
 	} else {
 	  ++wrong;
 	}
-	
+
 	// Loop over distribution returned by Timbl.
 	//
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
@@ -4227,20 +4227,20 @@ int sml( Logfile& l, Config& c ) {
 	cnt = vd->size();
 	distr_count = vd->totalSize();
 	double answer_f = 0;
-	
+
 	// Check if target word is in the distribution.
 	//
 	while ( it != vd->end() ) {
 	  //const Timbl::TargetValue *tv = it->second->Value();
-	  
+
 	  std::string tvs  = it->second->Value()->Name();
 	  double      wght = it->second->Weight();
-	  
+
 	  // Prob. of this item in distribution.
 	  //
 	  prob     = (double)wght / (double)distr_count;
 	  entropy -= ( prob * log2(prob) );
-	  
+
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    target_freq = wght;
 	    if ( correct_answer == false ) {
@@ -4251,16 +4251,16 @@ int sml( Logfile& l, Config& c ) {
 	  if ( tvs == answer ) { // Get the frequency to be able to calculate confidence
 	    answer_f = wght;
 	  }
-	  
+
 	  ++it;
 	}
 	target_distprob = (double)target_freq / (double)distr_count;
-	
+
 	double the_confidence = -1; // -1 as shortcut to infinity
-	if ( distr_count > 0 ) { 
+	if ( distr_count > 0 ) {
 	  the_confidence = answer_f / distr_count;
 	}
-	
+
 	// If correct: if target in distr, we take that prob, else
 	// the lexical prob.
 	// Unknown words?
@@ -4280,7 +4280,7 @@ int sml( Logfile& l, Config& c ) {
 	  }
 	}
 	sum_logprob += logprob;
-	
+
 	bool fail = true;
 	log_out << a_line << std::endl;
 
@@ -4293,10 +4293,10 @@ int sml( Logfile& l, Config& c ) {
 	size_t cc = 0;
 	std::vector<distr_elem*> filtered_distr_vec;
 	std::vector<distr_elem*>::const_iterator fi;
-	
+
 	sum_f = filter_dist( vd, c_set, filtered_distr_vec);
 	cc = filtered_distr_vec.size();
-	
+
 	/*
 [pberck@margretetorp cmcorrect]$ ~/uvt/wopr/src/wopr -l -r sml -p ibasefile:utexas.10e6.dt3.100000.l2r2_-a1+D.ibase,timbl:"-a1 +D",filename:utexas.10e6.dt3.t1e5d.cf350.l2r2,triggerfile:goldingroth3a.txt,lc:2,rc:2,confidence:0,id:SML4F
 	*/
@@ -4311,14 +4311,14 @@ int sml( Logfile& l, Config& c ) {
 	    log_out << "found " << cc << " in distribution of " << vd->size() << std::endl;
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
 	    fail = false;
-	    
+
 	    //Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	    std::map<std::string,int>::iterator tvsfi;
 	    std::map<std::string,int>::iterator wfi;
-	    
-	    // This is our answer, the stats are on whole distr. 
+
+	    // This is our answer, the stats are on whole distr.
 	    answer = top_c;
-	    
+
 	    double word_lp = pow( 2, -logprob );
 	    file_out << a_line << " (" << answer << ") "
 		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
@@ -4352,7 +4352,7 @@ int sml( Logfile& l, Config& c ) {
 	  file_out << a_line << " (" << target << ") 0 0 1 1 [ ]\n";
 	}
 	log_out << std::endl;
-	
+
 	// End of sentence (sort of)
 	//
 	if ( target == "</s>" ) {
@@ -4365,7 +4365,7 @@ int sml( Logfile& l, Config& c ) {
 	  sentence_wordcount = 0;
 	  l.log( "--" );
 	}
-	
+
       } // i.cls loop
 
     } // while getline()
