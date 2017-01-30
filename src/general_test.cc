@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2016 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -82,9 +82,6 @@ int gen_test( Logfile& l, Config& c ) {
   int                cs               = my_stoi( c.get_value( "cs", "10000" ) );
 
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   Cache *cache = new Cache(cs);
 
@@ -121,7 +118,6 @@ int gen_test( Logfile& l, Config& c ) {
   // One file, as before, or the whole globbed dir.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -140,8 +136,7 @@ int gen_test( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".gt";
 
     if (file_exists(l,c,output_filename)) {
@@ -176,8 +171,7 @@ int gen_test( Logfile& l, Config& c ) {
 
   // Process input files.
   //
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".gt";
 
     l.log( "Processing: "+a_file );
@@ -207,9 +201,6 @@ int gen_test( Logfile& l, Config& c ) {
     // Here we created Timbl exp before.
 
     std::string a_line;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
@@ -246,7 +237,7 @@ int gen_test( Logfile& l, Config& c ) {
     }
     long timbl_time = 0;
 
-    while( std::getline( file_in, a_line )) { 
+    while( std::getline( file_in, a_line )) {
 
       words.clear();
       a_line = trim( a_line );
@@ -285,7 +276,7 @@ int gen_test( Logfile& l, Config& c ) {
 		file_in.close();
 		return 1; // Abort
       }
-	  
+
       size_t md  = My_Experiment->matchDepth();
       bool   mal = My_Experiment->matchedAtLeaf();
 
@@ -296,14 +287,13 @@ int gen_test( Logfile& l, Config& c ) {
       Timbl::ValueDistribution::dist_iterator it = vd->begin();
       int cnt = 0;
       int distr_count = 0;
-      int target_freq = 0;
-      double prob            = 0.0;
+      //      int target_freq = 0;
       double entropy         = 0.0;
       int    rank            = 1;
       std::vector<distr_elem> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
-	  
+
       // Check cache/size/presence. Note it assumes that each size
       // only occurs once...
       //
@@ -334,7 +324,7 @@ int gen_test( Logfile& l, Config& c ) {
       // 0, 1, 2, 3
       //
       int cache_level = -1; // see above.
-	  
+
       if (cache_idx == -1) {
 		if ( cd == NULL ) {
 		  cache_level = 0;
@@ -348,61 +338,61 @@ int gen_test( Logfile& l, Config& c ) {
 		  cache_level = 2;// play mission impossible theme
 		}
       }
-	  
+
       // ----
-	  
+
       if ( cache_level == 3 ) { // Use the cache, Luke.
-		std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
-		if ( wfi != (cd->freqs).end() ) {
-		  target_freq = (long)(*wfi).second;
-		  target_in_dist = true;
-		}
-		entropy = cd->entropy;
-		distr_vec = cd->distr_vec; // the [distr] we print
+	std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
+	if ( wfi != (cd->freqs).end() ) {
+	  //	  target_freq = (long)(*wfi).second;
+	  target_in_dist = true;
+	}
+	entropy = cd->entropy;
+	distr_vec = cd->distr_vec; // the [distr] we print
       }
       if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
-		
-		int rank_counter = 1;
-		while ( it != vd->end() ) {
-		  //const Timbl::TargetValue *tv = it->second->Value();
-		  
-		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight(); // absolute frequency.
-		  
-		  if ( topn > 0 ) { // only save if we want to sort/print them later.
-			distr_elem  d;
-			d.name   = tvs;
-			d.freq   = wght;
-			d.s_freq = wght;
-			distr_vec.push_back( d );
-		  }
-		  
-		  if ( tvs == target ) { // The correct answer was in the distribution!
-			target_freq = wght;
-			target_in_dist = true;
-			rank = rank_counter;
-		  }
-		  
-		  // Save it in the cache?
-		  //
-		  if ( cache_level == 1 ) {
-			cd->freqs[tvs] = wght;
-		  }
-		  
-		  // Entropy of whole distr. Cache.
-		  //
-		  prob     = (double)wght / (double)distr_count;
-		  entropy -= ( prob * log2(prob) );
-		  
-		  ++rank_counter;
-		  ++it;
-		} // end loop distribution
-		if ( cache_level == 1 ) {
-		  cd->entropy = entropy;
-		}
+
+	int rank_counter = 1;
+	while ( it != vd->end() ) {
+	  //const Timbl::TargetValue *tv = it->second->Value();
+
+	  std::string tvs  = it->second->Value()->Name();
+	  double      wght = it->second->Weight(); // absolute frequency.
+
+	  if ( topn > 0 ) { // only save if we want to sort/print them later.
+	    distr_elem  d;
+	    d.name   = tvs;
+	    d.freq   = wght;
+	    d.s_freq = wght;
+	    distr_vec.push_back( d );
+	  }
+
+	  if ( tvs == target ) { // The correct answer was in the distribution!
+	    //	    target_freq = wght;
+	    target_in_dist = true;
+	    rank = rank_counter;
+	  }
+
+	  // Save it in the cache?
+	  //
+	  if ( cache_level == 1 ) {
+	    cd->freqs[tvs] = wght;
+	  }
+
+	  // Entropy of whole distr. Cache.
+	  //
+	  double prob = (double)wght / (double)distr_count;
+	  entropy -= ( prob * log2(prob) );
+
+	  ++rank_counter;
+	  ++it;
+	} // end loop distribution
+	if ( cache_level == 1 ) {
+	  cd->entropy = entropy;
+	}
       } // cache_level == 1 or 0
-	  
-	  
+
+
       // Counting correct guesses
       //
       if ( answer == target ) {
@@ -441,49 +431,49 @@ int gen_test( Logfile& l, Config& c ) {
       out << md << ' ' << mal << ' ';
 
       if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
-		int cntr = topn;
-		sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-		std::vector<distr_elem>::iterator fi;
-		fi = distr_vec.begin();
-		out << cnt << ' ' << distr_count << " [ ";
-		while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
-		  out << (*fi).name << ' ' << (*fi).freq << ' ';
-		  if ( cache_level == 1 ) {
-			distr_elem d;
-			d.name = (*fi).name;
-			d.freq = (*fi).freq;
-			(cd->distr_vec).push_back( d );
-		  }
-		  fi++;
-		}
-		out << "]";
+	int cntr = topn;
+	sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
+	std::vector<distr_elem>::iterator fi;
+	fi = distr_vec.begin();
+	out << cnt << ' ' << distr_count << " [ ";
+	while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
+	  out << (*fi).name << ' ' << (*fi).freq << ' ';
+	  if ( cache_level == 1 ) {
+	    distr_elem d;
+	    d.name = (*fi).name;
+	    d.freq = (*fi).freq;
+	    (cd->distr_vec).push_back( d );
+	  }
+	  ++fi;
+	}
+	out << "]";
       }
-	  
+
       std::string out_str = out.str();
       file_out << out_str << std::endl;
       cache->add( a_line, out_str );
-	  
+
       // Find new lowest here. Overdreven om sort te gebruiken?
       //
       if ( cache_level == 1 ) {
-		sort( distr_cache.begin(), distr_cache.end() );
-		lowest_cache = distr_cache.at(cache_size-1).cnt;
-		//}
-		lowest_cache = 1000000; // hmmm.....
-		for ( int i = 0; i < cache_size; i++ ) {
-		  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
-			lowest_cache = (distr_cache.at(i)).cnt;
-		  }
-		}
+	sort( distr_cache.begin(), distr_cache.end() );
+	//	lowest_cache = distr_cache.at(cache_size-1).cnt;
+	//}
+	lowest_cache = 1000000; // hmmm.....
+	for ( int i = 0; i < cache_size; i++ ) {
+	  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
+	    lowest_cache = (distr_cache.at(i)).cnt;
+	  }
+	}
       }
-	  
+
     } // while getline() ///////////// <-------------- \\\\\\\\\\\\\\\\/7
-	
+
     file_out.close();
     file_in.close();
-	
+
     l.log( cache->stat() );
-	
+
     if ( cs == 0 ) {
       double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
       l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
@@ -502,6 +492,7 @@ int gen_test( Logfile& l, Config& c ) {
 
     l.dec_prefix();
   }
+  delete My_Experiment;
   return 0;
 }
 #else

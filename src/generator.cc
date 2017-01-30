@@ -93,8 +93,6 @@ int generate( Logfile& l, Config& c ) {
   int                len              = my_stoi( c.get_value( "len", "50" ) );
   int                n                = my_stoi( c.get_value( "n", "10" ) );
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -136,9 +134,6 @@ int generate( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::string result;
-  std::vector<std::string> results;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
@@ -168,7 +163,7 @@ int generate( Logfile& l, Config& c ) {
 
     // Make a function out of this.
     //
-    //std::string foo = generate_one( c, a_line, len, ws, My_Experiment );
+    //std::string foo = generate_one( a_line, len, ws, My_Experiment );
     //l.log( foo );
 
     while ( --s_len >= 0 ) { // Or till we hit a "."
@@ -194,7 +189,6 @@ int generate( Logfile& l, Config& c ) {
 	rnd_idx = mtrand.randInt( distr_count-1 ); //NEW
       }
       //l.log( to_str(rnd_idx)+"/"+to_str(cnt) );
-      unsigned long sum = 0;
 
       // Take (top) answer, or choose something from the
       // distribution.
@@ -205,6 +199,7 @@ int generate( Logfile& l, Config& c ) {
 	  ++it;
 	}
       } else {
+	unsigned long sum = 0;
 	for ( unsigned int i = 0; i < rnd_idx; i++ ) {
 	  sum += it->second->Weight();
 	  if ( sum > rnd_idx ) {
@@ -249,7 +244,7 @@ int generate( Logfile& l, Config& c ) {
     file_out << std::endl;
   }
   file_out.close();
-
+  delete My_Experiment;
   return 0;
 }
 #else
@@ -262,17 +257,14 @@ int generate( Logfile& l, Config& c ) {
 #ifdef TIMBL
 // returns one sentence of length len.
 //
-std::string generate_one( Config& c, std::string& a_line, int len, int ws,
+std::string generate_one( std::string& a_line, int len, int ws,
 			  const std::string& end,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   std::string result = "";
-  std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   std::vector<std::string> words;
   Timbl::ValueDistribution::dist_iterator it;
-  int cnt;
 
   MTRand mtrand;
 
@@ -281,12 +273,12 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
 
   while ( --len >= 0 ) {
     a_line = a_line + " _";
-    tv = My_Experiment->Classify( a_line, vd );
-    if ( ! tv ) {
+    const Timbl::TargetValue *tv = My_Experiment->Classify( a_line, vd );
+    if ( !tv ) {
       break;
     }
     std::string answer = "";// tv->Name();
-    cnt = vd->size();
+    int cnt = vd->size();
 
     int rnd_idx = mtrand.randInt( cnt -1 );
 
@@ -295,7 +287,6 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
     //
     it = vd->begin();
     for ( int i = 0; i < rnd_idx; i++ ) {
-      std::string tvs  = it->second->Value()->Name();
       ++it;
     }
     std::string tvs  = it->second->Value()->Name();
@@ -326,16 +317,13 @@ std::string generate_one( Config& c, std::string& a_line, int len, int ws,
 
 // returns one sentence of length len.
 //
-std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
+std::string generate_xml( std::string& a_line, int len, int ws,
 			  const std::string& end, std::string id,
 			  Timbl::TimblAPI* My_Experiment ) {
 
-  std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
   std::vector<std::string> words;
   Timbl::ValueDistribution::dist_iterator it;
-  int cnt;
 
   MTRand mtrand;
 
@@ -383,12 +371,12 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
 
     //std::cout << "Timbl(" << a_line << ")" << std::endl;
 
-    tv = My_Experiment->Classify( a_line, vd );
+    const Timbl::TargetValue *tv = My_Experiment->Classify( a_line, vd );
     if ( ! tv ) {
       break;
     }
     std::string answer = "";// tv->Name();
-    cnt = vd->size();
+    int cnt = vd->size();
     int distr_count = vd->totalSize();
 
     unsigned int rnd_idx;
@@ -397,7 +385,6 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     } else {
       rnd_idx = mtrand.randInt( distr_count-1 );
     }
-    unsigned long sum = 0;
 
     // Take (top) answer, or choose something from the
     // distribution.
@@ -405,10 +392,10 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
     it = vd->begin();
     if ( mode == 0 ) {
       for ( unsigned int i = 0; i < rnd_idx; i++ ) {
-	std::string tvs  = it->second->Value()->Name();
 	++it;
       }
     } else {
+      unsigned long sum = 0;
       for ( unsigned int i = 0; i < rnd_idx; i++ ) {
         sum += it->second->Weight();
         if ( sum > rnd_idx ) {
@@ -448,8 +435,6 @@ std::string generate_xml( Config& c, std::string& a_line, int len, int ws,
   }
 
   std::cout << tmp_res << std::endl;
-  tmp_res = "";
-
   result = result + "</sentence>";
 
   return result;
@@ -522,7 +507,6 @@ int generate_server( Logfile& l, Config& c ) {
   // ----
 
   std::string a_line;
-  std::string result;
   std::string buf;
 
   while ( true ) {
@@ -563,7 +547,7 @@ int generate_server( Logfile& l, Config& c ) {
 
       //int len1 = mtrand.randInt( len )+1;
 
-      std::string foo = generate_xml( c, a_line, len, ws, end, to_str(n1),
+      std::string foo = generate_xml( a_line, len, ws, end, to_str(n1),
 				      My_Experiment );
 
       //foo = "<data><![CDATA[" + foo + "]]></data>";

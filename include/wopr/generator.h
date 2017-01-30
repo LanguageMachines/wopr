@@ -31,8 +31,8 @@
 int generate( Logfile&, Config& );
 
 #ifdef TIMBL
-std::string generate_one( Config&, std::string&, int, int, const std::string&, Timbl::TimblAPI* );
-std::string generate_xml( Config&, std::string&, std::string&, int, int, const std::string&, Timbl::TimblAPI* );
+std::string generate_one( std::string&, int, int, const std::string&, Timbl::TimblAPI* );
+std::string generate_xml( std::string&, std::string&, int, int, const std::string&, Timbl::TimblAPI* );
 #endif
 
 int generate_server( Logfile&, Config& );
