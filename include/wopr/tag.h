@@ -49,7 +49,7 @@ class Node {
   std::vector<int> dist; // hash with classhash, freq, ...
   std::vector<Arc*> arcs;
 
-  Node( int );
+  explicit Node( int );
 
   void set_defaultclass( int );
   void add_dist( int, int );

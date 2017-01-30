@@ -585,9 +585,6 @@ int correct( Logfile& l, Config& c ) {
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   // No slash at end of dirname.
   //
@@ -634,7 +631,6 @@ int correct( Logfile& l, Config& c ) {
   // they exists.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -797,14 +793,10 @@ int correct( Logfile& l, Config& c ) {
       return -1;
     }
 
-    std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
-	std::string classify_line;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
+    std::string classify_line;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
@@ -1136,9 +1128,6 @@ int tcorrect( Logfile& l, Config& c ) {
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
 
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
 #if defined(HAVE_TR1_UNORDERED_SET)
   std::tr1::unordered_set<std::string> triggers;
@@ -1190,7 +1179,6 @@ int tcorrect( Logfile& l, Config& c ) {
   // they exists.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -1354,14 +1342,10 @@ int tcorrect( Logfile& l, Config& c ) {
       return -1;
     }
 
-    std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
-	std::string classify_line;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
+    std::string classify_line;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
@@ -1757,15 +1741,10 @@ int server_sc( Logfile& l, Config& c ) {
     p0 = (double)N_1 / ((double)total_count * total_count);
   }
 
-  std::string distrib;
-  std::vector<std::string> distribution;
-  std::string result;
-  double distance;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
   signal(SIGCHLD, SIG_IGN);
-  volatile sig_atomic_t running = 1;
 
   try {
     Sockets::ServerSocket server;
@@ -1781,6 +1760,7 @@ int server_sc( Logfile& l, Config& c ) {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
+    volatile sig_atomic_t running = 1;
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
@@ -1803,8 +1783,6 @@ int server_sc( Logfile& l, Config& c ) {
       if ( cpid == 0 ) { // child process
 
 	Cache *cache = new Cache( cachesize ); // local cache
-
-	std::string buf;
 
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
@@ -1898,6 +1876,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      target_lexprob = (double)target_lexfreq / (double)total_count;
 	    }
 
+	    double distance;
 	    tv = My_Experiment->Classify( classify_line, vd, distance );
 	    if ( ! tv ) {
 	      l.log("ERROR: Timbl returned a classification error, aborting.");
@@ -1924,7 +1903,6 @@ int server_sc( Logfile& l, Config& c ) {
 	    int distr_count = 0;
 	    int target_freq = 0;
 
-	    double prob            = 0.0;
 	    double target_distprob = 0.0;
 	    double entropy         = 0.0;
 	    double sum_logprob     = 0.0;
@@ -1950,7 +1928,7 @@ int server_sc( Logfile& l, Config& c ) {
 
 		// Prob. of this item in distribution.
 		//
-		prob     = (double)wght / (double)distr_count;
+		double prob = (double)wght / (double)distr_count;
 		entropy -= ( prob * log2(prob) );
 
 		if ( tvs == target ) { // The correct answer was in the distr.
@@ -2018,11 +1996,10 @@ int server_sc( Logfile& l, Config& c ) {
 		    // So here we check frequency of tvs from the distr. with
 		    // frequency of the target.
 		    //
-		    int    tvs_lf = 0;
 		    double factor = 0.0;
 		    wfi = wfreqs.find( tvs );
 		    if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-		      tvs_lf =  (int)(*wfi).second;
+		      int tvs_lf =  (int)(*wfi).second;
 		      factor = tvs_lf / target_lexfreq;
 		    }
 		    //
@@ -2189,7 +2166,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
   unsigned long hpx_entries     = 0;
   unsigned long N_1             = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
-  std::map<std::string,int> hpxfreqs; // hapaxed list
   while( file_lexicon >> a_word >> wfreq ) {
     ++lex_entries;
     total_count += wfreq;
@@ -2198,7 +2174,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
       ++N_1;
     }
     if ( wfreq > hapax ) {
-      hpxfreqs[a_word] = wfreq;
       ++hpx_entries;
     }
   }
@@ -2212,10 +2187,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
   Cache *cache = new Cache( cachesize );
 
-  std::string distrib;
-  std::vector<std::string> distribution;
-  std::string result;
-  double distance;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -2256,8 +2227,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		l.log( "Connection " + to_str(newSock->getSockId()) + "/"
 			   + std::string(newSock->getClientName()) );
       }
-
-      std::string buf;
 
       bool connection_open = true;
       std::vector<std::string> cls; // classify lines
@@ -2351,6 +2320,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    target_lexprob = (double)target_lexfreq / (double)total_count;
 	  }
 
+	  double distance;
 	  tv = My_Experiment->Classify( classify_line, vd, distance );
 	  if ( ! tv ) {
 	    l.log("ERROR: Timbl returned a classification error, aborting.");
@@ -2371,7 +2341,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  int distr_count = 0;
 	  int target_freq = 0;
 
-	  double prob            = 0.0;
 	  double target_distprob = 0.0;
 	  double entropy         = 0.0;
 	  double sum_logprob     = 0.0;
@@ -2397,7 +2366,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
 	      // Prob. of this item in distribution.
 	      //
-	      prob     = (double)wght / (double)distr_count;
+	      double prob = (double)wght / (double)distr_count;
 	      entropy -= ( prob * log2(prob) );
 
 	      if ( tvs == target ) { // The correct answer was in the distr.
@@ -2465,12 +2434,11 @@ int server_sc_nf( Logfile& l, Config& c ) {
 			  // So here we check frequency of tvs from the distr. with
 			  // frequency of the target.
 			  //
-			  int    tvs_lf = 0;
 			  double factor = 0.0;
 			  wfi = wfreqs.find( tvs );
 			  if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-				tvs_lf =  (int)(*wfi).second;
-				factor = tvs_lf / target_lexfreq;
+			    int tvs_lf = (int)(*wfi).second;
+			    factor = tvs_lf / target_lexfreq;
 			  }
 			  //
 			  //l.log( tvs+"-"+to_str(tvs_lf)+"/"+to_str(factor) );
@@ -2507,11 +2475,12 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  // Return all, seperated by sep (tab).
 
 	  answer = "";
-	  int cntr = -1;
 	  std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 	  if ( distr_vec.empty() ) {
 	    answer = empty;
 	  } else {
+	    int cntr = -1; // BUG: hardly useful !
+	    //                     --cntr == 0 after a very ong time
 	    while ( (fi != distr_vec.end()-1 ) && (--cntr != 0) ) {
 	      answer = answer + (*fi)->name + sep;
 	      delete *fi;
@@ -2682,10 +2651,8 @@ int mcorrect( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  unsigned long hpx_entries = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   std::map<std::string,int> hpxfreqs; // hapaxed list
   std::ifstream file_lexicon( lexicon_filename.c_str() );
@@ -2698,16 +2665,16 @@ int mcorrect( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
       if ( wfreq == 1 ) {
-		++N_1;
+	++N_1;
       }
-	  if ( wfreq > hapax ) {
-		hpxfreqs[a_word] = wfreq;
-		++hpx_entries;
-	  }
+      if ( wfreq > hapax ) {
+	hpxfreqs[a_word] = wfreq;
+      }
     }
     file_lexicon.close();
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
@@ -2975,7 +2942,6 @@ int mcorrect( Logfile& l, Config& c ) {
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
-		double prob            = 0.0;
 		double target_distprob = 0.0;
 		double entropy         = 0.0;
 		bool in_distr          = false;
@@ -2993,7 +2959,7 @@ int mcorrect( Logfile& l, Config& c ) {
 
 		  // Prob. of this item in distribution.
 		  //
-		  prob     = (double)wght / (double)distr_count;
+		  double prob = (double)wght / (double)distr_count;
 		  entropy -= ( prob * log2(prob) );
 
 		  if ( tvs == target ) { // The correct answer was in the distribution!
@@ -3246,10 +3212,8 @@ int cmcorrect( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  unsigned long hpx_entries = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   std::map<std::string,int> hpxfreqs; // hapaxed list
   std::ifstream file_lexicon( lexicon_filename.c_str() );
@@ -3262,6 +3226,7 @@ int cmcorrect( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
@@ -3270,7 +3235,6 @@ int cmcorrect( Logfile& l, Config& c ) {
       }
       if ( wfreq > hapax ) {
 	hpxfreqs[a_word] = wfreq;
-	++hpx_entries;
       }
     }
     file_lexicon.close();
@@ -3324,13 +3288,13 @@ int cmcorrect( Logfile& l, Config& c ) {
   // Make mapping <int, double> from c to c* ?
   //
   std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
+    int Nc0;
+    double Nc1; // this is c*
+    int count;
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
@@ -3448,11 +3412,11 @@ int cmcorrect( Logfile& l, Config& c ) {
 	std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	bool   target_unknown = false;
 	bool   correct_answer = false;
-	double target_lexfreq = 0.0;// should be double because smoothing
 	double target_lexprob = 0.0;
 	if ( wfi == wfreqs.end() ) {
 	  target_unknown = true;
 	} else {
+	  double target_lexfreq; // should be double because smoothing
 	  target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
 	  std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
 	  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
@@ -3514,7 +3478,6 @@ int cmcorrect( Logfile& l, Config& c ) {
 	int cnt = 0;
 	int distr_count = 0;
 	int target_freq = 0;
-	double prob            = 0.0;
 	double target_distprob = 0.0;
 	double entropy         = 0.0;
 	cnt = vd->size();
@@ -3531,7 +3494,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 
 	  // Prob. of this item in distribution.
 	  //
-	  prob     = (double)wght / (double)distr_count;
+	  double prob = (double)wght / (double)distr_count;
 	  entropy -= ( prob * log2(prob) );
 
 	  if ( tvs == target ) { // The correct answer was in the distribution!
@@ -3918,10 +3881,8 @@ int sml( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  unsigned long hpx_entries = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   std::map<std::string,int> hpxfreqs; // hapaxed list
   std::ifstream file_lexicon( lexicon_filename.c_str() );
@@ -3934,6 +3895,7 @@ int sml( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
@@ -3942,7 +3904,6 @@ int sml( Logfile& l, Config& c ) {
       }
       if ( wfreq > hapax ) {
 	hpxfreqs[a_word] = wfreq;
-	++hpx_entries;
       }
     }
     file_lexicon.close();
@@ -3953,13 +3914,13 @@ int sml( Logfile& l, Config& c ) {
   // Make mapping <int, double> from c to c* ?
   //
   std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
+    int Nc0;
+    double Nc1; // this is c*
+    int count;
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
@@ -4072,11 +4033,11 @@ int sml( Logfile& l, Config& c ) {
 	std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	bool   target_unknown = false;
 	bool   correct_answer = false;
-	double target_lexfreq = 0.0;// should be double because smoothing
 	double target_lexprob = 0.0;
 	if ( wfi == wfreqs.end() ) {
 	  target_unknown = true;
 	} else {
+	  double target_lexfreq; // should be double because smoothing
 	  target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
 	  std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
 	  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
@@ -4130,7 +4091,6 @@ int sml( Logfile& l, Config& c ) {
 	int cnt = 0;
 	int distr_count = 0;
 	int target_freq = 0;
-	double prob            = 0.0;
 	double target_distprob = 0.0;
 	double entropy         = 0.0;
 	cnt = vd->size();
@@ -4147,7 +4107,7 @@ int sml( Logfile& l, Config& c ) {
 
 	  // Prob. of this item in distribution.
 	  //
-	  prob     = (double)wght / (double)distr_count;
+	  double prob = (double)wght / (double)distr_count;
 	  entropy -= ( prob * log2(prob) );
 
 	  if ( tvs == target ) { // The correct answer was in the distribution!
@@ -4196,7 +4156,6 @@ int sml( Logfile& l, Config& c ) {
 	// Filter distro, recalc confidence
 	std::vector<std::string> c_set = c_sets[target]; //check error(?)
 	std::string top_c;
-	double top_f = -1;
 	double sum_f = 0;
 	size_t cc = 0;
 	std::vector<distr_elem*> filtered_distr_vec;
@@ -4212,7 +4171,7 @@ int sml( Logfile& l, Config& c ) {
 	if ( cc > 0 ) { // found 1 or more elements from set
 	  if ( sum_f > 0 ) { // it should be...
 	    top_c = filtered_distr_vec[0]->name;
-	    top_f = filtered_distr_vec[0]->freq;
+	    double top_f = filtered_distr_vec[0]->freq;
 	    the_confidence = top_f / sum_f;
 	  }
 	  if ( (the_confidence >= confidence) || ( the_confidence < 0 ) ) {

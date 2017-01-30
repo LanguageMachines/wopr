@@ -38,17 +38,23 @@ class Expert {
 
   //! Constructor.
   //!
-  Expert( const std::string& n ) {
-	id     = n;
-	type   = 1;
-	called = 0;
-  }
+ explicit Expert( const std::string& n ): Expert( n, 1 )
+    {
+    };
 
-  Expert( const std::string& n, int t ) {
-	id     = n;
-	type   = t;
-	called = 0;
-  }
+ Expert( const std::string& n, int t ):
+  id( n ),
+    type( t ),
+    offset( 0 ),
+    called( 0 ),
+    highest_f( 0 )
+#ifdef TIMBL
+    , My_Experiment( 0),
+    vd( 0 ),
+    tv( 0 )
+#endif
+      {
+      };
 
   //! Destructor.
   //!
@@ -123,4 +129,3 @@ class Expert {
 };
 
 #endif
-
