@@ -37,14 +37,13 @@
 int server2( Logfile&, Config& );
 std::string json_safe( const std::string& );
 std::string str_clean( const std::string& );
-int parse_distribution( std::string, std::map<std::string, double>& );
 
 #ifdef TIMBL
 int socket_file( Logfile&, Config&,
 		 Timbl::TimblAPI *, const std::string&,
 		 std::map<std::string,int>&, unsigned long);
-int parse_distribution2( const Timbl::ValueDistribution*,
-			 std::map<std::string, double>&);
+int parse_distribution( const Timbl::ValueDistribution*,
+			std::map<std::string, double>&);
 int dist_to_xml( const Timbl::ValueDistribution*, std::string&, std::string& );
 #endif
 

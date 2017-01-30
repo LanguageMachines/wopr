@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2016 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck  Ko van der Sloot                       *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -115,7 +115,6 @@ int server2(Logfile& l, Config& c) {
   const int verbose = my_stoi( c.get_value( "verbose", "0" ));
   int ws = my_stoi( c.get_value( "ws", "7" ));
   int hapax = my_stoi( c.get_value( "hpx", "0" ));
-  std::string hpx_sym = c.get_value("hpx_sym", "<unk>"); // not used, hardcoded in hapax_line
   double unk_prob = my_stod( c.get_value( "unk_prob", "0.000001" ));
   const int sentence = my_stoi( c.get_value( "sentence", "1" ));
 
@@ -170,8 +169,6 @@ int server2(Logfile& l, Config& c) {
   key_t wopr_id = (key_t)my_stoi( c.get_value( "id", "88" ));
   int   msqid   = msgget( wopr_id, 0666 | IPC_CREAT );
 
-  std::string distrib;
-  std::vector<std::string> distribution;
   std::string result;
   const Timbl::TargetValue *tv;
 
@@ -210,7 +207,6 @@ int server2(Logfile& l, Config& c) {
       }
 
       //newSock->write( "Greetings, earthling.\n" );
-      std::string buf;
 
       // Measure processing time.
       //
@@ -218,279 +214,275 @@ int server2(Logfile& l, Config& c) {
 
       if ( c.get_status() && ( ! fork() )) { // this is the child process
 
-		bool connection_open = true;
-		while ( connection_open ) {
+	bool connection_open = true;
+	while ( connection_open ) {
 
-		  long f000 = l.clock_mu_secs();
+	  long f000 = l.clock_mu_secs();
 
-		  std::string tmp_buf;
-		  newSock->read( tmp_buf );
-		  tmp_buf = trim( tmp_buf, " \n\r" );
+	  std::string tmp_buf;
+	  newSock->read( tmp_buf );
+	  tmp_buf = trim( tmp_buf, " \n\r" );
 
-		  long f001 = l.clock_mu_secs();
-		  long diff001 = f001 - f000;
-		  l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
+	  long f001 = l.clock_mu_secs();
+	  long diff001 = f001 - f000;
+	  l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
 
-		  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
-			connection_open = false;
-			break;
-		  }
+	  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
+	    connection_open = false;
+	    break;
+	  }
 
-		  // ----
-		  // here we got a line to test. Now what if this were a filename?
-		  // Start looping over file here.
-		  // ----
+	  // ----
+	  // here we got a line to test. Now what if this were a filename?
+	  // Start looping over file here.
+	  // ----
 
-		  if ( tmp_buf.substr( 0, 5 ) == "file:" ) {
+	  if ( tmp_buf.substr( 0, 5 ) == "file:" ) {
 
-			l.log( "NOTICE: file mode in socket!" );
-			size_t pos = tmp_buf.find( ':', 0 );
-			if ( pos != std::string::npos ) {
-			  std::string lhs = trim(tmp_buf.substr( 0, pos ));
-			  std::string rhs = trim(tmp_buf.substr( pos+1 ));
-			  l.log( "Filename: " + rhs );
-			  socket_file( l, c, My_Experiment, rhs, wfreqs, total_count);
-			  std::string p = "ready.";
-			  newSock->write( p );
-			} else {
-			  l.log( "ERROR: cannot parse filename." );
-			}
-		  }
+	    l.log( "NOTICE: file mode in socket!" );
+	    size_t pos = tmp_buf.find( ':', 0 );
+	    if ( pos != std::string::npos ) {
+	      std::string rhs = trim(tmp_buf.substr( pos+1 ));
+	      l.log( "Filename: " + rhs );
+	      socket_file( l, c, My_Experiment, rhs, wfreqs, total_count);
+	      std::string p = "ready.";
+	      newSock->write( p );
+	    } else {
+	      l.log( "ERROR: cannot parse filename." );
+	    }
+	  }
 
-		  //
-		  // ----
+	  //
+	  // ----
 
-		  // Hapax.
-		  //
-		  std::string classify_line;
-		  if ( hapax > 0 ) {
-			hapax_line( tmp_buf, wfreqs, classify_line );
-		  } else {
-			classify_line = tmp_buf;
-		  }
+	  // Hapax.
+	  //
+	  std::string classify_line;
+	  if ( hapax > 0 ) {
+	    hapax_line( tmp_buf, wfreqs, classify_line );
+	  } else {
+	    classify_line = tmp_buf;
+	  }
 
-		  // Start & end symbols. Set sentence:0 to enable.
-		  //
-		  std::string ssym = "<s>";
-		  std::string esym = "</s>";
-		  if ( sentence == 1 ) {
-			classify_line = ssym + " " + classify_line + " " + esym;
-		  }
-		  l.log( "|" + classify_line + "|" );
+	  // Start & end symbols. Set sentence:0 to enable.
+	  //
+	  std::string ssym = "<s>";
+	  std::string esym = "</s>";
+	  if ( sentence == 1 ) {
+	    classify_line = ssym + " " + classify_line + " " + esym;
+	  }
+	  l.log( "|" + classify_line + "|" );
 
-		  std::vector<std::string> results;
-		  std::vector<std::string> targets;
+	  std::vector<std::string> results;
+	  std::vector<std::string> targets;
 
-		  // The targets are in a seperate array, which is (in this case)
-		  // the same as the input line.
-		  //
-		  std::string t;
-		  if ( (hapax > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
-			hapax_line( tmp_buf, wfreqs, t );
-		  } else {
-			t = tmp_buf;
-		  }
-		  if ( sentence == 1 ) {
-			t = ssym + " " + t + " " + esym;
-		  }
-		  Tokenize( t, targets, ' ' );
-		  std::vector<std::string>::iterator ti = targets.begin();
+	  // The targets are in a seperate array, which is (in this case)
+	  // the same as the input line.
+	  //
+	  std::string t;
+	  if ( (hapax > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
+	    hapax_line( tmp_buf, wfreqs, t );
+	  } else {
+	    t = tmp_buf;
+	  }
+	  if ( sentence == 1 ) {
+	    t = ssym + " " + t + " " + esym;
+	  }
+	  Tokenize( t, targets, ' ' );
+	  std::vector<std::string>::iterator ti = targets.begin();
 
-		  double total_logprob = 0.0; // Sum of log2(p)
+	  double total_logprob = 0.0; // Sum of log2(p)
 
-		  // The JSON reply to the client (nc or timbl.php).
-		  //
-		  std::string q;
-		  std::string json;
-		  std::string js_cl;
-		  std::string js_p;
-		  if ( output == 1 ) { // 1 is JSON output
-			q     = "\'";
-			json  = "{"+q+"results"+q+":[";
-			js_cl = q+"classifications"+q+":[";
-			js_p  = q+"probs"+q+":["; // what kind op probabilities
-		  }
+	  // The JSON reply to the client (nc or timbl.php).
+	  //
+	  std::string q;
+	  std::string json;
+	  std::string js_cl;
+	  std::string js_p;
+	  if ( output == 1 ) { // 1 is JSON output
+	    q     = "\'";
+	    json  = "{"+q+"results"+q+":[";
+	    js_cl = q+"classifications"+q+":[";
+	    js_p  = q+"probs"+q+":["; // what kind op probabilities
+	  }
 
-		  // results is an array with the line windowed.
-		  // The targets are in another array.
-		  //
-		  // WHERE DO WE HAPAX? After, or before we window?
-		  //
-		  window( classify_line, t, ws, 0, 0, false, results );
-		  for ( const auto& cl : results ) {
+	  // results is an array with the line windowed.
+	  // The targets are in another array.
+	  //
+	  // WHERE DO WE HAPAX? After, or before we window?
+	  //
+	  window( classify_line, t, ws, 0, 0, false, results );
+	  for ( const auto& cl : results ) {
 
-		    //l.log( cl ); // debug output
+	    //l.log( cl ); // debug output
 
-		    // Classify this buf.
-		    //
-		    // Update: If the last word in the context (the word before the
-		    // target is unknown, we skip Timbl, and take the a priori
-		    // word probability from the lexicon. This avoids Timbl
-		    // failing on the top-node and returning a distribution
-		    // containing everything.
-		    //
-		    std::string target = *ti;
+	    // Classify this buf.
+	    //
+	    // Update: If the last word in the context (the word before the
+	    // target is unknown, we skip Timbl, and take the a priori
+	    // word probability from the lexicon. This avoids Timbl
+	    // failing on the top-node and returning a distribution
+	    // containing everything.
+	    //
+	    std::string target = *ti;
 
-		    // Determine word before target. Look it up.
+	    // Determine word before target. Look it up.
 
-		    std::vector<std::string> lcs; // left context, last word.
-		    Tokenize( cl, lcs, ' ' );
-		    std::string lc = lcs.at(ws-1);
-		    double distance;
-		    const Timbl::ValueDistribution *vd = 0;
-		    tv = My_Experiment->Classify( cl, vd, distance );
-		    if ( ! tv ) {
-		      l.log("ERROR: Timbl returned a classification error, aborting.");
-		      break;
-		    }
-		    result = tv->Name();
-		    // Grok the distribution returned by Timbl.
-		    //
-		    std::map<std::string, double> res;
-		    parse_distribution2( vd, res ); // was parse_distribution(...)
+	    double distance;
+	    const Timbl::ValueDistribution *vd = 0;
+	    tv = My_Experiment->Classify( cl, vd, distance );
+	    if ( ! tv ) {
+	      l.log("ERROR: Timbl returned a classification error, aborting.");
+	      break;
+	    }
+	    result = tv->Name();
+	    // Grok the distribution returned by Timbl.
+	    //
+	    std::map<std::string, double> res;
+	    parse_distribution( vd, res );
 
-		    // Start calculating.
-		    //
-		    double prob = 0.0;
-		    if ( target == result ) {
-		      // we got it, no confusion.
-		      // Count right answers?
-		    }
-		    //
-		    // Look for the target word in the distribution returned by Timbl.
-		    // If it wasn't, look it up in the lexicon.
-		    //   If in lexicon, take lexicon prob.
-		    //   If not in lexicon, unknown, take default low prob. SMOOTHING!
-		    // If it was in distribution
-		    //    Take prob. in distribution.
-		    //
-		    std::map<std::string,double>::iterator foo = res.find(target);
-		    if ( foo == res.end() ) { // not found. Problem for log.
-		      //
-		      // Fall back 1: look up in dictionary.
-		      //
-		      std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-		      if ( wfi == wfreqs.end() ) { // not found.
-			if ( output == 1) {
-			  js_p = js_p + "{" + q + json_safe(target) + q + ":"
-			    + q + "unk" + q + "}";
-			}
-		      } else {
-			// Found, take p(word in lexicon)
-			//
-			prob = (int)(*wfi).second / (double)total_count ;
-			if ( output == 1) {
-			  js_p = js_p + "{" + q + json_safe(target) + q + ":"
-			    + q + "lex" + q + "}";
-			}
-		      }
-		    } else {
-		      //
-		      // Our target was in the distribution returned by Timbl.
-		      // Take the probability of word in distribution.
-		      //
-		      prob = (*foo).second;
-		      if ( output == 1 ) {
-			js_p = js_p + "{" + q + json_safe(target) + q + ":"
-			  + q + "dist" + q + "}";
-		      }
-		    }
+	    // Start calculating.
+	    //
+	    double prob = 0.0;
+	    if ( target == result ) {
+	      // we got it, no confusion.
+	      // Count right answers?
+	    }
+	    //
+	    // Look for the target word in the distribution returned by Timbl.
+	    // If it wasn't, look it up in the lexicon.
+	    //   If in lexicon, take lexicon prob.
+	    //   If not in lexicon, unknown, take default low prob. SMOOTHING!
+	    // If it was in distribution
+	    //    Take prob. in distribution.
+	    //
+	    std::map<std::string,double>::iterator foo = res.find(target);
+	    if ( foo == res.end() ) { // not found. Problem for log.
+	      //
+	      // Fall back 1: look up in dictionary.
+	      //
+	      std::map<std::string,int>::iterator wfi = wfreqs.find(target);
+	      if ( wfi == wfreqs.end() ) { // not found.
+		if ( output == 1) {
+		  js_p = js_p + "{" + q + json_safe(target) + q + ":"
+		    + q + "unk" + q + "}";
+		}
+	      } else {
+		// Found, take p(word in lexicon)
+		//
+		prob = (int)(*wfi).second / (double)total_count ;
+		if ( output == 1) {
+		  js_p = js_p + "{" + q + json_safe(target) + q + ":"
+		    + q + "lex" + q + "}";
+		}
+	      }
+	    } else {
+	      //
+	      // Our target was in the distribution returned by Timbl.
+	      // Take the probability of word in distribution.
+	      //
+	      prob = (*foo).second;
+	      if ( output == 1 ) {
+		js_p = js_p + "{" + q + json_safe(target) + q + ":"
+		  + q + "dist" + q + "}";
+	      }
+	    }
 
-		    // Good Turing smoothing oid. implementeren :)
-		    //
-		    if ( prob == 0.0 ) {
-		      prob = unk_prob; // KLUDGE!!! for testing.
-		    }
-		    total_logprob += log2( prob );
+	    // Good Turing smoothing oid. implementeren :)
+	    //
+	    if ( prob == 0.0 ) {
+	      prob = unk_prob; // KLUDGE!!! for testing.
+	    }
+	    total_logprob += log2( prob );
 
-		    if ( verbose == 1 ) {
-		      l.log( "[" + cl + "] = " + result );
-		    }
+	    if ( verbose == 1 ) {
+	      l.log( "[" + cl + "] = " + result );
+	    }
 
-		    /* Takes time!
-		       std::cout << "[" << cl << "] = " << result
-		       << "/" << distance << " "
-		       << res.size() << " "
-		       << "p("+target+")=" << prob
-		       << std::endl;
-		       //std::cout << distrib << std::endl;
-		       */
+	    /* Takes time!
+	       std::cout << "[" << cl << "] = " << result
+	       << "/" << distance << " "
+	       << res.size() << " "
+	       << "p("+target+")=" << prob
+	       << std::endl;
+	       //std::cout << distrib << std::endl;
+	       */
 
-		    if ( output == 1 ) {
-		      json = json + "{" + q + json_safe(result) + q + ":"
-			+ q + to_str( prob, precision ) + q + "}";
+	    if ( output == 1 ) {
+	      json = json + "{" + q + json_safe(result) + q + ":"
+		+ q + to_str( prob, precision ) + q + "}";
 
-		      js_cl = js_cl + "{" + q + json_safe(target) + q + ":"
-			+ q + json_safe(result) + q + "}";
+	      js_cl = js_cl + "{" + q + json_safe(target) + q + ":"
+		+ q + json_safe(result) + q + "}";
 
-		      if ( &cl != &results.back() ) { // add a comma except for the last
-			json  = json  + ",";
-			js_cl = js_cl + ",";
-			js_p  = js_p  + ",";
-		      }
-		    }
-		    result = result + " " + to_str(prob, precision) + "\n"; // not used?
+	      if ( &cl != &results.back() ) { // add a comma except for the last
+		json  = json  + ",";
+		js_cl = js_cl + ",";
+		js_p  = js_p  + ",";
+	      }
+	    }
+	    result = result + " " + to_str(prob, precision) + "\n"; // not used?
 
-		    //if (send(new_fd, result.c_str(), result.length(), 0) == -1)
-		    //perror("send");
+	    //if (send(new_fd, result.c_str(), result.length(), 0) == -1)
+	    //perror("send");
 
-		    ++ti;
-		  } // end sentence
+	    ++ti;
+	  } // end sentence
 
-		  long f2 = l.clock_mu_secs();
-		  long diff_mu_secs = f2 - f001;
-		  l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
+	  long f2 = l.clock_mu_secs();
+	  long diff_mu_secs = f2 - f001;
+	  l.log( "Processing took (mu-sec): " + to_str(diff_mu_secs) );
 
-		  total_logprob = - total_logprob;
-		  double avg_logprob = total_logprob / (double)results.size();
-		  double total_prplx = pow( 2, avg_logprob );
-		  l.log( "total_prplx = " + to_str(total_prplx) );
-		  result = to_str(total_prplx, precision) + "\n";
+	  total_logprob = - total_logprob;
+	  double avg_logprob = total_logprob / (double)results.size();
+	  double total_prplx = pow( 2, avg_logprob );
+	  l.log( "total_prplx = " + to_str(total_prplx) );
+	  result = to_str(total_prplx, precision) + "\n";
 
-		  if ( output == 1 ) {
-			json = json + "]," + q + "prplx" + q + ":"
-			  + q + to_str(total_prplx, precision) + q;
+	  if ( output == 1 ) {
+	    json = json + "]," + q + "prplx" + q + ":"
+	      + q + to_str(total_prplx, precision) + q;
 
-			js_cl = js_cl + "]";
-			js_p = js_p + "]";
+	    js_cl = js_cl + "]";
+	    js_p = js_p + "]";
 
-			json = json + "," + q + "ibasefile" + q + ":"
-			  + q + c.get_value( "ibasefile" ) + q;
+	    json = json + "," + q + "ibasefile" + q + ":"
+	      + q + c.get_value( "ibasefile" ) + q;
 
-			json = json + "," + q + "lexicon" + q + ":"
-			  + q + lexicon_filename + q;
+	    json = json + "," + q + "lexicon" + q + ":"
+	      + q + lexicon_filename + q;
 
-			json = json + "," + q + "total_count" + q + ":"
-			  + q + to_str( total_count ) + q;
+	    json = json + "," + q + "total_count" + q + ":"
+	      + q + to_str( total_count ) + q;
 
-			json = json + "," + q + "status" + q + ":"
-			  + q + "ok" + q;
+	    json = json + "," + q + "status" + q + ":"
+	      + q + "ok" + q;
 
-			json = json + "," + q + "microseconds" + q + ":"
-			  + q + to_str(diff_mu_secs) + q;
+	    json = json + "," + q + "microseconds" + q + ":"
+	      + q + to_str(diff_mu_secs) + q;
 
-			json = json + "," + js_cl;
-			json = json + "," + js_p;
+	    json = json + "," + js_cl;
+	    json = json + "," + js_p;
 
-			json = json + " }\n";
+	    json = json + " }\n";
 
-			// Should send extra info from c?
+	    // Should send extra info from c?
 
-			newSock->write( json );
-		  }
+	    newSock->write( json );
+	  }
 
-		  if ( output == 0 ) { // 0 is perplexity only
-			std::string p = to_str(total_prplx) + "\n";
-			newSock->write( p );
-		  }
+	  if ( output == 0 ) { // 0 is perplexity only
+	    std::string p = to_str(total_prplx) + "\n";
+	    newSock->write( p );
+	  }
 
-		  //close(new_fd);
+	  //close(new_fd);
 
-		  long f3 = l.clock_mu_secs();
-		  long diff2_mu_secs = f3 - f2;
-		  l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
-		} // connection_open
-		_exit(0);
+	  long f3 = l.clock_mu_secs();
+	  long diff2_mu_secs = f3 - f2;
+	  l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
+	} // connection_open
+	_exit(0);
       } // fork
       delete newSock;
     }
@@ -554,8 +546,8 @@ std::string str_clean( const std::string& s ) {
 // tv = My_Experiment->Classify( *ri, vd );
 //
 #ifdef TIMBL
-int parse_distribution2( const Timbl::ValueDistribution* vd,
-			 std::map<std::string, double>& res ) {
+int parse_distribution( const Timbl::ValueDistribution* vd,
+			std::map<std::string, double>& res ) {
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   int distr_count = vd->totalSize();
@@ -576,60 +568,6 @@ int parse_distribution2( const Timbl::ValueDistribution* vd,
   return 0;
 }
 #endif
-
-// Insert smoothed values here?
-//
-int parse_distribution( std::string& dist, std::map<std::string, double>& res ) {
-
-  std::vector<std::string> distribution;
-
-  Tokenize( dist, distribution, ' ' );
-  //
-  // nu hebben we paren? Eerste { overslaan.
-  //
-  bool is_class = true;
-  int  sum      = 0;
-  int  d_size   = 0;
-  std::string a_class;
-
-  for ( size_t i = 1; i < distribution.size(); i++ ) {
-    std::string token = distribution.at(i);
-    if ( (token == "{") || (token == "}")) {
-      continue;
-    }
-    if ( is_class ) { // the class
-      ++d_size;
-      a_class = token;
-    } else { // the frequency, absolute count.
-      token = token.substr(0, token.length()-1);
-      int i_token = my_stoi( token );
-      if ( i_token > 0 ) {
-	sum += i_token; // als +G, this is 0
-	res[a_class] = my_stoi( token );
-      } else {
-	res[a_class] = my_stod( token );
-      }
-    }
-    is_class = ( ! is_class );
-  }
-
-  // If we run with +G, we get sum == 0, we don't have to normalize in
-  // this case.
-  //
-  if ( sum == 0 ) {
-    return 0;
-  }
-
-  // Normalize.
-  //
-  for ( auto& iter : res ) {
-    //std::cout << iter.first << " " << iter.second << "\n";
-    iter.second = (double)iter.second / (double)sum;
-    //std::cout << iterfirst << " " << itersecond << "\n";
-  }
-
-  return 0;
-}
 
 // File from socket.
 //
@@ -662,8 +600,6 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 
   std::string classify_line;
   std::string tmp_buf;
-  std::string distrib;
-  std::vector<std::string> distribution;
   std::string result;
   double distance;
   const Timbl::ValueDistribution *vd;
@@ -688,7 +624,6 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 
     std::vector<std::string> results;
     std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
 
     // The targets are in a seperate array, which is (in this case)
     // the same as the input line.
@@ -752,15 +687,13 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 	//
 	//l.log( "Skipping Timbl for unknown context word:" + lc );
 	result   = "__SKIPPED__"; // make sure this is not in lexicon...
-	distrib  = "{}";
 	distance = 10.0;
       }
 
       // Grok the distribution returned by Timbl.
       //
       std::map<std::string, double> res;
-      //parse_distribution( distrib, res );
-      parse_distribution2( vd, res );
+      parse_distribution( vd, res );
 
       // Start calculating.
       //
@@ -935,8 +868,6 @@ int server4(Logfile& l, Config& c) {
   file_lexicon.close();
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
-  std::string distrib;
-  std::vector<std::string> distribution;
   std::string result;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
@@ -979,7 +910,6 @@ int server4(Logfile& l, Config& c) {
       int cpid = fork();
       if ( cpid == 0 ) { // child process
 
-	std::string buf;
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
@@ -1127,21 +1057,20 @@ int server4(Logfile& l, Config& c) {
 	      //
 	      // Grok the distribution returned by Timbl.
 	      //
-	      std::map<std::string, double> res;
 	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
 
-			std::string tvs  = it->second->Value()->Name();
-			double      wght = it->second->Weight(); // absolute frequency.
+		std::string tvs  = it->second->Value()->Name();
+		double      wght = it->second->Weight(); // absolute frequency.
 
-			if ( tvs == target ) { // The correct answer was in the distribution!
-			  target_freq = wght;
-			  if ( verbose > 1 ) {
-				l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
-			  }
-			}
+		if ( tvs == target ) { // The correct answer was in the distribution!
+		  target_freq = wght;
+		  if ( verbose > 1 ) {
+		    l.log( "Timbl answer in distr. "+ to_str(wght)+"/"+to_str(distr_count) );
+		  }
+		}
 
-			++it;
+		++it;
 	      } // end loop distribution
 
 	      if ( target_freq > 0 ) { //distr_count allways > 0.
@@ -1697,8 +1626,6 @@ int mbmt(Logfile& l, Config& c) {
   file_lexicon.close();
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
-  std::string distrib;
-  std::vector<std::string> distribution;
   std::string result;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
@@ -1737,7 +1664,6 @@ int mbmt(Logfile& l, Config& c) {
 	       + std::string(newSock->getClientName()) );
       }
 
-      std::string buf;
       bool connection_open = true;
       std::vector<std::string> cls; // classify lines
       std::vector<double> probs;
@@ -1996,6 +1922,7 @@ int webdemo(Logfile& l, Config& c) {
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   const std::string lexicon     = c.get_value( "lexicon" );
+  const int verbose             = my_stoi( c.get_value( "verbose", "1" ));
   const int lc                  = my_stoi( c.get_value( "lc", "2" ));
   const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& filterfile = c.get_value( "filterfile" );
@@ -2004,8 +1931,6 @@ int webdemo(Logfile& l, Config& c) {
   char hostname[256];
   gethostname( hostname, 256 );
   std::string info_str = std::string(hostname)+":"+port;
-
-  int verbose = 1;
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -2225,14 +2150,13 @@ int webdemo( Logfile& l, Config& c ) {
 // Iternal
 
 #if defined(TIMBLSERVER) && defined(TIMBL)
-int one(Logfile& l, Config& c) {
+int one( Logfile& l, Config& c) {
   l.log( "one." );
 
   const std::string& timbl      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-
-  int verbose = 1;
+  const int verbose             = my_stoi( c.get_value( "verbose", "1" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
@@ -2444,10 +2368,6 @@ int server_mg( Logfile& l, Config& c ) {
   int                fco              = my_stoi( c.get_value( "fco", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
 
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
-
   // specify default to be able to choose default classifier?
 
   l.inc_prefix();
@@ -2521,14 +2441,11 @@ int server_mg( Logfile& l, Config& c ) {
   }
 
 
-  std::string a_line;
-  std::vector<std::string> words;
   std::map<std::string, Classifier*>::iterator gci;
   std::string gate;
   std::string target;
 
   md2    multidist;
-  std::vector<md2_elem>::iterator dei;
   Classifier* cl = NULL; // classifier used.
   std::map<std::string,int>::iterator wfi;
 
@@ -2568,7 +2485,6 @@ int server_mg( Logfile& l, Config& c ) {
       int cpid = fork();
       if ( cpid == 0 ) { // child process
 
-	std::string buf;
 	bool connection_open = true;
 	std::vector<std::string> cls; // classify lines
 	std::vector<double> probs;
