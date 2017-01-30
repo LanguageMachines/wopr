@@ -83,7 +83,6 @@ int range_from_lex( Logfile& l, Config& c ) {
   // Load lexicon.
   //
   int wfreq;
-  std::map<std::string,int> wfreqs; // whole lexicon
   std::vector<lex_elem> lex_vec;
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
@@ -105,7 +104,6 @@ int range_from_lex( Logfile& l, Config& c ) {
   std::vector<int> wanted_freqs;
   std::vector<int>::iterator wfi;
   while ( file_lexicon >> a_word >> wfreq ) {
-    wfreqs[a_word] = wfreq;
     freqs_list[wfreq] = 1;
     lex_elem l;
     l.name = a_word;
@@ -136,7 +134,7 @@ int range_from_lex( Logfile& l, Config& c ) {
   fli = freqs_list.end();
   int idx = 1; // top-1 is the first one---+
   do {
-    *fli--;
+    --fli;
     if ( (idx >= m) && (idx < n) ) {
       wanted_freqs.push_back( (*fli).first ); // words with these freqs we want.
     }
@@ -155,7 +153,7 @@ int range_from_lex( Logfile& l, Config& c ) {
       range_out << (*li).name << " " << freq << "\n";
       ++cnt;
     }
-    li++;
+    ++li;
   }
   l.log( "Range file contains "+to_str(cnt)+ " items." );
   // --
@@ -363,7 +361,7 @@ int lcontext( Logfile& l, Config& c ) {
   std::string lc_str = "";
   di = global_context.begin()+gcs;
   do {
-    *di--;
+    --di;
     if ( gct == 0 ) { // Normal
       lc_str = lc_str + (*di).word + " ";
     } else { // binary
@@ -457,7 +455,7 @@ int lcontext( Logfile& l, Config& c ) {
       lc_str = "";
       gc_hash = 0;
       do {
-	*di--;
+	--di;
 	if ( gct == 0 ) { // Normal
 	  lc_str = lc_str + (*di).word + " ";
 	} else if ( gct == 1 ) { // binary
@@ -481,7 +479,7 @@ int lcontext( Logfile& l, Config& c ) {
       //
       di = global_context.begin()+gcs;
       do {
-	*di--;
+	--di;
 	--((*di).strength);
 	if ( (*di).strength <= 0 ) {
 	  *di = empty;
@@ -503,8 +501,8 @@ int lcontext( Logfile& l, Config& c ) {
   std::string stats_filename = output_filename + ".stats";
   file_out.open( stats_filename.c_str(), std::ios::out );
   if ( file_out ) {
-    for ( ri = range_stats.begin(); ri != range_stats.end(); ri++ ) {
-      file_out << (*ri).first << "\t" <<  (*ri).second << std::endl;
+    for ( const auto& ri : range_stats ) {
+      file_out << ri.first << "\t" <<  ri.second << std::endl;
     }
     file_out.close();
   }
@@ -649,7 +647,6 @@ int occgaps( Logfile& l, Config& c ) {
   //
   l.log( "Writing output." );
   std::map<std::string, Tvref >::iterator wpi;
-  Tvref::iterator vri;
   bool inside = false;
   for( wpi = word_positions.begin(); wpi != word_positions.end(); ++wpi ) {
 

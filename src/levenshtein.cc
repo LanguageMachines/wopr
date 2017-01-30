@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2016 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -386,7 +386,7 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
 #endif
 
 // call with "wopr -r wopr -p c:ld"
-int levenshtein( Logfile& l, Config& c ) {
+int levenshtein( Logfile& l, Config& ) {
 
   int mld = 5;
   int cs = true;
@@ -416,50 +416,27 @@ int levenshtein( Logfile& l, Config& c ) {
   return 0;
 }
 
-void distr_examine( const Timbl::ValueDistribution *vd, const std::string target,
-		    double& entropy) {
-  int distr_count = 0;
-  int target_freq = 0;
-  double prob            = 0.0;
-  //double entropy         = 0.0;
-
-  // Check if target word is in the distribution.
-  //
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
-  while ( it != vd->end() ) {
-    //const Timbl::TargetValue *tv = it->second->Value();
-
-    std::string tvs  = it->second->Value()->Name();
-    double      wght = it->second->Weight();
-
-    // Prob. of this item in distribution.
-    //
-    prob     = (double)wght / (double)distr_count;
-    entropy -= ( prob * log2(prob) );
-
-    if ( tvs == target ) { // The correct answer was in the distribution!
-      target_freq = wght;
-    }
-
-    ++it;
-  }
-  //target_distprob = (double)target_freq / (double)distr_count;
-}
-
 // The core, do the spelling correction on the distribution.
 // tv = My_Experiment->Classify( a_line, vd );
 //
-void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs, std::vector<distr_elem*>& distr_vec, int mld, double min_ratio, double target_lexfreq, bool cs, int min_df, double confidence) {
+void distr_spelcorr( const Timbl::ValueDistribution *vd,
+		     const std::string& target,
+		     std::map<std::string,int>& wfreqs,
+		     std::vector<distr_elem*>& distr_vec,
+		     int mld,
+		     double min_ratio,
+		     double target_lexfreq,
+		     bool cs,
+		     int min_df,
+		     double /* confidence */ ) {
 
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::map<std::string,int>::iterator tvsfi;
   std::map<std::string,int>::iterator wfi;
 
   // NB some of the test are outside this loop (max_distr, in_distr)
-  while ( it != vd->end() ) { // loop over distribution
-
-    std::string tvs  = it->second->Value()->Name(); // element in distribution
-    double      wght = it->second->Weight(); // frequency of distr. element
+  for ( const auto& it : *vd ) { // loop over distribution
+    std::string tvs  = it.second->Value()->Name(); // element in distribution
+    double      wght = it.second->Weight(); // frequency of distr. element
     // LD shortcut, if stringlength differs more than mld, we don't need to try
     int         ld   = lev_distance( target, tvs, mld, cs ); // LD with target (word in text)
 
@@ -467,10 +444,10 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
     // we include the result in our output.
     //
     if (
-		( ld > 0 ) &&
-		( ld <= mld ) &&
-		( (min_df == 0) || (wght >= min_df) )
-		) {
+	( ld > 0 ) &&
+	( ld <= mld ) &&
+	( (min_df == 0) || (wght >= min_df) )
+	) {
       //
       // So here we check frequency of element from the distr. with
       // frequency of the target. As parameter, we prolly already know it?
@@ -478,13 +455,12 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
       // it could be a misspelt word. Calculate the ratio between the
       // element from the distribution and the frequency of the target.
       // (PJB: should we not check target DISTR frequency?)
-      int    tvs_lf = 0;
       double factor = 0.0;
       wfi = wfreqs.find( tvs );
       // if we find distr. element in lexicon, and target is in lexicon
       if ( (wfi != wfreqs.end()) && (target_lexfreq > 0) ) {
-		tvs_lf =  (int)(*wfi).second;
-		factor = tvs_lf / target_lexfreq;
+	int tvs_lf = (int)(*wfi).second;
+	factor = tvs_lf / target_lexfreq;
       }
       //
       // std::cerr << tvs << "-" << tvs_lf << "/" << factor << std::endl;
@@ -509,49 +485,50 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& targ
 	distr_vec.push_back( d );
       } // factor>=min_ratio
     }
-
-    ++it;
   }
 }
 
 // test version paired with tcorrect.
 // Elements are added distr_vec
 //
-void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs, std::vector<distr_elem*>& distr_vec, int mld, bool cs,	int min_df, double confidence) {
+void tdistr_spelcorr( const Timbl::ValueDistribution *vd,
+		      const std::string& target,
+		      std::map<std::string,int>& wfreqs,
+		      std::vector<distr_elem*>& distr_vec,
+		      int mld,
+		      bool cs,
+		      int min_df,
+		      double /* confidence*/ ) {
 
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
   std::map<std::string,int>::iterator tvsfi;
-  std::map<std::string,int>::iterator wfi;
 
   // NB some of the test are outside this loop (max_distr, in_distr)
-  while ( it != vd->end() ) { // loop over distribution
+  for ( const auto& it : *vd ) { // loop over distribution
 
-    std::string tvs  = it->second->Value()->Name(); // element in distribution
-    double      wght = it->second->Weight(); // frequency of distr. element
-	// LD shortcut, if stringlength differs more than mld, we don't need to try
+    std::string tvs  = it.second->Value()->Name(); // element in distribution
+    double      wght = it.second->Weight(); // frequency of distr. element
+    // LD shortcut, if stringlength differs more than mld, we don't need to try
     int         ld   = lev_distance( target, tvs, mld, cs ); // LD with target (word in text)
 
-	// Checks if distribution value is to be included here.
-	// Levenshtein within bounds, or ld:0 to ignore
-	//
+    // Checks if distribution value is to be included here.
+    // Levenshtein within bounds, or ld:0 to ignore
+    //
     if ( ((ld > 0) && (ld <= mld)) || (mld == 0) ) {
-	  // min_df is minimum distribution frequency of token in distr.
-	  if ( (min_df == 0) || (wght >= min_df) ) { // min_df==0, ignore, else check
-		distr_elem* d = new distr_elem();
-		d->name = tvs;
-		d->freq = wght; //was ld. Freq not so useful, can be low for even
-		d->ld = ld;     // a correct, to the point, classification
-		tvsfi = wfreqs.find( tvs );
-		if ( tvsfi == wfreqs.end() ) {
-		  d->lexfreq = 0;
-		} else {
-		  d->lexfreq = (double)(*tvsfi).second;
-		}
-		distr_vec.push_back( d );
-	  } // min_df
+      // min_df is minimum distribution frequency of token in distr.
+      if ( (min_df == 0) || (wght >= min_df) ) { // min_df==0, ignore, else check
+	distr_elem* d = new distr_elem();
+	d->name = tvs;
+	d->freq = wght; //was ld. Freq not so useful, can be low for even
+	d->ld = ld;     // a correct, to the point, classification
+	tvsfi = wfreqs.find( tvs );
+	if ( tvsfi == wfreqs.end() ) {
+	  d->lexfreq = 0;
+	} else {
+	  d->lexfreq = (double)(*tvsfi).second;
+	}
+	distr_vec.push_back( d );
+      } // min_df
     } // ld
-
-    ++it;
   }
 }
 
@@ -584,8 +561,8 @@ int correct( Logfile& l, Config& c ) {
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  // std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  // std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl)
   int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
@@ -676,8 +653,7 @@ int correct( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
 
     if (file_exists(l,c,output_filename)) {
@@ -734,10 +710,8 @@ int correct( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  unsigned long hpx_entries = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   std::map<std::string,int> hpxfreqs; // hapaxed list
   std::ifstream file_lexicon( lexicon_filename.c_str() );
@@ -750,16 +724,16 @@ int correct( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
       if ( wfreq == 1 ) {
-		++N_1;
+	++N_1;
       }
-	  if ( wfreq > hapax ) {
-		hpxfreqs[a_word] = wfreq;
-		++hpx_entries;
-	  }
+      if ( wfreq > hapax ) {
+	hpxfreqs[a_word] = wfreq;
+      }
     }
     file_lexicon.close();
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
@@ -769,13 +743,13 @@ int correct( Logfile& l, Config& c ) {
   // Make mapping <int, double> from c to c* ?
   //
   std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
+    int Nc0;
+    double Nc1; // this is c*
+    int count;
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
@@ -797,8 +771,7 @@ int correct( Logfile& l, Config& c ) {
   }
   //l.log( "P(new_particular) = " + to_str(p0) );
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
 
     l.log( "Processing: "+a_file );
@@ -905,7 +878,7 @@ int correct( Logfile& l, Config& c ) {
 		if ( trigger_count > 0 ) {
 		  if ( triggers.find(target) == triggers.end() ) {
 			file_out << a_line << " (" << target << ") "
-					 << 0 << ' ' /*<< info << ' '*/ << 0 << ' ';
+					 << 0 << ' ' << 0 << ' ';
 			file_out << 0 << ' ';
 			file_out << 0 << " [ ";
 			file_out << "]";
@@ -962,7 +935,6 @@ int correct( Logfile& l, Config& c ) {
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
-		double prob            = 0.0;
 		double target_distprob = 0.0;
 		double entropy         = 0.0;
 		bool in_distr          = false;
@@ -980,7 +952,7 @@ int correct( Logfile& l, Config& c ) {
 
 		  // Prob. of this item in distribution.
 		  //
-		  prob     = (double)wght / (double)distr_count;
+		  double prob = (double)wght / (double)distr_count;
 		  entropy -= ( prob * log2(prob) );
 
 		  if ( tvs == target ) { // The correct answer was in the distribution!
@@ -1055,7 +1027,7 @@ int correct( Logfile& l, Config& c ) {
 		// distribution returned, and the top-10 (or less) of the distribution.
 		//
 		file_out << a_line << " (" << answer << ") "
-				 << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+				 << logprob << ' ' << entropy << ' ';
 		file_out << word_lp << ' ';
 		int cntr = 0;
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
@@ -1064,7 +1036,7 @@ int correct( Logfile& l, Config& c ) {
 		while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
 		  file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
 		  delete *fi;
-		  fi++;
+		  ++fi;
 		}
 		distr_vec.clear();
 		file_out << "]";
@@ -1114,7 +1086,7 @@ int correct( Logfile& l, Config& c ) {
     l.dec_prefix();
 
   }
-
+  delete My_Experiment;
   return 0;
 }
 #else
@@ -1143,8 +1115,8 @@ int tcorrect( Logfile& l, Config& c ) {
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  // std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  // std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl), ignored if 0.
   int                mwl              = my_stoi( c.get_value( "mwl", "0" ) );
   // maximum levenshtein distance (guess added if <= mld), or if 0 (ignores setting)
@@ -1237,8 +1209,7 @@ int tcorrect( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
 
     if (file_exists(l,c,output_filename)) {
@@ -1289,10 +1260,8 @@ int tcorrect( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  unsigned long hpx_entries = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   std::map<std::string,int> hpxfreqs; // hapaxed list
   std::ifstream file_lexicon( lexicon_filename.c_str() );
@@ -1305,6 +1274,7 @@ int tcorrect( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
@@ -1313,7 +1283,6 @@ int tcorrect( Logfile& l, Config& c ) {
       }
 	  if ( wfreq > hapax ) {
 		hpxfreqs[a_word] = wfreq;
-		++hpx_entries;
 	  }
     }
     file_lexicon.close();
@@ -1324,13 +1293,13 @@ int tcorrect( Logfile& l, Config& c ) {
   // Make mapping <int, double> from c to c* ?
   //
   std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
+    int Nc0;
+    double Nc1; // this is c*
+    int count;
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
@@ -1352,8 +1321,7 @@ int tcorrect( Logfile& l, Config& c ) {
   }
   //l.log( "P(new_particular) = " + to_str(p0) );
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
     std::string outlog_filename  = a_file + id + ".lg"; //LOG
 
@@ -1449,11 +1417,11 @@ int tcorrect( Logfile& l, Config& c ) {
 		std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 		bool   target_unknown = false;
 		bool   correct_answer = false;
-		double target_lexfreq = 0.0;// should be double because smoothing
 		double target_lexprob = 0.0;
 		if ( wfi == wfreqs.end() ) {
 		  target_unknown = true;
 		} else {
+		  double target_lexfreq;// should be double because smoothing
 		  target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
 		  std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
 		  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
@@ -1468,7 +1436,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		if ( trigger_count > 0 ) {
 		  if ( triggers.find(target) == triggers.end() ) {
 			file_out << a_line << " (" << target << ") "
-					 << 0 << ' ' /*<< info << ' '*/ << 0 << ' ';
+					 << 0 << ' ' << 0 << ' ';
 			file_out << 0 << ' ';
 			file_out << 0 << " [ ";
 			file_out << "]";
@@ -1525,7 +1493,6 @@ int tcorrect( Logfile& l, Config& c ) {
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
-		double prob            = 0.0;
 		double target_distprob = 0.0;
 		double entropy         = 0.0;
 		cnt = vd->size();
@@ -1542,7 +1509,7 @@ int tcorrect( Logfile& l, Config& c ) {
 
 		  // Prob. of this item in distribution.
 		  //
-		  prob     = (double)wght / (double)distr_count;
+		  double prob = (double)wght / (double)distr_count;
 		  entropy -= ( prob * log2(prob) );
 
 		  if ( tvs == target ) { // The correct answer was in the distribution!
@@ -1626,7 +1593,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		// distribution returned, and the top-10 (or less) of the distribution.
 		//
 		file_out << a_line << " (" << answer << ") "
-				 << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+				 << logprob << ' ' << entropy << ' ';
 		file_out << word_lp << ' ';
 		int cntr = 0;
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
@@ -1635,7 +1602,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
 		  file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
 		  delete *fi;
-		  fi++;
+		  ++fi;
 		}
 		distr_vec.clear();
 		file_out << "]";
@@ -1686,7 +1653,7 @@ int tcorrect( Logfile& l, Config& c ) {
     l.dec_prefix();
 
   }
-
+  delete My_Experiment;
   return 0;
 }
 #else
@@ -1717,6 +1684,9 @@ int server_sc( Logfile& l, Config& c ) {
   const int keep                = my_stoi( c.get_value( "keep", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const long cachesize          = my_stoi( c.get_value( "cs", "100000" ));
+  const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = my_stoi( c.get_value( "lc", "0" ));
+  const int          rc               = my_stoi( c.get_value( "rc", "0" ));
 
   int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
@@ -1746,12 +1716,6 @@ int server_sc( Logfile& l, Config& c ) {
   l.log( "min_ratio:  "+to_str(min_ratio) );
   l.dec_prefix();
 
-
-  // To be implemented later (maybe)
-  //
-  int mode  = 0;
-  int lc    = 0;
-  int rc    = 0;
 
   char sep = '\t';
 
@@ -1804,9 +1768,6 @@ int server_sc( Logfile& l, Config& c ) {
   volatile sig_atomic_t running = 1;
 
   try {
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( ibasefile );
-
     Sockets::ServerSocket server;
 
     if ( ! server.connect( port )) {
@@ -1817,6 +1778,8 @@ int server_sc( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
 
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
@@ -2005,21 +1968,17 @@ int server_sc( Logfile& l, Config& c ) {
 	    // Unknown words?
 	    //
 	    double logprob = 0.0;
-	    std::string info = "huh?";
 	    if ( target_freq > 0 ) { // Right answer was in distr.
 	      logprob = log2( target_distprob );
-	      info = "target_distprob";
 	    } else {
 	      if ( ! target_unknown ) { // Wrong, we take lex prob if known target
 		logprob = log2( target_lexprob );
-		info = "target_lexprob";
 	      } else {
 		//
 		// What to do here? We have an 'unknown' target, i.e. not in the
 		// lexicon.
 		//
 		logprob = log2( p0 );
-		info = "P(new_particular)";
 	      }
 	    }
 	    sum_logprob += logprob;
@@ -2102,15 +2061,17 @@ int server_sc( Logfile& l, Config& c ) {
 	    // Return all, seperated by sep (tab).
 
 	    answer = "";
-	    int cntr = -1;
-	    std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 	    if ( distr_vec.empty() ) {
 	      answer = empty;
 	    } else {
+	      int cntr = -1; // BUG: hardly useful !
+	      //                     --cntr == 0 after a very ong time
+	      std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
 	      while ( (fi != distr_vec.end()-1 ) && (--cntr != 0) ) {
+		//      there                        ^^^^^^^^^^
 		answer = answer + (*fi)->name + sep;
 		delete *fi;
-		fi++;
+		++fi;
 	      }
 	      answer = answer + (*fi)->name;
 	    }
@@ -2146,6 +2107,7 @@ int server_sc( Logfile& l, Config& c ) {
       delete newSock;
 
     }// running is true
+    delete My_Experiment;
   } //try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
@@ -2172,6 +2134,9 @@ int server_sc_nf( Logfile& l, Config& c ) {
   const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
   const int keep                = my_stoi( c.get_value( "keep", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
+  const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
+  const int          lc               = my_stoi( c.get_value( "lc", "0" ));
+  const int          rc               = my_stoi( c.get_value( "rc", "0" ));
 
   int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
@@ -2204,9 +2169,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
   // To be implemented later (maybe)
   //
   int hapax = 0;
-  int mode  = 0;
-  int lc    = 0;
-  int rc    = 0;
 
   char sep = '\t';
 
@@ -2264,8 +2226,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
   //l.log( "Starting server..." );
 
   try {
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( ibasefile );
 
     Sockets::ServerSocket server;
 
@@ -2277,6 +2237,8 @@ int server_sc_nf( Logfile& l, Config& c ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    (void)My_Experiment->GetInstanceBase( ibasefile );
 
     while ( true ) {  // main accept() loop
       l.log( "Listening..." );
@@ -2453,21 +2415,17 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  // Unknown words?
 	  //
 	  double logprob = 0.0;
-	  std::string info = "huh?";
 	  if ( target_freq > 0 ) { // Right answer was in distr.
 	    logprob = log2( target_distprob );
-	    info = "target_distprob";
 	  } else {
 	    if ( ! target_unknown ) { // Wrong, we take lex prob if known target
 	      logprob = log2( target_lexprob );
-	      info = "target_lexprob";
 	    } else {
 	      //
 	      // What to do here? We have an 'unknown' target, i.e. not in the
 	      // lexicon.
 	      //
 	      logprob = log2( p0 );
-	      info = "P(new_particular)";
 	    }
 	  }
 	  sum_logprob += logprob;
@@ -2557,7 +2515,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    while ( (fi != distr_vec.end()-1 ) && (--cntr != 0) ) {
 	      answer = answer + (*fi)->name + sep;
 	      delete *fi;
-	      fi++;
+	      ++fi;
 	    }
 	    answer = answer + (*fi)->name;
 	  }
@@ -2582,8 +2540,8 @@ int server_sc_nf( Logfile& l, Config& c ) {
       size_t ccs = cache->get_size();
       l.log( "Cache now: "+to_str(ccs)+"/"+to_str(cachesize)+" elements." );
       l.log( cache->stat() );
-
     }//true
+    delete My_Experiment;
   } //try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
@@ -2622,8 +2580,8 @@ int mcorrect( Logfile& l, Config& c ) {
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  // std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  // std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // minimum word length (guess added if > mwl)
   int                mwl              = my_stoi( c.get_value( "mwl", "5" ) );
   // maximum levenshtein distance (guess added if <= mld)
@@ -2649,11 +2607,6 @@ int mcorrect( Logfile& l, Config& c ) {
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   // Minimum max-depth of timbl answer
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
-
-  //Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   // No slash at end of dirname.
   //
@@ -2696,7 +2649,6 @@ int mcorrect( Logfile& l, Config& c ) {
   // they exists.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -2715,8 +2667,7 @@ int mcorrect( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
 
     if (file_exists(l,c,output_filename)) {
@@ -2765,8 +2716,6 @@ int mcorrect( Logfile& l, Config& c ) {
   // Read configfile with ibase definitions
   // --------------------------------------
 
-  std::vector<Expert*> exs;
-  std::vector<Expert*>::iterator exi;
   std::map<std::string,Expert*> triggers; // reverse list, trigger to expert
   std::map<std::string,int> called; // counter
 
@@ -2823,13 +2772,13 @@ int mcorrect( Logfile& l, Config& c ) {
   // Make mapping <int, double> from c to c* ?
   //
   std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
+    int Nc0;
+    double Nc1; // this is c*
+    int count;
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
@@ -2851,8 +2800,7 @@ int mcorrect( Logfile& l, Config& c ) {
   }
   //l.log( "P(new_particular) = " + to_str(p0) );
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
 
     l.log( "Processing: "+a_file );
@@ -2878,14 +2826,10 @@ int mcorrect( Logfile& l, Config& c ) {
       return -1;
     }
 
-    std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
-	std::string classify_line;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
+    std::string classify_line;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
@@ -2920,8 +2864,9 @@ int mcorrect( Logfile& l, Config& c ) {
 	  }
 
 	  for ( size_t i = 0; i < cls.size(); i++ ) {
+	    double target_lexfreq = 0.0;// should be double because smoothing
 
-		words.clear();
+	    words.clear();
 	    a_line = cls.at(i);
 		a_line = trim( a_line );
 
@@ -2945,16 +2890,15 @@ int mcorrect( Logfile& l, Config& c ) {
 		std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 		bool   target_unknown = false;
 		bool   correct_answer = false;
-		double target_lexfreq = 0.0;// should be double because smoothing
 		double target_lexprob = 0.0;
 		if ( wfi == wfreqs.end() ) {
 		  target_unknown = true;
 		} else {
-		  target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
+		  target_lexfreq = (int)(*wfi).second; // Take lexfreq, unless we smooth
 		  std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
 		  if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
-			target_lexfreq = (double)(*cfi).second;
-			//l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
+		    target_lexfreq = (double)(*cfi).second;
+		    //l.log( "smoothed_lexfreq = " + to_str(target_lexfreq) );
 		  }
 		  target_lexprob = (double)target_lexfreq / (double)total_count;
 		}
@@ -3136,7 +3080,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		// distribution returned, and the top-10 (or less) of the distribution.
 		//
 		file_out << a_line << " (" << answer << ") "
-			 << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+			 << logprob << ' ' << entropy << ' ';
 		file_out << word_lp << ' ';
 		int cntr = 0;
 		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() ); //NB: cmprev (versus cmp)
@@ -3145,7 +3089,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
 		  file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' '; // print LD or freq? old was LD, now freq
 		  delete *fi;
-		  fi++;
+		  ++fi;
 		}
 		distr_vec.clear();
 		file_out << "]";
@@ -3189,14 +3133,11 @@ int mcorrect( Logfile& l, Config& c ) {
       l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
     }
 
-	// print call statistics for triggers.
-	//
-	std::map<std::string,int>::const_iterator ci = called.begin();
-	while ( ci != called.end() ) {
-	  l.log( ci->first+": "+to_str(ci->second) );
-	  ci++;
-	}
-
+    // print call statistics for triggers.
+    //
+    for ( const auto& cl : called ) {
+      l.log( cl.first+": "+to_str(cl.second) );
+    }
     c.add_kv( "sc_file", output_filename );
     l.log( "SET sc_file to "+output_filename );
 
@@ -3230,8 +3171,8 @@ int cmcorrect( Logfile& l, Config& c ) {
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  // std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  // std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // offset for triggerpos, from the right, so 0 is the target position
   int                offset           = my_stoi( c.get_value( "offset", "0" ));
   // Ratio between top-1 frequency and sum of distribution frequencies
@@ -3239,11 +3180,6 @@ int cmcorrect( Logfile& l, Config& c ) {
   // Minimum max-depth of timbl answer
   int                min_md           = my_stoi( c.get_value( "min_md", "0" )); //0 is >=0, is allow all
   int                topn             = my_stoi( c.get_value( "topn", "0" ) );
-
-  //Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   // No slash at end of dirname.
   //
@@ -3277,7 +3213,6 @@ int cmcorrect( Logfile& l, Config& c ) {
   // they exists.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -3296,10 +3231,8 @@ int cmcorrect( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
-    std::string outlog_filename  = a_file + id + ".lg"; //LOG
 
     if (file_exists(l,c,output_filename)) {
       //l.log( "Output for "+a_file+" exists, removing from list." );
@@ -3347,8 +3280,6 @@ int cmcorrect( Logfile& l, Config& c ) {
   // Read configfile with ibase definitions
   // --------------------------------------
 
-  std::vector<Expert*> exs;
-  std::vector<Expert*>::iterator exi;
   std::map<std::string,Expert*> triggers; // reverse list, trigger to expert
   std::map<std::string,int> called; // counter
 
@@ -3421,8 +3352,7 @@ int cmcorrect( Logfile& l, Config& c ) {
   }
   //l.log( "P(new_particular) = " + to_str(p0) );
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
     std::string outlog_filename  = a_file + id + ".lg"; //LOG
 
@@ -3455,14 +3385,10 @@ int cmcorrect( Logfile& l, Config& c ) {
       return -1;
     }
 
-    std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
-	std::string classify_line;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
+    std::string classify_line;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
@@ -3667,7 +3593,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	    // this is our classification
 	    double word_lp = pow( 2, -logprob );
 	    file_out << a_line << " (" << answer << ") "
-		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+		     << logprob << ' ' << entropy << ' ';
 	    file_out << word_lp << ' ';
 	    file_out << cnt << " [ ";
 	    if ( topn > 0 ) {
@@ -3676,7 +3602,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	      //sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
 	      while ( (fi != distr_vec.end()) && (cntr-- != 0) ) {
 		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-		fi++;
+		++fi;
 	      }
 	    }
 	    file_out << "]";
@@ -3684,7 +3610,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	    fi = distr_vec.begin();
 	    while ( fi != distr_vec.end() ) {
 	      delete *fi;
-	      fi++;
+	      ++fi;
 	    }
 	    distr_vec.clear();
 	  } // confidence
@@ -3738,10 +3664,8 @@ int cmcorrect( Logfile& l, Config& c ) {
 
     // print call statistics for triggers.
     //
-    std::map<std::string,int>::const_iterator ci = called.begin();
-    while ( ci != called.end() ) {
-      l.log( ci->first+": "+to_str(ci->second) );
-      ci++;
+    for ( const auto& c : called ) {
+      l.log( c.first+": "+to_str(c.second) );
     }
 
     c.add_kv( "sc_file", output_filename );
@@ -3770,14 +3694,13 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
   double distr_count = 0;
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
-  std::vector<std::string>::iterator si;
 
   while ( it != vd->end() ) { // loop over distribution
     std::string tvs  = it->second->Value()->Name(); // element in distribution
     double      wght = it->second->Weight(); // frequency of distr. element
 
-    for ( si = a_set.begin(); si != a_set.end(); si++ ) { //should be outer
-      if ( (*si) == tvs ) {
+    for ( const auto& si : a_set ) { //should be outer
+      if ( si == tvs ) {
 	distr_elem *d = new distr_elem(tvs, wght, 0); //last index?
 	distr_vec.push_back( d );
 	++cnt;
@@ -3799,7 +3722,6 @@ double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& 
   double distr_count = 0;
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
-  std::vector<std::string>::iterator si;
 
   while ( it != vd->end() ) { // loop over distribution
     std::string tvs  = it->second->Value()->Name(); // element in distribution
@@ -3835,16 +3757,13 @@ int sml( Logfile& l, Config& c ) {
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   //std::string        output_filename  = filename + id + ".sc";
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  // std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  // std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   // Ratio between top-1 frequency and sum of rest of distribution frequencies
   double             confidence      = my_stod( c.get_value( "confidence", "0" ));
   int                topn            = my_stoi( c.get_value( "topn", "0" ) );
 
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
 #if defined(HAVE_TR1_UNORDERED_SET)
   std::tr1::unordered_set<std::string> triggers;
@@ -3890,7 +3809,6 @@ int sml( Logfile& l, Config& c ) {
   // they exists.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -3909,8 +3827,7 @@ int sml( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
 
     if (file_exists(l,c,output_filename)) {
@@ -3963,20 +3880,17 @@ int sml( Logfile& l, Config& c ) {
       l.log( "Reading sets." );
       std::string a_line;
       int set_count = 0;
-      std::vector<std::string>::iterator wi;
       while( std::getline( file_triggers, a_line )) {
 	if ( a_line[0] != '#' ) {
-	  std::string a_word;
 	  words.clear();
 	  ++set_count;
 	  Tokenize( a_line, words );
 	  std::vector<std::string> c_set;
-	  for ( wi = words.begin(); wi != words.end(); wi++ ) {
-	    c_set.push_back(*wi);
-	    //l.log( (*wi)+" "+a_line);
+	  for ( const auto& w : words ) {
+	    c_set.push_back(w);
 	  }
-	  for ( wi = words.begin(); wi != words.end(); wi++ ) {
-	    c_sets[*wi] = c_set;
+	  for ( const auto& w : words ) {
+	    c_sets[w] = c_set;
 	  }
 	}
       }
@@ -4067,8 +3981,7 @@ int sml( Logfile& l, Config& c ) {
   }
   //l.log( "P(new_particular) = " + to_str(p0) );
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".sc";
     std::string outlog_filename  = a_file + id + ".lg"; //LOG
 
@@ -4101,14 +4014,10 @@ int sml( Logfile& l, Config& c ) {
       return -1;
     }
 
-    std::vector<std::string>::iterator vi;
     std::ostream_iterator<std::string> output( file_out, " " );
 
     std::string a_line;
     std::string classify_line;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     int correct = 0;
@@ -4182,7 +4091,7 @@ int sml( Logfile& l, Config& c ) {
 	if ( trigger_count > 0 ) {
 	  if ( triggers.find(target) == triggers.end() ) {
 	    file_out << a_line << " (" << target << ") "
-		     << 0 << ' ' /*<< info << ' '*/ << 0 << ' ';
+		     << 0 << ' ' << 0 << ' ';
 	    file_out << 0 << ' ';
 	    file_out << 0 << " [ ";
 	    file_out << "]";
@@ -4286,7 +4195,6 @@ int sml( Logfile& l, Config& c ) {
 
 	// Filter distro, recalc confidence
 	std::vector<std::string> c_set = c_sets[target]; //check error(?)
-	std::vector<std::string>::iterator si;
 	std::string top_c;
 	double top_f = -1;
 	double sum_f = 0;
@@ -4312,16 +4220,12 @@ int sml( Logfile& l, Config& c ) {
 	    log_out << "the_confidence [" << the_confidence << "] >= confidence [" << confidence << "] or the_confidence < 0 " << std::endl;
 	    fail = false;
 
-	    //Timbl::ValueDistribution::dist_iterator it = vd->begin();
-	    std::map<std::string,int>::iterator tvsfi;
-	    std::map<std::string,int>::iterator wfi;
-
 	    // This is our answer, the stats are on whole distr.
 	    answer = top_c;
 
 	    double word_lp = pow( 2, -logprob );
 	    file_out << a_line << " (" << answer << ") "
-		     << logprob << ' ' /*<< info << ' '*/ << entropy << ' ';
+		     << logprob << ' ' << entropy << ' ';
 	    file_out << word_lp << ' ';
 	    file_out << cnt << " [ ";
 	    if ( topn > 0 ) {
@@ -4331,7 +4235,7 @@ int sml( Logfile& l, Config& c ) {
 	      fi = filtered_distr_vec.begin();
 	      while ( (fi != filtered_distr_vec.end()) && (cntr-- != 0) ) {
 		file_out << (*fi)->name << ' ' << (double)((*fi)->freq) << ' ';
-		fi++;
+		++fi;
 	      }
 	    } // topn
 	    file_out << "]";
@@ -4339,7 +4243,7 @@ int sml( Logfile& l, Config& c ) {
 	    fi = filtered_distr_vec.begin();
 	    while ( fi != filtered_distr_vec.end() ) {
 	      delete *fi;
-	      fi++;
+	      ++fi;
 	    }
 	    filtered_distr_vec.clear();
 	  } // confidence
@@ -4398,7 +4302,7 @@ int sml( Logfile& l, Config& c ) {
     l.dec_prefix();
 
   }
-
+  delete My_Experiment;
   return 0;
 }
 #else
