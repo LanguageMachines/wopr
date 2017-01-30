@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -72,7 +68,7 @@ int ngram_server(Logfile& l, Config& c) {
   const std::string& ngl_filename    = c.get_value( "ngl" );
   const std::string& counts_filename = c.get_value( "counts" );
   int                n               = my_stoi( c.get_value( "n", "3" ));
-  std::string        id              = c.get_value( "id", "" );
+  //  std::string        id              = c.get_value( "id", "" );
   const std::string  port            = c.get_value( "port", "1984" );
   //const int mode                     = my_stoi( c.get_value( "mode", "0" ));
   const int resm                     = my_stoi( c.get_value( "resm", "0" ));
@@ -102,15 +98,7 @@ int ngram_server(Logfile& l, Config& c) {
   }
 
   std::string a_line;
-  std::vector<std::string> results;
   std::map<std::string,double> ngrams; // NB no ngl_elem here!
-  std::map<std::string,double>::iterator gi;
-
-  std::string ngram;
-  std::string prob_str;
-  //std::string freq_str;
-  double prob;
-  size_t pos, pos1;
 
   l.log( "Reading ngrams..." );
 
@@ -119,14 +107,11 @@ int ngram_server(Logfile& l, Config& c) {
   // NB: input and my_stod are not checked for errors (TODO).
   //
   while( std::getline( file_ngl, a_line ) ) {
-    pos      = a_line.rfind(' ');
-    prob_str = a_line.substr(pos+1);
-    prob     = my_stod( prob_str );
-
-    pos1     = a_line.rfind(' ', pos-1);
-    //freq_str = a_line.substr(pos1+1, pos-pos1-1);
-    ngram    = a_line.substr(0, pos1);
-
+    size_t pos  = a_line.rfind(' ');
+    std::string prob_str = a_line.substr(pos+1);
+    double prob = my_stod( prob_str );
+    size_t pos1 = a_line.rfind(' ', pos-1);
+    std::string ngram = a_line.substr(0, pos1);
     ngrams[ngram] = prob;
   }
   file_ngl.close();

@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -105,7 +101,6 @@ int ngram_list( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> results;
-  std::vector<std::string>::iterator ri;
   std::map<std::string,ngl_elem> grams;
   std::map<std::string,ngl_elem>::iterator gi;
   long sum_freq = 0;
@@ -119,11 +114,10 @@ int ngram_list( Logfile& l, Config& c ) {
     for ( int i = 1; i <= n; i++ ) {
       results.clear();
       if ( ngram_line( a_line, i, results ) == 0 ) {
-	for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	for ( auto const& cl : results ) {
 	  if ( i == 1 ) {
 	    ++sum_freq;
 	  }
-	  std::string cl = *ri;
 	  gi = grams.find( cl );
 	  if ( gi == grams.end() ) {
 	    ngl_elem e;
@@ -171,9 +165,9 @@ int ngram_list( Logfile& l, Config& c ) {
   // Format is:
   // n-gram frequency probability
   //
-  for ( gi = grams.begin(); gi != grams.end(); gi++ ) {
-    std::string ngram = (*gi).first;
-    ngl_elem e = (*gi).second;
+  for ( const auto& gi : grams ) {
+    std::string ngram = gi.first;
+    ngl_elem e = gi.second;
     if ( e.n == 1 ) { // unigram
       // srilm saves log10 of probability in its files.
       double p = e.freq / (float)sum_freq;
@@ -236,7 +230,6 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> results;
-  std::vector<std::string>::iterator ri;
   std::map<std::string,ngl_elem> grams;
   std::map<std::string,ngl_elem>::iterator gi;
   long sum_freq = 0;
@@ -250,11 +243,10 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
     for ( int i = 1; i <= n; i++ ) {
       results.clear();
       if ( ngram_line( a_line, i, results ) == 0 ) {
-	for ( ri = results.begin(); ri != results.end(); ri++ ) {
+	for ( const auto& cl : results ) {
 	  if ( i == 1 ) {
 	    ++sum_freq;
 	  }
-	  std::string cl = *ri;
 	  gi = grams.find( cl );
 	  if ( gi == grams.end() ) {
 	    ngl_elem e;
@@ -302,9 +294,9 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
   // Format is:
   // n-gram frequency probability
   //
-  for ( gi = grams.begin(); gi != grams.end(); gi++ ) {
-    std::string ngram = (*gi).first;
-    ngl_elem e = (*gi).second;
+  for ( const auto& gi : grams ) {
+    std::string ngram = gi.first;
+    ngl_elem e = gi.second;
     if ( e.n == 1 ) { // unigram
       // srilm saves log10 of probability in its files.
       file_out << ngram << " " << e.freq << " "
@@ -413,20 +405,20 @@ int ngram_test( Logfile& l, Config& c ) {
   ngp_filename = ngp_filename + ".ngp" + to_str(n);
   ngd_filename = ngd_filename + ".ngd" + to_str(n);
 
-  typedef double(*pt2log)(double);
-  pt2log mylog = &log2;
-  if ( log_base != 0 ) {
-    if ( log_base == 10 ) {
-      // In ngd output only
-      mylog = &log10;
-    } else {
-      if ( log_base != 2 ) {
-	l.log( "Log must be 2 or 10, setting to 2." );
-      }
-      log_base = 2;
-      mylog = &log2;
-    }
-  }
+  // typedef double(*pt2log)(double);
+  // pt2log mylog = &log2;
+  // if ( log_base != 0 ) {
+  //   if ( log_base == 10 ) {
+  //     // In ngd output only
+  //     mylog = &log10;
+  //   } else {
+  //     if ( log_base != 2 ) {
+  // 	l.log( "Log must be 2 or 10, setting to 2." );
+  //     }
+  //     log_base = 2;
+  //     mylog = &log2;
+  //   }
+  // }
   if ( mode == "srilm" ) {
     if ( log_base != 10 ) {
       log_base = 10;
@@ -539,7 +531,6 @@ int ngram_test( Logfile& l, Config& c ) {
     // changed probs.
     //
     std::ifstream file_ngc( ngc_filename.c_str() );
-    int offset = 2;//2 for srilm, 3 for wopr
     if ( file_ngc ) {
       l.log( "Reading SRILM counts file." );
       while( std::getline( file_ngc, a_line ) ) {
@@ -548,6 +539,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	replace( a_line.begin(), a_line.end(), '\t', ' ' );
 	Tokenize( a_line, results );
 	ngram.clear();
+	int offset = 2;  //2 for srilm, 3 for wopr
 	size_t i;
 	for ( i = 0; i < results.size()-offset; i++ ) {
 	  ngram = ngram + results.at(i) + " ";
@@ -781,8 +773,6 @@ int ngram_test( Logfile& l, Config& c ) {
   // sentence, and for each word, look at n-grams which end
   // with said word.
 
-  std::vector<std::string>::iterator ri;
-  std::map<std::string,std::string>::iterator mi;
   std::vector<ngram_elem> best_ngrams;
   std::vector<ngram_elem>::iterator ni;
 
@@ -819,8 +809,7 @@ int ngram_test( Logfile& l, Config& c ) {
       if ( ngram_line( a_line, i, results ) == 0 ) {
 
 	int word_idx = i-1;
-	for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	  std::string cl = *ri;
+	for ( const auto& cl : results ) {
 	  gi = ngrams.find( cl );
 	  if ( gi != ngrams.end() ) {
 	    //l.log( "Checking: " + (*gi).first + "/" + to_str((*gi).second) );
@@ -920,15 +909,12 @@ int ngram_test( Logfile& l, Config& c ) {
 	  //
 	  long classification_freq = 0;
 	  std::map<long, long, std::greater<long> > dfreqs;
-	  std::vector<ngde>::iterator vi;
-	  vi = v.begin();
-	  while ( vi != v.end() ) {
-	    long freq = (*vi).freq; // SRILM has no freqs, only in counts file
+	  for( const auto& vi : v ) {
+	    long freq = vi.freq; // SRILM has no freqs, only in counts file
 	    dfreqs[freq] += 1;
-	    if ( (*vi).token == target ) { // position in distribution
+	    if ( vi.token == target ) { // position in distribution
 	      classification_freq = freq;
 	    }
-	    vi++;
 	  }
 	  long   idx       = 1;
 	  long   class_idx = 0;
@@ -952,7 +938,7 @@ int ngram_test( Logfile& l, Config& c ) {
 
 	  // Now the top-n
 	  int cnt = topn;
-	  vi = v.begin();
+	  auto vi = v.begin();
 	  out = out + " [";
 	  while ( (vi != v.end()) && (--cnt >= 0) ) {
 	    long freq = (*vi).freq;
@@ -1004,10 +990,10 @@ int ngram_test( Logfile& l, Config& c ) {
       }
     }
     double pplx   = 0.0;
-    double pplx10 = 0.0;
+    //    double pplx10 = 0.0;
     if ( (wc-oov) > 0 ) {
       pplx   = pow(  2, -H/(double)(wc-oov) );
-      pplx10 = pow( 10, -sum_l10p/(double)(wc-oov) );
+      //      pplx10 = pow( 10, -sum_l10p/(double)(wc-oov) );
     }
     ngp_out << H << " "
 	    << pplx << " "
@@ -1056,12 +1042,13 @@ int ngram_test( Logfile& l, Config& c ) {
   For use in the ngram server.
 */
 
-int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngrams, std::vector<ngram_elem>& best_ngrams,
-		    std::vector<std::string>& results, Logfile& l ) {
+int ngram_one_line( std::string a_line,
+		    int n,
+		    std::map<std::string,double>& ngrams,
+		    std::vector<ngram_elem>& best_ngrams,
+		    std::vector<std::string>& results,
+		    Logfile& ) {
 
-  std::vector<std::string>::iterator ri;
-  std::map<std::string,std::string>::iterator mi;
-  std::vector<ngram_elem>::iterator ni;
   std::map<std::string,double>::iterator gi;
 
   best_ngrams.clear();
@@ -1073,8 +1060,7 @@ int ngram_one_line( std::string a_line, int n, std::map<std::string,double>& ngr
     if ( ngram_line( a_line, i, results ) == 0 ) { // input to ngrams size i
 
       int word_idx = i-1;
-      for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	std::string cl = *ri;
+      for ( const auto& cl : results ) {
 	//l.log( "Processing; "+cl );
 	gi = ngrams.find( cl );
 	if ( gi != ngrams.end() ) {
