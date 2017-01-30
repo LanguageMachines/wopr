@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -177,23 +173,22 @@ int focus( Logfile& l, Config& c ) {
     output_files[ combined_class ] = output_filename;
   } else  {
     // seperate file for each focus word.
-    std::map<std::string,int>::iterator ofi;
-    for( ofi = focus_words.begin(); ofi != focus_words.end(); ofi++ ) {
+    for ( const auto& ofi : focus_words ) {
       if ( numeric_files < 0 ) {
-		std::string fw = (*ofi).first;
-		std::string output_filename_fw = output_filename + "_" + fw;
-		//l.log( "OPEN: " + output_filename_fw );
-		output_files[ fw ] = output_filename_fw;
-		ic[ fw ] = 0;
+	std::string fw = ofi.first;
+	std::string output_filename_fw = output_filename + "_" + fw;
+	//l.log( "OPEN: " + output_filename_fw );
+	output_files[ fw ] = output_filename_fw;
+	ic[ fw ] = 0;
       } else {
-		// use numeric_files to create a filename
-		std::string num = to_str( numeric_files, numdigits );
-		std::string fw  = (*ofi).first;
-		std::string output_filename_num = output_filename + "_" + num;
-		//l.log( "OPEN: " + output_filename_fw );
-		output_files[ fw ] = output_filename_num;
-		ic[ fw ] = 0;
-		++numeric_files;
+	// use numeric_files to create a filename
+	std::string num = to_str( numeric_files, numdigits );
+	std::string fw  = ofi.first;
+	std::string output_filename_num = output_filename + "_" + num;
+	//l.log( "OPEN: " + output_filename_fw );
+	output_files[ fw ] = output_filename_num;
+	ic[ fw ] = 0;
+	++numeric_files;
       }
     }
   }
@@ -209,55 +204,53 @@ int focus( Logfile& l, Config& c ) {
 
     std::string target;
     std::string a_str;
-    int         pos;
     std::map<std::string, int>::iterator ri;
-    int is_gated;
 
     while( std::getline( file_in, a_line ) ) {
 
       words.clear();
       Tokenize( a_line, words, ' ' );
 
-      pos = words.size()-1-fco;
+      int pos = words.size()-1-fco;
       pos = (pos < 0) ? 0 : pos;
       target = words[pos]; // target is the focus "target"
-      a_str  = words[0];
-      is_gated = 0;
+
+      bool is_gated = false;
 
       ri = focus_words.find( target ); // Is it in the focus list?
       if ( ri != focus_words.end() ) { // yes
-		//l.log( "FOUND: "+target+" in "+a_line );
-		is_gated = 1;
-		if ( (fmode == 0) || (fmode == 4) ) { // all in the combined file
-		  std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
-		  if ( ! file_out ) {
-			l.log( "ERROR: cannot write output file ["+output_files[combined_class]+"]." );
-			return -1;
-		  }
-		  file_out << a_line << std::endl;
-		  file_out.close(); // must be inefficient...
-		} else { // in its own file
-		  std::ofstream file_out( output_files[target].c_str(), std::ios::app );
-		  if ( ! file_out ) {
-			l.log( "ERROR: cannot write output file." );
-			return -1;
-		  }
-		  file_out << a_line << std::endl;
-		  file_out.close(); // must be inefficient...
-		  ++ic[target];
-		}
+	//l.log( "FOUND: "+target+" in "+a_line );
+	is_gated = true;
+	if ( (fmode == 0) || (fmode == 4) ) { // all in the combined file
+	  std::ofstream file_out( output_files[combined_class].c_str(), std::ios::app );
+	  if ( ! file_out ) {
+	    l.log( "ERROR: cannot write output file ["+output_files[combined_class]+"]." );
+	    return -1;
+	  }
+	  file_out << a_line << std::endl;
+	  file_out.close(); // must be inefficient...
+	} else { // in its own file
+	  std::ofstream file_out( output_files[target].c_str(), std::ios::app );
+	  if ( ! file_out ) {
+	    l.log( "ERROR: cannot write output file." );
+	    return -1;
+	  }
+	  file_out << a_line << std::endl;
+	  file_out.close(); // must be inefficient...
+	  ++ic[target];
+	}
       }
 
       // The left over to the default, or in case of fmode 4, everything.
-      if ( (is_gated == 0) || (fmode == 4) ) {// gated==0 -> not found in list
-		std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
-		if ( ! file_out ) {
-		  l.log( "ERROR: cannot write output file." );
-		  return -1;
-		}
-		file_out << a_line << std::endl;
-		file_out.close(); // must be inefficient...
-		++ic[dflt];
+      if ( ( !is_gated ) || (fmode == 4) ) { //gated==false -> not found in list
+	std::ofstream file_out( output_files[dflt].c_str(), std::ios::app );
+	if ( ! file_out ) {
+	  l.log( "ERROR: cannot write output file." );
+	  return -1;
+	}
+	file_out << a_line << std::endl;
+	file_out.close(); // must be inefficient...
+	++ic[dflt];
       }
 
     }
@@ -273,17 +266,16 @@ int focus( Logfile& l, Config& c ) {
 #ifdef TIMBL
 
   if ( timbl != "no" ) { // We skip kvs and ibase creation is so desired
-    std::ofstream kvs_out( kvs_filename.c_str(), std::ios::out );
+    std::ofstream kvs_out( kvs_filename, std::ios::out );
     if ( ! kvs_out ) {
       l.log( "ERROR: cannot write kvs output file." );
       return -1;
     }
 
     Timbl::TimblAPI       *My_Experiment;
-    std::map<std::string,std::string>::iterator ofi;
-    for( ofi = output_files.begin(); ofi != output_files.end(); ofi++ ) {
-      std::string focus_word      = (*ofi).first;
-      std::string output_filename = (*ofi).second;
+    for ( const auto& ofi : output_files ) {
+      std::string focus_word      = ofi.first;
+      std::string output_filename = ofi.second;
 
       std::string t_ext = timbl;
       std::string ibase_filename = output_filename;

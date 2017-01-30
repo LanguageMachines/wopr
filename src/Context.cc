@@ -108,4 +108,3 @@ void Context::reset() {
 size_t Context::get_size() {
   return size;
 }
-

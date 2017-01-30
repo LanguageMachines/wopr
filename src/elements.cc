@@ -37,18 +37,15 @@
 // Classes
 // ----------------------------------------------------------------------------
 
-distr_elem::distr_elem() {
+distr_elem::distr_elem( const std::string& s, double d1, double d2):
+  name(s),freq(d1),lexfreq(d2),ld(0)
+{
 }
 
-distr_elem::distr_elem( const std::string& s, double d1, double d2) {
-  name = s;
-  freq = d1;
-  lexfreq = d2;
+distr_elem::distr_elem():distr_elem("",0.0,0.0) {
 }
+
 
 distr_elem::~distr_elem() {
   //std::cerr << "destroying.\n";
 }
-
-
-

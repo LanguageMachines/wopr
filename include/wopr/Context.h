@@ -17,9 +17,9 @@ class Context {
   friend std::ostream& operator << ( std::ostream&, const Context& );
 
  public:
-  Context(size_t);
+  explicit Context(size_t);
   Context( const Context& );
-  Context( const Context* );
+  explicit Context( const Context* );
   void push(const std::string&);
   void cp( const Context* );
   const std::string& last_letter();

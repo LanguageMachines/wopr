@@ -39,7 +39,7 @@
 
 class distr_elem {
  public:
-  std::string name; 
+  std::string name;
   double      freq;
   double      lexfreq;
   int         ld;
@@ -56,14 +56,14 @@ class distr_elem_cmp_ptr {
  public:
   bool operator() (const distr_elem* de1, const distr_elem* de2) const {
     return de1->freq < de2->freq;
-  } 
+  }
 };
 
 class distr_elem_cmprev_ptr {
  public:
   bool operator() (const distr_elem* de1, const distr_elem* de2) const {
     return de2->freq < de1->freq;
-  } 
-}; 
+  }
+};
 
 #endif
