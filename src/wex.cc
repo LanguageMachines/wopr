@@ -68,9 +68,6 @@ int multi( Logfile& l, Config& c ) {
   std::string        output_filename  = filename + ".px" + to_str(ws);
   std::string        pre_s            = c.get_value( "pre_s", "<s>" );
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -121,6 +118,9 @@ int multi( Logfile& l, Config& c ) {
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
 
+  // BUG: KvdS the code here is reading a file and assigne values which are
+  // NEVER USED!
+
   // If we want smoothed counts, we need this file...
   // Make mapping <int, double> from c to c* ?
   //
@@ -157,7 +157,6 @@ int multi( Logfile& l, Config& c ) {
   // read kvs
   //
   std::map<int, Classifier*> ws_classifier; // size -> classifier.
-  std::map<int, Classifier*>::iterator wsci;
   std::vector<Classifier*> cls;
   std::vector<Classifier*>::iterator cli;
   if ( kvs_filename != "" ) {
@@ -179,13 +178,10 @@ int multi( Logfile& l, Config& c ) {
     l.log( "Read classifiers." );
   }
 
-  std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
 
   std::string a_line;
   std::vector<std::string> results;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<Multi*> multivec( 20 );
@@ -235,8 +231,7 @@ int multi( Logfile& l, Config& c ) {
       // values... (classifier, classification, distr?, prob....)
       //
       multi_idx = 0;
-      for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	std::string cl = *ri;
+      for ( const auto& cl : results ) {
 	file_out << cl << std::endl;
 
 	tv = timbl->Classify( cl, vd );
@@ -396,10 +391,6 @@ int multi_dist( Logfile& l, Config& c ) {
   }
   std::string        output_filename  = filename + id + ".md";
 
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
-
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "lexicon:    "+lexicon_filename );
@@ -427,7 +418,6 @@ int multi_dist( Logfile& l, Config& c ) {
   int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  std::map<std::string,int> wfreqs; // whole lexicon
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
     l.log( "NOTICE: cannot load lexicon file." );
@@ -439,7 +429,6 @@ int multi_dist( Logfile& l, Config& c ) {
     l.log( "Reading lexicon." );
     std::string a_word;
     while ( file_lexicon >> a_word >> wfreq ) {
-      wfreqs[a_word] = wfreq;
       total_count += wfreq;
       if ( wfreq == 1 ) {
 	++N_1;
@@ -448,6 +437,9 @@ int multi_dist( Logfile& l, Config& c ) {
     file_lexicon.close();
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
   }
+
+  // BUG: KvdS the code here is reading a file and assigne values which are
+  // NEVER USED!
 
   // If we want smoothed counts, we need this file...
   // Make mapping <int, double> from c to c* ?
@@ -507,19 +499,14 @@ int multi_dist( Logfile& l, Config& c ) {
     l.log( "Read classifiers. Starting classification." );
   }
 
-  std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
 
   std::string a_line;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
   std::vector<distr_probs> distr_vec;
-  std::vector<distr_probs>::iterator dei;
   std::map<std::string, double> combined_distr;
-  std::map<std::string, double>::iterator mi;
   std::vector<double> distr_counts(classifier_count); // to calculate probs
   long combined_correct = 0;
 
@@ -590,10 +577,10 @@ int multi_dist( Logfile& l, Config& c ) {
 
     // sort combined, get top-n, etc.
     //
-    for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
+    for ( const auto& mi : combined_distr ) {
       distr_probs  d;
-      d.name   = mi->first;
-      d.prob   = mi->second; // was d.freq
+      d.name   = mi.first;
+      d.prob   = mi.second; // was d.freq
       distr_vec.push_back( d );
     }
 
@@ -603,17 +590,15 @@ int multi_dist( Logfile& l, Config& c ) {
     //
     int cntr = topn;
     std::string combined_guess = "";
-    dei = distr_vec.begin();
-    while ( dei != distr_vec.end() ) {
+    for ( const auto& dei : distr_vec ) {
       if ( --cntr >= 0 ) {
 	//file_out << (*dei).name << ' ' << (*dei).freq << ' ';
 	//l.log( (*dei).name + ' ' + to_str((*dei).prob) ); // was .freq
-	file_out << " " << (*dei).name << " " << (*dei).prob;
+	file_out << " " << dei.name << " " << dei.prob;
 	if ( cntr == 0 ) { // take the first (could be more with same p).
-	  combined_guess = (*dei).name;
+	  combined_guess = dei.name;
 	}
       }
-      dei++;
     }
     file_out << " }";
     if ( target == combined_guess ) {
@@ -654,10 +639,6 @@ int multi_dist2( Logfile& l, Config& c ) {
   std::string        id               = c.get_value( "id", to_str(getpid()) );
   std::string        output_filename  = kvs_filename + "_" + id + ".mc";
 
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
-
   l.inc_prefix();
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "filename:   "+filename );
@@ -679,7 +660,6 @@ int multi_dist2( Logfile& l, Config& c ) {
   int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
-  std::map<std::string,int> wfreqs; // whole lexicon
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
     l.log( "NOTICE: cannot load lexicon file." );
@@ -691,7 +671,6 @@ int multi_dist2( Logfile& l, Config& c ) {
     l.log( "Reading lexicon." );
     std::string a_word;
     while ( file_lexicon >> a_word >> wfreq ) {
-      wfreqs[a_word] = wfreq;
       total_count += wfreq;
       if ( wfreq == 1 ) {
 	++N_1;
@@ -782,25 +761,22 @@ int multi_dist2( Logfile& l, Config& c ) {
 
 	if ( do_combined == true ) {
 	  // The distribution is in classification.distr
-	  std::vector<md2_elem>::iterator dei;
-	  dei = foo.distr.begin();
-	  while ( dei != foo.distr.end() ) {
+	  for ( const auto& dei : foo.distr ) {
 	    //std::cout << " " << (*dei).token << " " << (*dei).prob;
 	    if ( type == 1 ) { // merge normal classifier
-	      combined_distr[(*dei).token] += ((*dei).prob * classifier_weight);
+	      combined_distr[dei.token] += (dei.prob * classifier_weight);
 	    } else if ( type == 2 ) { // distribution
 	      if ( subtype == 1 ) { // multiply
-		combined_distr[(*dei).token] *= classifier_weight;
+		combined_distr[dei.token] *= classifier_weight;
 	      } else if ( subtype == 2 ) { // add
 		//
 		// We need some kind of normalisation here.
 		// Maybe related to best in the real/merged classification?
 		// Make these "just as important".
 		//
-		combined_distr[(*dei).token] += (*dei).prob;
+		combined_distr[dei.token] += dei.prob;
 	      }
 	    } // other type, divide by index number etc.
-	    ++dei;
 	  }
 	}
 
@@ -819,15 +795,13 @@ int multi_dist2( Logfile& l, Config& c ) {
 	std::string combined_guess = "";
 	std::vector<distr_probs> distr_vec;
 	std::vector<distr_probs>::iterator dei;
-	std::map<std::string, double>::iterator mi;
-	std::vector<double> distr_counts(classifier_count);
 
 	// Convert hash to vector so we can sort it.
 	//
-	for ( mi = combined_distr.begin(); mi != combined_distr.end(); mi++ ) {
+	for ( const auto& mi : combined_distr ) {
 	  distr_probs  d;
-	  d.name   = mi->first;
-	  d.prob   = mi->second;
+	  d.name   = mi.first;
+	  d.prob   = mi.second;
 	  distr_vec.push_back( d );
 	}
 	sort( distr_vec.begin(), distr_vec.end() );
@@ -841,7 +815,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	    //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
 	    file_out << " " << (*dei).name << " " << (*dei).prob;
 	  }
-	  dei++;
+	  ++dei;
 	}
 	file_out << " }";
 	if ( outtarget == combined_guess ) {
@@ -922,10 +896,6 @@ int multi_gated( Logfile& l, Config& c ) {
     l.log( "SET filename to "+output_filename );
     return 0;
   }
-
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   // specify default to be able to choose default classifier?
 
@@ -1032,7 +1002,6 @@ int multi_gated( Logfile& l, Config& c ) {
   int gates_triggered = 0;
 
   md2    multidist;
-  std::vector<md2_elem>::iterator dei;
   Classifier* cl = NULL; // classifier used.
   std::map<std::string,int>::iterator wfi;
 
@@ -1098,8 +1067,8 @@ int multi_gated( Logfile& l, Config& c ) {
       known = "u";
       wfi = wfreqs.find(target);
       if ( wfi != wfreqs.end() ) {
-		multidist.prob = (int)(*wfi).second / (double)total_count;
-		known = "k";
+	multidist.prob = (int)(*wfi).second / (double)total_count;
+	known = "k";
       }
     }
     if ( mode == 1 ) {
@@ -1163,30 +1132,30 @@ int multi_gated( Logfile& l, Config& c ) {
       int cnt = multidist.cnt;
       std::string tmp;
       if ( (cnt <= max_distr) && (target.length() > (size_t)mwl) && (multidist.in_distr == false) && (multidist.entropy <= max_ent) ) {
-		std::vector<distr_elem*> distr_vec;
-		distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true, 0, -1);
-		sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
-		std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
-		int cntr = 0;
-		while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
-		  tmp = tmp + " " + (*fi)->name + " " + to_str((double)((*fi)->freq));
-		  delete *fi;
-		  fi++;
-		}
-		distr_vec.clear();
+	std::vector<distr_elem*> distr_vec;
+	distr_spelcorr( cl->vd, target, wfreqs, distr_vec, mld, min_ratio, 0.0, true, 0, -1);
+	sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
+	std::vector<distr_elem*>::const_iterator fi = distr_vec.begin();
+	int cntr = 0;
+	while ( (fi != distr_vec.end()) && (--cntr != 0) ) {
+	  tmp = tmp + " " + (*fi)->name + " " + to_str((double)((*fi)->freq));
+	  delete *fi;
+	  ++fi;
+	}
+	distr_vec.clear();
       }
       file_out << "[" << tmp << " ]";
-    } else { // normal topn distribution output
+    }
+    else
+      { // normal topn distribution output
       sort( multidist.distr.begin(), multidist.distr.end() );
       int cntr = topn;
-      dei = multidist.distr.begin();
       file_out << "[";
-      while ( dei != multidist.distr.end() ) {
-		if ( --cntr >= 0 ) {
-		  //l.log( (*dei).name + ' ' + to_str((*dei).prob) );
-		  file_out << " " << (*dei).token << " " << (*dei).freq;
-		}
-		dei++;
+      for ( const auto& dei : multidist.distr ) {
+	if ( --cntr >= 0 ) {
+	  //l.log( dei.name + ' ' + to_str(dei.prob) );
+	  file_out << " " << dei.token << " " << dei.freq;
+	}
       }
       file_out << " ]";
     }
