@@ -16,8 +16,7 @@ class Multi {
 
   //! Constructor.
   //!
-  Multi( const std::string& s) {
-    id = s;
+  explicit Multi( const std::string& s): id(s) {
   }
 
   //! Destructor.

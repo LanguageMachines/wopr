@@ -50,7 +50,6 @@ class Logfile {
 
  public:
   Logfile();
-  Logfile(std::string);
   ~Logfile();
 
   void append( const std::string& );

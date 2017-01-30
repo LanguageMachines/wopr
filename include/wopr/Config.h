@@ -53,7 +53,7 @@ class Config {
   time_t                  t_start;    /*!< Startup time */
   std::string             fname;      /*!< Name of config file */
   std::string             buf;
-  std::map<std::string, std::string> kv; 
+  std::map<std::string, std::string> kv;
   int                     status;
 
 public:
@@ -61,7 +61,7 @@ public:
   //! Constructor.
   //!
   Config();
-  Config( const std::string& );
+  explicit Config( const std::string& );
 
   //! Destructor.
   //!

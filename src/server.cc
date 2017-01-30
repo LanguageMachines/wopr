@@ -1294,7 +1294,6 @@ int xmlserver(Logfile& l, Config& c) {
       int cpid = fork();
       if ( cpid == 0 ) { // child process
 
-	std::string buf;
       	bool connection_open = true;
 
 	while ( running && connection_open ) {

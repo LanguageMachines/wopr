@@ -93,7 +93,7 @@ class Classifier {
 
   //! Constructor.
   //!
-  Classifier( const std::string& );
+  explicit Classifier( const std::string& );
   Classifier( const std::string&, int );
 
   //! Destructor.

@@ -16,14 +16,12 @@
  */
 class cache_elem {
  public:
-  std::string ans; 
+  std::string ans;
   int cnt;
   std::list<std::string>::iterator listpos;
 
-  cache_elem( const std::string& s ) {
-    ans = s;
-    cnt = 1;
-  };
+  explicit cache_elem( const std::string& s ):ans(s),cnt(1) {
+  }
 };
 
 class Cache {
@@ -47,15 +45,14 @@ class Cache {
   //!
   Cache() {
     cache_size = 10;
-    empty = "";
     hits = misses = evictions = stores = reinserts = 0;
   };
-  Cache( int s ) {
+
+  explicit Cache( int s ) {
     if ( s < 0 ) {
       s = 0;
     }
     cache_size =  s;
-    empty = "";
     hits = misses = evictions = stores = reinserts = 0;
   };
 
@@ -92,7 +89,7 @@ class Cache {
     }
 
     ++stores;
-	
+
     int cs = cache.size();
     if ( cs < cache_size ) {
       // if contains, we need to update.
@@ -137,7 +134,7 @@ class Cache {
     return NULL;
   }
 
-  // Retrieve string answer from cache. 
+  // Retrieve string answer from cache.
   //
   const std::string& get( const std::string& a ) {
     if ( cache_size == 0 ) {

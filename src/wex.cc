@@ -170,7 +170,7 @@ int multi( Logfile& l, Config& c ) {
     read_classifiers_from_file( file_kvs, cls );
     l.log( to_str((int)cls.size()) );
     file_kvs.close();
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
       l.log( (*cli)->id );
       (*cli)->init();
       int c_ws = (*cli)->get_ws();
@@ -198,7 +198,7 @@ int multi( Logfile& l, Config& c ) {
     // Initialise correct target as well...
     //
     int multi_idx = 0;
-    multivec.clear();
+    multivec.clear(); // KvdS BUG: This will leak Multi*'s like hell!
     words.clear();
     Tokenize( a_line, words, ' ' );
     int sentence_size = words.size();
@@ -209,7 +209,7 @@ int multi( Logfile& l, Config& c ) {
 
     // We loop over classifiers, vote which result we take.
     //
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
 
       Classifier *classifier = *cli;
       l.log( "Classifier: " + (*cli)->id );
@@ -277,26 +277,6 @@ int multi( Logfile& l, Config& c ) {
   return -1;
 }
 #endif
-
-// Fill a keyword value.
-//
-int read_kv_from_file( std::ifstream& file,
-		       std::map<std::string, std::string>& res )  {
-  std::string a_line;
-  while( std::getline( file, a_line )) {
-    if ( a_line.length() == 0 ) {
-      continue;
-    }
-    size_t pos = a_line.find( ':', 0 );
-    if ( pos != std::string::npos ) {
-      std::string lhs = trim(a_line.substr( 0, pos ));
-      std::string rhs = trim(a_line.substr( pos+1 ));
-      res[lhs] = rhs;
-    }
-  }
-
-  return 0;
-}
 
 // Read the classifiers.
 // classifier: <NAME> begins a new classifier "block"
@@ -518,7 +498,7 @@ int multi_dist( Logfile& l, Config& c ) {
     read_classifiers_from_file( file_kvs, cls );
     l.log( to_str((int)cls.size()) );
     file_kvs.close();
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
       l.log( (*cli)->id );
       (*cli)->init();
       ++classifier_count;
@@ -554,7 +534,7 @@ int multi_dist( Logfile& l, Config& c ) {
     // We loop over classifiers. We need a summed_distribution.
     //
     int classifier_idx = 0;
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
 
       Classifier *classifier   = *cli;
       Timbl::TimblAPI *timbl   = classifier->get_exp();
@@ -647,7 +627,7 @@ int multi_dist( Logfile& l, Config& c ) {
   file_out.close();
   file_in.close();
 
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+  for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) );
   }
   l.log( "Combined: "+to_str(combined_correct) );
@@ -736,7 +716,7 @@ int multi_dist2( Logfile& l, Config& c ) {
     }
     read_classifiers_from_file( file_kvs, cls );
     file_kvs.close();
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
       (*cli)->init();
       l.log( (*cli)->id + "/" + to_str((*cli)->get_type()) );
       //
@@ -781,7 +761,7 @@ int multi_dist2( Logfile& l, Config& c ) {
     outline.clear();
     combined_distr.clear();
 
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
 
       Classifier *classifier = *cli;
       go_on = classifier->classify_next();
@@ -877,7 +857,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 
   file_out.close();
 
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+  for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
     l.log( (*cli)->id+": "+ to_str((*cli)->get_correct()) + "/" +
 	   to_str((*cli)->get_cc()) );
   }
@@ -1012,7 +992,7 @@ int multi_gated( Logfile& l, Config& c ) {
     file_kvs.close();
     l.log( "Read "+to_str(cls.size())+" classifiers from "+kvs_filename );
 
-    for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
       (*cli)->init();
       l.log( (*cli)->id + "/" + to_str((*cli)->get_type()) );
       //
@@ -1225,7 +1205,7 @@ int multi_gated( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot write stat output file." );
     return -1;
   }
-  for ( cli = cls.begin(); cli != cls.end(); cli++ ) {
+  for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
     stat_out << (*cli)->id << " "
 	     << (*cli)->get_cc() << " "
 	     << (*cli)->get_cg() << " "
