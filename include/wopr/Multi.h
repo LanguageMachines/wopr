@@ -48,10 +48,8 @@ class Multi {
   //
   std::string get_answers() {
     std::string a = target + ":";
-    std::map<Classifier*, std::string>::iterator mi;
-
-    for ( mi = answers.begin(); mi != answers.end(); mi++ ) {
-      a = a + " " + (*mi).first->id + ":" + (*mi).second;
+    for ( const auto& aw : answers ) {
+      a = a + " " + aw.first->id + ":" + aw.second;
     }
 
     return a;
@@ -59,4 +57,3 @@ class Multi {
 };
 
 #endif
-
