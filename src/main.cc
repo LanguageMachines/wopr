@@ -70,7 +70,7 @@
 //  Detested globals
 // ---------------------------------------------------------------------------
 
-volatile int ctrl_c = 0;
+volatile int ctrl_c = 0; // BUG: This is set but never used
 
 // ---------------------------------------------------------------------------
 //  Code.
@@ -79,7 +79,7 @@ volatile int ctrl_c = 0;
 /*!
   Handler for control.C
 */
-extern "C" void ctrl_c_handler( int sig ) {
+extern "C" void ctrl_c_handler( int ) {
   ctrl_c = 1;
 }
 
@@ -144,9 +144,9 @@ int main( int argc, char* argv[] ) {
 
   Config co;
   co.add_kv( "PID", to_str(getpid()) );
-  int verbose = 0;
   int log     = 0;
-  int c;
+  int verbose = 0; // BUG: this varriable is set, but never used
+
   std::vector<std::string>kv_pairs;
   while ( 1 ) {
     int option_index = 0;
@@ -164,13 +164,12 @@ int main( int argc, char* argv[] ) {
       {0, 0, 0, 0}
     };
 
-    c = getopt_long(argc, argv, "c:ls:p:r:veV", long_options, &option_index);
+    int c = getopt_long(argc, argv, "c:ls:p:r:veV", long_options, &option_index);
     if (c == -1) {
       break;
     }
 
     switch ( c ) {
-
     case 0:
       //if ( long_options[option_index].name == "verbose" ) {
       if ( strncmp(long_options[option_index].name, "verbose", 7) == 0 ) {

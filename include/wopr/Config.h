@@ -61,7 +61,6 @@ public:
   //! Constructor.
   //!
   Config();
-  explicit Config( const std::string& );
 
   //! Destructor.
   //!

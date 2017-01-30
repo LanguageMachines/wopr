@@ -63,11 +63,6 @@ Config::Config() {
   //add_kv( "factor", "10" ); // default settings.
 }
 
-Config::Config( const std::string& a_fname ) {
-  t_start = now();
-  status = 1;
-}
-
 Config::~Config() {
 }
 
@@ -119,22 +114,19 @@ void Config::process_line( const std::string& a_line, bool force ) {
 }
 
 void Config::dump_kv() {
-  std::map<std::string, std::string>::iterator mi;
-  for( mi = kv.begin(); mi != kv.end(); mi++ ) {
-    std::cout << mi->first << ": " << mi->second << std::endl;
+  for( const auto& mi : kv ) {
+    std::cout << mi.first << ": " << mi.second << std::endl;
   }
 }
 
 std::string Config::kvs_str() {
   std::string res;
-  std::string val;
-  std::map<std::string, std::string>::iterator mi;
-  for( mi = kv.begin(); mi != kv.end(); mi++ ) {
-    val = mi->second;
+  for( const auto& mi : kv ) {
+    std::string val = mi.second;
     if ( val.find( ' ', 0 ) != std::string::npos ) { // contains space
       val = "'" + val + "'";
     }
-    res = res + mi->first + ":" + val + ",";
+    res = res + mi.first + ":" + val + ",";
   }
   res = res.substr(0, res.length()-1);
   return res;
@@ -143,19 +135,17 @@ std::string Config::kvs_str() {
 // Without the PID, emptry strings and the run string.
 std::string Config::kvs_str_clean() {
   std::string res;
-  std::string val;
-  std::map<std::string, std::string>::iterator mi;
-  for( mi = kv.begin(); mi != kv.end(); mi++ ) {
-	if ( (mi->first == "PID") || (mi->first == "run") ) {
-	  continue;
-	}
-    val = mi->second;
+  for( const auto& mi : kv ) {
+    if ( (mi.first == "PID") || (mi.first == "run") ) {
+      continue;
+    }
+    std::string val = mi.second;
     if ( val.find( ' ', 0 ) != std::string::npos ) { // contains space
       val = "'" + val + "'";
     }
-	if ( val != "" ) {
-	  res = res + mi->first + ":" + val + ",";
-	}
+    if ( val != "" ) {
+      res = res + mi.first + ":" + val + ",";
+    }
   }
   res = res.substr(0, res.length()-1);
   return res;
@@ -190,4 +180,3 @@ const std::string& Config::get_value( const std::string& k, const std::string& d
   }
   return kv[k];
 }
-

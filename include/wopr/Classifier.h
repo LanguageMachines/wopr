@@ -29,7 +29,20 @@ struct md2_elem {
     return token == rhs.token;
   }
 };
+
 struct md2 {
+md2():
+  prob(0.0),
+    cnt(0),
+    distr_count(0),
+    entropy(0.0),
+    md(0),
+    mal(false),
+    info(0),
+    in_distr(false),
+    idx(0),
+    mrr(0.0)
+  {};
   std::string name;
   std::string cl;
   std::string answer;
