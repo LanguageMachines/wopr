@@ -25,15 +25,15 @@
 
 struct distr_elem;
 
-void generate_next( Timbl::TimblAPI*, std::string, std::vector<distr_elem>& );
-void generate_tree( Timbl::TimblAPI*, Context&, std::vector<std::string>&, int, std::vector<int>&,int, std::string );
-int explode(std::string, std::vector<std::string>&);
-void window_word_letters(std::string, std::string, int, Context&, std::vector<std::string>&);
-void window_words_letters(std::string, int, Context&, std::vector<std::string>&);
+void generate_next( Timbl::TimblAPI*, const std::string&, std::vector<distr_elem>& );
+void generate_tree( Timbl::TimblAPI*, Context&, std::vector<std::string>&, int, std::vector<int>&,int, const std::string& );
+int explode( const std::string&, std::vector<std::string>&);
+void window_word_letters( const std::string&, const std::string&, int, Context&, std::vector<std::string>&);
+void window_words_letters( const std::string&, int, Context&, std::vector<std::string>&);
 int pdt( Logfile&, Config& );
 int pdt2( Logfile&, Config& );
 //void generate_next(  Timbl::TimblAPI*, Config&, std::string, int, std::vector<distr_elem>& );
-size_t count_keys(std::string&);
+size_t count_keys( const std::string&);
 int window_letters( Logfile&, Config& );
 int pdt2web( Logfile&, Config& );
 

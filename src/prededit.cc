@@ -125,8 +125,6 @@ int pdt( Logfile& l, Config& c ) {
   std::string        id              = c.get_value( "id", to_str(getpid()) );
 
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
 
   if ( contains_id(filename, id) == true ) {
     id = "";
@@ -194,10 +192,6 @@ int pdt( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::string token;
-  std::string result;
-  std::vector<std::string> results;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
   std::vector<std::string> words;
   std::vector<std::string>::iterator wi;
   std::vector<std::string> predictions;
@@ -206,14 +200,8 @@ int pdt( Logfile& l, Config& c ) {
 
   MTRand mtrand;
 
-  std::string ectx; // empty context
-  for ( int i = 0; i < lc+rc; i++ ) {
-    ectx = ectx + "_ ";
-  }
-
   int ctx_size = lc+rc;
   Context ctx(ctx_size);
-  std::vector<distr_elem> res;
 
   //std::vector<std::string>::iterator it_endm1 = ctx.begin();
   //advance(it_end,4);
@@ -297,10 +285,9 @@ int pdt( Logfile& l, Config& c ) {
 	       << std::setfill('0') << std::setw(4) << instance_count << " ";
       file_out << ctx << std::endl;
 
-      std::vector<std::string>::iterator si = strs.begin();
       prediction_count = 0;
       long savedhere = 0; // key presses saved in this prediction.
-      while ( si != strs.end() ) {
+      for ( const auto& si : strs ) {
 
 	// We should check if the prediction matches the original sentence.
 	// We compare word by word in the sentence and the predicted sequence.
@@ -314,7 +301,7 @@ int pdt( Logfile& l, Config& c ) {
 	//  "ctx.push( token );" above. Skip the largest (could be more?).
 	//
 	predictions.clear();
-	Tokenize( (*si), predictions );
+	Tokenize( si, predictions );
 	pi = predictions.begin(); //start at first word of predicted sequence
 	wi = words.begin(); // start at current word in sentence
 	advance( wi, i+1 ); //advance to next word in sentence (PJB optimise)
@@ -330,8 +317,8 @@ int pdt( Logfile& l, Config& c ) {
 	  } else {
 	    mismatched = true;
 	  }
-	  pi++;
-	  wi++;
+	  ++pi;
+	  ++wi;
 	}
 
 	// Skip if not > minmatch (to skip silly matches like comma's)
@@ -357,7 +344,7 @@ int pdt( Logfile& l, Config& c ) {
 	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
 	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "."
 		   << std::setfill('0') << std::setw(4) << instance_count << "."
-		   << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
+		   << std::setfill('0') << std::setw(4) << prediction_count << si << std::endl;
 
 	  if ( matched != "" )  {
 	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "."
@@ -367,7 +354,6 @@ int pdt( Logfile& l, Config& c ) {
 	  }
 	}
 	prediction_count++;
-	si++;
       }
       strs.clear();
 
@@ -395,7 +381,7 @@ int pdt( Logfile& l, Config& c ) {
 
   c.add_kv( "pdt_file", output_filename );
   l.log( "SET pdt_file to "+output_filename );
-
+  delete My_Experiment;
   return 0;
 }
 
@@ -422,8 +408,6 @@ int pdt2( Logfile& l, Config& c ) {
 
   Timbl::TimblAPI   *My_Experiment0;
   Timbl::TimblAPI   *My_Experiment1;
-  std::string        distrib;
-  std::vector<std::string> distribution;
 
   if ( contains_id(filename, id) == true ) {
     id = "";
@@ -484,22 +468,28 @@ int pdt2( Logfile& l, Config& c ) {
     My_Experiment0 = new Timbl::TimblAPI( timbl0 );
     if ( ! My_Experiment0->Valid() ) {
       l.log( "Timbl Experiment0 is not valid." );
+      delete My_Experiment0;
       return 1;
     }
     (void)My_Experiment0->GetInstanceBase( ibasefile0 );
     if ( ! My_Experiment0->Valid() ) {
       l.log( "Timbl Experiment0 is not valid." );
+      delete My_Experiment0;
       return 1;
     }
     // My_Experiment->Classify( cl, result, distrib, distance );
     My_Experiment1 = new Timbl::TimblAPI( timbl1 );
     if ( ! My_Experiment1->Valid() ) {
       l.log( "Timbl Experiment1 is not valid." );
+      delete My_Experiment0;
+      delete My_Experiment1;
       return 1;
     }
     (void)My_Experiment1->GetInstanceBase( ibasefile1 );
     if ( ! My_Experiment1->Valid() ) {
       l.log( "Timbl Experiment1 is not valid." );
+      delete My_Experiment0;
+      delete My_Experiment1;
       return 1;
     }
   } catch (...) {
@@ -522,14 +512,9 @@ int pdt2( Logfile& l, Config& c ) {
   std::string a_line;
   std::string token;
   std::string letter;
-  std::string result;
-  std::vector<std::string> results;
-  std::vector<std::string> targets;
-  std::vector<std::string>::iterator ri;
   std::vector<std::string> words;
   std::vector<std::string> letters;
   std::vector<std::string>::iterator wi;
-  std::vector<std::string>::iterator li;
   std::vector<std::string> predictions;
   std::vector<std::string>::iterator pi;
   Timbl::ValueDistribution::dist_iterator it;
@@ -545,8 +530,6 @@ int pdt2( Logfile& l, Config& c ) {
   //
   int ctx_size1 = lc1+rc1;
   Context ctx1(ctx_size1);
-
-  std::vector<distr_elem> res;
 
   file_out << "# l" << length;
   for ( int i = length; i > 0; i-- ) {
@@ -748,11 +731,10 @@ int pdt2( Logfile& l, Config& c ) {
       file_out << ctx1 << std::endl;
       */
 
-      std::vector<std::string>::iterator si = strs.begin();
       prediction_count = 0;
       long savedhere = 0; // key presses saved in this prediction.
       int adjust = 0; // Adjust the keys saved if we find word predictor matches.
-      while ( si != strs.end() ) {
+      for ( const auto si : strs ) {
 
 	// We should check if the prediction matches the original sentence.
 	// We compare word by word in the sentence and the predicted sequence.
@@ -766,7 +748,7 @@ int pdt2( Logfile& l, Config& c ) {
 	//  "ctx.push( token );" above. Skip the largest (could be more?).
 	//
 	predictions.clear();
-	Tokenize( (*si), predictions );
+	Tokenize( si, predictions );
 	pi = predictions.begin(); //start at first word of predicted sequence
 	wi = words.begin(); // start at current word in sentence
 	advance( wi, i+1 ); //advance to next word in sentence (PJB optimise)
@@ -782,8 +764,8 @@ int pdt2( Logfile& l, Config& c ) {
 	  } else {
 	    mismatched = true;
 	  }
-	  pi++;
-	  wi++;
+	  ++pi;
+	  ++wi;
 	}
 
 	// We take largest number of presses, not words. Same result.
@@ -805,7 +787,7 @@ int pdt2( Logfile& l, Config& c ) {
 	if ( ( matchesonly && (matched != "") ) || ( matchesonly == false ) ) {
 	  file_out << "P" << std::setfill('0') << std::setw(4) << sentence_count << "."
 		   << std::setfill('0') << std::setw(4) << instance_count << "."
-		   << std::setfill('0') << std::setw(4) << prediction_count << (*si) << std::endl;
+		   << std::setfill('0') << std::setw(4) << prediction_count << si << std::endl;
 
 	  if ( matched != "" ) {
 	    file_out << "M" << std::setfill('0') << std::setw(4) << sentence_count << "."
@@ -820,7 +802,6 @@ int pdt2( Logfile& l, Config& c ) {
 	  }
 	}
 	prediction_count++;
-	si++;
       } //si over strs
 
       strs.clear();
@@ -871,22 +852,18 @@ int pdt2( Logfile& l, Config& c ) {
 // Should implement caching? Threading, ...
 // Cache must be 'global', contained in c maybe, or a parameter.
 //
-void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::vector<distr_elem>& distr_vec ) {
+void generate_next( Timbl::TimblAPI* My_Experiment,
+		    const std::string& instance,
+		    std::vector<distr_elem>& distr_vec ) {
 
-  std::string distrib;
-  std::vector<std::string> distribution;
   double distance;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  std::string result;
-
   tv = My_Experiment->Classify( instance, vd, distance );
   if ( ! tv ) {
     //l.log( "ERROR: Timbl returned a classification error, aborting." );
     //error
   }
-
-  result = tv->Name();
 
   // Grok the distribution returned by Timbl.
   //
@@ -912,8 +889,12 @@ void generate_next( Timbl::TimblAPI* My_Experiment, std::string instance, std::v
 
 // Recursive. How to do variable length? Use dc parameter instead of lenth?
 //
-void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<std::string>& strs, int length, std::vector<int>& depths, int dc, std::string t ) {
-
+void generate_tree( Timbl::TimblAPI* My_Experiment,
+		    Context& ctx,
+		    std::vector<std::string>& strs,
+		    int length, std::vector<int>& depths,
+		    int dc,
+		    const std::string& t ) {
   if ( dc == 0 ) {
     // here we should save/print the whole "string" (?)
     //std::cout << "STRING: [" << t << "]" << std::endl;
@@ -922,8 +903,6 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
   }
 
   //std::cerr << "gen_tree: ctx=" << ctx.toString() << " / l=" << length << ", t=" << t << std::endl;
-
-  std::string result;
 
   // generate top-n, for each, recurse one down.
   // Need a different res in generate_next, and keep another (kind of) res
@@ -964,7 +943,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
       generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
     }
 
-    fi++;
+    ++fi;
   }
 
 }
@@ -975,11 +954,11 @@ void generate_tree( Timbl::TimblAPI* My_Experiment, Context& ctx, std::vector<st
 // Quick&dirty hack, pdt should be re-written (some day).
 //
 #ifndef HAVE_ICU
-size_t count_keys(std::string& line) {
+size_t count_keys( const std::string& line ) {
   return line.size();
 }
 #else
-size_t count_keys(std::string& line) {
+size_t count_keys( const std::string& line ) {
   UnicodeString ustr = UnicodeString::fromUTF8(line);
   return ustr.length();
 }
@@ -988,7 +967,8 @@ size_t count_keys(std::string& line) {
 // foo -> f o o
 //
 #ifndef HAVE_ICU
-int explode(std::string a_word, std::vector<std::string>& res) {
+int explode( const std::string& a_word,
+	     std::vector<std::string>& res) {
   for ( int i = 0; i < a_word.length(); i++ ) {
     std::string tmp = a_word.substr(i, 1);
     res.push_back( tmp );
@@ -996,7 +976,8 @@ int explode(std::string a_word, std::vector<std::string>& res) {
   return res.size();
 }
 #else
-int explode(std::string a_word, std::vector<std::string>& res) {
+int explode( const std::string& a_word,
+	     std::vector<std::string>& res) {
   UnicodeString ustr = UnicodeString::fromUTF8(a_word);
   for ( int i = 0; i < ustr.length(); i++ ) {
     UnicodeString tmp = ustr.charAt(i);
@@ -1014,7 +995,11 @@ int explode(std::string a_word, std::vector<std::string>& res) {
 // h e  _
 //
 #ifndef HAVE_ICU
-void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx, std::vector<std::string>& res) {
+void window_word_letters( const std::string& a_word,
+			  const std::string& t,
+			  int lc,
+			  Context& ctx,
+			  std::vector<std::string>& res) {
   int i;
   for ( i = 0; i < a_word.length()-1; i++ ) { //NB ()-1
     std::string tmp = a_word.substr(i, 1);
@@ -1028,7 +1013,11 @@ void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx
   res.push_back( ctx.toString() + " " + "_" ); //instead of t
 }
 #else
-void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx, std::vector<std::string>& res) {
+void window_word_letters( const std::string& a_word,
+			  const std::string& t,
+			  int lc,
+			  Context& ctx,
+			  std::vector<std::string>& res ) {
   int i;
   //UnicodeString ustr = UnicodeString::fromUTF8(StringPiece(a_word.c_str()));
   UnicodeString ustr = UnicodeString::fromUTF8(a_word);
@@ -1057,9 +1046,11 @@ void window_word_letters(std::string a_word, std::string t, int lc, Context& ctx
 // e _ man  <- from extra space inserted
 // _ m man
 //
-void window_words_letters(std::string a_line, int lc, Context& ctx, std::vector<std::string>& res) {
+void window_words_letters( const std::string& a_line,
+			   int lc,
+			   Context& ctx,
+			   std::vector<std::string>& res ) {
   std::vector<std::string> words;
-  std::vector<std::string>::iterator wi;
   Tokenize( a_line, words );
   size_t i;
   for ( i = 0; i < words.size(); i++ ) { // each word
@@ -1116,12 +1107,11 @@ int window_letters( Logfile& l, Config& c ) {
 
   std::string                        a_word;
   std::string                        a_line;
-  bool                               first = true; //false to get first line with empty context
   std::vector<std::string>           results;
-  std::vector<std::string>::iterator ri;
   Context ctx(lc);
 
   if ( mode == 0 ) {
+    bool first = true; //false to get first line with empty context
     while ( file_in >> a_word ) {
 
       if ( ! first ) {
@@ -1134,8 +1124,8 @@ int window_letters( Logfile& l, Config& c ) {
 	results.push_back( ctx.toString() + " " + a_word );
       }
       window_word_letters(a_word, a_word, lc, ctx, results);
-      for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	file_out << *ri << "\n";
+      for ( const auto& ri : results ) {
+	file_out << ri << "\n";
       }
       first =  false;
       results.clear();
@@ -1147,8 +1137,8 @@ int window_letters( Logfile& l, Config& c ) {
 	continue;
       }
       window_words_letters(a_line, lc, ctx, results);
-      for ( ri = results.begin(); ri != results.end(); ri++ ) {
-	file_out << *ri << "\n";
+      for ( const auto& ri : results ) {
+	file_out << ri << "\n";
       }
       results.clear();
       ctx.reset();

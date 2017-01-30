@@ -69,7 +69,8 @@ pthread_mutex_t Logfile::mtx = PTHREAD_MUTEX_INITIALIZER;
 /*!
   \brief Creates a logfile which prints to cout.
 */
-Logfile::Logfile() {
+Logfile::Logfile(): clck_mu_sec(0)
+{
   init();
 }
 
