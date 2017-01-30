@@ -433,17 +433,9 @@ class Classifier {
   }
 #endif
 
-#ifdef TIMBL
-  void classify( const std::string& cl, const Timbl::TargetValue *tv,
-		 const Timbl::ValueDistribution *vd ) {
-    tv = My_Experiment->Classify( cl, vd );
-  }
-#endif
-
 /*
 transform( result.begin(), result.end(), vectors[i].begin(),result.begin(), plus<T>() ) ;
 */
 };
 
 #endif
-
