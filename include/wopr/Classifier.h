@@ -120,7 +120,8 @@ class Classifier {
   void set_ws( int i ) {
     ws = i;
   }
-  int get_ws() {
+
+  int get_ws() const {
     return ws;
   }
 
@@ -131,56 +132,63 @@ class Classifier {
   void set_testfile( const std::string& t ) {
     testfile = t;
   }
-  const std::string& get_testfile() {
+
+  const std::string& get_testfile() const {
     return testfile;
   }
 
   void set_distfile( const std::string& t ) {
     distfile = t;
   }
-  const std::string& get_distfile() {
+
+  const std::string& get_distfile() const {
     return distfile;
   }
 
   void set_weight( double w ) {
     weight = w;
   }
-  double get_weight() {
+
+  double get_weight() const {
     return weight;
   }
 
   void set_distprob( double p ) {
     distprob = p;
   }
-  double get_distprob() {
+  double get_distprob() const {
     return distprob;
   }
 
   void set_type( int t ) {
     type = t;
   }
-  int get_type() {
+
+  int get_type() const {
     return type;
   }
 
   void set_subtype( int t ) {
     subtype = t;
   }
-  int get_subtype() {
+
+  int get_subtype() const {
     return subtype;
   }
 
   void set_gatetrigger( const std::string& t ) {
     gatetrigger = t;
   }
-  const std::string& get_gatetrigger() {
+
+  const std::string& get_gatetrigger() const {
     return gatetrigger;
   }
 
   void set_gatepos( int p ) {
     gatepos = p;
   }
-  int get_gatepos() {
+
+  int get_gatepos() const {
     return gatepos;
   }
 
@@ -402,26 +410,29 @@ class Classifier {
   void inc_correct() {
     ++correct;
   }
-  long get_correct() {
+
+  long get_correct() const {
     return correct;
   }
 
-  long get_cc() {
+  long get_cc() const {
     return classification_count;
   }
 
-  long get_cg() {
+  long get_cg() const {
     return score_cg;
   }
-  long get_cd() {
+
+  long get_cd() const {
     return score_cd;
   }
-  long get_ic() {
+
+  long get_ic() const {
     return score_ic;
   }
 
 
-  std::string info_str() {
+  std::string info_str() const {
     return id+"/"+ibasefile+"/"+testfile+"/wgt="+to_str(weight)
       +"/type="+to_str(type);
   }
@@ -441,7 +452,7 @@ class Classifier {
   }
 
 #ifdef TIMBL
-  Timbl::TimblAPI *get_exp() {
+  Timbl::TimblAPI *get_exp()  const {
     return My_Experiment;
   }
 #endif

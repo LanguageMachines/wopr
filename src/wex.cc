@@ -66,8 +66,8 @@ int multi( Logfile& l, Config& c ) {
   int                ws               = my_stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = my_stoi( c.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".px" + to_str(ws);
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
+  //  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
+  //  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -91,52 +91,53 @@ int multi( Logfile& l, Config& c ) {
     return -1;
   }
 
-  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
-  //
-  int wfreq;
-  unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
-  std::map<std::string,int> wfreqs; // whole lexicon
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "NOTICE: cannot load lexicon file." );
-    //return -1;
-  } else {
-    // Read the lexicon with word frequencies.
-    // We need a hash with frequence - countOfFrequency, ffreqs.
-    //
-    l.log( "Reading lexicon." );
-    std::string a_word;
-    while ( file_lexicon >> a_word >> wfreq ) {
-      wfreqs[a_word] = wfreq;
-      total_count += wfreq;
-      if ( wfreq == 1 ) {
-	++N_1;
-      }
-    }
-    file_lexicon.close();
-    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-  }
+  // BUG: KvdS the code below is reading a file and assigne values which are
+  // NEVER USED!
+
+  // // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  // //
+  // unsigned long total_count = 0;
+  // unsigned long N_1 = 0; // Count for p0 estimate.
+  // std::ifstream file_lexicon( lexicon_filename.c_str() );
+  // if ( ! file_lexicon ) {
+  //   l.log( "NOTICE: cannot load lexicon file." );
+  //   //return -1;
+  // } else {
+  //   // Read the lexicon with word frequencies.
+  //   // We need a hash with frequence - countOfFrequency, ffreqs.
+  //   //
+  //   l.log( "Reading lexicon." );
+  //   std::string a_word;
+  //   int wfreq;
+  //   while ( file_lexicon >> a_word >> wfreq ) {
+  //     total_count += wfreq;
+  //     if ( wfreq == 1 ) {
+  // 	++N_1;
+  //     }
+  //   }
+  //   file_lexicon.close();
+  //   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  // }
 
   // BUG: KvdS the code here is reading a file and assigne values which are
   // NEVER USED!
 
-  // If we want smoothed counts, we need this file...
-  // Make mapping <int, double> from c to c* ?
-  //
-  std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
-  std::ifstream file_counts( counts_filename.c_str() );
-  if ( ! file_counts ) {
-    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
-  } else {
-    while( file_counts >> count >> Nc0 >> Nc1 ) {
-      c_stars[count] = Nc1;
-    }
-    file_counts.close();
-  }
+  // // If we want smoothed counts, we need this file...
+  // // Make mapping <int, double> from c to c* ?
+  // //
+  // std::map<int,double> c_stars;
+  // int Nc0;
+  // double Nc1; // this is c*
+  // int count;
+  // std::ifstream file_counts( counts_filename.c_str() );
+  // if ( ! file_counts ) {
+  //   l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
+  // } else {
+  //   while( file_counts >> count >> Nc0 >> Nc1 ) {
+  //     c_stars[count] = Nc1;
+  //   }
+  //   file_counts.close();
+  // }
 
   // The P(new_word) according to GoodTuring-3.pdf
   // We need the filename.cnt for this, because we really need to
@@ -156,9 +157,7 @@ int multi( Logfile& l, Config& c ) {
 
   // read kvs
   //
-  std::map<int, Classifier*> ws_classifier; // size -> classifier.
   std::vector<Classifier*> cls;
-  std::vector<Classifier*>::iterator cli;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::ifstream file_kvs( kvs_filename.c_str() );
@@ -169,11 +168,9 @@ int multi( Logfile& l, Config& c ) {
     read_classifiers_from_file( file_kvs, cls );
     l.log( to_str((int)cls.size()) );
     file_kvs.close();
-    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
-      l.log( (*cli)->id );
-      (*cli)->init();
-      int c_ws = (*cli)->get_ws();
-      ws_classifier[c_ws] = *cli;
+    for ( auto const& cli : cls ) {
+      l.log( cli->id );
+      cli->init();
     }
     l.log( "Read classifiers." );
   }
@@ -193,7 +190,6 @@ int multi( Logfile& l, Config& c ) {
     // one per word in the sentence?
     // Initialise correct target as well...
     //
-    int multi_idx = 0;
     multivec.clear(); // KvdS BUG: This will leak Multi*'s like hell!
     words.clear();
     Tokenize( a_line, words, ' ' );
@@ -205,11 +201,9 @@ int multi( Logfile& l, Config& c ) {
 
     // We loop over classifiers, vote which result we take.
     //
-    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
-
-      Classifier *classifier = *cli;
-      l.log( "Classifier: " + (*cli)->id );
-      int win_s = (*cli)->get_ws();
+    for ( auto const& classifier : cls ) {
+      l.log( "Classifier: " + classifier->id );
+      int win_s = classifier->get_ws();
       //l.log( "win_s="+to_str(win_s) );
 
       Timbl::TimblAPI *timbl = classifier->get_exp();
@@ -230,7 +224,7 @@ int multi( Logfile& l, Config& c ) {
       // We need a data structure to gather all the results and probability
       // values... (classifier, classification, distr?, prob....)
       //
-      multi_idx = 0;
+      int multi_idx = 0;
       for ( const auto& cl : results ) {
 	file_out << cl << std::endl;
 
@@ -413,50 +407,54 @@ int multi_dist( Logfile& l, Config& c ) {
     return -1;
   }
 
-  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
-  //
-  int wfreq;
-  unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "NOTICE: cannot load lexicon file." );
-    //return -1;
-  } else {
-    // Read the lexicon with word frequencies.
-    // We need a hash with frequence - countOfFrequency, ffreqs.
-    //
-    l.log( "Reading lexicon." );
-    std::string a_word;
-    while ( file_lexicon >> a_word >> wfreq ) {
-      total_count += wfreq;
-      if ( wfreq == 1 ) {
-	++N_1;
-      }
-    }
-    file_lexicon.close();
-    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-  }
+  // BUG: KvdS the code below is reading a file and assigne values which are
+  // NEVER USED!
+
+
+  // // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  // //
+  // int wfreq;
+  // unsigned long total_count = 0;
+  // unsigned long N_1 = 0; // Count for p0 estimate.
+  // std::ifstream file_lexicon( lexicon_filename.c_str() );
+  // if ( ! file_lexicon ) {
+  //   l.log( "NOTICE: cannot load lexicon file." );
+  //   //return -1;
+  // } else {
+  //   // Read the lexicon with word frequencies.
+  //   // We need a hash with frequence - countOfFrequency, ffreqs.
+  //   //
+  //   l.log( "Reading lexicon." );
+  //   std::string a_word;
+  //   while ( file_lexicon >> a_word >> wfreq ) {
+  //     total_count += wfreq;
+  //     if ( wfreq == 1 ) {
+  // 	++N_1;
+  //     }
+  //   }
+  //   file_lexicon.close();
+  //   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  // }
 
   // BUG: KvdS the code here is reading a file and assigne values which are
   // NEVER USED!
 
-  // If we want smoothed counts, we need this file...
-  // Make mapping <int, double> from c to c* ?
-  //
-  std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
-  std::ifstream file_counts( counts_filename.c_str() );
-  if ( ! file_counts ) {
-    l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
-  } else {
-    while( file_counts >> count >> Nc0 >> Nc1 ) {
-      c_stars[count] = Nc1;
-    }
-    file_counts.close();
-  }
+  // // If we want smoothed counts, we need this file...
+  // // Make mapping <int, double> from c to c* ?
+  // //
+  // std::map<int,double> c_stars;
+  // int Nc0;
+  // double Nc1; // this is c*
+  // int count;
+  // std::ifstream file_counts( counts_filename.c_str() );
+  // if ( ! file_counts ) {
+  //   l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
+  // } else {
+  //   while( file_counts >> count >> Nc0 >> Nc1 ) {
+  //     c_stars[count] = Nc1;
+  //   }
+  //   file_counts.close();
+  // }
 
   // The P(new_word) according to GoodTuring-3.pdf
   // We need the filename.cnt for this, because we really need to
@@ -479,7 +477,6 @@ int multi_dist( Logfile& l, Config& c ) {
   //
   std::vector<Classifier*> cls;
   std::vector<Classifier*>::iterator cli;
-  int classifier_count = 0;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::ifstream file_kvs( kvs_filename.c_str() );
@@ -493,7 +490,6 @@ int multi_dist( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
       l.log( (*cli)->id );
       (*cli)->init();
-      ++classifier_count;
       l.log( (*cli)->info_str() );
     }
     l.log( "Read classifiers. Starting classification." );
@@ -507,7 +503,6 @@ int multi_dist( Logfile& l, Config& c ) {
   std::vector<std::string> words;
   std::vector<distr_probs> distr_vec;
   std::map<std::string, double> combined_distr;
-  std::vector<double> distr_counts(classifier_count); // to calculate probs
   long combined_correct = 0;
 
   while( std::getline( file_in, a_line )) { // in right instance format
@@ -542,7 +537,6 @@ int multi_dist( Logfile& l, Config& c ) {
       bool   mal = timbl->matchedAtLeaf();
 
       int distr_count = vd->totalSize(); // sum of freqs in distr.
-      distr_counts[classifier_idx] = distr_count;
 
       /*l.log( (*cli)->id + ":" + cl + "/" + answer + " " +
 	to_str(cnt) + "/" + to_str(distr_count) );*/
@@ -655,37 +649,39 @@ int multi_dist2( Logfile& l, Config& c ) {
     return -1;
   }
 
-  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
-  //
-  int wfreq;
-  unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "NOTICE: cannot load lexicon file." );
-    //return -1;
-  } else {
-    // Read the lexicon with word frequencies.
-    // We need a hash with frequence - countOfFrequency, ffreqs.
-    //
-    l.log( "Reading lexicon." );
-    std::string a_word;
-    while ( file_lexicon >> a_word >> wfreq ) {
-      total_count += wfreq;
-      if ( wfreq == 1 ) {
-	++N_1;
-      }
-    }
-    file_lexicon.close();
-    l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-  }
+  // BUG: KvdS the code below is reading a file and assigne values which are
+  // NEVER USED!
+
+  // // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  // //
+  // int wfreq;
+  // unsigned long total_count = 0;
+  // unsigned long N_1 = 0; // Count for p0 estimate.
+  // std::ifstream file_lexicon( lexicon_filename.c_str() );
+  // if ( ! file_lexicon ) {
+  //   l.log( "NOTICE: cannot load lexicon file." );
+  //   //return -1;
+  // } else {
+  //   // Read the lexicon with word frequencies.
+  //   // We need a hash with frequence - countOfFrequency, ffreqs.
+  //   //
+  //   l.log( "Reading lexicon." );
+  //   std::string a_word;
+  //   while ( file_lexicon >> a_word >> wfreq ) {
+  //     total_count += wfreq;
+  //     if ( wfreq == 1 ) {
+  // 	++N_1;
+  //     }
+  //   }
+  //   file_lexicon.close();
+  //   l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  // }
 
   // read kvs
   // in multi_dist we don't need the size, we read a testfile instead.
   //
   std::vector<Classifier*> cls;
   std::vector<Classifier*>::iterator cli;
-  int classifier_count = 0;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
     std::ifstream file_kvs( kvs_filename.c_str() );
@@ -720,8 +716,6 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  (*cli)->set_subtype(2);
 	}
       }
-
-      ++classifier_count;
       l.log( (*cli)->info_str() );
     }
     l.log( "Read classifiers. Starting classification." );
@@ -919,9 +913,7 @@ int multi_gated( Logfile& l, Config& c ) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  int wfreq;
   unsigned long total_count = 0;
-  unsigned long N_1 = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
   std::ifstream file_lexicon( lexicon_filename.c_str() );
   if ( ! file_lexicon ) {
@@ -933,12 +925,10 @@ int multi_gated( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq;
-      if ( wfreq == 1 ) {
-		++N_1;
-      }
     }
     file_lexicon.close();
     l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
@@ -949,7 +939,6 @@ int multi_gated( Logfile& l, Config& c ) {
   std::vector<Classifier*> cls;
   std::vector<Classifier*>::iterator cli;
   std::map<std::string,Classifier*> gated_cls; // reverse list
-  int classifier_count = 0;
   Classifier* dflt = NULL;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
@@ -973,8 +962,6 @@ int multi_gated( Logfile& l, Config& c ) {
       } else if ( (*cli)->get_type() == 4 ) { //Well, not the default one
 		dflt = (*cli);
       }
-
-      ++classifier_count;
       l.log( (*cli)->info_str() );
     }
 
@@ -995,7 +982,6 @@ int multi_gated( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> words;
-  int pos;
   std::map<std::string, Classifier*>::iterator gci;
   std::string gate;
   std::string target;
@@ -1017,10 +1003,10 @@ int multi_gated( Logfile& l, Config& c ) {
     // to  be used for an instance, on different fco
     // positions... (hm, a multi-dist-gated version?)
 
-    pos    = words.size()-1-fco;
-    pos    = (pos < 0) ? 0 : pos;
-    gate   = words[pos];
-    target = words[words.size()-1];
+    int pos = words.size()-1-fco;
+    pos     = (pos < 0) ? 0 : pos;
+    gate    = words[pos];
+    target  = words[words.size()-1];
 
     //l.log( a_line + " / " + gate );
 
