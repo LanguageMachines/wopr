@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2008-2014 Peter Berck                                           *
+ * Copyright 2008-2017 Peter Berck, Ko van der Sloot                         *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -77,10 +73,6 @@ Node* Arc::get_node() {
 Node::Node( int n ) {
   classhash = n;
   //std::cout << "Node(" << n << ")\n";
-}
-
-void Node::set_defaultclass( int c ) {
-  classhash = c;
 }
 
 void Node::add_dist( int c, int f ) {
@@ -239,17 +231,13 @@ int read_digits( std::ifstream& f ) {
 
 void read_dist( Node* n, std::ifstream& f, int d, std::vector<int>& counts ) {
   char chr;
-  std::string res;
-
   f.get( chr ); // skip space
-  int number;
-  int freq;
   int count = 0;
   bool readdist = true;
   while ( readdist ) {
-    number = read_digits( f );
+    int number = read_digits( f );
     f.get( chr ); // skip space
-    freq = read_digits( f );
+    int freq = read_digits( f );
     n->add_dist( number, freq ); // Insert smoothed value already here?
     // that would allow us to save back a smoothed ibase.
     // error....Timbl wants integers.
