@@ -91,7 +91,7 @@
 #define BACKLOG 5     // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once
 
-void sigchld_handler( int s ) {
+void sigchld_handler( int ) {
   while(waitpid(-1, NULL, WNOHANG) > 0);
 }
 
@@ -779,12 +779,12 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 /*
   This one is for moses
 */
-int server3(Logfile& l, Config& c) {
+int server3(Logfile& l, Config& ) {
   l.log( "server3. Deprecated." );
   return -1;
 }
 #else
-int server3( Logfile& l, Config& c ) {
+int server3( Logfile& l, Config& ) {
   l.log( "No TIMBL support." );
   return -1;
 }

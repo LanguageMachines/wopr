@@ -184,7 +184,7 @@ std::string to_str(double i) {
   Q&D method to get a string rep. of an integer.
   see: http://www.arachnoid.com/cpptutor/student3.html
 */
-std::string to_str(double i, int p) {
+std::string to_str(double i, int ) {
   std::ostringstream ostr;
   //ostr << std::setiosflags(std::ios::fixed) << std::setprecision(p) << i;
   ostr << i;
@@ -322,8 +322,6 @@ long parse_date_time(const std::string& d) {
   int mn = my_stoi( d.substr(14, 2) );
 
   struct tm t_s;
-  extern time_t timezone;
-  extern int daylight;
 
   t_s.tm_sec  = 0;//timezone; /* seconds after the minute [0, 61] */
   t_s.tm_min  = mn;       /* minutes after the hour [0, 59] */
