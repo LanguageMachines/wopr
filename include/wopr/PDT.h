@@ -23,7 +23,6 @@ const int PDTC_INVALID = 1;
 class PDTC {
  public:
   std::string id;
-  int         type;
   int         status;
   std::string ibasefile;
   std::string timbl;
@@ -40,6 +39,13 @@ class PDTC {
 
   PDTC() {
     status = PDTC_EMPTY;
+#ifdef TIMBL
+    My_Experiment = 0;
+    vd = 0;
+    tv = 0;
+#endif
+    ctx = 0;
+    ctx_size = -1;
     add_log( "PDC() called." );
   }
 
@@ -47,7 +53,7 @@ class PDTC {
     log.clear();
   }
 
-  void init( const std::string f, const std::string t, int c ) {
+  void init( const std::string& f, const std::string& t, int c ) {
     ibasefile = f;
     timbl = t;
     ctx_size = c;
@@ -80,12 +86,11 @@ class PDTC {
     log.push_back( s );
   }
   void dump_log() {
-    std::vector<std::string>::iterator li;
-    for ( li = log.begin(); li != log.end(); li++ ) {
-      std::cerr << *li << "\n";
+    for ( const auto& li : log ) {
+      std::cerr << li << "\n";
     }
   }
-  
+
 };
 
 // ----
@@ -98,7 +103,7 @@ class History {
 
   //! Constructor.
   //!
-  History(size_t m) {
+  explicit History(size_t m) {
     max = m;
     his.resize(max);
     his.clear();
@@ -119,7 +124,7 @@ class History {
     }
     //dump();
   }
-  
+
   Context* get() {
     // check size?
     std::cerr << the_time() << ": (get)his.size()=" << his.size() << std::endl;
@@ -141,7 +146,7 @@ class History {
       std::cerr << the_time() << ": (dump)(" << i << ")=" << his.at(i)->toString() << std::endl;
     }
   }
-  
+
 };
 
 // ----
@@ -177,9 +182,18 @@ class PDT {
   //! Constructor.
   //!
   PDT() {
+    n = -1;
+    dl = -1;
     start_t = utc();
     last_t = utc();
     lpos = 0;
+    ltr_c = 0;
+    wrd_c = 0;
+    ltr_ctx = 0;
+    wrd_ctx = 0;
+    p_wrd_ctx = 0;
+    ltr_his = 0;
+    wrd_his = 0;
   };
 
   //! Destructor.
@@ -195,9 +209,8 @@ class PDT {
     log.push_back( s );
   }
   void dump_log() {
-    std::vector<std::string>::iterator li;
-    for ( li = log.begin(); li != log.end(); li++ ) {
-      std::cerr << *li << "\n";
+    for ( const auto& li :log ) {
+      std::cerr << li << "\n";
     }
   }
 
@@ -258,7 +271,7 @@ class PDT {
   //
   int get_ltr_his() {
     return ltr_his->his.size();
-    touch();
+    //    touch(); BUG? never called
   }
 
   // Assume one letter, or explode it first?
@@ -354,17 +367,17 @@ class PDT {
   // We could be half way a word, the first word is the desired
   // continuation. Or we could be on a space.
   //
-  void feed( std::string& s ) {
-    // feed_ltr( std::string& s )
-    // if ( ltr_ctx->last_letter() == "_" ) ...
-    // feed_wrd( std::string& s )
-  }
+  /* void feed( std::string& s ) { */
+  /*   // feed_ltr( std::string& s ) */
+  /*   // if ( ltr_ctx->last_letter() == "_" ) ... */
+  /*   // feed_wrd( std::string& s ) */
+  /* } */
 
 
 
   time_t age() {
     return utc() - start_t;
-    touch();
+    //    touch(); BUG?? never called
   }
   time_t idle() {
     return utc() - last_t;

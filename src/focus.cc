@@ -75,7 +75,10 @@ int focus( Logfile& l, Config& c ) {
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
     output_filename = output_filename + "_" + id;
   }
+
+#ifdef TIMBL
   std::string        kvs_filename    = output_filename + ".kvs";
+#endif
   std::string        combined_class  = c.get_value( "PID", "0000" );
 
   if ( fco < 0 ) {
@@ -203,7 +206,6 @@ int focus( Logfile& l, Config& c ) {
     }
 
     std::string target;
-    std::string a_str;
     std::map<std::string, int>::iterator ri;
 
     while( std::getline( file_in, a_line ) ) {

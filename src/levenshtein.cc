@@ -1701,7 +1701,7 @@ int server_sc( Logfile& l, Config& c ) {
   l.dec_prefix();
 
 
-  char sep = '\t';
+  const char sep = '\t';
 
   // Load lexicon.
   //
@@ -2147,7 +2147,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
   //
   int hapax = 0;
 
-  char sep = '\t';
+  const char sep = '\t';
 
   // Load lexicon.
   //
@@ -2912,6 +2912,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		// Check match-depth, if too undeep, we are probably
 		// unsure.
 		//
+		// KvdS : possible BUG: md is never set to != 0, but tested
 		size_t md  = 0; //My_Experiment->matchDepth();
 		//bool   mal = 0; //My_Experiment->matchedAtLeaf();
 

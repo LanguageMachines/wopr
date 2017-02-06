@@ -364,8 +364,6 @@ std::string generate_xml( std::string& a_line, int len, int ws,
     }
   }
 
-  int mode = 1; // 0 is old
-
   while ( --len >= 0 ) {
     a_line = a_line + " ?";
 
@@ -380,30 +378,30 @@ std::string generate_xml( std::string& a_line, int len, int ws,
     int distr_count = vd->totalSize();
 
     unsigned int rnd_idx;
-    if ( mode == 0 ) {
-      rnd_idx = mtrand.randInt( cnt-1 ); //  % 3;
-    } else {
-      rnd_idx = mtrand.randInt( distr_count-1 );
-    }
+#ifdef OLD_GEN
+    rnd_idx = mtrand.randInt( cnt-1 ); //  % 3;
+#else
+    rnd_idx = mtrand.randInt( distr_count-1 );
+#endif
 
     // Take (top) answer, or choose something from the
     // distribution.
     //
     it = vd->begin();
-    if ( mode == 0 ) {
-      for ( unsigned int i = 0; i < rnd_idx; i++ ) {
-	++it;
-      }
-    } else {
-      unsigned long sum = 0;
-      for ( unsigned int i = 0; i < rnd_idx; i++ ) {
-        sum += it->second->Weight();
-        if ( sum > rnd_idx ) {
-          break;
-        }
-        ++it;
-      }
+#ifdef OLD_GEN
+    for ( unsigned int i = 0; i < rnd_idx; ++i ) {
+      ++it;
     }
+#else
+    unsigned long sum = 0;
+    for ( unsigned int i = 0; i < rnd_idx; ++i ) {
+      sum += it->second->Weight();
+      if ( sum > rnd_idx ) {
+	break;
+      }
+      ++it;
+    }
+#endif
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
     answer = tvs;

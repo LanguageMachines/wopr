@@ -1015,7 +1015,7 @@ void window_word_letters( const std::string& a_word,
 #else
 void window_word_letters( const std::string& a_word,
 			  const std::string& t,
-			  int lc,
+			  int, // unused lc
 			  Context& ctx,
 			  std::vector<std::string>& res ) {
   int i;
@@ -1358,7 +1358,6 @@ int pdt2web( Logfile& l, Config& c ) {
   std::vector<std::string> strs;
   std::vector<std::string>::iterator si = strs.begin();
   std::vector<std::string> letters;
-  std::vector<std::string>::iterator li;
   letters.clear();
 
   /*
@@ -1680,7 +1679,7 @@ int pdt2web( Logfile& l, Config& c ) {
       std::ostringstream ostr;
       ostr << doc;
 
-      std::string answer = pdt->wrd_ctx->toString() + '\n';
+      //      std::string answer = pdt->wrd_ctx->toString() + '\n';
       newSock->write( ostr.str() );
       l.log( ostr.str() );
     } else if ( cmd == "SPC" ) {
@@ -1735,7 +1734,6 @@ int pdt2web( Logfile& l, Config& c ) {
 	pdt->add_wrd( buf_tokens.at(2) );
 
 	std::vector<std::string> letters;
-	std::vector<std::string>::iterator li;
 	(void)explode( buf_tokens.at(2), letters );
 	// need a space before?
 	for ( size_t j = 0; j < letters.size(); j++ ) {
