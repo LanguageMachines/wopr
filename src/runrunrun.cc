@@ -113,7 +113,7 @@ int make_ibase( Logfile& l, Config& c ) {
   const std::string& timbl          =  c.get_value("timbl");
   const std::string& filename       = c.get_value( "filename" );
   const std::string& ibasefile      = c.get_value( "ibasefile", "" ); //pbmbmt
-  std::string        id             = c.get_value( "id", "" );
+  //  std::string        id             = c.get_value( "id", "" );
 
   //std::string t_ext = timbl;
   std::string ibase_filename = filename;
@@ -190,7 +190,7 @@ int run_external( Logfile* l, Config *c ) {
   return 0;
 }
 
-int dummy( Logfile* l, Config *c ) {
+int dummy( Logfile* l, Config *) {
   l->log( "ERROR, dummy function." );
   return -1;
 }
@@ -215,12 +215,12 @@ int count_lines( Logfile& l, Config& c ) {
 }
 
 
-int dump_kv(Logfile *l, Config *c)  {
+int dump_kv(Logfile *, Config *c)  {
   c->dump_kv();
   return 0;
 }
 
-int clear_kv(Logfile *l, Config *c)  {
+int clear_kv(Logfile *, Config *c)  {
   c->clear_kv();
   return 0;
 }
@@ -240,7 +240,6 @@ int script(Logfile& l, Config& c)  {
     if ( a_line.length() == 0 ) {
       continue;
     }
-    std::vector<std::string>cmds;
     std::vector<std::string>kv_pairs;
 
     size_t pos = a_line.find( ':', 0 );
@@ -322,7 +321,6 @@ int script(Logfile& l, Config& c)  {
 	kv_pairs.clear();
 	l.log( "EXTERN2: "+expanded_rhs );
 	FILE *fp;
-	int  status;
 	char line[1024];
 	fp = popen( expanded_rhs.c_str(), "r");
 	if (fp == NULL) {
@@ -334,7 +332,6 @@ int script(Logfile& l, Config& c)  {
 	  //l.log( line ); // Tokenize? add_kv()?
 	  c.add_kv( "extern", line );
 	}
-	status = pclose(fp);
       }
       // SET: options:
       // set: filename:output01
@@ -401,7 +398,7 @@ pt2Func fun_factory( const std::string& a_fname ) {
 
 // NEW
 
-int tst(Logfile& l, Config& c)  {
+int tst( Logfile&, Config& )  {
   return 1;
 }
 
@@ -709,13 +706,12 @@ int letters(Logfile& l, Config& c) {
   }
 
   std::string a_line;
-  std::string::iterator si;
   while ( getline( file_in, a_line )) {
-    for ( si = a_line.begin(); si != a_line.end(); si++ ) {
-      if ( *si == ' ' ) {
+    for ( const auto c : a_line ) {
+      if ( c == ' ' ) {
 	file_out << "_ ";
       } else {
-	file_out << *si << ' ' ;
+	file_out << c << ' ' ;
       }
     }
     file_out << std::endl;
@@ -771,8 +767,6 @@ int window( Logfile& l, Config& c ) {
   // until nomorewords.
   std::string               a_word;
   std::vector<std::string>  window(ws+1, "_");
-  std::map<std::string,int> count;
-  std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
 
   while( file_in >> a_word ) {
@@ -849,7 +843,6 @@ int window_s( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> results;
-  std::vector<std::string> targets;
   std::vector<std::string>::iterator ri;
 
   while( std::getline( file_in, a_line )) {
@@ -864,7 +857,7 @@ int window_s( Logfile& l, Config& c ) {
 
     window( a_line, a_line, ws, 0, 0, false, results );
     if ( (skip == 0) || (results.size() >= (size_t)ws) ) {
-      for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
+      for ( ri = results.begin()+skip; ri != results.end(); ++ri ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
 	//l.log( cl );
@@ -917,8 +910,6 @@ int ngram( Logfile& l, Config& c ) {
   // until nomorewords.
   std::string               a_word;
   std::vector<std::string>  window(ws, "_");
-  std::map<std::string,int> count;
-  std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
 
   for ( int i = 0; i < ws; i++ ) {
@@ -972,13 +963,11 @@ int ngram_s( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> results;
-  std::vector<std::string>::iterator ri;
 
   while( std::getline( file_in, a_line )) {
 
     ngram_line( a_line, ws, results );
-    for ( ri = results.begin(); ri != results.end(); ri++ ) {
-      std::string cl = *ri;
+    for ( const auto cl : results ) {
       file_out << cl << std::endl;
     }
     results.clear();
@@ -1029,9 +1018,7 @@ int prepare( Logfile& l, Config& c ) {
     return -1;
   }
 
-  std::string a_line, a_word;
-  std::vector<std::string> words;
-  std::vector<std::string>::iterator wi;
+  std::string a_line;
   while( std::getline( file_in, a_line )) {
     //
     // How to split the line?
@@ -1112,11 +1099,11 @@ int arpa( Logfile& l, Config& c ) {
   file_out << "ngram " << ws << "=" << count.size() << "\n";
   file_out << "\\" << ws << "-grams:\n";
 
-  for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
-    int ngfreq = (*iter).second;
+  for( const auto& iter : count ) {
+    int ngfreq = iter.second;
     double cprob = (double)ngfreq / (double)total_count;
-    //file_out << to_str(cprob, precision) << " " << (*iter).first << "\n";
-    file_out << log(cprob) << " " << (*iter).first << "\n";
+    //file_out << to_str(cprob, precision) << " " << iter.first << "\n";
+    file_out << log(cprob) << " " << iter.first << "\n";
   }
 
   file_out << "\\end\\\n";
@@ -1158,9 +1145,6 @@ int window_line(Logfile& l, Config& c) {
   Tokenize( a_line, words, ' ' );
 
   std::string classify_line;
-  int correct = 0;
-  int possible = 0;
-  int sentence_length = 0;
   try {
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
     (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
@@ -1169,10 +1153,13 @@ int window_line(Logfile& l, Config& c) {
     std::string result;
     double distance;
     double total_prplx = 0.0;
+    int correct = 0;
+    int possible = 0;
+    int sentence_length = 0;
 
     //window.at(ws-1) = words.at(0); // shift in the first word
     //                      +1 in the above case.
-    for ( wi = words.begin()+0; wi != words.end(); wi++ )  {
+    for ( wi = words.begin()+0; wi != words.end(); ++wi )  {
       ++sentence_length;
       a_word = *wi;
       std::copy( window.begin(), window.end()-1, std::inserter(res, res.end()));
@@ -1283,6 +1270,7 @@ int window_line(Logfile& l, Config& c) {
     for ( int i = 0; i < sentence_length; i++ ) {
       l.log( word_stats.at(i) );
     }
+    delete My_Experiment;
   }
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
@@ -1368,83 +1356,83 @@ int window( std::string a_line, std::string target_str,
   for ( size_t i = offset; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
 
-	if ( it == 0 ) {
-	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
-		if ( fi != si ) {
-		  //spacer = (*fi == "") ? "" : " ";
-		  windowed_line = windowed_line + *fi + " ";
-		}
-	  }
-	  windowed_line = windowed_line + *(ti+offset); // target. function to make target?
-	  res.push_back( windowed_line );
-	  windowed_line.clear();
-	  si++;
-	  ti++;
-	  if ( factor > 0 ) {
-		--factor;
-	  }
+    if ( it == 0 ) {
+      for ( fi = si-lc+factor; fi != si+1+rc; ++fi ) { // context around si
+	if ( fi != si ) {
+	  //spacer = (*fi == "") ? "" : " ";
+	  windowed_line = windowed_line + *fi + " ";
 	}
-	if ( it == 3 ) { //normal l2r2 windowing but target from another file ("l2t3r2")
-	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
-		if ( fi != si ) {
-		  //spacer = (*fi == "") ? "" : " ";
-		  windowed_line = windowed_line + *fi + " ";
-		}
-	  }
-	  windowed_line = windowed_line + *(ti+offset); // target. function to make target?
-	  res.push_back( windowed_line );
-	  windowed_line.clear();
-	  si++;
-	  ti++;
-	  if ( factor > 0 ) {
-		--factor;
-	  }
+      }
+      windowed_line = windowed_line + *(ti+offset); // target. function to make target?
+      res.push_back( windowed_line );
+      windowed_line.clear();
+      ++si;
+      ++ti;
+      if ( factor > 0 ) {
+	--factor;
+      }
+    }
+    if ( it == 3 ) { //normal l2r2 windowing but target from another file ("l2t3r2")
+      for ( fi = si-lc+factor; fi != si+1+rc; ++fi ) { // context around si
+	if ( fi != si ) {
+	  //spacer = (*fi == "") ? "" : " ";
+	  windowed_line = windowed_line + *fi + " ";
 	}
-	if ( it == 1 ) {
-	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
-		if ( fi != si ) {
-		  //spacer = (*fi == "") ? "" : " ";
-		  windowed_line = windowed_line + *fi + " ";
-		} else {
-		  // This can be done two ways. We can have two texts, one good, one with errors.
-		  // Method one:
-		  // Create instances from the error-text, the target is taken from the clean-text.
-		  windowed_line = windowed_line + *fi + " "; // not *(ti+offset) because error from txt
-		}
-	  }
-	  windowed_line = windowed_line + *(ti+offset); // target. function to make target?
-	  res.push_back( windowed_line );
-	  windowed_line.clear();
-	  si++;
-	  ti++;
-	  if ( factor > 0 ) {
-		--factor;
-	  }
+      }
+      windowed_line = windowed_line + *(ti+offset); // target. function to make target?
+      res.push_back( windowed_line );
+      windowed_line.clear();
+      ++si;
+      ++ti;
+      if ( factor > 0 ) {
+	--factor;
+      }
+    }
+    if ( it == 1 ) {
+      for ( fi = si-lc+factor; fi != si+1+rc; ++fi ) { // context around si
+	if ( fi != si ) {
+	  //spacer = (*fi == "") ? "" : " ";
+	  windowed_line = windowed_line + *fi + " ";
+	} else {
+	  // This can be done two ways. We can have two texts, one good, one with errors.
+	  // Method one:
+	  // Create instances from the error-text, the target is taken from the clean-text.
+	  windowed_line = windowed_line + *fi + " "; // not *(ti+offset) because error from txt
 	}
-	if ( it == 2 ) {
-	  std::string t;
-	  for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
-		if ( fi != si ) {
-		  //spacer = (*fi == "") ? "" : " ";
-		  windowed_line = windowed_line + *fi + " ";
-		} else {
-		  // This can be done two ways. We can have two texts, one good, one with errors.
-		  // Method two:
-		  // Create instances from the clean-text, but take the target in the INSTANCES from the error-text.
-		  // The parameters don't have the most logical names in this case.
-		  t = *fi;
-		  windowed_line = windowed_line + *ti + " "; // included target in instance from targetfile.
-		}
-	  }
-	  windowed_line = windowed_line + t;
-	  res.push_back( windowed_line );
-	  windowed_line.clear();
-	  si++;
-	  ti++;
-	  if ( factor > 0 ) {
-		--factor;
-	  }
+      }
+      windowed_line = windowed_line + *(ti+offset); // target. function to make target?
+      res.push_back( windowed_line );
+      windowed_line.clear();
+      ++si;
+      ++ti;
+      if ( factor > 0 ) {
+	--factor;
+      }
+    }
+    if ( it == 2 ) {
+      std::string t;
+      for ( fi = si-lc+factor; fi != si+1+rc; ++fi ) { // context around si
+	if ( fi != si ) {
+	  //spacer = (*fi == "") ? "" : " ";
+	  windowed_line = windowed_line + *fi + " ";
+	} else {
+	  // This can be done two ways. We can have two texts, one good, one with errors.
+	  // Method two:
+	  // Create instances from the clean-text, but take the target in the INSTANCES from the error-text.
+	  // The parameters don't have the most logical names in this case.
+	  t = *fi;
+	  windowed_line = windowed_line + *ti + " "; // included target in instance from targetfile.
 	}
+      }
+      windowed_line = windowed_line + t;
+      res.push_back( windowed_line );
+      windowed_line.clear();
+      ++si;
+      ++ti;
+      if ( factor > 0 ) {
+	--factor;
+      }
+    }
 
   } // int i ...
 
@@ -1493,7 +1481,7 @@ int window( std::string a_line, std::string target_str,
   for ( size_t i = 0; i < words.size(); i++ ) {
     //mark/target is at full(i+lc)
 
-    for ( fi = si-lc+factor; fi != si+1+rc; fi++ ) { // context around si
+    for ( fi = si-lc+factor; fi != si+1+rc; ++fi ) { // context around si
       if ( fi != si ) {
 	//spacer = (*fi == "") ? "" : " ";
 	windowed_line = windowed_line + *fi + " ";
@@ -1506,8 +1494,8 @@ int window( std::string a_line, std::string target_str,
       res.push_back( windowed_line );
     }
     windowed_line.clear();
-    si++;
-    ti++;
+    ++si;
+    ++ti;
     if ( factor > 0 ) {
       --factor;
     }
@@ -1518,8 +1506,11 @@ int window( std::string a_line, std::string target_str,
 
 // With 'backoff'. See comments above. Right context doesn't make sense here.
 //
-int window( std::string a_line, std::string target_str,
-	    int lc, int rc, int bo,
+int window( const std::string& a_line,
+	    const std::string& target_str,
+	    int lc,
+	    int, //rc
+	    int bo,
 	    std::vector<std::string>& res ) {
 
   std::vector<std::string> words;
@@ -1547,7 +1538,7 @@ int window( std::string a_line, std::string target_str,
   si = full.begin()+lc; // first word of the instance
   int factor = lc; // lc for variable length instances.
   for ( size_t i = 0; i < words.size(); i++ ) {
-    for ( fi = si-lc; fi != si-bo; fi++ ) { // context around si
+    for ( fi = si-lc; fi != si-bo; ++fi ) { // context around si
       if ( fi != si ) {
 	windowed_line = windowed_line + *fi + " ";
       }
@@ -1559,8 +1550,8 @@ int window( std::string a_line, std::string target_str,
       res.push_back( windowed_line );
     }
     windowed_line.clear();
-    si++;
-    ti++;
+    ++si;
+    ++ti;
   }
 
   return 0;
@@ -1633,41 +1624,40 @@ int window_lr( Logfile& l, Config& c ) {
   std::string                        a_line;
   std::string                        t_line;
   std::vector<std::string>           results;
-  std::vector<std::string>::iterator ri;
 
   if ( to == 0 ) {
     while( std::getline( file_in, a_line ) ) {
       if ( a_line == "" ) {
-		if ( it > 0 ) { // we assume target file has identical layout/empty lines
-		  std::getline( tfile_in, t_line ); // also forward one line
-		}
-		continue;
+	if ( it > 0 ) { // we assume target file has identical layout/empty lines
+	  std::getline( tfile_in, t_line ); // also forward one line
+	}
+	continue;
       }
-	  if ( it > 0 ) {
-		std::getline( tfile_in, t_line );
-	  }
-	  if ( it == 1 ) {
-		window( a_line, t_line, lc, rc, it, false, results ); // line 1317
-	  }
-	  if ( it == 3 ) {
-		window( a_line, t_line, lc, rc, it, false, results ); // line 1317
-	  }
-	  if ( it == 2 ) {
-		window( t_line, a_line, lc, rc, it, false, results ); // line 1317
-	  }
-	  if ( it == 0 ) {
-		window( a_line, a_line, lc, rc, it, false, results ); // line 1317
-	  }
-      for ( ri = results.begin(); ri != results.end(); ri++ ) {
-		file_out << *ri << "\n";
+      if ( it > 0 ) {
+	std::getline( tfile_in, t_line );
+      }
+      if ( it == 1 ) {
+	window( a_line, t_line, lc, rc, it, false, results ); // line 1317
+      }
+      if ( it == 3 ) {
+	window( a_line, t_line, lc, rc, it, false, results ); // line 1317
+      }
+      if ( it == 2 ) {
+	window( t_line, a_line, lc, rc, it, false, results ); // line 1317
+      }
+      if ( it == 0 ) {
+	window( a_line, a_line, lc, rc, it, false, results ); // line 1317
+      }
+      for ( const auto& ri : results ) {
+	file_out << ri << "\n";
       }
       results.clear();
     }
   } else {
     while( std::getline( file_in, a_line ) ) {
       window( a_line, a_line, lc, rc, false, to, results ); // line 1390
-      for ( ri = results.begin(); ri != results.end(); ri++ ) {
-		file_out << *ri << "\n";
+      for ( const auto& ri : results ) {
+	file_out << ri << "\n";
       }
       results.clear();
     }
@@ -1777,12 +1767,9 @@ int unk_pred( Logfile& l, Config& c ) {
 
   // Set up Timbl.
   //
-  std::string distrib;
   std::string a_line;
-  std::vector<std::string> distribution;
   std::vector<std::string> words;
   std::string result;
-  double distance;
   int unknown_count = 0;
   int skipped_num = 0;
   int skipped_ent = 0;
@@ -1792,7 +1779,6 @@ int unk_pred( Logfile& l, Config& c ) {
     (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
 
     std::vector<std::string> results;
-    std::vector<std::string>::iterator ri;
 
     // Loop over the test file.
     // The test file is in format l-1,l-2,l-3,...
@@ -1817,14 +1803,14 @@ int unk_pred( Logfile& l, Config& c ) {
 	if ( (word[0] > 64) && (word[0] < 91) && (i > 0 ) ) {
 	  ++skipped_ent;
 	  new_line = new_line + word + " ";
+	  //	  std::cout << "ENTITY: " << word << std::endl;
 	  continue;
-	  std::cout << "ENTITY: " << word << std::endl;
 	}
 	if ( is_numeric( word ) ) {
 	  ++skipped_num;
 	  new_line = new_line + word + " ";
+	  //	  std::cout << "NUMERIC: " << word << std::endl;
 	  continue;
-	  std::cout << "NUMERIC: " << word << std::endl;
 	}
 	if ( wfreqs.find( words.at(i) ) == wfreqs.end() ) { // not found
 	  //
@@ -1840,6 +1826,8 @@ int unk_pred( Logfile& l, Config& c ) {
 	  std::string cl = results.at(i);      // line to classify
 	  cl = cl + "TARGET";
 	  //std::cout << cl << std::endl;
+	  std::string distrib;
+	  double distance;
 	  My_Experiment->Classify( cl, result, distrib, distance );
 	  //std::cout << "CLAS=" << result << std::endl;
 	  new_line = new_line + result + " ";
@@ -1872,6 +1860,7 @@ int unk_pred( Logfile& l, Config& c ) {
       */
 
     } // getline
+    delete My_Experiment;
   } // try
   catch ( const std::exception& e ) {
     l.log( "ERROR: exception caught." );
@@ -1907,14 +1896,13 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
     return 1;
   }
 
-  std::vector<std::string>::iterator wi;
   std::vector<std::string>::iterator ngri;
 
   std::string w_line = "";
-  wi = words.begin(); // first word of sentence.
-  for ( size_t i = 0; i < words.size()-n+1; i++ ) {
+  std::vector<std::string>::iterator wi = words.begin(); // first word of sentence.
+  for ( size_t i = 0; i < words.size()-n+1; ++i ) {
 
-    for ( ngri= wi; ngri < wi+n-1; ngri++ ) {
+    for ( ngri= wi; ngri < wi+n-1; ++ngri ) {
       w_line = w_line + *ngri + " "; // no out of bounds checking.
     }
     w_line = w_line + *ngri;
@@ -1922,7 +1910,7 @@ int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
     res.push_back( w_line );
 
     w_line.clear();
-    wi++;
+    ++wi;
   }
 
   return 0;
@@ -1987,8 +1975,6 @@ int lexicon(Logfile& l, Config& c) {
     return 0;
   }
 
-  long line_count = 0;
-
   std::ifstream file_in( filename.c_str() );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
@@ -2013,7 +1999,6 @@ int lexicon(Logfile& l, Config& c) {
 	std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
 	}*/
       ++count[ a_word ];
-      ++line_count;
     }
   }
   file_in.close();
@@ -2032,11 +2017,11 @@ int lexicon(Logfile& l, Config& c) {
   }
   std::map<int,int> ffreqs;
   long total_count = 0;
-  for( std::map<std::string,int>::iterator iter = count.begin(); iter != count.end(); iter++ ) {
-    std::string wrd = (*iter).first;
-    int wfreq = (*iter).second;
+  for( const auto& iter : count ) {
+    std::string wrd = iter.first;
+    int wfreq = iter.second;
     file_out << wrd << " " << wfreq << "\n";
-    ffreqs[wfreq]++;
+    ++ffreqs[wfreq];
     total_count += wfreq;
     //
     // anagram value
@@ -2060,10 +2045,10 @@ int lexicon(Logfile& l, Config& c) {
     return -1;
   }
   counts_out << 0 << " " << 0 << " " << 0 << "\n";
-  for( std::map<int,int>::iterator iter = ffreqs.begin(); iter != ffreqs.end(); iter++ ) {
+  for( const auto& iter : ffreqs ) {
     //double pMLE = (double)(*iter).first / total_count;
-    int cnt = (*iter).first;
-    counts_out << cnt << " " << (*iter).second << " " << cnt << "\n";
+    int cnt = iter.first;
+    counts_out << cnt << " " << iter.second << " " << cnt << "\n";
   }
   counts_out.close();
 
@@ -2509,8 +2494,6 @@ int window_usenet( Logfile& l, Config& c ) {
   std::string               a_word;
   std::string               target;
   std::vector<std::string>  window(ws+1, "_");
-  std::map<std::string,int> count;
-  std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
   std::vector<std::string>  data;
 
@@ -2585,81 +2568,80 @@ int server( Logfile& l, Config& c ) {
 int test(Logfile& l, Config& c) {
   std::string foo = c.get_value( "zin" );
   std::vector<std::string> results;
-  std::vector<std::string>::iterator ri;
 
   l.log( "ngram( 3 )" );
   ngram_line( foo, 3, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "ngram( 1 )" );
   ngram_line( foo, 1, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "ngram( 5 )" );
   ngram_line( foo, 5, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
 
   l.log( "window( 7, 0, false )" );
   window( foo, "T T T T T T T", 7, 0, false, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "window( 7, 0, true )" );
   window( foo, "T T T T T T T", 7, 0, true, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
 
   l.log( "window( 3, 0 ) + target, backoff 0" );
   window( foo, foo, 3, 0, 0, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "window( 3, 0 ) + target, backoff 1" );
   window( foo, foo, 3, 0, 1, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "window( 2, 0 ) + target, backoff 1" );
   window( foo, foo, 2, 0, 1, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
 
   l.log( "window( 2, 3, false )" );
   window( foo, foo, 2, 3, false, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "window( 2, 3, true )" );
   window( foo, foo, 2, 3, true, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "window( 1, 1, false )" );
   window( foo, "", 1, 1, false, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
   results.clear();
   l.log( "window( 0, 3, false )" );
   window( foo, "", 0, 3, false, results );
-  for ( ri = results.begin(); ri != results.end(); ri++ ) {
-    l.log( *ri );
+  for ( const auto& ri : results ) {
+    l.log( ri );
   }
 
 
@@ -2702,12 +2684,6 @@ int test(Logfile& l, Config& c) {
   return 0;
 }
 
-/*
-double log2( double n ) {
-  return log(n) / log(2); // make that a constant.
-}
-*/
-
 // word entropy.
 // over map/array with words+freq.
 //   std::map<std::string,int> wfreqs;
@@ -2715,13 +2691,12 @@ double log2( double n ) {
 double word_entropy( std::map<std::string,int>& wfreqs ) {
   double word_e = 0.0;
   unsigned long t_freq = 0;
-  std::map<std::string,int>::iterator wi;
 
-  for ( wi = wfreqs.begin(); wi != wfreqs.end(); wi++ ) {
-    t_freq += (*wi).second;
+  for ( const auto& wi : wfreqs ) {
+    t_freq += wi.second;
   }
-  for ( wi = wfreqs.begin(); wi != wfreqs.end(); wi++ ) {
-    double w_prob = (double)((*wi).second / (double)t_freq);
+  for ( const auto& wi : wfreqs ) {
+    double w_prob = (double)(wi.second / (double)t_freq);
     word_e += (w_prob * log2( w_prob ));
   }
   return -word_e;
@@ -2749,11 +2724,6 @@ int smooth_old( Logfile& l, Config& c ) {
     return -1;
   }
 
-  std::string a_line;
-  std::vector<std::string>words;
-
-  std::string a_word;
-  std::map<std::string,int> wfreqs;
   std::map<int,int> ffreqs; // sort order?
 
   // Read the counts of counts.
@@ -2780,16 +2750,6 @@ int smooth_old( Logfile& l, Config& c ) {
     k = numcounts;
   }
 
-  std::map<int,int>::iterator fi;
-  std::vector<int> counts;
-  for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
-    /*
-    if ( (int)(*fi).first < k ) {
-      l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
-    }
-    */
-    //counts.at( (int)(*fi).first ) = (int)(*fi).second;;
-  }
   l.log( "Total count: " + to_str( total_count ));
 
   std::ofstream counts_out( counts_filename.c_str(), std::ios::out );
@@ -2885,12 +2845,9 @@ int smooth_old_LEX( Logfile& l, Config& c ) {
     return -1;
   }
 
-  std::string a_line;
-  std::vector<std::string>words;
   unsigned long total_count = 0;
   std::string a_word;
   int wfreq;
-  std::map<std::string,int> wfreqs;
   std::map<int,int> ffreqs;
 
   for ( int i = 0; i < 10; i++ ) {
@@ -2902,7 +2859,6 @@ int smooth_old_LEX( Logfile& l, Config& c ) {
   //
   l.log( "Reading lexicon." );
   while( file_lexicon >> a_word >> wfreq ) {
-    wfreqs[a_word] = wfreq;
     ffreqs[wfreq]++;
     total_count += wfreq;
   }
@@ -2910,10 +2866,8 @@ int smooth_old_LEX( Logfile& l, Config& c ) {
   l.log( "Read lexicon." );
 
   std::map<int,int>::iterator fi;
-  std::vector<int> counts;
-  for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
+  for ( fi = ffreqs.begin(); fi != ffreqs.end(); ++fi ) {
     l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
-    //counts.at( (int)(*fi).first ) = (int)(*fi).second;;
   }
   l.log( "Total count: " + to_str( total_count ));
 
@@ -2964,13 +2918,10 @@ int smooth(Logfile& l, Config& c)  {
   unsigned long lcount = 0;
   unsigned long total_count = 0;
   unsigned long word_count = 0;
-  std::string a_word;
   std::map<std::string,int> pcounts; // pattern counter
   std::map<int,int> ffreqs; // frequency of frequencies
 
   std::map<std::string,int> class_count;
-
-  std::vector< std::map<std::string,int> > foobar;
 
   l.log( "Reading data." );
   while( std::getline( file_in, a_line )) {
@@ -2991,17 +2942,15 @@ int smooth(Logfile& l, Config& c)  {
   file_in.close();
   l.log( "Line count: " + to_str(lcount));
 
-  std::map<std::string,int>::iterator pi;
-  for ( pi = pcounts.begin(); pi != pcounts.end(); pi++ ) {
-    int freq = (int)(*pi).second;
+  for ( const auto& pi : pcounts ) {
+    int freq = (int)pi.second;
     ffreqs[freq]++;
   }
-  for ( pi = class_count.begin(); pi != class_count.end(); pi++ ) {
-    //l.log( (*pi).first + "," + to_str((int)(*pi).second) );
-  }
-  std::map<int,int>::iterator fi;
-  for ( fi = ffreqs.begin(); fi != ffreqs.end(); fi++ ) {
-    l.log( to_str((int)(*fi).first) + "," + to_str((int)(*fi).second) );
+  //  for ( const auto& pi : class_count ) {
+  //  l.log( pi.first + "," + to_str((int)pi.second) );
+  //  }
+  for ( const auto& fi :ffreqs ) {
+    l.log( to_str((int)fi.first) + "," + to_str((int)fi.second) );
   }
 
   l.log( "Number of counts: " + to_str( static_cast<long>(ffreqs.size()) ));
@@ -3086,8 +3035,6 @@ int read_a3(Logfile& l, Config& c) {
   while( getline( file_in, a_line) ) {
     if ( a_line.substr(0,4) == "NULL" ) {
       //l.log( a_line );
-      std::string clean;
-      std::string::iterator si;
 
       size_t posb = 0;
       size_t pose = 0;
@@ -3146,9 +3093,6 @@ int pplx( Logfile& l, Config& c ) {
   std::string        suf_s            = c.get_value( "suf_s", "</s>" );
   int                skip             = 0;
   Timbl::TimblAPI   *My_Experiment = 0;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
@@ -3171,27 +3115,29 @@ int pplx( Logfile& l, Config& c ) {
     return -1;
   }
 
-  // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
-  //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
-  if ( ! file_lexicon ) {
-    l.log( "ERROR: cannot load lexicon file." );
-    return -1;
-  }
-  // Read the lexicon with word frequencies.
-  // We need a hash with frequence - countOfFrequency, ffreqs.
-  //
-  l.log( "Reading lexicon." );
-  std::string a_word;
-  int wfreq;
-  unsigned long total_count = 0;
-  std::map<std::string,int> wfreqs; // whole lexicon
-  while ( file_lexicon >> a_word >> wfreq ) {
-    wfreqs[a_word] = wfreq;
-    total_count += wfreq;
-  }
-  file_lexicon.close();
-  l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
+  // BUG: below a file is opened and read, but all of its content is unused
+
+  // // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
+  // //
+  // std::ifstream file_lexicon( lexicon_filename.c_str() );
+  // if ( ! file_lexicon ) {
+  //   l.log( "ERROR: cannot load lexicon file." );
+  //   return -1;
+  // }
+  // // Read the lexicon with word frequencies.
+  // // We need a hash with frequence - countOfFrequency, ffreqs.
+  // //
+  // l.log( "Reading lexicon." );
+  // std::string a_word;
+  // int wfreq;
+  // unsigned long total_count = 0;
+  // std::map<std::string,int> wfreqs; // whole lexicon
+  // while ( file_lexicon >> a_word >> wfreq ) {
+  //   wfreqs[a_word] = wfreq;
+  //   total_count += wfreq;
+  // }
+  // file_lexicon.close();
+  // l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
 
   try {
     My_Experiment = new Timbl::TimblAPI( timbl );
@@ -3199,12 +3145,10 @@ int pplx( Logfile& l, Config& c ) {
     // My_Experiment->Classify( cl, result, distrib, distance );
   } catch (...) {}
 
-  std::vector<std::string>::iterator vi;
   std::ostream_iterator<std::string> output( file_out, " " );
 
   std::string a_line;
   std::vector<std::string> results;
-  std::vector<std::string> targets;
   std::vector<std::string>::iterator ri;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
@@ -3224,7 +3168,7 @@ int pplx( Logfile& l, Config& c ) {
     window( a_line, a_line, ws, 0, false, results );
 
     if ( (skip == 0) || (results.size() >= (size_t)ws) ) {
-      for ( ri = results.begin()+skip; ri != results.end(); ri++ ) {
+      for ( ri = results.begin()+skip; ri != results.end(); ++ri ) {
 	std::string cl = *ri;
 	file_out << cl << std::endl;
 	l.log( cl );
@@ -3292,6 +3236,7 @@ int pplx( Logfile& l, Config& c ) {
 
   c.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
+  delete My_Experiment;
   return 0;
 }
 #else
@@ -3346,9 +3291,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   int                bl               = my_stoi( c.get_value( "bl", "0" )); //baseline
   int                log_base         = my_stoi( c.get_value( "log", "2" ) ); // default like log2 before
   Timbl::TimblAPI   *My_Experiment;
-  std::string        distrib;
-  std::vector<std::string> distribution;
-  std::string        result;
 
   typedef double(*pt2log)(double);
   pt2log mylog = &log2;
@@ -3423,7 +3365,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   // they exists.
   //
   std::vector<std::string> filenames;
-  std::vector<std::string>::iterator fi;
   if ( dirname == "" ) {
     filenames.push_back( filename );
   } else {
@@ -3442,8 +3383,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     id = "_"+id;
   }
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".px";
     std::string output_filename1 = a_file + id + ".pxs";
 
@@ -3486,7 +3426,6 @@ int pplx_simple( Logfile& l, Config& c ) {
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   // Insert counts for sentence markers?
   //
-  int wfreq;
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
@@ -3500,15 +3439,16 @@ int pplx_simple( Logfile& l, Config& c ) {
     //
     l.log( "Reading lexicon." );
     std::string a_word;
+    int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
       if ( wfreq > hapax ) { // PJB: klopt dit? We don't get ++N_1? Smoothing?
-		wfreqs[a_word] = wfreq;
-		total_count += wfreq;
-		if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
-		  // or we calculate everything <= hapax as mass for the unknown. An
-		  // unknown token will also be HAPAX...
-		  ++N_1;
-		}
+	wfreqs[a_word] = wfreq;
+	total_count += wfreq;
+	if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
+	  // or we calculate everything <= hapax as mass for the unknown. An
+	  // unknown token will also be HAPAX...
+	  ++N_1;
+	}
       }
     }
     file_lexicon.close();
@@ -3527,15 +3467,15 @@ int pplx_simple( Logfile& l, Config& c ) {
   // Make mapping <int, double> from c to c* ?
   //
   std::map<int,double> c_stars;
-  int Nc0;
-  double Nc1; // this is c*
-  int count;
 
   std::ifstream file_counts( counts_filename.c_str() );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
     l.log( "Reading counts." );
+    int count;
+    int Nc0;
+    double Nc1; // this is c*
     while( file_counts >> count >> Nc0 >> Nc1 ) {
       c_stars[count] = Nc1;
     }
@@ -3565,9 +3505,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
   // Timbl was here
 
-  for ( fi = filenames.begin(); fi != filenames.end(); fi++ ) {
-    std::string a_file = *fi;
-
+  for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".px";
     std::string output_filename1 = a_file + id + ".pxs";
 
@@ -3607,9 +3545,6 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string sentence;
-    std::vector<std::string> results;
-    std::vector<std::string> targets;
-    std::vector<std::string>::iterator ri;
     const Timbl::ValueDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
@@ -3699,15 +3634,12 @@ int pplx_simple( Logfile& l, Config& c ) {
 
 		double sum_avg_diff = 0;
 		std::string tmp_output;
-		std::vector<double>::iterator vi;
-		vi = w_pplx.begin();
 		//file_out1 << "[ ";
 		tmp_output = " [ ";
-		while ( vi != w_pplx.end() ) {
-		  //file_out1 << *vi << ' ';
-		  tmp_output = tmp_output + to_str(*vi) + " ";
-		  sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
-		  vi++;
+		for ( const auto& vi : w_pplx ) {
+		  //file_out1 << vi << ' ';
+		  tmp_output = tmp_output + to_str(vi) + " ";
+		  sum_avg_diff += (vi - avg_pplx) * (vi - avg_pplx);
 		}
 		tmp_output += "]";
 		//file_out1 << "] ";
@@ -3737,18 +3669,17 @@ int pplx_simple( Logfile& l, Config& c ) {
       std::map<std::string,int>::iterator wfi = wfreqs.find( target );
       bool   target_unknown = false;
       bool   target_in_dist = false;
-      double target_lexfreq = 0.0;// should be double because smoothing
       double target_lexprob = 0.0;
       if ( wfi == wfreqs.end() ) {
-		target_unknown = true;
+	target_unknown = true;
       } else {
-		target_lexfreq =  (int)(*wfi).second; // Take lexfreq, unless we smooth
-		std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
-		if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
-		  target_lexfreq = (double)(*cfi).second;
-		  //l.log( "Changed lexfreq to: " + to_str(target_lexfreq));
-		}
-		target_lexprob = (double)target_lexfreq / (double)total_count;
+	double target_lexfreq = (int)(*wfi).second; // Take lexfreq, unless we smooth
+	std::map<int,double>::iterator cfi = c_stars.find( target_lexfreq );
+	if ( cfi != c_stars.end() ) { // We have a smoothed value, use it
+	  target_lexfreq = (double)(*cfi).second;
+	  //l.log( "Changed lexfreq to: " + to_str(target_lexfreq));
+	}
+	target_lexprob = (double)target_lexfreq / (double)total_count;
       }
 
       // What does Timbl think?
@@ -3773,13 +3704,13 @@ int pplx_simple( Logfile& l, Config& c ) {
 
       std::string answer = tv->Name();
       if ( vd == NULL ) {
-		l.log( "Classify( a_line, vd ) was null, skipping current line." );
-		file_out << a_line << ' ' << answer << " ERROR" << std::endl;
-		//continue;
-		file_out1.close();
-		file_out.close();
-		file_in.close();
-		return 1; // Abort
+	l.log( "Classify( a_line, vd ) was null, skipping current line." );
+	file_out << a_line << ' ' << answer << " ERROR" << std::endl;
+	//continue;
+	file_out1.close();
+	file_out.close();
+	file_in.close();
+	return 1; // Abort
       }
 
       size_t md  = My_Experiment->matchDepth();
@@ -3794,7 +3725,6 @@ int pplx_simple( Logfile& l, Config& c ) {
       int cnt = 0;
       int distr_count = 0;
       int target_freq = 0;
-      double prob            = 0.0;
       double target_distprob = 0.0;
       double entropy         = 0.0;
       int    rank            = 1;
@@ -3809,25 +3739,25 @@ int pplx_simple( Logfile& l, Config& c ) {
       int cache_idx = -1;
       cached_distr* cd = NULL;
       for ( int i = 0; i < cache_size; i++ ) {
-		if ( distr_cache.at(i).cnt == cnt ) {
-		  if ( distr_cache.at(i).sum_freqs == distr_count ) {
-			if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
-			  cache_idx = i; // it's cached already!
-			  cd = &distr_cache.at(i);
-			  break;
-			}
-		  }
-		}
+	if ( distr_cache.at(i).cnt == cnt ) {
+	  if ( distr_cache.at(i).sum_freqs == distr_count ) {
+	    if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
+	      cache_idx = i; // it's cached already!
+	      cd = &distr_cache.at(i);
+	      break;
+	    }
+	  }
+	}
       }
       if ( (cache_size > 0 ) && (cache_idx == -1) ) { // It should be cached, if not present.
-		if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
-		  cd = &distr_cache.at( cache_size-1 ); // the lowest.
-		  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
-		  cd->cnt = cnt;
-		  cd->sum_freqs  = distr_count;
-		  cd->first = it->second->Value()->Name();
-		  (cd->distr_vec).clear();
-		}
+	if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
+	  cd = &distr_cache.at( cache_size-1 ); // the lowest.
+	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
+	  cd->cnt = cnt;
+	  cd->sum_freqs  = distr_count;
+	  cd->first = it->second->Value()->Name();
+	  (cd->distr_vec).clear();
+	}
       }
       // cache_idx == -1 && cd == null: not cached, don't want to (small distr).
       // cache_idx == -1 && cd != null: not cached, want to cache it.
@@ -3883,12 +3813,10 @@ int pplx_simple( Logfile& l, Config& c ) {
 		  ++it;
 		}
 		long   idx       = 1;
-		long   class_idx = 0;
 		std::map<long, long>::iterator dfi = dfreqs.begin();
 		while ( dfi != dfreqs.end() ) {
 		  if ( dfi->first == classification_freq ) {
-			class_idx = idx;
-			class_mrr = (double)1.0/idx;
+		    class_mrr = (double)1.0/idx;
 		  }
 		  //if ( idx > some_limit ) { break;}
 		  ++dfi;
@@ -3929,7 +3857,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
 		  // Entropy of whole distr. Cache.
 		  //
-		  prob     = (double)wght / (double)distr_count;
+		  double prob = (double)wght / (double)distr_count;
 		  entropy -= ( prob * mylog(prob) );
 
 		  ++it;
@@ -3939,12 +3867,10 @@ int pplx_simple( Logfile& l, Config& c ) {
 		}
 
 		long   idx       = 1;
-		long   class_idx = 0;
 		std::map<long, long>::iterator dfi = dfreqs.begin();
 		while ( dfi != dfreqs.end() ) {
 		  if ( dfi->first == classification_freq ) {
-			class_idx = idx;
-			class_mrr = (double)1.0/idx;
+		    class_mrr = (double)1.0/idx;
 		  }
 		  //if ( idx > some_limit ) { break;}
 		  ++dfi;
@@ -3972,22 +3898,22 @@ int pplx_simple( Logfile& l, Config& c ) {
       // Unknown words?
       //
       double w_prob  = 0.0;
-      std::string info = "huh?";
+      //      std::string info = "huh?";
       if ( target_freq > 0 ) { // Right answer was in distr.
-		w_prob = target_distprob;
-		info = "target_distprob";
+	w_prob = target_distprob;
+	//	info = "target_distprob";
       } else {
-		if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-		  w_prob = target_lexprob;
-		  info = "target_lexprob";
-		} else {
-		  //
-		  // What to do here? We have an 'unknown' target, i.e. not in the
-		  // lexicon.
-		  //
-		  w_prob = p0;
-		  info = "P(new_particular)";
-		}
+	if ( ! target_unknown ) { // Wrong, we take lex prob if known target
+	  w_prob = target_lexprob;
+	  //	  info = "target_lexprob";
+	} else {
+	  //
+	  // What to do here? We have an 'unknown' target, i.e. not in the
+	  // lexicon.
+	  //
+	  w_prob = p0;
+	  //	  info = "P(new_particular)";
+	}
       }
 
       // (ref. Antal's mail 21/11/08)
@@ -4083,7 +4009,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 			d.freq = (*fi).freq;
 			(cd->distr_vec).push_back( d );
 		  }
-		  fi++;
+		  ++fi;
 		}
 		file_out << "]";
       }
@@ -4106,15 +4032,12 @@ int pplx_simple( Logfile& l, Config& c ) {
 
 		double sum_avg_diff = 0;
 		std::string tmp_output;
-		std::vector<double>::iterator vi;
-		vi = w_pplx.begin();
 		//file_out1 << "[ ";
 		tmp_output = " [ ";
-		while ( vi != w_pplx.end() ) {
+		for ( const auto& vi : w_pplx ) {
 		  //file_out1 << *vi << ' ';
-		  tmp_output = tmp_output + to_str(*vi) + " ";
-		  sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
-		  vi++;
+		  tmp_output = tmp_output + to_str(vi) + " ";
+		  sum_avg_diff += (vi - avg_pplx) * (vi - avg_pplx);
 		}
 		tmp_output += "]";
 		//file_out1 << "] ";
@@ -4153,15 +4076,12 @@ int pplx_simple( Logfile& l, Config& c ) {
 
 		double sum_avg_diff = 0;
 		std::string tmp_output;
-		std::vector<double>::iterator vi;
-		vi = w_pplx.begin();
 		//file_out1 << "[ ";
 		tmp_output = " [ ";
-		while ( vi != w_pplx.end() ) {
+		for ( const auto& vi : w_pplx ) {
 		  //file_out1 << *vi << ' ';
-		  tmp_output = tmp_output + to_str(*vi) + " ";
-		  sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
-		  vi++;
+		  tmp_output = tmp_output + to_str(vi) + " ";
+		  sum_avg_diff += (vi - avg_pplx) * (vi - avg_pplx);
 		}
 		tmp_output += "]";
 		//file_out1 << "] ";
@@ -4181,15 +4101,15 @@ int pplx_simple( Logfile& l, Config& c ) {
       // Find new lowest here. Overdreven om sort te gebruiken?
       //
       if ( cache_level == 1 ) {
-		sort( distr_cache.begin(), distr_cache.end() );
-		lowest_cache = distr_cache.at(cache_size-1).cnt;
-		//}
-		lowest_cache = 1000000; // hmmm.....
-		for ( int i = 0; i < cache_size; i++ ) {
-		  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
-			lowest_cache = (distr_cache.at(i)).cnt;
-		  }
-		}
+	sort( distr_cache.begin(), distr_cache.end() );
+	lowest_cache = distr_cache.at(cache_size-1).cnt;
+	//}
+	lowest_cache = 1000000; // hmmm.....
+	for ( int i = 0; i < cache_size; i++ ) {
+	  if ( (distr_cache.at(i)).cnt < lowest_cache ) {
+	    lowest_cache = (distr_cache.at(i)).cnt;
+	  }
+	}
       }
 
     } // while getline()
@@ -4208,15 +4128,12 @@ int pplx_simple( Logfile& l, Config& c ) {
 
       double sum_avg_diff = 0;
       std::string tmp_output;
-      std::vector<double>::iterator vi;
-      vi = w_pplx.begin();
       //file_out1 << "[ ";
       tmp_output = " [ ";
-      while ( vi != w_pplx.end() ) {
-		//file_out1 << *vi << ' ';
-		tmp_output = tmp_output + to_str(*vi) + " ";
-		sum_avg_diff += (*vi - avg_pplx) * (*vi - avg_pplx);
-		vi++;
+      for ( const auto& vi :w_pplx ) {
+	//file_out1 << vi << ' ';
+	tmp_output = tmp_output + to_str(vi) + " ";
+	sum_avg_diff += (vi - avg_pplx) * (vi - avg_pplx);
       }
       tmp_output += "]";
       //file_out1 << "] ";
@@ -4268,7 +4185,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     l.dec_prefix();
   }
-
+  delete My_Experiment;
   return 0;
 }
 #else
@@ -4279,7 +4196,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 #endif
 
 
-bool file_exists( Logfile& l, Config& c, const std::string& fn ) {
+bool file_exists( Logfile&, Config& c, const std::string& fn ) {
   struct stat file_info;
   int stat_res;
 
@@ -4347,7 +4264,6 @@ int test_wopr( Logfile& l, Config& c ) {
 
   //std::string                        a_word = "wöåd and エイ ひ.";
   std::vector<std::string>           results;
-  std::vector<std::string>::iterator ri;
 
   if ( cmd == "utf8" ) {
     int lc = 4;
@@ -4357,8 +4273,8 @@ int test_wopr( Logfile& l, Config& c ) {
       results.clear();
       window_words_letters(a_word, lc, ctx, results);
     }
-    for ( ri = results.begin(); ri != results.end(); ri++ ) {
-      l.log(*ri);
+    for ( const auto& ri : results ) {
+      l.log(ri);
     }
   } else if ( cmd == "ld" ) {
     for ( long i = 0; i < 1; i++ ) {
@@ -4371,9 +4287,8 @@ int test_wopr( Logfile& l, Config& c ) {
   } else if ( cmd == "comb" ) {
     std::map<std::string,int> w;
     permutate(a_word, n, w);
-    std::map<std::string,int>::iterator wfi;
-    for ( wfi = w.begin(); wfi != w.end(); wfi++ ) {
-      std::cout << (*wfi).first << std::endl;
+    for ( const auto& wfi : w ) {
+      std::cout << wfi.first << std::endl;
     }
   }
   return 0;
