@@ -102,9 +102,8 @@ std::string secs_to_str( long t ) {
   }
 
   std::string res_str;
-  long rest; // NB fix int/long mixup
   for (int i = 0; i < 4; i++) {
-    rest = int(t / div[i]);
+    long rest = int(t / div[i]);  // NB fix int/long mixup
     if ( rest > 0 ) { // use >= 0 if you want "00h" etc included.
       t -= rest * div[i];
       res_str += to_str((int)rest, 2) + ind[i];

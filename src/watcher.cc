@@ -54,7 +54,7 @@
 // ---------------------------------------------------------------------------
 
 extern "C" void* watcher( void *params ) {
-  Config *c = (Config*)params;
+  Config *c = static_cast<Config*>(params);
 
   // Init message queue.
   //
