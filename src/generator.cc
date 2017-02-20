@@ -80,7 +80,7 @@ durian:wopr pberck$ ./wopr -r generate -p start:"Mexico has not",ibasefile:test/
 #ifdef TIMBL
 int generate( Logfile& l, Config& c ) {
   l.log( "generate" );
-  const std::string& start            = c.get_value( "start", "" );
+  const std::string start            = c.get_value( "start", "" );
   const std::string  filename         = c.get_value( "filename", to_str(getpid()) );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );
@@ -102,6 +102,7 @@ int generate( Logfile& l, Config& c ) {
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
   l.log( "mode:       "+to_str(mode) );
+  l.log( "start:      "+start );
   l.log( "end:        "+end ); // end marker of sentences
   l.log( "n:          "+to_str(n) ); // number of sentences
   l.log( "len:        "+to_str(len) ); // max length of sentences
