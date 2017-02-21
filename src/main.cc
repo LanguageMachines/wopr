@@ -267,12 +267,12 @@ int main( int argc, char* argv[] ) {
     l.log( "ERROR: cannot write wopr.log." );
     return -1;
   }
-
   if ( log == 1 ) {
     wopr_log.open( "wopr.log", std::ios::out | std::ios::app );
     if ( wopr_log ) {
       wopr_log << "# " << the_date_time() << ", wopr " << VERSION << " (";
       wopr_log << to_str(getpid()) << ")" << std::endl;
+      wopr_log << "verbosty: " << verbose << std::endl;
       wopr_log << "wopr";
       for (int i = 1; i < argc; i++) {
 	wopr_log << " ";

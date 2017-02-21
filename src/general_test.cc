@@ -493,6 +493,7 @@ int gen_test( Logfile& l, Config& c ) {
     l.dec_prefix();
   }
   delete My_Experiment;
+  delete cache;
   return 0;
 }
 #else

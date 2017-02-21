@@ -1736,11 +1736,6 @@ int server_sc( Logfile& l, Config& c ) {
   file_lexicon.close();
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
-  double p0 = 0.00001; // Arbitrary low probability for unknown words.
-  if ( total_count > 0 ) { // Better estimate if we have a lexicon
-    p0 = (double)N_1 / ((double)total_count * total_count);
-  }
-
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
 
@@ -1797,15 +1792,15 @@ int server_sc( Logfile& l, Config& c ) {
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = 0;
-	    break;
+	    continue;
 	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 	  if ( verbose > 1 ) {
 	    l.log( "|" + tmp_buf + "|" );
@@ -1866,14 +1861,9 @@ int server_sc( Logfile& l, Config& c ) {
 	    // Is the target in the lexicon?
 	    //
 	    std::map<std::string,int>::iterator wfi = wfreqs.find( target );
-	    bool   target_unknown = false;
 	    double target_lexfreq = 0.0;
-	    double target_lexprob = 0.0;
-	    if ( wfi == wfreqs.end() ) {
-	      target_unknown = true;
-	    } else {
+	    if ( wfi != wfreqs.end() ) {
 	      target_lexfreq =  (int)(*wfi).second; // Take lexfreq
-	      target_lexprob = (double)target_lexfreq / (double)total_count;
 	    }
 
 	    double distance;
@@ -1901,11 +1891,8 @@ int server_sc( Logfile& l, Config& c ) {
 
 	    int cnt         = 0;
 	    int distr_count = 0;
-	    int target_freq = 0;
 
-	    double target_distprob = 0.0;
 	    double entropy         = 0.0;
-	    double sum_logprob     = 0.0;
 
 	    bool in_distr          = false;
 
@@ -1932,34 +1919,12 @@ int server_sc( Logfile& l, Config& c ) {
 		entropy -= ( prob * log2(prob) );
 
 		if ( tvs == target ) { // The correct answer was in the distr.
-		  target_freq = wght;
 		  in_distr = true;
 		}
 
 		++it;
 	      }
 	    }
-	    target_distprob = (double)target_freq / (double)distr_count;
-
-	    // If correct: if target in distr, we take that prob, else
-	    // the lexical prob.
-	    // Unknown words?
-	    //
-	    double logprob = 0.0;
-	    if ( target_freq > 0 ) { // Right answer was in distr.
-	      logprob = log2( target_distprob );
-	    } else {
-	      if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-		logprob = log2( target_lexprob );
-	      } else {
-		//
-		// What to do here? We have an 'unknown' target, i.e. not in the
-		// lexicon.
-		//
-		logprob = log2( p0 );
-	      }
-	    }
-	    sum_logprob += logprob;
 
 	    // If we didn't have the correct answer in the distro, we take ld=1
 	    // Skip words shorter than mwl.
@@ -2029,10 +1994,6 @@ int server_sc( Logfile& l, Config& c ) {
 	      }
 	    }// PJB max_distr,
 
-	    // Word logprob (ref. Antal's mail 21/11/08)
-	    // 2 ^ (-logprob(w))
-	    //
-	    //double word_lp = pow( 2, -logprob );
 	    sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 
 	    // Return all, seperated by sep (tab).
@@ -2180,15 +2141,10 @@ int server_sc_nf( Logfile& l, Config& c ) {
   file_lexicon.close();
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
-  double p0 = 0.00001; // Arbitrary low probability for unknown words.
-  if ( total_count > 0 ) { // Better estimate if we have a lexicon
-    p0 = (double)N_1 / ((double)total_count * total_count);
-  }
-
   Cache *cache = new Cache( cachesize );
 
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
+  const Timbl::ValueDistribution *vd = 0;
+  const Timbl::TargetValue *tv = 0;
 
   /*
     ------------ break ----------------
@@ -2239,7 +2195,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		tmp_buf = trim( tmp_buf, " \n\r" );
 
 		if ( tmp_buf == "_CLOSE_" ) {
-		  connection_open = false;
 		  c.set_status(0);
 		  return(0);
 		}
@@ -2251,7 +2206,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		if ( tmp_buf.length() == 0 ) {
 		  connection_open = false;
 		  c.set_status(0);
-		  break;
+		  continue;
 		}
 		if ( verbose > 1 ) {
 		  l.log( "|" + tmp_buf + "|" );
@@ -2310,14 +2265,9 @@ int server_sc_nf( Logfile& l, Config& c ) {
 		  // Is the target in the lexicon?
 		  //
 	  std::map<std::string,int>::iterator wfi = wfreqs.find( target );
-	  bool   target_unknown = false;
 	  double target_lexfreq = 0.0;
-	  double target_lexprob = 0.0;
-	  if ( wfi == wfreqs.end() ) {
-	    target_unknown = true;
-	  } else {
+	  if ( wfi != wfreqs.end() ) {
 	    target_lexfreq =  (int)(*wfi).second; // Take lexfreq
-	    target_lexprob = (double)target_lexfreq / (double)total_count;
 	  }
 
 	  double distance;
@@ -2339,11 +2289,8 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
 	  int cnt         = 0;
 	  int distr_count = 0;
-	  int target_freq = 0;
 
-	  double target_distprob = 0.0;
 	  double entropy         = 0.0;
-	  double sum_logprob     = 0.0;
 
 	  bool in_distr          = false;
 
@@ -2370,34 +2317,12 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	      entropy -= ( prob * log2(prob) );
 
 	      if ( tvs == target ) { // The correct answer was in the distr.
-			target_freq = wght;
-			in_distr = true;
+		in_distr = true;
 	      }
 
 	      ++it;
 	    }
 	  }
-	  target_distprob = (double)target_freq / (double)distr_count;
-
-	  // If correct: if target in distr, we take that prob, else
-	  // the lexical prob.
-	  // Unknown words?
-	  //
-	  double logprob = 0.0;
-	  if ( target_freq > 0 ) { // Right answer was in distr.
-	    logprob = log2( target_distprob );
-	  } else {
-	    if ( ! target_unknown ) { // Wrong, we take lex prob if known target
-	      logprob = log2( target_lexprob );
-	    } else {
-	      //
-	      // What to do here? We have an 'unknown' target, i.e. not in the
-	      // lexicon.
-	      //
-	      logprob = log2( p0 );
-	    }
-	  }
-	  sum_logprob += logprob;
 
 	  // If we didn't have the correct answer in the distro, we take ld=1
 	  // Skip words shorter than mwl.
@@ -2466,10 +2391,6 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	      }
 	    }
 	  }
-	  // Word logprob (ref. Antal's mail 21/11/08)
-	  // 2 ^ (-logprob(w))
-	  //
-	  //double word_lp = pow( 2, -logprob );
 	  sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmp_ptr() );
 
 	  // Return all, seperated by sep (tab).
@@ -4096,8 +4017,6 @@ int sml( Logfile& l, Config& c ) {
 	double entropy         = 0.0;
 	cnt = vd->size();
 	distr_count = vd->totalSize();
-	double answer_f = 0;
-
 	// Check if target word is in the distribution.
 	//
 	while ( it != vd->end() ) {
@@ -4118,18 +4037,9 @@ int sml( Logfile& l, Config& c ) {
 	      --wrong; // direct answer wrong, but right in distr. compensate count
 	    }
 	  }
-	  if ( tvs == answer ) { // Get the frequency to be able to calculate confidence
-	    answer_f = wght;
-	  }
-
 	  ++it;
 	}
 	target_distprob = (double)target_freq / (double)distr_count;
-
-	double the_confidence = -1; // -1 as shortcut to infinity
-	if ( distr_count > 0 ) {
-	  the_confidence = answer_f / distr_count;
-	}
 
 	// If correct: if target in distr, we take that prob, else
 	// the lexical prob.
@@ -4168,7 +4078,7 @@ int sml( Logfile& l, Config& c ) {
 	/*
 [pberck@margretetorp cmcorrect]$ ~/uvt/wopr/src/wopr -l -r sml -p ibasefile:utexas.10e6.dt3.100000.l2r2_-a1+D.ibase,timbl:"-a1 +D",filename:utexas.10e6.dt3.t1e5d.cf350.l2r2,triggerfile:goldingroth3a.txt,lc:2,rc:2,confidence:0,id:SML4F
 	*/
-	the_confidence = -1;
+	double the_confidence = -1; // -1 as shortcut to infinity
 	if ( cc > 0 ) { // found 1 or more elements from set
 	  if ( sum_f > 0 ) { // it should be...
 	    top_c = filtered_distr_vec[0]->name;

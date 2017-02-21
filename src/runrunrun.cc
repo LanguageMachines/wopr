@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2016 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko van der Sloot                       *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -1231,7 +1231,6 @@ int window_line(Logfile& l, Config& c) {
       l.log( "prplx = " + to_str( 1 - prplx ));
       total_prplx += prplx;
       distribution.clear();
-      d_size = 0;
       //
       // End experimental
       /*
@@ -3270,6 +3269,7 @@ struct cached_distr {
     return cnt > rhs.cnt;
   }
 };
+
 int pplx_simple( Logfile& l, Config& c ) {
   l.log( "pplxs" );
   const std::string& filename         = c.get_value( "filename" );
@@ -3281,7 +3281,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   const std::string& timbl            = c.get_value( "timbl" );
   int                hapax            = my_stoi( c.get_value( "hpx", "0" ));
   std::string        id               = c.get_value( "id", to_str(getpid()) );
-  int                ws               = my_stoi( c.get_value( "ws", "3" ));
+  //  int                ws               = my_stoi( c.get_value( "ws", "3" ));
   int                lc               = my_stoi( c.get_value( "lc", "0" ));
   int                rc               = my_stoi( c.get_value( "rc", "0" ));
   int                topn             = my_stoi( c.get_value( "topn", "0" ) );
@@ -3314,7 +3314,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   // It should really only say the length of the context, i.e the
   // number of features before the target.
   //
-  ws = lc + rc;
+  int ws = lc + rc;
 
   std::string bl_str = "";
   if ( bl == 1 ) {
@@ -4102,7 +4102,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       //
       if ( cache_level == 1 ) {
 	sort( distr_cache.begin(), distr_cache.end() );
-	lowest_cache = distr_cache.at(cache_size-1).cnt;
+	//	lowest_cache = distr_cache.at(cache_size-1).cnt;
 	//}
 	lowest_cache = 1000000; // hmmm.....
 	for ( int i = 0; i < cache_size; i++ ) {
@@ -4142,10 +4142,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       //file_out1 << std_dev;
       file_out1 << std_dev << tmp_output;
       file_out1 << std::endl;
-      sum_logprob         = 0.0;
+      //      sum_logprob         = 0.0;
       sentence_wordcount  = 0;
-      sentence_noov_count = 0;
-      sum_noov_logprob    = 0.0;
+      //      sentence_noov_count = 0;
+      //      sum_noov_logprob    = 0.0;
       ++sentence_count;
       w_pplx.clear();
     }

@@ -214,8 +214,7 @@ int server2(Logfile& l, Config& c) {
 
       if ( c.get_status() && ( ! fork() )) { // this is the child process
 
-	bool connection_open = true;
-	while ( connection_open ) {
+	while ( true  ) {
 
 	  long f000 = l.clock_mu_secs();
 
@@ -228,7 +227,6 @@ int server2(Logfile& l, Config& c) {
 	  l.log( "Waiting & Receiving took (mu-sec): " + to_str(diff001) );
 
 	  if ( (tmp_buf == "") || (tmp_buf == "_CLOSE_" ) ) {
-	    connection_open = false;
 	    break;
 	  }
 
@@ -481,7 +479,7 @@ int server2(Logfile& l, Config& c) {
 	  long f3 = l.clock_mu_secs();
 	  long diff2_mu_secs = f3 - f2;
 	  l.log( "Sending over socket took (mu-sec): " + to_str(diff2_mu_secs) );
-	} // connection_open
+	} // while(true)
 	_exit(0);
       } // fork
       delete newSock;
@@ -602,8 +600,8 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
   std::string tmp_buf;
   std::string result;
   double distance;
-  const Timbl::ValueDistribution *vd;
-  const Timbl::TargetValue *tv;
+  const Timbl::ValueDistribution *vd = 0;
+  const Timbl::TargetValue *tv = 0;
 
   while( std::getline( file_in, tmp_buf )) {
 
@@ -928,17 +926,17 @@ int server4(Logfile& l, Config& c) {
 
 	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = false;
-	    break;
+	    continue;
 	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 	  // So we can do: kill `echo "_PPID_" | nc localhost 8888`
 	  // from a script
@@ -946,7 +944,7 @@ int server4(Logfile& l, Config& c) {
 	  if ( tmp_buf == "_PPID_" ) {
 	    newSock->write( to_str(getppid()) + '\n' );
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 
 
@@ -1304,17 +1302,17 @@ int xmlserver(Logfile& l, Config& c) {
 
 	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = false;
-	    break;
+	    continue;
 	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 	  // So we can do: kill `echo "_PPID_" | nc localhost 8888`
 	  // from a script
@@ -1322,7 +1320,7 @@ int xmlserver(Logfile& l, Config& c) {
 	  if ( tmp_buf == "_PPID_" ) {
 	    newSock->write( to_str(getppid()) + '\n' );
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 
 
@@ -1688,7 +1686,7 @@ int mbmt(Logfile& l, Config& c) {
 
 	if ( classify_line.length() == 0 ) {
 	  connection_open = false;
-	  break;
+	  continue;
 	}
 
 	// So we can do:
@@ -1698,12 +1696,12 @@ int mbmt(Logfile& l, Config& c) {
 	if ( classify_line == "_PID_" ) {
 	  newSock->write( to_str(getpid()) + '\n' );
 	  connection_open = false;
-	  break;
+	  continue;
 	}
 	if ( classify_line == "_QUIT_" ) {
 	  connection_open = false;
 	  running = false;
-	  break;
+	  continue;
 	}
 
 	cls.clear();
@@ -2497,15 +2495,15 @@ int server_mg( Logfile& l, Config& c ) {
 	  if ( tmp_buf == "_EXIT_" ) {
 	    connection_open = false;
 	    running = 0;
-	    break;
+	    continue;
 	  }
 	  if ( tmp_buf == "_CLOSE_" ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 	  if ( tmp_buf.length() == 0 ) {
 	    connection_open = false;
-	    break;
+	    continue;
 	  }
 
 	  if ( verbose > 0 ) {

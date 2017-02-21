@@ -247,7 +247,7 @@ void read_dist( Node* n, std::ifstream& f, int d, std::vector<int>& counts ) {
     if ( chr != ',' ) {
       readdist = false;
       counts[d+1] += count;
-      break;
+      continue;
     }
     f.get( chr );
   }
@@ -272,7 +272,6 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
   while ( working ) {
 
     if ( ! f.get( chr ) ) {
-      working = false;
       return a_node; // was break;
     }
 
@@ -283,7 +282,7 @@ Node* read_node( std::ifstream& f, int depth, std::vector<int>& counts ) {
     if ( chr == ')' ) {
       f.get( chr ); // eat CR
       working = false; // could be a comma after. could be more children.
-      break;
+      continue;
     }
 
     if ( chr == ']' ) {
@@ -377,7 +376,7 @@ int tag( Logfile& l, Config& c ) {
   // Load ibase
   //
   l.log( "Reading ibase." );
-  std::ifstream file_ibase( ibase_filename.c_str() );
+  std::ifstream file_ibase( ibase_filename );
   if ( ! file_ibase ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -429,7 +428,10 @@ int tag( Logfile& l, Config& c ) {
     }
   }
   file_ibase.close();
-
+  if ( top_node == 0 ){
+    l.log( "ERROR: reading nodes from " + ibase_filename + " somehow failed." );
+    return -1;
+  }
   l.log( "Writing ARPA" );
   std::ofstream file_arpa( arpa_filename.c_str(), std::ios::out );
   if ( ! file_arpa ) {
