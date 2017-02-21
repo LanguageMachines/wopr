@@ -1,10 +1,7 @@
-# $Id: Makefile.am 16386 2013-07-23 14:17:01Z sloot $
-# $URL: https://ilk.uvt.nl/svn/sources/tscan/trunk/src/Makefile.am $
-
 AM_CPPFLAGS = -I@top_srcdir@/include
-AM_CXXFLAGS = -std=c++0x -Wall
+AM_CXXFLAGS = -std=c++11 -Wall
 
-bin_PROGRAMS = wopr 
+bin_PROGRAMS = wopr
 
 wopr_SOURCES = Classifier.cc \
 	generator.cc \
@@ -30,4 +27,3 @@ wopr_SOURCES = Classifier.cc \
 	ngram_server.cc \
 	tag.cc \
         watcher.cc
-
