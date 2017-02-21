@@ -1,9 +1,5 @@
-// ---------------------------------------------------------------------------
-// $Id$
-// ---------------------------------------------------------------------------
-
 /*****************************************************************************
- * Copyright 2007 - 2014 Peter Berck                                         *
+ * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -80,7 +76,7 @@ durian:wopr pberck$ ./wopr -r generate -p start:"Mexico has not",ibasefile:test/
 #ifdef TIMBL
 int generate( Logfile& l, Config& c ) {
   l.log( "generate" );
-  const std::string& start            = c.get_value( "start", "" );
+  const std::string  start            = c.get_value( "start", "" );
   const std::string  filename         = c.get_value( "filename", to_str(getpid()) );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
   const std::string& timbl            = c.get_value( "timbl" );

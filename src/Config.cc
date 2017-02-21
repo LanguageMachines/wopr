@@ -174,7 +174,7 @@ const std::string& Config::get_value( const std::string& k ) {
   return kv[k];
 }
 
-const std::string& Config::get_value( const std::string& k, const std::string& d ) {
+const std::string Config::get_value( const std::string& k, const std::string& d ) {
   if ( kv.find(k) == kv.end() ) {
     return d;
   }

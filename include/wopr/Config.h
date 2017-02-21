@@ -1,8 +1,5 @@
-// $Id$
-//
-
 /*****************************************************************************
- * Copyright 2005 - 2011 - 2011 Peter Berck                                         *
+ * Copyright 2005 - 2017 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
@@ -77,7 +74,7 @@ public:
   void add_kv( const std::string&, const std::string& );
   void del_kv( const std::string& );
   const std::string& get_value( const std::string& );
-  const std::string& get_value( const std::string&, const std::string& );
+  const std::string get_value( const std::string&, const std::string& );
 
 };
 
