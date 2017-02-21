@@ -553,7 +553,7 @@ int generate_server( Logfile& l, Config& c ) {
     delete newSock;
 
   } // while true
-
+  delete My_Experiment;
   return 0;
 }
 #else
