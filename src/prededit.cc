@@ -196,7 +196,6 @@ int pdt( Logfile& l, Config& c ) {
   std::vector<std::string>::iterator wi;
   std::vector<std::string> predictions;
   std::vector<std::string>::iterator pi;
-  Timbl::ValueDistribution::dist_iterator it;
 
   MTRand mtrand;
 
@@ -517,7 +516,6 @@ int pdt2( Logfile& l, Config& c ) {
   std::vector<std::string>::iterator wi;
   std::vector<std::string> predictions;
   std::vector<std::string>::iterator pi;
-  Timbl::ValueDistribution::dist_iterator it;
 
   MTRand mtrand;
 

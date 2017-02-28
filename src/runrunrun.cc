@@ -2539,23 +2539,12 @@ int window_usenet( Logfile& l, Config& c ) {
 // ./wopr --run server -p ibasefile:tekst.txt.l1000.ws7.ibase,timbl:"-a1 +D"
 //
 #ifdef TIMBL
-int server(Logfile& l, Config& c) {
-  const std::string& timbl  = c.get_value("timbl");
-
-  try {
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
-    (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
-    My_Experiment->StartServer( 8888, 1 );
-  }
-  catch ( const std::exception& e ) {
-    l.log( "ERROR: exception caught." );
-    return -1;
-  }
-
-  return 0;
+int server(Logfile& l, Config& ) {
+  l.log( "ERROR This 'timbl server' mode is unsupported since 2010" );
+  return -1;
 }
 #else
-int server( Logfile& l, Config& c ) {
+int server( Logfile& l, Config& ) {
   l.log( "No TIMBL support." );
   return -1;
 }
