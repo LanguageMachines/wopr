@@ -1,5 +1,6 @@
 sudo: required
 dist: trusty
+group: edge
 
 # whitelist
 branches:
@@ -29,10 +30,12 @@ matrix:
       compiler: clang
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
-          packages: ['clang-3.7']
-      env: COMPILER=clang++-3.7
-
+          packages:
+            - clang
+            - libiomp-dev
+      env:
+        - COMPILER=clang
+        - CXXFLAGS="-fopenmp=libiomp5"
 
 before_install:
     - sudo apt-get update
