@@ -48,6 +48,7 @@
 #include "wopr/MersenneTwister.h"
 
 #ifdef HAVE_ICU
+#undef U_CHARSET_IS_UTF8
 #define U_CHARSET_IS_UTF8 1
 #include "unicode/utypes.h"
 #include "unicode/uchar.h"

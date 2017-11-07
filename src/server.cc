@@ -799,7 +799,8 @@ int server3( Logfile& l, Config& ) {
     ../wopr -r server4 -p ibasefile:OpenSub-english.train.txt.l2r0.hpx1_-a1+D.ibase,timbl:"-a1 +D",lexicon:OpenSub-english.train.txt.lex,mode:1,verbose:2,resm:1
 
 */
-int server4(Logfile& l, Config& c) {
+int server4( Logfile& l, Config& c) {
+
   l.log( "server4. Returns a log10prob over sequence." );
 
   const std::string& timbl      = c.get_value( "timbl" );

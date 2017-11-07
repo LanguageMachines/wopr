@@ -1,9 +1,6 @@
-// $Id$
-//
-
 /*****************************************************************************
  * Copyright 2007 - 2014 Peter Berck                                         *
- *                                                                           *
+ *           2017 Ko van der Sloot                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
  * wopr is free software; you can redistribute it and/or modify it           *
@@ -77,7 +74,7 @@ inline std::string &replacein(std::string &s, const std::string &sub,
   return s;
 }
 
-std::string askenv(const std::string& key) throw(std::invalid_argument);
+std::string askenv(const std::string& key);
 
 std::string itoa(int i,const char* form);
 
@@ -99,4 +96,3 @@ long clock_m_secs();
 size_t fnvhash(const std::string&);
 
 #endif
-

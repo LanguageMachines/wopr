@@ -2,6 +2,10 @@
 www.sourceforge.net/projects/tinyxml
 Original code by Lee Thomason (www.grinninglizard.com)
 
+* 2017 Ko van der Sloot:
+  - removed 'dynamic throw' as C++11 nolonger supports this
+  - added //fallthrough comments in case statement. make GCC 7 happy
+
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any
 damages arising from the use of this software.
@@ -111,14 +115,17 @@ void TiXmlBase::ConvertUTF32ToUTF8( unsigned long input, char* output, int* leng
 			--output;
 			*output = (char)((input | BYTE_MARK) & BYTE_MASK);
 			input >>= 6;
+			// fallthrough
 		case 3:
 			--output;
 			*output = (char)((input | BYTE_MARK) & BYTE_MASK);
 			input >>= 6;
+			// fallthrough
 		case 2:
 			--output;
 			*output = (char)((input | BYTE_MARK) & BYTE_MASK);
 			input >>= 6;
+			// fallthrough
 		case 1:
 			--output;
 			*output = (char)(input | FIRST_BYTE_MARK[*length]);
@@ -1635,4 +1642,3 @@ bool TiXmlText::Blank() const
 			return false;
 	return true;
 }
-
