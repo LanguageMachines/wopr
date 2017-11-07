@@ -96,6 +96,7 @@ int generate( Logfile& l, Config& c ) {
   l.log( "timbl:      "+timbl );
   l.log( "ws:         "+to_str(ws) );
   l.log( "mode:       "+to_str(mode) );
+  l.log( "start:      "+start );
   l.log( "end:        "+end ); // end marker of sentences
   l.log( "n:          "+to_str(n) ); // number of sentences
   l.log( "len:        "+to_str(len) ); // max length of sentences
