@@ -7,6 +7,14 @@ branches:
   only:
     - master
 
+notifications:
+  irc:
+    channels:
+      - "irc.uvt.nl#gitlama"
+    template:
+      - "%{repository_slug}#%{build_number} %{message} --> %{build_url}"
+    skip_join: true
+
 language: cpp
 matrix:
   include:
@@ -18,20 +26,11 @@ matrix:
           packages: ['g++-4.9']
       env: COMPILER=g++-4.9
 
-#    - os: linux
-#      compiler: gcc
-#      addons:
-#        apt:
-#          sources: ['ubuntu-toolchain-r-test']
-#          packages: ['g++-5']
-#      env: COMPILER=g++-5
-
     - os: linux
       compiler: clang
       addons:
         apt:
           packages:
-            - clang
             - libiomp-dev
       env:
         - COMPILER=clang
