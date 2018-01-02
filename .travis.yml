@@ -33,7 +33,7 @@ matrix:
           packages:
             - libiomp-dev
       env:
-        - COMPILER=clang
+        - COMPILER=clang++
         - CXXFLAGS="-fopenmp=libiomp5"
 
 before_install:
