@@ -1,6 +1,3 @@
-# $Id: bootstrap 2465 2009-01-26 09:58:02Z sloot $
-# $URL: $
-
 # bootstrap - script to bootstrap the distribution rolling engine
 
 # usage:
@@ -22,7 +19,7 @@ automake=automake
 aclocal=aclocal
 
 # if you want to autogenerate a ChangeLog form svn:
-# 
+#
 #  svn2cl, a python script, as used in the GNU Enterprise project.
 #    By jcater (Jason Cater), contributions by reinhard (Reinhard Müller).
 #    Get it from
@@ -52,7 +49,7 @@ fi
 
 if $aclocal --version|head -1 |grep ' 1\.[4-7]'; then
     echo "aclocal 1.4-1.7 is active. You should use aclocal 1.8 or later"
-    if test -f /etc/debian_version; then	
+    if test -f /etc/debian_version; then
         echo " sudo apt-get install aclocal1.9"
         echo " sudo update-alternatives --config aclocal"
     fi
@@ -73,4 +70,3 @@ AUTOMAKE=automake ACLOCAL=aclocal autoreconf --install \
 # aclocal-1.9 \
 #     && automake-1.9 --add-missing --verbose --gnu \
 #     && autoconf
-

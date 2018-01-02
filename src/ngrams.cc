@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2017 Peter Berck, Ko vd Sloot                            *
+ * Copyright 2007 - 2018 Peter Berck, Ko vd Sloot                            *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *

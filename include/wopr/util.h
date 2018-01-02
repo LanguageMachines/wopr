@@ -1,6 +1,6 @@
 /*****************************************************************************
  * Copyright 2007 - 2014 Peter Berck                                         *
- *           2017 Ko van der Sloot                                           *
+ *           2018 Ko van der Sloot                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
  * wopr is free software; you can redistribute it and/or modify it           *
