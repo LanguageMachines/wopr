@@ -93,11 +93,11 @@
   ./wopr -r pdt -p ibasefile:./test/distr/austen.train.l2r0_-a1+D.ibase,timbl:"-a1 +D",filename:test/zin01,lc:2
 */
 #ifdef TIMBL
-struct distr_elem {
+struct t_distr_elem {
   std::string name;
   double      freq;
   double      s_freq;
-  bool operator<(const distr_elem& rhs) const {
+  bool operator<(const t_distr_elem& rhs) const {
     return freq > rhs.freq;
   }
 };
@@ -853,7 +853,7 @@ int pdt2( Logfile& l, Config& c ) {
 //
 void generate_next( Timbl::TimblAPI* My_Experiment,
 		    const std::string& instance,
-		    std::vector<distr_elem>& distr_vec ) {
+		    std::vector<t_distr_elem>& distr_vec ) {
 
   double distance;
   const Timbl::ValueDistribution *vd;
@@ -872,7 +872,7 @@ void generate_next( Timbl::TimblAPI* My_Experiment,
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight(); // absolute frequency.
 
-    distr_elem  d;
+    t_distr_elem  d;
     d.name   = tvs;
     d.freq   = wght;
     d.s_freq = wght;
@@ -908,7 +908,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment,
   // in this generate_tree.
   //
   std::string instance = ctx.toString() + " ?"; // where context length?
-  std::vector<distr_elem> res;
+  std::vector<t_distr_elem> res;
   generate_next( My_Experiment, instance, res );
 
   //std::cerr << "RESSIZE=" << res.size() << std::endl;
@@ -921,7 +921,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment,
 
   sort( res.begin(), res.end() );
 
-  std::vector<distr_elem>::iterator fi = res.begin();
+  std::vector<t_distr_elem>::iterator fi = res.begin();
   int cnt = depths.at( dc ); // was length
   while ( (fi != res.end()) && (--cnt >= 0) ) {
 
