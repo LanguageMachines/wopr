@@ -1,424 +1,426 @@
+1.40.6  Releasing current status-quo (since last version various fixes not in this ChangeLog)
+
 1.40.5 Added topn to cmcorrect.
-	
+
 1.40.4	Unfix
-	
+
 1.40.3	Fix
-	
+
 1.40.2	More fixes
-	
+
 1.40.1	Bug fixes.
-	
+
 1.40.0  ccorrect -> sml, fixes.
-	
+
 1.39.6	Finished ccorrect, fixes
-	
+
 1.39.5	Added ccorrect, some fixes
-	
+
 1.39.4	Added cmcorrect
-	
+
 1.39.3	Change for Apple (tr1/)unordered_set.
-	
+
 1.39.2	More pedantic fixes.
-	
+
 1.39.1	Fixes.
-	
+
 1.39.0	Added it:3 for plain windowing with target from other file
-	
+
 1.38.4-RC4	trigger stuff, changed >mwl to >=mwl
-	
+
 1.38.4-RC2/RC3	Testing stuff.
-	
+
 1.38.3	Added min_md to parameters for correct.
-	
+
 1.38.2	Word in progress, confidence parameter for correct.
-	
+
 1.38.1	First version mcorrect.
 
 1.38.0	mcorrect work in progress.
-	
+
 1.37.5	Added min_df option to correct.
-	
+
 1.37.4	Added kvs option.
-	
+
 1.37.3	Added it:2 option.
-	
+
 1.37.2	Parameter targetfile possible for window_lr with it > 0.
-	
+
 1.37.1	Working error window_lr.
-	
+
 1.37.0	Added "error" mode to windowing.
-	
+
 1.36.9	Added hapax_txt to hapax (plain) text.
-	
+
 1.36.8	Added typos option to correct.
-	
+
 1.36.7	Added mode option to correct.
-	
+
 1.36.6	Case insensitive levenshtein distance added.
-	
+
 1.36.5	Some cleanup in correct, new version.
-	
+
 1.36.4	Work in progress, not for public consumption.
-	
+
 1.36.3	Added max_tf for correct.
-	
+
 1.36.2	Baseline added.
-	
+
 1.36.1	minmatch (mm) parameter for pdt added.
-	
+
 1.36.0	UFT8 in pdt.
-	
+
 1.35.5	Ko added xmlserver.
 	-V/--version option added.
-	
+
 1.35.4	Fix in ngt output (extra [] removed)
-	
+
 1.35.3	Ko's fixes.
-	
+
 1.35.2	Some clean up, fixes, changes.
-	
+
 1.35.1	Working pdt2web.
-	
+
 1.35.0	PDT server stuff, work in progress.
-	
+
 1.34.2	Added mode for window_letters.
-	
+
 1.34.1	Fixed the output in pdt2.
-	
+
 1.34.0	Fixed counting bug in pdt2. Output is still uncorrected, total
 	values are OK.
-	
+
 1.33.4	Bug fixing pdt2.
-	
+
 1.33.3	More work on pdt2.
-	
+
 1.33.2	Work on pdt2. Function window_letters added.
-	
+
 1.33.1	Spelling mistake fixed.
-	
+
 1.33.0	The *.pxs files with right context now correctly determine sentence
 	boundaries.
-	
+
 1.32.1	Working version of 'pdt'.
-	
+
 1.32.0	Started on 'pdt' code.
-	
+
 1.31.8	Fixed cache bug in server_sc.
-	
+
 1.31.7	Changes smt/mbmt.
-	
+
 1.31.6	Fix for unigram top-n in ngd output. Fix for cache in smt server.
-	
+
 1.31.5	Choosable log2/log10/p in both ngl and ngt.
-	
+
 1.31.4	Configurable logs.
-	
+
 1.31.3	Added different log outputs to ngl.
-	
+
 1.31.2	Better info in output
-	
+
 1.31.1	Added better statistics and MRR.
-	
+
 1.31.0	Redid the pure ngram LM, returns distributions now. Also added
 	possibility to load an SRILM LM and counts file to be able to look
 	at SRILM distributions.
-	
+
 1.30.2	Changed levenshtein to return LD:1 for transpositions.
-	
+
 1.30.1	Testing special server for pbmbmt.
-	
+
 1.30.0	Change in ibase filename generation, -k parameter is not included
 	anymore.
-	
+
 1.29.9	gco added to lcontext
-	
+
 1.29.8	Working gap.
-	
+
 1.29.7	Gaps work in progress.
-	
+
 1.29.6	occ200 word in progress
-	
+
 1.29.5	Docs. Fixes.
-	
+
 1.29.4	Misc fixes. Docs added.
-	
+
 1.29.3	Added ibasefile name override
-	
+
 1.29.2	Caching in gt.
-	
+
 1.29.1	New caching improved.
-	
+
 1.29.0	New caching added.
-	
+
 1.28.5	Added caching size/parameter.
-	
+
 1.28.4	Simple caching in server_nc_nf added.
-	
+
 1.28.3	Benchmark added.
-	
+
 1.28.2	better forking server for spelling correction.
-	
+
 1.28.1	Fixes in servers.
-	
+
 1.28.0	Working server_sc.
-	
+
 1.27.1	first version of server_sc implemented.
-	
+
 1.27.0	server_mg implemented.
-	
+
 1.26.5	Demo stuff, work in progress.
-	
+
 1.26.4	Better file checking in directory modes. Small fixes.
 	fnvhash added.
-	
+
 1.26.3	Directory mode in 'pplxs' implemented.
-	
+
 1.26.2	Better error checking.
-	
+
 1.26.1	Directory mode in 'correct'.
-	
+
 1.26.0	Directory mode in 'gt' implemented.
-	
+
 1.25.6	Counters in lexicon fixed (missing reset).
-	
+
 1.25.5	Better fix for size_t problems 32 bits computers.
-	
+
 1.25.4	Fix for bad input data.
-	
+
 1.25.3	Quick fix for 32 bits.
-	
+
 1.25.2	Implemented mrr in pplxs. This interferes with the caching
 	mechanism which has been temporarily disabled until this is
-	solved. 
-	
+	solved.
+
 1.25.1	Correct mrr output in mg file now.
-	
+
 1.25.0	Implementing MRR; change in mg output format.
-	
+
 1.24.4	Added distr_count to px output, changed mg output to resemble px
-	output. 
+	output.
 1.24.3	Fixed output of probabilities bug in mg.
-	
-1.24.2	Extra parameters in focus. ffc now >=. 
-	
+
+1.24.2	Extra parameters in focus. ffc now >=.
+
 1.24.1	Working focus and multi_gated. Made fco a parameter in mg.
-	
+
 1.24.0	Redid focus code and added new word expert multi classifier.
-	
+
 1.23.3	Changes in ngram_server
-	
+
 1.23.2	Deprecated server3. Use server4 in stead.
-	
+
 1.23.1	Moving away from heavy TimblServer dependency. Took the necessary
 	SocketBasics files from TimblServer and incorporated them into
-	Wopr. 
-	
+	Wopr.
+
 1.23.0	Introducing ngram_server with TimblServerAPI. Still work in progress.
-	
+
 1.22.6	Changes in generate and generate_server. Likelihood of choice now
 	according to frequency.
-	
+
 1.22.5	Server4 added, still work in progress. Functionality might change
 	again.
-	
+
 1.22.4	Removed default encapsulation of read_a3 output in <s></s>.
 	Made ssym and esym parameters.
-	
+
 1.22.3	Changes in server3
-	
+
 1.22.2	Changes in server3
-	
+
 1.22.1	Changes in server3
-	
+
 1.22.0	Server3 added, server2 was very much out of date. Work in progress.
-	
+
 1.21.3	Added pplx_px.pl script to distribution.
-	
+
 1.21.2	Added deleting of parameters from scripts.
-	
+
 1.21.1	Small fixes in 'prepare'.
-	
+
 1.21.0	Threw the eos/sos parameters out again, solved in a better way
 	with the 'prepare' function.
-	
+
 1.20.0	Implemented "SRILM" style sentence makers in window_lr. New
 	parameters for 'window_lr', 'eos:1' and 'sos:1'. Note that using
 	'eos:1' with right context can give strange patterns.
-	
+
 1.19.0	Put the printing of "u" and "k" for un/known words in its own
 	field. Change in data format for '.px' files!
-	
+
 1.18.2	Fixed unnecessary printing of "u" in '.px' output.
-	
+
 1.18.1	Added "u" indication for unknown words in '.px' output. It is
 	appended to the "cg, cd, ic" indicator.
-	
+
 1.18.0	Added the logprob sum for none OOV words to 'pplx_simple', changed
 	fileformat for '.pxs' files!
-	
+
 1.17.4	Added avergare/word counts to 'ngt'. Added count of words and OOV
 	words to per sentence output '.ngp' files in 'ngt'.
-	
+
 1.17.3	Bug fixed in 'ngt', adjusted word counter with OOV words counter.
-	
+
 1.17.2	Some clean up,  'ngt' now more like SRILM with OOV words.
 
 1.17.1	Added 'id' parameter to ''correct'.
-	
+
 1.17.0	Changes in correct. Added the min_ratio variable which sets the
 	minimum ratio between the lexical freq. of a possible correction
 	to a type and the lexical frequency of the typo. Ignored when the
 	possible typo is unknown.a
-	
+
 1.16.4	Added extra subtype to Classifier.h to distinguish between the
 	multiplying and adding type-2.
-	
+
 1.16.3	Internal changes: changed removal of doubles in 'mc' to checking for
 	doubles when adding to vector.
-	
+
 1.16.2	Added multiplication option to the added distribution.
-	
+
 1.16.1	Small fixes.
-	
+
 1.16.0	Deprecated 'md' and 'md2', put together in new 'mc':
 	multi-classifiers.  Added perl script 'examine_mc.pl'.
-	
+
 1.15.1	Added algorithm include.
-	
+
 1.15.0	Function 'md2' can now take a file with a distribution (generated
 	by the 'lcontext' function) and add it like it was output from a
 	classifier to the merged distribution. In this version the
 	probability for each element is set to a fixed value in the kvs
 	file (parameter 'distprob'). Fixed small bug in counting of
 	correct classifications in the merged distribution.
-	
+
 1.14.16	Fixed bug in classifier weight (which was ignored) in 'md' and
 	'md2'. Added filename parameter in 'md2' to be able to collapse
 	'md' and 'md2' in one function.
 	Extra info_str() in Classifier for 'md2'.
-	
+
 1.14.15	Added match depth and match-at-leaf to md(2) output. Fixed
 	examine_md.pl script for new output.
-	
+
 1.14.14 Made combined in 'md2' optional with 'c' parameter. 'c:1' to
 	combine distributions. Added combined count to 'md2'.
-	
+
 1.14.13	Added weight parameter to Classifiers for 'md' and
 	'md2'. Implemented combined distribution in 'md2'.
-	
+
 1.14.12	Small fixes in md2 output and md2 file output.
-	
+
 1.14.11 Fixed extra output line in 'md2'.
-	
+
 1.14.10	Renamed multi_dist2 output .md2. Added example_md.pl script.
-	
+
 1.14.9	Moved open_file() outside init() in Classifier.h
-	
+
 1.14.8	Added file output to multi_dist2.
-	
+
 1.14.7	Added counters to Classifier. ''Work on md2''.
-	
+
 1.14.6	Added 'md2', new code in multi_dist2, changes for md2 in
 	Classifier.h.
-	
+
 1.14.5	Added 'id' parameter to 'md'.
-	
+
 1.14.4	Added score per classifier in 'md'.
-	
+
 1.14.3	Better file output in 'md'.
-	
+
 1.14.2	Fixes, changed multi_distr to use probabilities. Added file output.
-	
+
 1.14.1	Added multi_dist function in wex.cc, called 'md' in command
 	line. Miscellaneous changes in runrunrun.cc
-	
-1.14.0	Added wex.cc/h. 
-	
+
+1.14.0	Added wex.cc/h.
+
 1.13.11	Added sentence printout in pplxs. The parameter is "is:" ("include
 	sentence"). Value is '1' or '0'.
-	
+
 1.13.10	Added file-exists check in ngl.
-	
+
 1.13.9	Set "fco" parameter in ngl to default 0.
 	Disallow negative "to" parameter in window_lr.
 	Function ngl now sets "ngl" prameter instead of "filename".
 	Changed "filename" parameter to "testfile" in ngt for consistency.
-	
+
 1.13.8	Added forgotten math.h
-	
+
 1.13.7	Added id parameter to ngt.
 	Added a target offset parameter called "to" to window_lr which
 	allows one to skip to the next target. In other words, with
 	"to:1" one predicts the word after the next word.
-	
+
 1.13.6	Added rudimentary frequency filtering to ngl.
-	
+
 1.13.5	Added Turing estimator for unknown words. Uses counts file
 	to calculate.
-	
+
 1.13.4	Changed ngl output format. Added raw frequencies.
-	
+
 1.13.3	File output in ngram output. The ngt functions writes two
 	output files; one with a probability per word, and one
 	with sentence perplexities. Still to fix: snoothing &c.
-	
+
 1.13.2	Entropy and perplexity calculations added.
-	
+
 1.13.1	Pure ngram LM code working. Not ready for prime time yet.
-	
+
 1.13.0	Moved ngl to own source file.
-	
+
 1.12.5	Added probability calculations to ngl.
-	
+
 1.12.4	ngl (ngram lists) added.
-	
+
 1.12.3	Finished gt function. Changes in man page, which was really out
 	of date. Should be rewritten.
-	
+
 1.12.2	Added 'gt' (general test) function. Still in beta, do not use yet.
-	
+
 1.12.1	Added web/generator/generator.script
-	
+
 1.12.0	Added tr function
-	
+
 1.11.4	Added id to hapax function (useful for testset)
-	
+
 1.11.3	Added fco parameter in focus.
-	
+
 1.11.2	Removed excess printing from pplxs.
-	
+
 1.11.1	Changes in date_time_stamp in scripts.
-	
+
 1.11.0	First version with focus.
 	Added "add: filename:.txt" to scripting.
 	Added $datetime, $date and $time to kv pairs for scripts.
-	
+
 1.10.23 Saves gc stats in lcontext.
 	MRR calculations (in progress, not used yet).
-	
+
 1.10.22	Wopr will now abort pplx_simple if Timbl classify returns null for
 	the distribution.
 	hapax function now checks if file already exists.
 	P(0) caclulation checks for division by 0.
-	
+
 1.10.21	I broke down and put the Timbl settings in the ibase filename. It
 	does not make pretty filenames (okay, it makes ugly ones), but
 	useful. Also took out the id: string from the ibase filename!
-	
+
 1.10.20 Removed some debugging output.
-	
+
 1.10.19 Default gcd to 50.
 	gc_sep became a boolean parameter in lcontext. Default is gc_sep:1
 	which means spaces between the binary features. gc_sep:0 means no
-	spaces. 
+	spaces.
 	Fixed a typo in ChangeLog :-)
-	
+
 1.10.18 Binary GC type implemented. First version, could be bugs.
 	Added type (gct) to auto-filename generation in lcontext.
-	
+
 1.10.17 count_lines reinstated.
 	Small fixes, improvements.
-	
+
 1.10.16 Working lcontext and rfl
-	
+
 20070919 Autoconf version
