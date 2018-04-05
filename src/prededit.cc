@@ -967,7 +967,7 @@ size_t count_keys( const std::string& line ) {
 #ifndef HAVE_ICU
 int explode( const std::string& a_word,
 	     std::vector<std::string>& res) {
-  for ( int i = 0; i < a_word.length(); i++ ) {
+  for ( unsigned int i = 0; i < a_word.length(); i++ ) {
     std::string tmp = a_word.substr(i, 1);
     res.push_back( tmp );
   }
@@ -998,7 +998,7 @@ void window_word_letters( const std::string& a_word,
 			  int lc,
 			  Context& ctx,
 			  std::vector<std::string>& res) {
-  int i;
+  unsigned int i;
   for ( i = 0; i < a_word.length()-1; i++ ) { //NB ()-1
     std::string tmp = a_word.substr(i, 1);
     ctx.push( tmp ); // next letter in context
