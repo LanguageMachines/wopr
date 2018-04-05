@@ -36,11 +36,11 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      sudo apt-get update
+      sudo apt-get update;
       sudo apt-get install pkg-config autoconf-archive ccache cppcheck
                            autotools-dev libicu-dev libxml2-dev libbz2-dev
                            libtar-dev zlib1g-dev
-                           libboost-dev libboost-regex-dev
+                           libboost-dev libboost-regex-dev;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update;
