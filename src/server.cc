@@ -2280,7 +2280,6 @@ int one( Logfile& l, Config& c ) {
 struct distr_elem {
   std::string name;
   double      freq;
-  double      s_freq;
   bool operator<(const distr_elem& rhs) const {
     return freq > rhs.freq;
   }

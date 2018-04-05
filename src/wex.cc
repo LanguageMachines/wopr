@@ -515,7 +515,6 @@ int multi_dist( Logfile& l, Config& c ) {
 
     // We loop over classifiers. We need a summed_distribution.
     //
-    int classifier_idx = 0;
     for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
 
       Classifier *classifier   = *cli;
@@ -564,7 +563,6 @@ int multi_dist( Logfile& l, Config& c ) {
 
 	++it;
       }
-      ++classifier_idx;
     } // classifiers
 
     file_out << " ] {";
@@ -724,7 +722,6 @@ int multi_dist2( Logfile& l, Config& c ) {
 
   // We loop over classifiers.
   //
-  int classifier_idx = 0;
   bool go_on = true;
   std::string outline;
   std::string outtarget;
@@ -776,7 +773,6 @@ int multi_dist2( Logfile& l, Config& c ) {
 	}
 
       } // go_on
-      ++classifier_idx;
     } // classifiers
 
     if ( go_on == true ) {
