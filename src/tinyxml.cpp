@@ -1528,16 +1528,20 @@ void TiXmlAttributeSet::Remove( TiXmlAttribute* removeMe )
 {
 	TiXmlAttribute* node;
 
-	for( node = sentinel.next; node != &sentinel; node = node->next )
-	{
-		if ( node == removeMe )
+	for( node = sentinel.next; node != &sentinel ; ){
+	  {
+	    if ( node ){
+	      if ( node == removeMe )
 		{
-			node->prev->next = node->next;
-			node->next->prev = node->prev;
-			node->next = 0;
-			node->prev = 0;
-			return;
+		  node->prev->next = node->next;
+		  node->next->prev = node->prev;
+		  node->next = 0;
+		  node->prev = 0;
+		  return;
 		}
+	      node = node->next;
+	    }
+	  }
 	}
 	assert( 0 );		// we tried to remove a non-linked attribute.
 }

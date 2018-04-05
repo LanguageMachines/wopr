@@ -23,6 +23,7 @@ AC_CHECK_TYPES([ptrdiff_t])
 AC_C_INLINE
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
+AC_TYPE_INT64_T
 
 #check headers
 AC_CHECK_HEADERS([netinet/in.h])
@@ -35,10 +36,11 @@ AC_CHECK_HEADERS([sys/socket.h])
 #check functions
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname gethostname gettimeofday inet_ntoa])
 AC_CHECK_FUNCS([memset pow regcomp select setlocale socket strchr strerror])
-AC_CHECK_FUNCS([sqrt])
+AC_CHECK_FUNCS([sqrt memmove])
 AC_FUNC_FORK
 AC_FUNC_MKTIME
 AC_FUNC_STRTOD
+AC_FUNC_ERROR_AT_LINE
 
 PKG_PROG_PKG_CONFIG
 
