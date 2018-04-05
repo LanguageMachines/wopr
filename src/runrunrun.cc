@@ -2091,7 +2091,7 @@ int64_t anahash( std::string& s ) {
     res += (unsigned long long)pow((unsigned long long)s[i],5);
   }
 #else
-  UnicodeString ustr = UnicodeString::fromUTF8(s);
+  icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(s);
   for ( int i = 0; i < ustr.length(); i++ ) {
     res += (int64_t)pow(ustr.charAt(i),5);
   }
@@ -4233,8 +4233,8 @@ void permutate(const std::string& s, int l, std::map<std::string,int>& w) {
       w[aw] = 1;
     }
 #else
-    UnicodeString ustr = UnicodeString::fromUTF8(s1);
-    UnicodeString aw = UnicodeString(ustr, 0, l);
+    icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(s1);
+    icu::UnicodeString aw = icu::UnicodeString(ustr, 0, l);
     std::string aw1;
     aw.toUTF8String(aw1);
     wfi = w.find( aw1 );

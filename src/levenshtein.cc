@@ -248,8 +248,8 @@ int lev_distance(const std::string& source, const std::string& target, int mld, 
 #else
 int lev_distance(const std::string& source, const std::string& target, int mld, bool cs) {
 
-  UnicodeString u_source = UnicodeString::fromUTF8(source);
-  UnicodeString u_target = UnicodeString::fromUTF8(target);
+  icu::UnicodeString u_source = icu::UnicodeString::fromUTF8(source);
+  icu::UnicodeString u_target = icu::UnicodeString::fromUTF8(target);
 
   // Step 1
 

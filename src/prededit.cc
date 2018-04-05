@@ -1,6 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2016 Peter Berck                                         *
- *                                                                           *
+ * Copyright 2007 - 2018 Peter Berck, Ko vd Sloot                            *
  * This file is part of wopr.                                                *
  *                                                                           *
  * wopr is free software; you can redistribute it and/or modify it           *
@@ -958,7 +957,7 @@ size_t count_keys( const std::string& line ) {
 }
 #else
 size_t count_keys( const std::string& line ) {
-  UnicodeString ustr = UnicodeString::fromUTF8(line);
+  icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(line);
   return ustr.length();
 }
 #endif
@@ -977,9 +976,9 @@ int explode( const std::string& a_word,
 #else
 int explode( const std::string& a_word,
 	     std::vector<std::string>& res) {
-  UnicodeString ustr = UnicodeString::fromUTF8(a_word);
+  icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(a_word);
   for ( int i = 0; i < ustr.length(); i++ ) {
-    UnicodeString tmp = ustr.charAt(i);
+    icu::UnicodeString tmp = ustr.charAt(i);
     std::string tmp_res;
     tmp.toUTF8String(tmp_res);
     res.push_back( tmp_res );
@@ -1018,10 +1017,10 @@ void window_word_letters( const std::string& a_word,
 			  Context& ctx,
 			  std::vector<std::string>& res ) {
   int i;
-  //UnicodeString ustr = UnicodeString::fromUTF8(StringPiece(a_word.c_str()));
-  UnicodeString ustr = UnicodeString::fromUTF8(a_word);
+  //icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(StringPiece(a_word.c_str()));
+  icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(a_word);
   for ( i = 0; i < ustr.length()-1; i++ ) { //NB ()-1
-    UnicodeString tmp = ustr.charAt(i);
+    icu::UnicodeString tmp = ustr.charAt(i);
     std::string tmp_res;
     tmp.toUTF8String(tmp_res);
     ctx.push( tmp_res ); // next letter in context
@@ -1029,7 +1028,7 @@ void window_word_letters( const std::string& a_word,
   }
   // After the last letter, predict a space instead.
   // Do we want to predict spaces? Just skip this instance?
-  UnicodeString tmp = ustr.charAt(i);
+  icu::UnicodeString tmp = ustr.charAt(i);
   std::string tmp_res;
   tmp.toUTF8String(tmp_res);
   ctx.push( tmp_res ); // next letter in context
@@ -1220,7 +1219,7 @@ int pdt2web( Logfile& l, Config& c ) {
 
 #ifdef HAVE_ICU
   /*
-  UnicodeString us1("Öäå and so");
+  icu::UnicodeString us1("Öäå and so");
   std::string us0 = "Öäå and so";
   UChar uc1 = us1.charAt(1);
   std::cerr << "-------->" << uc1 << std::endl;
@@ -1231,7 +1230,7 @@ int pdt2web( Logfile& l, Config& c ) {
   std::cerr << "-length->" << us0.length() << std::endl;
 
 
-  UnicodeString ustr = "Öäå foo åäö.";
+  icu::UnicodeString ustr = "Öäå foo åäö.";
   const UChar* source = ustr.getBuffer();
   char target[1000];
   UErrorCode status = U_ZERO_ERROR;
@@ -1285,7 +1284,7 @@ int pdt2web( Logfile& l, Config& c ) {
   }
 
   for ( int i = 0; i < ustr.length(); i++ ) {
-    UnicodeString uc = ustr.charAt(i);
+    icu::UnicodeString uc = ustr.charAt(i);
     std::string us;
     uc.toUTF8String(us);
     std::cerr << us;
