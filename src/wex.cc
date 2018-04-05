@@ -575,6 +575,7 @@ int multi_dist( Logfile& l, Config& c ) {
       distr_probs  d;
       d.name   = mi.first;
       d.prob   = mi.second; // was d.freq
+      d.freq   = 0;
       distr_vec.push_back( d );
     }
 
@@ -796,6 +797,7 @@ int multi_dist2( Logfile& l, Config& c ) {
 	  distr_probs  d;
 	  d.name   = mi.first;
 	  d.prob   = mi.second;
+	  d.freq   = 0;
 	  distr_vec.push_back( d );
 	}
 	sort( distr_vec.begin(), distr_vec.end() );
