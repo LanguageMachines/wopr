@@ -175,7 +175,7 @@ void Logfile::log( const std::string& s, const std::string& esc_code  ) {
   Log to syslog.
 */
 void Logfile::log( const std::string& s, int sl ) {
-  log( s );
+  this->log( s );
   if ( sl != 0 ) {
     syslog( LOG_INFO, "%s", s.c_str() );
   }

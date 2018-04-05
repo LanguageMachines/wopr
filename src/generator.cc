@@ -315,7 +315,7 @@ std::string generate_one( std::string& a_line, int len, int ws,
 // returns one sentence of length len.
 //
 std::string generate_xml( std::string& a_line, int len, int ws,
-			  const std::string& end, std::string id,
+			  const std::string& end, std::string& id,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   const Timbl::ValueDistribution *vd;
@@ -541,8 +541,8 @@ int generate_server( Logfile& l, Config& c ) {
       a_line = start;
 
       //int len1 = mtrand.randInt( len )+1;
-
-      std::string foo = generate_xml( a_line, len, ws, end, to_str(n1),
+      std::string n1s = to_str(n1);
+      std::string foo = generate_xml( a_line, len, ws, end, n1s,
 				      My_Experiment );
 
       //foo = "<data><![CDATA[" + foo + "]]></data>";

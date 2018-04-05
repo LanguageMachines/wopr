@@ -74,8 +74,8 @@ extern "C" void* watcher( void *params ) {
 	c->set_status(0);
       }
     }
-
   }
+  return 0;
 }
 
 void create_watcher( Config& c ) {

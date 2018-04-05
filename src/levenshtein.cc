@@ -3604,7 +3604,6 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
 
 // for cmcorrect
 double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& distr_vec) {
-  int    cnt         = 0;
   double distr_count = 0;
 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
@@ -3615,13 +3614,12 @@ double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& 
 
     distr_elem *d = new distr_elem(tvs, wght, 0); //last index?
     distr_vec.push_back( d );
-    ++cnt;
     distr_count += wght;
 
     ++it;
   }
   sort( distr_vec.begin(), distr_vec.end(), distr_elem_cmprev_ptr() );
-  return distr_count; //cnt is size()
+  return distr_count;
 }
 
 // Confidence only. Add modes for examining distribution?

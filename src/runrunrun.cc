@@ -26,6 +26,7 @@
 #include <config.h>
 #endif
 
+#include <exception>
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -321,13 +322,13 @@ int script(Logfile& l, Config& c)  {
 	}
 	kv_pairs.clear();
 	l.log( "EXTERN2: "+expanded_rhs );
-	FILE *fp;
-	char line[1024];
-	fp = popen( expanded_rhs.c_str(), "r");
+	FILE *fp = popen( expanded_rhs.c_str(), "r");
 	if (fp == NULL) {
 	  /* Handle error */;
+	  throw std::runtime_error( "popen failed: " + expanded_rhs );
 	}
 	// extern2: wc -l ChangeLog | egrep -o "[0-9]+"
+	char line[1024];
 	while (fgets(line, 1024, fp) != NULL) {
 	  line[strlen(line)-1] = '\0'; // oooh
 	  //l.log( line ); // Tokenize? add_kv()?
@@ -2161,7 +2162,6 @@ int hapax(Logfile& l, Config& c)  {
 
   std::string a_line;
   std::vector<std::string>words;
-  unsigned long lcount = 0;
   unsigned long wcount = 0;
   std::string a_word;
   int wfreq;
@@ -2190,7 +2190,6 @@ int hapax(Logfile& l, Config& c)  {
   wfreqs["</s>"] = 1;
 
   while( std::getline( file_in, a_line )) {
-    ++lcount;
     Tokenize( a_line, words, ' ' );
     //
     // The features.
@@ -2294,7 +2293,6 @@ int hapax_txt(Logfile& l, Config& c)  {
 
   std::string a_line;
   std::vector<std::string>words;
-  unsigned long lcount = 0;
   unsigned long wcount = 0;
   std::string a_word;
   int wfreq;
@@ -2323,7 +2321,6 @@ int hapax_txt(Logfile& l, Config& c)  {
   wfreqs["</s>"] = 1;
 
   while( std::getline( file_in, a_line )) {
-    ++lcount;
     Tokenize( a_line, words, ' ' );
     //
     // The features and class
