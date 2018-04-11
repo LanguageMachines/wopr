@@ -288,7 +288,6 @@ int gen_test( Logfile& l, Config& c ) {
       int distr_count = 0;
       //      int target_freq = 0;
       double entropy         = 0.0;
-      int    rank            = 1;
       std::vector<distr_elem> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
@@ -369,7 +368,6 @@ int gen_test( Logfile& l, Config& c ) {
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    //	    target_freq = wght;
 	    target_in_dist = true;
-	    rank = rank_counter;
 	  }
 
 	  // Save it in the cache?
