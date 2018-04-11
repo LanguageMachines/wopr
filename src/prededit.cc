@@ -933,14 +933,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment,
     new_ctx.push(  (*fi).name );
     //std::cerr << "gen_tree: ctx=" << ctx.toString() << " / new_ctx=" << new_ctx.toString() << std::endl;
 
-    // NB the extra space in the beginning.
-    //
-    if ( res.size() == 1 ) { // not for non-web PDT ?
-      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );
-    } else {
-      generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );//+"/"+to_str(res.size()) );
-    }
-
+    generate_tree( My_Experiment, new_ctx, strs, length-1, depths, dc-1, t+" "+(*fi).name );
     ++fi;
   }
 

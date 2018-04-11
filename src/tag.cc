@@ -158,12 +158,10 @@ void Node::dump( std::map<int, std::string>& classes,
   // We need a place to insert our smoothed values.
   //
   double sum = 0.0;
-  double o_sum = 0.0;
   std::vector<double> sdist(dist.size()); // dist: [c1, f1, ...]
   smooth_dist( smooth, sdist );
   for ( size_t i = 0; i < sdist.size(); i += 2 ) {
     sum += (double)sdist[i+1];
-    o_sum += (double)dist[i+1];
   }
 
   if ( d == 0 ) { // d is depth, we are at the 'end' here.

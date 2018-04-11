@@ -2603,11 +2603,6 @@ int server_mg( Logfile& l, Config& c ) {
 	      multidist.prob = (int)(*wfi).second / (double)total_count;
 	    }
 	  }
-	  if ( multidist.prob == 0 ) {
-	    //file_out << "0 ";
-	  } else {
-	    //file_out << log2( multidist.prob ) << " ";
-	  }
 
 	  double res_pl10 = -99; // or zero, like SRILM when pplx-ing
 	  if ( resm == 2 ) {
