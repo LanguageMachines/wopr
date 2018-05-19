@@ -2280,7 +2280,6 @@ int one( Logfile& l, Config& c ) {
 struct distr_elem {
   std::string name;
   double      freq;
-  double      s_freq;
   bool operator<(const distr_elem& rhs) const {
     return freq > rhs.freq;
   }
@@ -2603,11 +2602,6 @@ int server_mg( Logfile& l, Config& c ) {
 	    if ( wfi != wfreqs.end() ) {
 	      multidist.prob = (int)(*wfi).second / (double)total_count;
 	    }
-	  }
-	  if ( multidist.prob == 0 ) {
-	    //file_out << "0 ";
-	  } else {
-	    //file_out << log2( multidist.prob ) << " ";
 	  }
 
 	  double res_pl10 = -99; // or zero, like SRILM when pplx-ing

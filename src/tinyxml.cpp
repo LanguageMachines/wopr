@@ -147,13 +147,12 @@ TiXmlNode::TiXmlNode( NodeType _type ) : TiXmlBase()
 TiXmlNode::~TiXmlNode()
 {
 	TiXmlNode* node = firstChild;
-	TiXmlNode* temp = 0;
 
 	while ( node )
 	{
-		temp = node;
-		node = node->next;
-		delete temp;
+	  TiXmlNode* temp = node;
+	  node = node->next;
+	  delete temp;
 	}
 }
 
@@ -169,13 +168,12 @@ void TiXmlNode::CopyTo( TiXmlNode* target ) const
 void TiXmlNode::Clear()
 {
 	TiXmlNode* node = firstChild;
-	TiXmlNode* temp = 0;
 
 	while ( node )
 	{
-		temp = node;
-		node = node->next;
-		delete temp;
+	  TiXmlNode* temp = node;
+	  node = node->next;
+	  delete temp;
 	}
 
 	firstChild = 0;
@@ -1530,16 +1528,20 @@ void TiXmlAttributeSet::Remove( TiXmlAttribute* removeMe )
 {
 	TiXmlAttribute* node;
 
-	for( node = sentinel.next; node != &sentinel; node = node->next )
-	{
-		if ( node == removeMe )
+	for( node = sentinel.next; node != &sentinel ; ){
+	  {
+	    if ( node ){
+	      if ( node == removeMe )
 		{
-			node->prev->next = node->next;
-			node->next->prev = node->prev;
-			node->next = 0;
-			node->prev = 0;
-			return;
+		  node->prev->next = node->next;
+		  node->next->prev = node->prev;
+		  node->next = 0;
+		  node->prev = 0;
+		  return;
 		}
+	      node = node->next;
+	    }
+	  }
 	}
 	assert( 0 );		// we tried to remove a non-linked attribute.
 }
@@ -1883,4 +1885,3 @@ bool TiXmlPrinter::Visit( const TiXmlUnknown& unknown )
 	DoLineBreak();
 	return true;
 }
-

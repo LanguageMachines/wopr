@@ -26,6 +26,7 @@
 #include <config.h>
 #endif
 
+#include <exception>
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -188,6 +189,7 @@ int run_external( Logfile* l, Config *c ) {
   while (fgets(line, 1024, fp) != NULL) {
     l->log( line );
   }
+  pclose( fp );
   return 0;
 }
 
@@ -321,18 +323,19 @@ int script(Logfile& l, Config& c)  {
 	}
 	kv_pairs.clear();
 	l.log( "EXTERN2: "+expanded_rhs );
-	FILE *fp;
-	char line[1024];
-	fp = popen( expanded_rhs.c_str(), "r");
+	FILE *fp = popen( expanded_rhs.c_str(), "r");
 	if (fp == NULL) {
 	  /* Handle error */;
+	  throw std::runtime_error( "popen failed: " + expanded_rhs );
 	}
 	// extern2: wc -l ChangeLog | egrep -o "[0-9]+"
+	char line[1024];
 	while (fgets(line, 1024, fp) != NULL) {
 	  line[strlen(line)-1] = '\0'; // oooh
 	  //l.log( line ); // Tokenize? add_kv()?
 	  c.add_kv( "extern", line );
 	}
+	pclose( fp );
       }
       // SET: options:
       // set: filename:output01
@@ -1390,15 +1393,7 @@ int window( std::string a_line, std::string target_str,
     }
     if ( it == 1 ) {
       for ( fi = si-lc+factor; fi != si+1+rc; ++fi ) { // context around si
-	if ( fi != si ) {
-	  //spacer = (*fi == "") ? "" : " ";
-	  windowed_line = windowed_line + *fi + " ";
-	} else {
-	  // This can be done two ways. We can have two texts, one good, one with errors.
-	  // Method one:
-	  // Create instances from the error-text, the target is taken from the clean-text.
-	  windowed_line = windowed_line + *fi + " "; // not *(ti+offset) because error from txt
-	}
+	windowed_line = windowed_line + *fi + " ";
       }
       windowed_line = windowed_line + *(ti+offset); // target. function to make target?
       res.push_back( windowed_line );
@@ -2091,7 +2086,7 @@ int64_t anahash( std::string& s ) {
     res += (unsigned long long)pow((unsigned long long)s[i],5);
   }
 #else
-  UnicodeString ustr = UnicodeString::fromUTF8(s);
+  icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(s);
   for ( int i = 0; i < ustr.length(); i++ ) {
     res += (int64_t)pow(ustr.charAt(i),5);
   }
@@ -2161,7 +2156,6 @@ int hapax(Logfile& l, Config& c)  {
 
   std::string a_line;
   std::vector<std::string>words;
-  unsigned long lcount = 0;
   unsigned long wcount = 0;
   std::string a_word;
   int wfreq;
@@ -2190,7 +2184,6 @@ int hapax(Logfile& l, Config& c)  {
   wfreqs["</s>"] = 1;
 
   while( std::getline( file_in, a_line )) {
-    ++lcount;
     Tokenize( a_line, words, ' ' );
     //
     // The features.
@@ -2294,7 +2287,6 @@ int hapax_txt(Logfile& l, Config& c)  {
 
   std::string a_line;
   std::vector<std::string>words;
-  unsigned long lcount = 0;
   unsigned long wcount = 0;
   std::string a_word;
   int wfreq;
@@ -2323,7 +2315,6 @@ int hapax_txt(Logfile& l, Config& c)  {
   wfreqs["</s>"] = 1;
 
   while( std::getline( file_in, a_line )) {
-    ++lcount;
     Tokenize( a_line, words, ' ' );
     //
     // The features and class
@@ -3552,7 +3543,6 @@ int pplx_simple( Logfile& l, Config& c ) {
     double sum_wlp             = 0.0; // word level pplx
     int    sentence_wordcount  = 0;
     int    sentence_count      = 0;
-    double sum_rrank           = 0.0;
     double sum_noov_logprob    = 0.0; // none OOV words
     int    sentence_noov_count = 0; // number of none OOV words
 
@@ -3717,7 +3707,6 @@ int pplx_simple( Logfile& l, Config& c ) {
       int target_freq = 0;
       double target_distprob = 0.0;
       double entropy         = 0.0;
-      int    rank            = 1;
       double class_mrr       = 0.0;
       std::vector<distr_elpplx> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
@@ -3873,12 +3862,11 @@ int pplx_simple( Logfile& l, Config& c ) {
       // Counting correct guesses
       //
       if ( answer == target ) {
-		++correct;
+	++correct;
       } else if ( (answer != target) && (target_in_dist == true) ) {
-		++correct_distr;
-		sum_rrank += (1.0 / rank); // THESE are unsorted!
+	++correct_distr;
       } else {
-		++wrong;
+	++wrong;
       }
 
       target_distprob = (double)target_freq / (double)distr_count;
@@ -4233,8 +4221,8 @@ void permutate(const std::string& s, int l, std::map<std::string,int>& w) {
       w[aw] = 1;
     }
 #else
-    UnicodeString ustr = UnicodeString::fromUTF8(s1);
-    UnicodeString aw = UnicodeString(ustr, 0, l);
+    icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(s1);
+    icu::UnicodeString aw = icu::UnicodeString(ustr, 0, l);
     std::string aw1;
     aw.toUTF8String(aw1);
     wfi = w.find( aw1 );

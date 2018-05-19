@@ -212,7 +212,6 @@ int gen_test( Logfile& l, Config& c ) {
     // Output results on </s> or similar.
     // Or a divisor which is not processed?
     //
-    double sum_rrank          = 0.0;
 
     // Cache a map(string:freq) of the top-n distributions returned
     // by Timbl.
@@ -289,7 +288,6 @@ int gen_test( Logfile& l, Config& c ) {
       int distr_count = 0;
       //      int target_freq = 0;
       double entropy         = 0.0;
-      int    rank            = 1;
       std::vector<distr_elem> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
@@ -370,7 +368,6 @@ int gen_test( Logfile& l, Config& c ) {
 	  if ( tvs == target ) { // The correct answer was in the distribution!
 	    //	    target_freq = wght;
 	    target_in_dist = true;
-	    rank = rank_counter;
 	  }
 
 	  // Save it in the cache?
@@ -399,7 +396,6 @@ int gen_test( Logfile& l, Config& c ) {
 		++correct;
       } else if ( (answer != target) && (target_in_dist == true) ) {
 		++correct_distr;
-		sum_rrank += (1.0 / rank); // THESE are unsorted!
       } else {
 		++wrong;
       }

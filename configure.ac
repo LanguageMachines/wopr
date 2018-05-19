@@ -23,6 +23,7 @@ AC_CHECK_TYPES([ptrdiff_t])
 AC_C_INLINE
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
+AC_TYPE_INT64_T
 
 #check headers
 AC_CHECK_HEADERS([netinet/in.h])
@@ -35,15 +36,39 @@ AC_CHECK_HEADERS([sys/socket.h])
 #check functions
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname gethostname gettimeofday inet_ntoa])
 AC_CHECK_FUNCS([memset pow regcomp select setlocale socket strchr strerror])
-AC_CHECK_FUNCS([sqrt])
+AC_CHECK_FUNCS([sqrt memmove])
 AC_FUNC_FORK
 AC_FUNC_MKTIME
 AC_FUNC_STRTOD
+AC_FUNC_ERROR_AT_LINE
+
+PKG_PROG_PKG_CONFIG
 
 # This "magic" seems to be necessary...
-if test "x$PKG_CONFIG_PATH" = x; then
-     export PKG_CONFIG_PATH=""
+if test "x$prefix" = "xNONE"; then
+   prefix="/usr/local"
 fi
+
+if test "x$PKG_CONFIG_PATH" = x
+then
+   export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
+else
+   export PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
+fi
+
+AC_OSX_PKG( [icu4c] )
+AC_MSG_NOTICE([pkg-config: PATH=$PKG_CONFIG_PATH])
+
+PKG_CHECK_MODULES( [ICU],
+ 		   [icu-uc >= 50 icu-io],
+		   CXXFLAGS="$CXXFLAGS $ICU_CFLAGS"
+		   LIBS="$ICU_LIBS $LIBS"
+		   AC_DEFINE( HAVE_ICU, 1, [We have ICU] ) )
+
+PKG_CHECK_MODULES([XML2], [libxml-2.0 >= 2.6.16] )
+CXXFLAGS="$CXXFLAGS $XML2_CFLAGS"
+LIBS="$LIBS $XML2_LIBS"
+
 
 AC_ARG_WITH([timbl],
             [AS_HELP_STRING([--without-timbl],
@@ -63,10 +88,6 @@ AC_ARG_WITH(ticcutils,
 PKG_CHECK_MODULES([ticcutils], [ticcutils >= 0.4] )
 CXXFLAGS="$CXXFLAGS $ticcutils_CFLAGS"
 LIBS="$ticcutils_LIBS $LIBS"
-
-PKG_CHECK_MODULES([XML2], [libxml-2.0 >= 2.6.16] )
-CXXFLAGS="$CXXFLAGS $XML2_CFLAGS"
-LIBS="$LIBS $XML2_LIBS"
 
 AS_IF([test "x$with_folia" != xno],
 	    [
@@ -102,19 +123,6 @@ AS_IF([test "x$with_timbl" != xno],
             ]
 	    )
 
-# Checks for timblserve library.
-
-#AC_ARG_WITH(timblserver,
-#       [  --with-timblserver=DIR       use timblserver installed in <DIR>;
-#               note that you can install Timbl in a non-default directory with
-#               ./configure --prefix=<DIR> in the Timbl installation directory],
-#       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"
-#        AC_DEFINE_UNQUOTED(TIMBLSERVER,"$prefix",[ Have TimblServer ])
-#  AC_MSG_NOTICE( [pkg-config search path: $PKG_CONFIG_PATH] )
-#PKG_CHECK_MODULES([timblserver], [timblserver >= 1.0.0] )
-#CXXFLAGS="$CXXFLAGS $timblserver_CFLAGS"
-#LIBS="$LIBS $timblserver_LIBS"
-#])
 AC_DEFINE_UNQUOTED(TIMBLSERVER,"yes",[ Have TimblServer ])
 
 AX_TYPE_SOCKLEN_T
@@ -137,32 +145,6 @@ else
 fi
 AC_DEFINE_UNQUOTED(WOPR_SIZE_T,$size_t_value, "size_t" )
 AC_DEFINE_UNQUOTED(HAVE_SIZE_T,$ac_cv_type_size_t, "have_size_t" )
-
-## from ucto
-#
-useICU=1;
-# inspired by feh-1.3.4/configure.ac.  Tnx Tom Gilbert and feh hackers.
-AC_ARG_WITH(icu,
-       [  --with-icu=DIR          use ICU installed in <DIR>],
-       [if test "$with_icu" = "no"; then
-           useICU=0
-        else
-           CXXFLAGS="$CXXFLAGS -I$withval/include"
-           LIBS="-L$withval/lib $LIBS"
-        fi] )
-
-if test "$useICU" = "1"; then
-  AX_ICU_CHECK( [3.6],
-                [CXXFLAGS="$CXXFLAGS $ICU_CPPSEARCHPATH"
-                LIBS="$LIBS $ICU_LIBPATH $ICU_LIBS $ICU_IOLIBS"],
-                [AC_MSG_FAILURE( "No ICU development environment found. Please check if libicu-dev or the like is installed" )] )
-  AC_DEFINE(HAVE_ICU, 1, we want to use ICU )
-else
-  #AC_MSG_ERROR("ICU support is required")
-  AC_MSG_NOTICE([No ICU support])
-  #AC_DEFINE(HAVE_NOICU, 0, we do not want to use ICU )
-fi
-# ---
 
 # Levenshtein distance transposition
 #

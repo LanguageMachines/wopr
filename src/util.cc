@@ -418,6 +418,7 @@ int get_dir(std::string dir, std::vector<std::string> &files, std::string re) {
 
     int r = regcomp(&regex, re.c_str(), 0);
     if ( r != 0 ) {
+      closedir(dp);
       return -1;
     }
 
