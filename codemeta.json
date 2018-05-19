@@ -1,0 +1,97 @@
+{
+    "@context": [
+        "https://doi.org/10.5063/schema/codemeta-2.0",
+        "http://schema.org",
+        {
+            "entryPoints": { "@reverse": "schema:actionApplication" },
+            "interfaceType": { "@id": "codemeta:interfaceType" }
+        }
+    ],
+    "@type": "SoftwareSourceCode",
+    "identifier": "wopr",
+    "name": "Wopr",
+    "version": "0.40.7",
+    "description": "WOPR is a wrapper around the k-nearest neighbor classifier in TiMBL, offering word prediction and language modeling functionalities. Trained on a text corpus, WOPR can predict missing words, report perplexities at the word level and the text level, and generate spelling correction hypotheses.",
+    "license": "https://spdx.org/licenses/GPL-3.0",
+	"url": "https://ilk.uvt.nl/wopr",
+    "producer": {
+		"@id": "https://www.ru.nl/cls",
+		"@type": "Organization",
+		"name": "Centre for Language Studies",
+		"url": "https://www.ru.nl/cls",
+		"parentOrganization": {
+			"@id": "https://www.ru.nl",
+			"name": "Radboud University",
+			"@type": "Organization",
+			"url": "https://www.ru.nl",
+			"location": {
+				"@type": "Place",
+				"name": "Nijmegen"
+			}
+		}
+    },
+    "author": [
+		{
+			"@type": "Person",
+			"givenName": "Peter",
+			"familyName": "Berck",
+			"affiliation": { "@id": "https://www.ru.nl/cls" }
+		},
+		{
+			"@type": "Person",
+			"givenName": "Ko",
+			"familyName": "van der Sloot",
+			"affiliation": { "@id": "https://www.ru.nl/cls" }
+		}
+	],
+	"sourceOrganization": { "@id": "https://www.ru.nl/cls" },
+	"programmingLanguage": {
+		"@type": "ComputerLanguage",
+		"identifier": "c++",
+		"name": "C++"
+	},
+	"operatingSystem": "POSIX",
+	"codeRepository": "https://github.com/LanguageMachines/wopr",
+    "softwareRequirements": [
+        {
+			"@type": "SoftwareApplication",
+			"identifier": "ticcutils",
+			"name": "ticcutils"
+		},
+        {
+			"@type": "SoftwareApplication",
+			"identifier": "timbl",
+			"name": "timbl"
+		},
+        {
+			"@type": "SoftwareApplication",
+			"identifier": "libfolia",
+			"name": "libfolia"
+		}
+	],
+	"readme": "https://github.com/LanguageMachines/wopr/blob/master/README",
+	"issueTracker": "https://github.com/LanguageMachines/wopr/issues",
+	"contIntegration": "https://travis-ci.org/LanguageMachines/wopr",
+	"releaseNotes": "https://github.com/LanguageMachines/wopr/releases",
+	"developmentStatus": "inactive",
+	"keywords":  [ "nlp", "natural language processing", "language modelling" ],
+    "referencePublication": [
+		{
+			"@type": "TechArticle",
+			"name": "Wopr",
+			"author": [ "Peter Berck" ],
+			"datePublished": "2012",
+			"url": "https://ilk.uvt.nl/wopr/woprdoc.pdf"
+		}
+	],
+	"dateCreated": "2008-04-27",
+    "entryPoints": [
+        {
+            "@type": "EntryPoint",
+            "name": "wopr",
+            "urlTemplate": "file:///wopr",
+            "description": "Command-line interface to WOPR",
+            "interfaceType": "CLI"
+        }
+    ]
+}
