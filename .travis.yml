@@ -1,5 +1,5 @@
 sudo: required
-dist: xenial
+dist: trusty
 group: edge
 
 # whitelist
@@ -62,35 +62,35 @@ before_install:
 
   - export PATH="/usr/lib/ccache/bin/:$PATH"
 
-  - git clone https://github.com/proycon/ticcutils
+  - git clone https://github.com/LanguageMachines/ticcutils
   - cd ticcutils
   - bash bootstrap.sh
   - ./configure $OPENMPFLAG
   - make
   - sudo make install
   - cd ..
-  - git clone https://github.com/proycon/libfolia
+  - git clone https://github.com/LanguageMachines/libfolia
   - cd libfolia
   - bash bootstrap.sh
   - ./configure $OPENMPFLAG
   - make
   - sudo make install
   - cd ..
-  - git clone https://github.com/proycon/timbl
+  - git clone https://github.com/LanguageMachines/timbl
   - cd timbl
   - bash bootstrap.sh
   - ./configure $OPENMPFLAG
   - make
   - sudo make install
   - cd ..
-  - git clone https://github.com/proycon/timblserver
+  - git clone https://github.com/LanguageMachines/timblserver
   - cd timblserver
   - bash bootstrap.sh
   - ./configure $OPENMPFLAG
   - make
   - sudo make install
   - cd ..
-  - git clone https://github.com/proycon/mbt
+  - git clone https://github.com/LanguageMachines/mbt
   - cd mbt
   - bash bootstrap.sh
   - ./configure $OPENMPFLAG
