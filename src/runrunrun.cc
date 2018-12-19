@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright 2007 - 2018 Peter Berck, Ko van der Sloot                       *
+ * Copyright 2007 - 2019 Peter Berck, Ko van der Sloot                       *
  *                                                                           *
  * This file is part of wopr.                                                *
  *                                                                           *
