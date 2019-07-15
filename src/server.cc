@@ -1353,18 +1353,18 @@ int xmlserver(Logfile& l, Config& c) {
 	  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
 
 	  // init a new FoLiA XML document
-	  folia::Document doc( "id='wopr'" );
+	  folia::Document doc( "xml:id='wopr'" );
 	  doc.declare( folia::AnnotationType::METRIC,
 		       "metricset",
 		       "annotator='wopr'" );
 	  folia::Text *text =
-	    new folia::Text( folia::getArgs( "id='wopr.t'"), &doc );
+	    new folia::Text( folia::getArgs( "xml:id='wopr.t'"), &doc );
 	  doc.append( text );
 	  folia::Paragraph *p
-	    = new folia::Paragraph( folia::getArgs( "id='wopr.t.p'" ), &doc );
+	    = new folia::Paragraph( folia::getArgs( "xml:id='wopr.t.p'" ), &doc );
 	  text->append( p );
 	  folia::Sentence *s =
-	    new folia::Sentence( folia::getArgs("id='wopr.t.p.s'"), &doc );
+	    new folia::Sentence( folia::getArgs("xml:id='wopr.t.p.s'"), &doc );
 	  p->append( s );
 	  l.log( "folia document created." );
 
