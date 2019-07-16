@@ -1,3 +1,8 @@
+2019-07-16  Ko van der Sloot <K.vanderSloot@let.ru.nl>
+
+	* ChangeLog, Makefile.am, NEWS, TODO, bootstrap.sh: Get ready for
+	release
+
 2019-07-15  Ko van der Sloot <K.vanderSloot@let.ru.nl>
 
 	* src/server.cc: fix for xml:id (fixes
