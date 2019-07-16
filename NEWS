@@ -1,4 +1,4 @@
-1.40.7
+1.41
 [Ko van der Sloot]
 * small bug-fix to adapt to newer libfolia (https://github.com/proycon/tscan/issues/12)
 * code cleanup/improvements as suggested by static checkers
