@@ -1,0 +1,5 @@
+1.40.7
+[Ko van der Sloot]
+* small bug-fix to adapt to newer libfolia (https://github.com/proycon/tscan/issues/12)
+* code cleanup/imporvements as suggested by static checkers
+* most compiler warnings are gone now
