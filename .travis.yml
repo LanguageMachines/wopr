@@ -109,7 +109,7 @@ install:
   - ./configure $OPENMPFLAG
   - cppcheck --enable=all --quiet --error-exitcode=0 .
   - $SCAN ./configure $OPENMPFLAG
-  - $SCAN --status-bugs make
+  - $SCAN make  #  --status-bugs make
   - make
   - sudo make install
 
