@@ -17,6 +17,9 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 LT_INIT
 
+#check OpenMP support
+AC_OPENPM
+
 #types, compiler options and such
 AC_HEADER_STDBOOL
 AC_CHECK_TYPES([ptrdiff_t])
