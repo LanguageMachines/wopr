@@ -18,7 +18,7 @@ AC_PROG_LIBTOOL
 LT_INIT
 
 #check OpenMP support
-AC_OPENPM
+AC_OPENMP
 
 #types, compiler options and such
 AC_HEADER_STDBOOL
