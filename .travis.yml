@@ -108,6 +108,7 @@ install:
   - bash bootstrap.sh
   - ./configure $OPENMPFLAG
   - cppcheck --enable=all --quiet --error-exitcode=0 .
+  - $SCAN ./configure $OPENMPFLAG
   - $SCAN --status-bugs make
   - make
   - sudo make install

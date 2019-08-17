@@ -127,6 +127,7 @@ int gen_test( Logfile& l, Config& c ) {
   size_t numfiles = filenames.size();
   if ( numfiles == 0 ) {
     l.log( "No files found. Skipping." );
+    delete cache;
     return 0;
   }
 
@@ -146,6 +147,7 @@ int gen_test( Logfile& l, Config& c ) {
   }
   if ( numfiles == 0 ) {
     l.log( "All output files already exists, skipping." );
+    delete cache;
     return 0;
   }
 
@@ -155,15 +157,18 @@ int gen_test( Logfile& l, Config& c ) {
     My_Experiment = new Timbl::TimblAPI( timbl );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
+      delete cache;
       return 1;
     }
     (void)My_Experiment->GetInstanceBase( ibasefile );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
+      delete cache;
       return 1;
     }
   } catch (...) {
     l.log( "Cannot create Timbl Experiment..." );
+    delete cache;
     return 1;
   }
   l.log( "Instance base loaded." );
@@ -186,14 +191,17 @@ int gen_test( Logfile& l, Config& c ) {
 
     l.inc_prefix();
 
+
     std::ifstream file_in( a_file.c_str() );
     if ( ! file_in ) {
       l.log( "ERROR: cannot load inputfile." );
+      delete cache;
       return -1;
     }
     std::ofstream file_out( output_filename.c_str(), std::ios::out );
     if ( ! file_out ) {
       l.log( "ERROR: cannot write .gt output file." ); // for px
+      delete cache;
       return -1;
     }
     file_out << "# target class ci md mal (dist.cnt sumF [topn])" << std::endl;

@@ -546,7 +546,9 @@ std::string str_clean( const std::string& s ) {
 #ifdef TIMBL
 int parse_distribution( const Timbl::ValueDistribution* vd,
 			std::map<std::string, double>& res ) {
-
+  if ( vd == NULL ){
+    return 1;
+  }
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   int distr_count = vd->totalSize();
 
@@ -2576,7 +2578,7 @@ int server_mg( Logfile& l, Config& c ) {
 	  } else { // the default classifier.
 	    cl = dflt;
 	  }
-
+	  assert( cl != NULL );
 	  // Do the classification.
 	  //
 	  //l.log( cl->id + "/" + to_str(cl->get_type()) );

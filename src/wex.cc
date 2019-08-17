@@ -1021,7 +1021,7 @@ int multi_gated( Logfile& l, Config& c ) {
     } else { // the default classifier.
       cl = dflt;
     }
-
+    assert( cl != NULL );
     // Do the classification.
     //
     //l.log( cl->id + "/" + to_str(cl->get_type()) );

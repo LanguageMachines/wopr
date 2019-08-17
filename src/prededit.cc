@@ -1568,121 +1568,131 @@ int pdt2web( Logfile& l, Config& c ) {
 	l.log( "-2 index requested at "+buf_tokens.at(1) );
 	newSock->write( err_doc_str );// error doc
 	cmd = "__IGNORE__";
-      } else {
+      }
+      else {
 	pdt = pdts.at( pdt_idx );
 	if ( pdt == NULL ) {
 	  l.log( "NULL index requested at "+buf_tokens.at(1) );
 	  newSock->write( err_doc_str );// error doc
 	  cmd = "__IGNORE__";
-	} else {
+	}
+	else {
 	  time_t idle = pdt->idle();
 	  l.log( "idle="+to_str(idle));
 	}
       }
-
-      if ( cmd == "STOP" ) {
+      if ( pdt == NULL ) {
+	// nothing
+      }
+      else if ( cmd == "STOP" ) {
 	delete pdt;
 	pdts.at( pdt_idx ) = NULL;
 	newSock->write( ok_doc_str );
-      } else if ( cmd == "GEN" ) {
-      //
-      // Generate from the contexts. First complete with the letter predictor,
-      // then follow up with the word predictor.
-      //
-      TiXmlDocument doc;
-      TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
-      TiXmlElement * element = new TiXmlElement( "result" );
-      doc.LinkEndChild( decl );
-      doc.LinkEndChild( element );
-
-      strs.clear();
-      pdt->ltr_generate( strs );
-      si = strs.begin();
-      long time0 = clock_m_secs();
-      int cnt = 0;
-      while ( si != strs.end() ) {
-	std::string s = *si;
-	s = s.substr( 1, s.length()-1);
-	Context *old = new Context(pdt->wrd_ctx); //save
-	pdt->add_wrd( s );
-	std::vector<std::string> strs_wrd;
-	std::vector<std::string>::iterator si_wrd;
-	pdt->wrd_generate( strs_wrd );
-	si_wrd = strs_wrd.begin();
-	while ( si_wrd != strs_wrd.end() ) {
-
-	  TiXmlElement * element0 = new TiXmlElement( "gen" );
-	  element0->SetAttribute("idx", cnt++);
-	  TiXmlText * text0 = new TiXmlText( s + *si_wrd );
-	  element0->LinkEndChild( text0 );
-	  element->LinkEndChild( element0 );
-
-	  //l.log( s + *si_wrd );
-	  ++si_wrd;
-	}
-	delete pdt->wrd_ctx;
-	pdt->wrd_ctx = old; // restore.
-	++si;
       }
-      long time_ms = clock_m_secs()-time0;
-      add_element( element, "time_ms", to_str(time_ms) );
+      else if ( cmd == "GEN" ) {
+	//
+	// Generate from the contexts. First complete with the letter predictor,
+	// then follow up with the word predictor.
+	//
+	TiXmlDocument doc;
+	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+	TiXmlElement * element = new TiXmlElement( "result" );
+	doc.LinkEndChild( decl );
+	doc.LinkEndChild( element );
 
-      std::ostringstream ostr;
-      ostr << doc;
-      newSock->write( ostr.str() );
-      l.log( ostr.str() );
-    } else if ( cmd == "CTX" ) {
-      //
-      // Returns the two contexts.
-      //
-      l.log( pdt->ltr_ctx->toString() );
-      l.log( pdt->wrd_ctx->toString() );
-      l.log( pdt->wip+"/"+pdt->pwip );
+	strs.clear();
+	pdt->ltr_generate( strs );
+	si = strs.begin();
+	long time0 = clock_m_secs();
+	int cnt = 0;
+	while ( si != strs.end() ) {
+	  std::string s = *si;
+	  s = s.substr( 1, s.length()-1);
+	  Context *old = new Context(pdt->wrd_ctx); //save
+	  pdt->add_wrd( s );
+	  std::vector<std::string> strs_wrd;
+	  std::vector<std::string>::iterator si_wrd;
+	  pdt->wrd_generate( strs_wrd );
+	  si_wrd = strs_wrd.begin();
+	  while ( si_wrd != strs_wrd.end() ) {
 
-      TiXmlDocument doc;
-      TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+	    TiXmlElement * element0 = new TiXmlElement( "gen" );
+	    element0->SetAttribute("idx", cnt++);
+	    TiXmlText * text0 = new TiXmlText( s + *si_wrd );
+	    element0->LinkEndChild( text0 );
+	    element->LinkEndChild( element0 );
 
-      TiXmlElement * element0 = new TiXmlElement( "ctx_ltr" );
-      TiXmlText * text0 = new TiXmlText( pdt->ltr_ctx->toString() );
-      element0->LinkEndChild( text0 );
-      TiXmlElement * element1 = new TiXmlElement( "ctx_wrd" );
-      TiXmlText * text1 = new TiXmlText( pdt->wrd_ctx->toString() );
-      element1->LinkEndChild( text1 );
+	    //l.log( s + *si_wrd );
+	    ++si_wrd;
+	  }
+	  delete pdt->wrd_ctx;
+	  pdt->wrd_ctx = old; // restore.
+	  ++si;
+	}
+	long time_ms = clock_m_secs()-time0;
+	add_element( element, "time_ms", to_str(time_ms) );
 
-      TiXmlElement * element2 = new TiXmlElement( "ds" );
-      TiXmlText * text2 = new TiXmlText( pdt->ds );
-      element2->LinkEndChild( text2 );
-      TiXmlElement * element3 = new TiXmlElement( "dl" );
-      TiXmlText * text3 = new TiXmlText( to_str(pdt->dl) );
-      element3->LinkEndChild( text3 );
+	std::ostringstream ostr;
+	ostr << doc;
+	newSock->write( ostr.str() );
+	l.log( ostr.str() );
+      }
+      else if ( cmd == "CTX" ) {
+	//
+	// Returns the two contexts.
+	//
+	l.log( pdt->ltr_ctx->toString() );
+	l.log( pdt->wrd_ctx->toString() );
+	l.log( pdt->wip+"/"+pdt->pwip );
 
-      TiXmlElement * element = new TiXmlElement( "result" );
-      element->LinkEndChild( element0 );
-      element->LinkEndChild( element1 );
-      element->LinkEndChild( element2 );
-      element->LinkEndChild( element3 );
+	TiXmlDocument doc;
+	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
 
-      add_element( element, "ltr_his", to_str(pdt->get_ltr_his()) );
+	TiXmlElement * element0 = new TiXmlElement( "ctx_ltr" );
+	TiXmlText * text0 = new TiXmlText( pdt->ltr_ctx->toString() );
+	element0->LinkEndChild( text0 );
+	TiXmlElement * element1 = new TiXmlElement( "ctx_wrd" );
+	TiXmlText * text1 = new TiXmlText( pdt->wrd_ctx->toString() );
+	element1->LinkEndChild( text1 );
 
-      doc.LinkEndChild( decl );
-      doc.LinkEndChild( element );
+	TiXmlElement * element2 = new TiXmlElement( "ds" );
+	TiXmlText * text2 = new TiXmlText( pdt->ds );
+	element2->LinkEndChild( text2 );
+	TiXmlElement * element3 = new TiXmlElement( "dl" );
+	TiXmlText * text3 = new TiXmlText( to_str(pdt->dl) );
+	element3->LinkEndChild( text3 );
 
-      std::ostringstream ostr;
-      ostr << doc;
+	TiXmlElement * element = new TiXmlElement( "result" );
+	element->LinkEndChild( element0 );
+	element->LinkEndChild( element1 );
+	element->LinkEndChild( element2 );
+	element->LinkEndChild( element3 );
 
-      //      std::string answer = pdt->wrd_ctx->toString() + '\n';
-      newSock->write( ostr.str() );
-      l.log( ostr.str() );
-    } else if ( cmd == "SPC" ) {
-      pdt->add_spc();
-      newSock->write( ok_doc_str );
-    } else if ( cmd == "CLR" ) {
-      pdt->clear();
-      newSock->write( ok_doc_str );
-    } else if ( cmd == "DEL" ) {
-      pdt->del_ltr();
-      newSock->write( ok_doc_str );
-    } else if ( cmd == "LTR" ) {
+	add_element( element, "ltr_his", to_str(pdt->get_ltr_his()) );
+
+	doc.LinkEndChild( decl );
+	doc.LinkEndChild( element );
+
+	std::ostringstream ostr;
+	ostr << doc;
+
+	//      std::string answer = pdt->wrd_ctx->toString() + '\n';
+	newSock->write( ostr.str() );
+	l.log( ostr.str() );
+      }
+      else if ( cmd == "SPC" ) {
+	pdt->add_spc();
+	newSock->write( ok_doc_str );
+      }
+      else if ( cmd == "CLR" ) {
+	pdt->clear();
+	newSock->write( ok_doc_str );
+      }
+      else if ( cmd == "DEL" ) {
+	pdt->del_ltr();
+	newSock->write( ok_doc_str );
+      }
+      else if ( cmd == "LTR" ) {
 	//
 	// Add one letter to the letter context.
 	//
@@ -1690,7 +1700,8 @@ int pdt2web( Logfile& l, Config& c ) {
 	  pdt->add_ltr( buf_tokens.at(2) );
 	}
 	newSock->write( ok_doc_str );
-      } else if ( cmd == "FEED" ) {
+      }
+      else if ( cmd == "FEED" ) {
 	//
 	// First attempt to feed selected text into
 	// the system. Need to skip the first few letters
@@ -1717,7 +1728,8 @@ int pdt2web( Logfile& l, Config& c ) {
 	  pdt->add_spc();
 	}
 	newSock->write( ok_doc_str );
-      } else if ( cmd == "WRD" ) {
+      }
+      else if ( cmd == "WRD" ) {
 	//
 	// Add a word to the word context. Explode the word,
 	// and add each letter to the letter context as well.
@@ -1731,7 +1743,8 @@ int pdt2web( Logfile& l, Config& c ) {
 	  pdt->add_ltr( letters.at(j) );
 	}
 	newSock->write( ok_doc_str );
-      } else if ( cmd == "GENWRD" ) {
+      }
+      else if ( cmd == "GENWRD" ) {
 	//
 	// Seperate generators for words and letters.
 	//
@@ -1746,7 +1759,8 @@ int pdt2web( Logfile& l, Config& c ) {
 	    ++si_wrd;
 	  }
 	  newSock->write( ok_doc_str );// should be answer
-	} else if ( buf_tokens.at(2) == "LTR" ) {
+	}
+	else if ( buf_tokens.at(2) == "LTR" ) {
 	  strs.clear();
 	  pdt->ltr_generate( strs );
 	  si = strs.begin();

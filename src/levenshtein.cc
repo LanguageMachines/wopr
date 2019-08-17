@@ -2159,10 +2159,12 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
     if ( ! server.connect( port )) {
       l.log( "ERROR: cannot start server: "+server.getMessage() );
+      delete cache;
       return 1;
     }
     if ( ! server.listen() ) {
       l.log( "ERROR: cannot listen. ");
+      delete cache;
       return 1;
     };
     Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
@@ -2173,16 +2175,18 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
       Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
       if ( !server.accept( *newSock ) ) {
-		if( errno == EINTR ) {
-		  continue;
-		} else {
-		  l.log( "ERROR: " + server.getMessage() );
-		  return 1;
-		}
+	if( errno == EINTR ) {
+	  continue;
+	}
+	else {
+	  l.log( "ERROR: " + server.getMessage() );
+	  delete cache;
+	  return 1;
+	}
       }
       if ( verbose > 0 ) {
-		l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-			   + std::string(newSock->getClientName()) );
+	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
+	       + std::string(newSock->getClientName()) );
       }
 
       bool connection_open = true;
@@ -2191,80 +2195,81 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
       while ( connection_open ) {
 
-		std::string tmp_buf;
-		newSock->read( tmp_buf );
-		tmp_buf = trim( tmp_buf, " \n\r" );
+	std::string tmp_buf;
+	newSock->read( tmp_buf );
+	tmp_buf = trim( tmp_buf, " \n\r" );
 
-		if ( tmp_buf == "_CLOSE_" ) {
-		  c.set_status(0);
-		  return(0);
-		}
-		if ( tmp_buf == "_CLEAR_" ) {
-		  //cache.clear();
-		  //l.log( "Cache now: "+to_str(cache.size())+" elements." );
-		  continue;
-		}
-		if ( tmp_buf.length() == 0 ) {
-		  connection_open = false;
-		  c.set_status(0);
-		  continue;
-		}
-		if ( verbose > 1 ) {
-		  l.log( "|" + tmp_buf + "|" );
-		}
+	if ( tmp_buf == "_CLOSE_" ) {
+	  c.set_status(0);
+	  delete cache;
+	  return(0);
+	}
+	if ( tmp_buf == "_CLEAR_" ) {
+	  //cache.clear();
+	  //l.log( "Cache now: "+to_str(cache.size())+" elements." );
+	  continue;
+	}
+	if ( tmp_buf.length() == 0 ) {
+	  connection_open = false;
+	  c.set_status(0);
+	  continue;
+	}
+	if ( verbose > 1 ) {
+	  l.log( "|" + tmp_buf + "|" );
+	}
 
-		cls.clear();
+	cls.clear();
 
-		std::string classify_line = tmp_buf;
+	std::string classify_line = tmp_buf;
 
-		// Sentence based, window here, classify all, etc.
-		//
-		if ( mode == 1 ) {
-		  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
-		} else {
-		  cls.push_back( classify_line );
-		}
+	// Sentence based, window here, classify all, etc.
+	//
+	if ( mode == 1 ) {
+	  window( classify_line, classify_line, lc, rc, (bool)false, 0, cls );
+	} else {
+	  cls.push_back( classify_line );
+	}
 
-		// Loop over all lines.
-		//
-		std::vector<std::string> words;
-		probs.clear();
-		for ( size_t i = 0; i < cls.size(); i++ ) {
+	// Loop over all lines.
+	//
+	std::vector<std::string> words;
+	probs.clear();
+	for ( size_t i = 0; i < cls.size(); i++ ) {
 
-		  classify_line = cls.at(i);
+	  classify_line = cls.at(i);
 
-		  // Check the cache
-		  //
-		  std::string cache_ans = cache->get( classify_line );
-		  if ( cache_ans != "" ) {
-			if ( verbose > 2 ) {
-			  l.log( "Found in cache." );
-			}
-			newSock->write(  cache_ans + '\n' );
-			continue;
-		  }
+	  // Check the cache
+	  //
+	  std::string cache_ans = cache->get( classify_line );
+	  if ( cache_ans != "" ) {
+	    if ( verbose > 2 ) {
+	      l.log( "Found in cache." );
+	    }
+	    newSock->write(  cache_ans + '\n' );
+	    continue;
+	  }
 
-		  words.clear();
-		  Tokenize( classify_line, words, ' ' );
+	  words.clear();
+	  Tokenize( classify_line, words, ' ' );
 
-		  /*if ( hapax > 0 ) {
-			int c = hapax_vector( words, hpxfreqs );
-			std::string t;
-			vector_to_string(words, t);
-			classify_line = t;
-			if ( verbose > 1 ) {
-			l.log( "|" + classify_line + "| hpx" );
-			}
-			}*/
+	  /*if ( hapax > 0 ) {
+	    int c = hapax_vector( words, hpxfreqs );
+	    std::string t;
+	    vector_to_string(words, t);
+	    classify_line = t;
+	    if ( verbose > 1 ) {
+	    l.log( "|" + classify_line + "| hpx" );
+	    }
+	    }*/
 
-		  // if we take target from a pre-non-hapaxed vector, we
-		  // can hapax the whole sentence in the beginning and use
-		  // that for the instances-without-target
-		  //
-		  std::string target = words.at( words.size()-1 );
+	  // if we take target from a pre-non-hapaxed vector, we
+	  // can hapax the whole sentence in the beginning and use
+	  // that for the instances-without-target
+	  //
+	  std::string target = words.at( words.size()-1 );
 
-		  // Is the target in the lexicon?
-		  //
+	  // Is the target in the lexicon?
+	  //
 	  std::map<std::string,int>::iterator wfi = wfreqs.find( target );
 	  double target_lexfreq = 0.0;
 	  if ( wfi != wfreqs.end() ) {
