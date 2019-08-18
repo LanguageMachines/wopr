@@ -19,6 +19,12 @@ LT_INIT
 
 #check OpenMP support
 AC_OPENMP
+if test "x$ac_cv_prog_cxx_openmp" != "xunsupported"; then
+   CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+   AC_DEFINE(HAVE_OPENMP, 1 , Define to 1 if you have OpenMP )
+else
+   AC_MSG_NOTICE(We don't have OpenMP. Multithreaded operation is disabled)
+fi
 
 #types, compiler options and such
 AC_HEADER_STDBOOL
@@ -88,7 +94,7 @@ AC_ARG_WITH(ticcutils,
        [  --with-ticcutils=DIR       use ticcutils installed in <DIR>],
        [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"],
        [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$prefix/lib/pkgconfig"])
-PKG_CHECK_MODULES([ticcutils], [ticcutils >= 0.4] )
+PKG_CHECK_MODULES([ticcutils], [ticcutils >= 0.22] )
 CXXFLAGS="$CXXFLAGS $ticcutils_CFLAGS"
 LIBS="$ticcutils_LIBS $LIBS"
 
