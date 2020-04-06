@@ -192,7 +192,7 @@ int server2(Logfile& l, Config& c) {
     // loop
     while ( c.get_status() != 0 ) {  // main accept() loop
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -893,7 +893,7 @@ int server4( Logfile& l, Config& c) {
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -1275,7 +1275,7 @@ int xmlserver(Logfile& l, Config& c) {
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -1650,7 +1650,7 @@ int mbmt(Logfile& l, Config& c) {
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -1985,7 +1985,7 @@ int webdemo(Logfile& l, Config& c) {
     bool skip = false;
 
     while ( true ) {
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -2186,7 +2186,7 @@ int one( Logfile& l, Config& c) {
 
 
     while ( true ) {
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -2467,7 +2467,7 @@ int server_mg( Logfile& l, Config& c ) {
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;

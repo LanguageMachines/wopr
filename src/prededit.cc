@@ -1459,7 +1459,7 @@ int pdt2web( Logfile& l, Config& c ) {
 
     l.log( "Listening..." );
 
-    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+    Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
     if ( !server.accept( *newSock ) ) {
       if( errno == EINTR ) {
 	continue;

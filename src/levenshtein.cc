@@ -1760,7 +1760,7 @@ int server_sc( Logfile& l, Config& c ) {
     while ( running ) {  // main accept() loop
       l.log( "Listening..." );
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
@@ -2173,7 +2173,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
     while ( true ) {  // main accept() loop
       l.log( "Listening..." );
 
-      Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+      Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
       if ( !server.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;

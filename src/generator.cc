@@ -506,7 +506,7 @@ int generate_server( Logfile& l, Config& c ) {
 
   while ( true ) {
 
-    Sockets::ServerSocket *newSock = new Sockets::ServerSocket();
+    Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
     if ( !server.accept( *newSock ) ) {
       if( errno == EINTR ) {
 	continue;
