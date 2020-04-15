@@ -1,3 +1,8 @@
+1.42 2020-04-15
+[Ko van der Sloot]
+* adapted to newer version of ticcutils
+* changes in configuration process
+
 1.41
 [Ko van der Sloot]
 * small bug-fix to adapt to newer libfolia (https://github.com/proycon/tscan/issues/12)
