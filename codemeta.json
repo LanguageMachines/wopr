@@ -10,7 +10,7 @@
     "@type": "SoftwareSourceCode",
     "identifier": "wopr",
     "name": "Wopr",
-    "version": "0.42",
+    "version": "0.43",
     "description": "WOPR is a wrapper around the k-nearest neighbor classifier in TiMBL, offering word prediction and language modeling functionalities. Trained on a text corpus, WOPR can predict missing words, report perplexities at the word level and the text level, and generate spelling correction hypotheses.",
     "license": "https://spdx.org/licenses/GPL-3.0",
 	"url": "https://ilk.uvt.nl/wopr",

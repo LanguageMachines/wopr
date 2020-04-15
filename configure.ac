@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
-AC_INIT([wopr], [1.42], [lamasoftware@science.ru.nl])  #adapt version number in codemeta.json as well
+AC_INIT([wopr], [1.43], [lamasoftware@science.ru.nl])  #adapt version number in codemeta.json as well
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
