@@ -1244,7 +1244,7 @@ int window_line(Logfile& l, Config& c) {
 	while ( it != vd->end() ){
 	  //Timbl::Vfield *foo = it->second;
 	  //const Timbl::TargetValue *bar = foo->Value();
-	  std::string quux = it->second->Value()->Name(); //bar->Name();
+	  std::string quux = it->second->Value()->utf8_name(); //bar->utf8_name();
 	  if ( quux == a_word ) {
 	    std::cout << "Found a_word.\n";
 	    std::cout << it->second->Value() << ": "
@@ -3184,8 +3184,8 @@ int pplx( Logfile& l, Config& c ) {
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
 	}
-	wopr_line = wopr_line + tv->Name() + " ";
-	l.log( "Answer: " + tv->Name() );
+	wopr_line = wopr_line + tv->utf8_name() + " ";
+	l.log( "Answer: " + tv->utf8_name() );
 
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
@@ -3682,7 +3682,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 		break;
       }
 
-      std::string answer = tv->Name();
+      std::string answer = tv->utf8_name();
       if ( vd == NULL ) {
 	l.log( "Classify( a_line, vd ) was null, skipping current line." );
 	file_out << a_line << ' ' << answer << " ERROR" << std::endl;
@@ -3720,7 +3720,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       for ( int i = 0; i < cache_size; i++ ) {
 	if ( distr_cache.at(i).cnt == cnt ) {
 	  if ( distr_cache.at(i).sum_freqs == distr_count ) {
-	    if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
+	    if ( distr_cache.at(i).first == it->second->Value()->utf8_name() ) {
 	      cache_idx = i; // it's cached already!
 	      cd = &distr_cache.at(i);
 	      break;
@@ -3731,10 +3731,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       if ( (cache_size > 0 ) && (cache_idx == -1) ) { // It should be cached, if not present.
 	if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	  cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
+	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->utf8_name()+")" );
 	  cd->cnt = cnt;
 	  cd->sum_freqs  = distr_count;
-	  cd->first = it->second->Value()->Name();
+	  cd->first = it->second->Value()->utf8_name();
 	  (cd->distr_vec).clear();
 	}
       }
@@ -3781,7 +3781,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 		std::map<long, long, std::greater<long> > dfreqs;
 		while ( it != vd->end() ) {
 
-		  std::string tvs  = it->second->Value()->Name();
+		  std::string tvs  = it->second->Value()->utf8_name();
 		  double      wght = it->second->Weight(); // absolute frequency.
 
 		  dfreqs[wght] += 1;
@@ -3809,7 +3809,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 		while ( it != vd->end() ) {
 		  //const Timbl::TargetValue *tv = it->second->Value();
 
-		  std::string tvs  = it->second->Value()->Name();
+		  std::string tvs  = it->second->Value()->utf8_name();
 		  double      wght = it->second->Weight(); // absolute frequency.
 
 		  dfreqs[wght] += 1;

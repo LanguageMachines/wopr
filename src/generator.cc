@@ -170,7 +170,7 @@ int generate( Logfile& l, Config& c ) {
 	l.log( "ERROR: Timbl returned a classification error, aborting." );
 	break;
       }
-      std::string answer = "";// tv->Name();
+      std::string answer = "";// tv->utf8_name();
       cnt = vd->size();
       distr_count = vd->totalSize();
 
@@ -205,7 +205,7 @@ int generate( Logfile& l, Config& c ) {
 	  ++it;
 	}
       }
-      std::string tvs  = it->second->Value()->Name();
+      std::string tvs  = it->second->Value()->utf8_name();
       answer = tvs;
 
       result = result + answer;
@@ -274,7 +274,7 @@ std::string generate_one( std::string& a_line, int len, int ws,
     if ( !tv ) {
       break;
     }
-    std::string answer = "";// tv->Name();
+    std::string answer = "";// tv->utf8_name();
     int cnt = vd->size();
 
     int rnd_idx = mtrand.randInt( cnt -1 );
@@ -286,7 +286,7 @@ std::string generate_one( std::string& a_line, int len, int ws,
     for ( int i = 0; i < rnd_idx; i++ ) {
       ++it;
     }
-    std::string tvs  = it->second->Value()->Name();
+    std::string tvs  = it->second->Value()->utf8_name();
     answer = tvs;
 
     result = result + answer + " ";
@@ -370,7 +370,7 @@ std::string generate_xml( std::string& a_line, int len, int ws,
     if ( ! tv ) {
       break;
     }
-    std::string answer = "";// tv->Name();
+    std::string answer = "";// tv->utf8_name();
     int cnt = vd->size();
     int distr_count = vd->totalSize();
 
@@ -399,7 +399,7 @@ std::string generate_xml( std::string& a_line, int len, int ws,
       ++it;
     }
 #endif
-    std::string tvs  = it->second->Value()->Name();
+    std::string tvs  = it->second->Value()->utf8_name();
     double      wght = it->second->Weight();
     answer = tvs;
 

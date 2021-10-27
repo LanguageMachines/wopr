@@ -218,7 +218,7 @@ class Classifier {
 	if ( ! tv ) {
 	  return false;
 	}
-	classification.answer = tv->Name();
+	classification.answer = tv->utf8_name();
 
 	classification.md  = My_Experiment->matchDepth();
 	classification.mal = My_Experiment->matchedAtLeaf();
@@ -229,7 +229,7 @@ class Classifier {
 
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	while ( it != vd->end() ) {
-	  std::string tvs  = it->second->Value()->Name();
+	  std::string tvs  = it->second->Value()->utf8_name();
 	  long        wght = it->second->Weight(); // absolute frequency.
 	  double      p    = (double)wght / (double)vd->totalSize();
 	  md2_elem md2e;
@@ -327,7 +327,7 @@ class Classifier {
     classification.info     = INFO_WRONG; // unless proven wrong :)
     classification.in_distr = false;
 
-    classification.answer = tv->Name();
+    classification.answer = tv->utf8_name();
 
     classification.md  = My_Experiment->matchDepth();
     classification.mal = My_Experiment->matchedAtLeaf();
@@ -353,7 +353,7 @@ class Classifier {
     // Should calc entropy and other stuff relevant for spel corr here.
     //
     while ( it != vd->end() ) {
-      std::string tvs  = it->second->Value()->Name();
+      std::string tvs  = it->second->Value()->utf8_name();
       long        wght = it->second->Weight(); // absolute frequency.
       double      p    = (double)wght / (double)vd->totalSize();
       md2_elem md2e;

@@ -233,7 +233,7 @@ int multi( Logfile& l, Config& c ) {
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
 	}
-	std::string answer = tv->Name();
+	std::string answer = tv->utf8_name();
 
 	int cnt = vd->size();
 
@@ -530,7 +530,7 @@ int multi_dist( Logfile& l, Config& c ) {
 	l.log( "ERROR: Timbl returned a classification error, aborting." );
 	break;
       }
-      std::string answer = tv->Name();
+      std::string answer = tv->utf8_name();
 
       size_t md  = timbl->matchDepth();
       bool   mal = timbl->matchedAtLeaf();
@@ -548,7 +548,7 @@ int multi_dist( Logfile& l, Config& c ) {
 
       Timbl::ValueDistribution::dist_iterator it = vd->begin();
       while ( it != vd->end() ) {
-	std::string tvs  = it->second->Value()->Name();
+	std::string tvs  = it->second->Value()->utf8_name();
 	long        wght = it->second->Weight(); // absolute frequency.
 	double      p    = (double)wght / (double)distr_count;
 

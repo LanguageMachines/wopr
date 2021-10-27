@@ -274,7 +274,7 @@ int gen_test( Logfile& l, Config& c ) {
       long us1 = clock_u_secs();
       timbl_time += (us1-us0);
 
-      std::string answer = tv->Name();
+      std::string answer = tv->utf8_name();
       if ( vd == NULL ) {
 		l.log( "Classify( a_line, vd ) was null, skipping current line." );
 		file_out << a_line << ' ' << answer << " ERROR" << std::endl;
@@ -362,7 +362,7 @@ int gen_test( Logfile& l, Config& c ) {
 	while ( it != vd->end() ) {
 	  //const Timbl::TargetValue *tv = it->second->Value();
 
-	  std::string tvs  = it->second->Value()->Name();
+	  std::string tvs  = it->second->Value()->utf8_name();
 	  double      wght = it->second->Weight(); // absolute frequency.
 
 	  if ( topn > 0 ) { // only save if we want to sort/print them later.

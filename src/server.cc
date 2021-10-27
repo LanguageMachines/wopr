@@ -333,7 +333,7 @@ int server2(Logfile& l, Config& c) {
 	      l.log("ERROR: Timbl returned a classification error, aborting.");
 	      break;
 	    }
-	    result = tv->Name();
+	    result = tv->utf8_name();
 	    // Grok the distribution returned by Timbl.
 	    //
 	    std::map<std::string, double> res;
@@ -554,7 +554,7 @@ int parse_distribution( const Timbl::ValueDistribution* vd,
 
   while ( it != vd->end() ) {
 
-    std::string tvs  = it->second->Value()->Name();
+    std::string tvs  = it->second->Value()->utf8_name();
     double      wght = it->second->Weight();
 
     // Prob. of this item in distribution.
@@ -679,7 +679,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
 	}
-	result = tv->Name();
+	result = tv->utf8_name();
       } else {
 	//
 	// Set some dummy values so we can fall through the rest
@@ -1041,7 +1041,7 @@ int server4( Logfile& l, Config& c) {
 			break;
 	      }
 
-	      result = tv->Name();
+	      result = tv->utf8_name();
 	      size_t res_freq = tv->ValFreq();
 
 	      if ( verbose > 1 ) {
@@ -1061,7 +1061,7 @@ int server4( Logfile& l, Config& c) {
 	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
 
-		std::string tvs  = it->second->Value()->Name();
+		std::string tvs  = it->second->Value()->utf8_name();
 		double      wght = it->second->Weight(); // absolute frequency.
 
 		if ( tvs == target ) { // The correct answer was in the distribution!
@@ -1406,7 +1406,7 @@ int xmlserver(Logfile& l, Config& c) {
 	      break;
 	    }
 
-	    std::string result = tv->Name();
+	    std::string result = tv->utf8_name();
 	    size_t res_freq = tv->ValFreq();
 
 	    if ( verbose > 1 ) {
@@ -1426,7 +1426,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	    while ( it != vd->end() ) {
 
-	      std::string tvs  = it->second->Value()->Name();
+	      std::string tvs  = it->second->Value()->utf8_name();
 	      if ( tvs == target ) { // The correct answer was in the distribution!
 		target_freq = it->second->Weight(); // absolute frequency.
 		if ( verbose > 1 ) {
@@ -1775,7 +1775,7 @@ int mbmt(Logfile& l, Config& c) {
 			break;
 	      }
 
-	      result = tv->Name();
+	      result = tv->utf8_name();
 	      size_t res_freq = tv->ValFreq();
 
 	      double res_p = -1;
@@ -1791,7 +1791,7 @@ int mbmt(Logfile& l, Config& c) {
 	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
 
-		std::string tvs  = it->second->Value()->Name();
+		std::string tvs  = it->second->Value()->utf8_name();
 		double      wght = it->second->Weight(); // absolute frequency.
 
 		if ( tvs == target ) { // The correct answer was in the distribution!
@@ -2067,7 +2067,7 @@ int webdemo(Logfile& l, Config& c) {
 	  xml = xml + "<timbl md=\""+to_str(md)+"\" mal=\""+to_str(md)+"\" />";
 
 	  if ( tv ) {
-	    result = tv->Name();
+	    result = tv->utf8_name();
 	    size_t res_freq = tv->ValFreq(); //??
 
 	    if ( verbose > 1 ) {
@@ -2228,7 +2228,7 @@ int one( Logfile& l, Config& c) {
       double distance;
       tv = My_Experiment->Classify( classify_line, vd, distance );
       if ( tv ) {
-	result = tv->Name();
+	result = tv->utf8_name();
 	size_t res_freq = tv->ValFreq(); //??
 
 	if ( verbose > 1 ) {
@@ -2298,7 +2298,7 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
 
   while ( it != vd->end() ) {
 
-    std::string tvs  = it->second->Value()->Name();
+    std::string tvs  = it->second->Value()->utf8_name();
     double      wght = it->second->Weight();
 
     distr_elem  d;

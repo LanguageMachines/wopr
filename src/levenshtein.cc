@@ -436,7 +436,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd,
 
   // NB some of the test are outside this loop (max_distr, in_distr)
   for ( const auto& it : *vd ) { // loop over distribution
-    std::string tvs  = it.second->Value()->Name(); // element in distribution
+    std::string tvs  = it.second->Value()->utf8_name(); // element in distribution
     double      wght = it.second->Weight(); // frequency of distr. element
     // LD shortcut, if stringlength differs more than mld, we don't need to try
     int         ld   = lev_distance( target, tvs, mld, cs ); // LD with target (word in text)
@@ -506,7 +506,7 @@ void tdistr_spelcorr( const Timbl::ValueDistribution *vd,
   // NB some of the test are outside this loop (max_distr, in_distr)
   for ( const auto& it : *vd ) { // loop over distribution
 
-    std::string tvs  = it.second->Value()->Name(); // element in distribution
+    std::string tvs  = it.second->Value()->utf8_name(); // element in distribution
     double      wght = it.second->Weight(); // frequency of distr. element
     // LD shortcut, if stringlength differs more than mld, we don't need to try
     int         ld   = lev_distance( target, tvs, mld, cs ); // LD with target (word in text)
@@ -888,7 +888,7 @@ int correct( Logfile& l, Config& c ) {
 		  l.log( "ERROR: Timbl returned a classification error, aborting." );
 		  break;
 		}
-		std::string answer = tv->Name();
+		std::string answer = tv->utf8_name();
 		//l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
 		// Check match-depth, if too undeep, we are probably
@@ -940,7 +940,7 @@ int correct( Logfile& l, Config& c ) {
 		while ( it != vd->end() ) {
 		  //const Timbl::TargetValue *tv = it->second->Value();
 
-		  std::string tvs  = it->second->Value()->Name();
+		  std::string tvs  = it->second->Value()->utf8_name();
 		  double      wght = it->second->Weight();
 
 		  // Prob. of this item in distribution.
@@ -1438,7 +1438,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		  l.log( "ERROR: Timbl returned a classification error, aborting." );
 		  break;
 		}
-		std::string answer = tv->Name();
+		std::string answer = tv->utf8_name();
 		//l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
 		// Check match-depth, if too undeep, we are probably
@@ -1489,7 +1489,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		while ( it != vd->end() ) {
 		  //const Timbl::TargetValue *tv = it->second->Value();
 
-		  std::string tvs  = it->second->Value()->Name();
+		  std::string tvs  = it->second->Value()->utf8_name();
 		  double      wght = it->second->Weight();
 
 		  // Prob. of this item in distribution.
@@ -1881,7 +1881,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    //bool   mal = My_Experiment->matchedAtLeaf();
 
 	    //size_t      res_freq = tv->ValFreq();
-	    std::string answer   = tv->Name();
+	    std::string answer   = tv->utf8_name();
 	    if ( verbose > 1 ) {
 	      l.log( "timbl("+classify_line+")="+answer );
 	    }
@@ -1907,7 +1907,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      while ( it != vd->end() ) {
 		//const Timbl::TargetValue *tv = it->second->Value();
 
-		std::string tvs  = it->second->Value()->Name();
+		std::string tvs  = it->second->Value()->utf8_name();
 		double      wght = it->second->Weight();
 
 		if ( verbose > 1 ) {
@@ -1942,7 +1942,7 @@ int server_sc( Logfile& l, Config& c ) {
 		  // 20100111: freq voorspelde woord : te voorspellen woord > 1
 		  //             uit de distr          target
 
-		  std::string tvs  = it->second->Value()->Name();
+		  std::string tvs  = it->second->Value()->utf8_name();
 		  double      wght = it->second->Weight();
 		  int ld = lev_distance( target, tvs, mld, true );
 
@@ -2284,7 +2284,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  }
 
 	  //size_t      res_freq = tv->ValFreq();
-	  std::string answer   = tv->Name();
+	  std::string answer   = tv->utf8_name();
 	  if ( verbose > 1 ) {
 	    l.log( "timbl("+classify_line+")="+answer );
 	  }
@@ -2310,7 +2310,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    while ( it != vd->end() ) {
 	      //const Timbl::TargetValue *tv = it->second->Value();
 
-	      std::string tvs  = it->second->Value()->Name();
+	      std::string tvs  = it->second->Value()->utf8_name();
 	      double      wght = it->second->Weight();
 
 	      if ( verbose > 1 ) {
@@ -2345,7 +2345,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 			// 20100111: freq voorspelde woord : te voorspellen woord > 1
 			//             uit de distr          target
 
-			std::string tvs  = it->second->Value()->Name();
+			std::string tvs  = it->second->Value()->utf8_name();
 			double      wght = it->second->Weight();
 			int ld = lev_distance( target, tvs, mld, true );
 
@@ -2833,7 +2833,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		  l.log( "ERROR: "+a_line );
 		  break;
 		}
-		std::string answer = tv->Name();
+		std::string answer = tv->utf8_name();
 		//l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
 		// Check match-depth, if too undeep, we are probably
@@ -2882,7 +2882,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		while ( it != vd->end() ) {
 		  //const Timbl::TargetValue *tv = it->second->Value();
 
-		  std::string tvs  = it->second->Value()->Name();
+		  std::string tvs  = it->second->Value()->utf8_name();
 		  double      wght = it->second->Weight();
 
 		  // Prob. of this item in distribution.
@@ -3384,7 +3384,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  l.log( "ERROR: "+a_line );
 	  break;
 	}
-	std::string answer = tv->Name();
+	std::string answer = tv->utf8_name();
 	//l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
 	// Check match-depth, if too undeep, we are probably
@@ -3417,7 +3417,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	while ( it != vd->end() ) {
 	  //const Timbl::TargetValue *tv = it->second->Value();
 
-	  std::string tvs  = it->second->Value()->Name();
+	  std::string tvs  = it->second->Value()->utf8_name();
 	  double      wght = it->second->Weight();
 
 	  // Prob. of this item in distribution.
@@ -3587,7 +3587,7 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
 
   while ( it != vd->end() ) { // loop over distribution
-    std::string tvs  = it->second->Value()->Name(); // element in distribution
+    std::string tvs  = it->second->Value()->utf8_name(); // element in distribution
     double      wght = it->second->Weight(); // frequency of distr. element
 
     for ( const auto& si : a_set ) { //should be outer
@@ -3614,7 +3614,7 @@ double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& 
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
 
   while ( it != vd->end() ) { // loop over distribution
-    std::string tvs  = it->second->Value()->Name(); // element in distribution
+    std::string tvs  = it->second->Value()->utf8_name(); // element in distribution
     double      wght = it->second->Weight(); // frequency of distr. element
 
     distr_elem *d = new distr_elem(tvs, wght, 0); //last index?
@@ -3995,7 +3995,7 @@ int sml( Logfile& l, Config& c ) {
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
 	}
-	std::string answer = tv->Name();
+	std::string answer = tv->utf8_name();
 	//l.log( "Answer: '" + answer + "' / '" + target + "'" );
 
 	// Check match-depth, if too undeep, we are probably
@@ -4026,7 +4026,7 @@ int sml( Logfile& l, Config& c ) {
 	while ( it != vd->end() ) {
 	  //const Timbl::TargetValue *tv = it->second->Value();
 
-	  std::string tvs  = it->second->Value()->Name();
+	  std::string tvs  = it->second->Value()->utf8_name();
 	  double      wght = it->second->Weight();
 
 	  // Prob. of this item in distribution.
