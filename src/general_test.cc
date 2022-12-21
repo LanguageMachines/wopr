@@ -49,23 +49,24 @@
 // ---------------------------------------------------------------------------
 
 #ifdef TIMBL
-struct distr_elem {
-  distr_elem():freq(0),s_freq(0){};
+struct local_distr_elem {
+  local_distr_elem():freq(0),s_freq(0){};
   std::string name;
   double      freq;
   double      s_freq;
-  bool operator<(const distr_elem& rhs) const {
+  bool operator<(const local_distr_elem& rhs) const {
     return freq > rhs.freq;
   }
 };
-struct cached_distr {
+
+struct my_cached_distr {
   int cnt;
   long sum_freqs;
   double entropy;
   std::string first;
   std::map<std::string,int> freqs; // word->frequency
-  std::vector<distr_elem> distr_vec; // top-n to print
-  bool operator<(const cached_distr& rhs) const {
+  std::vector<local_distr_elem> distr_vec; // top-n to print
+  bool operator<(const my_cached_distr& rhs) const {
     return cnt > rhs.cnt;
   }
 };
@@ -235,9 +236,9 @@ int gen_test( Logfile& l, Config& c ) {
     // Distribution cache
     //
     int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
-    std::vector<cached_distr> distr_cache;
+    std::vector<my_cached_distr> distr_cache;
     for ( int i = 0; i < cache_size; i++ ) {
-      cached_distr c;
+      my_cached_distr c;
       c.cnt       = 0;
       c.sum_freqs = 0;
       c.entropy   = 0.0;
@@ -297,7 +298,7 @@ int gen_test( Logfile& l, Config& c ) {
       int distr_count = 0;
       //      int target_freq = 0;
       double entropy         = 0.0;
-      std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+      std::vector<local_distr_elem> distr_vec;// see correct in levenshtein.
       cnt         = vd->size();
       distr_count = vd->totalSize();
 
@@ -305,7 +306,7 @@ int gen_test( Logfile& l, Config& c ) {
       // only occurs once...
       //
       int cache_idx = -1;
-      cached_distr* cd = NULL;
+      my_cached_distr* cd = NULL;
       for ( int i = 0; i < cache_size; i++ ) {
 		if ( distr_cache.at(i).cnt == cnt ) {
 		  if ( distr_cache.at(i).sum_freqs == distr_count ) {
@@ -367,7 +368,7 @@ int gen_test( Logfile& l, Config& c ) {
 	  double      wght = it->second->Weight(); // absolute frequency.
 
 	  if ( topn > 0 ) { // only save if we want to sort/print them later.
-	    distr_elem  d;
+	    local_distr_elem  d;
 	    d.name   = tvs;
 	    d.freq   = wght;
 	    d.s_freq = wght;
@@ -438,13 +439,13 @@ int gen_test( Logfile& l, Config& c ) {
       if ( topn > 0 ) { // we want a topn, sort and print them. (Cache them?)
 	int cntr = topn;
 	sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-	std::vector<distr_elem>::iterator fi;
+	std::vector<local_distr_elem>::iterator fi;
 	fi = distr_vec.begin();
 	out << cnt << ' ' << distr_count << " [ ";
 	while ( (fi != distr_vec.end()) && (--cntr >= 0) ) { // cache only those?
 	  out << (*fi).name << ' ' << (*fi).freq << ' ';
 	  if ( cache_level == 1 ) {
-	    distr_elem d;
+	    local_distr_elem d;
 	    d.name = (*fi).name;
 	    d.freq = (*fi).freq;
 	    (cd->distr_vec).push_back( d );

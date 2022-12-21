@@ -181,8 +181,6 @@ int multi( Logfile& l, Config& c ) {
   std::vector<std::string> results;
   const Timbl::ValueDistribution *vd;
   const Timbl::TargetValue *tv;
-  std::vector<Multi*> multivec( 20 );
-  std::vector<std::string> words;
 
   while( std::getline( file_in, a_line )) {
 
@@ -190,9 +188,9 @@ int multi( Logfile& l, Config& c ) {
     // one per word in the sentence?
     // Initialise correct target as well...
     //
-    multivec.clear(); // KvdS BUG: This will leak Multi*'s like hell!
-    words.clear();
+    std::vector<std::string> words;
     Tokenize( a_line, words, ' ' );
+    std::vector<Multi*> multivec( words.size() );
     int sentence_size = words.size();
     for ( int i = 0; i < sentence_size; i++ ) {
       multivec[i] = new Multi("");
@@ -250,6 +248,9 @@ int multi( Logfile& l, Config& c ) {
     for ( int i = 0; i < sentence_size; i++ ) {
       //l.log( words[i] + ": " + multivec[i]->get_answer() );
       l.log( multivec[i]->get_answers() );
+    }
+    for ( const auto& it : multivec ){
+      delete it;
     }
   }
 

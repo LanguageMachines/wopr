@@ -21,7 +21,7 @@ class Multi {
 
   //! Destructor.
   //!
-  ~Multi();
+  ~Multi(){};
 
   void set_classifier( const std::string& c ) {
     classifier = c;

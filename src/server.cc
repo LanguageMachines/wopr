@@ -2279,10 +2279,10 @@ int one( Logfile& l, Config& c ) {
 
 #ifdef TIMBL
 // PJB: TODO: real XML processing
-struct distr_elem {
+struct my_distr_elem {
   std::string name;
   double      freq;
-  bool operator<(const distr_elem& rhs) const {
+  bool operator<(const my_distr_elem& rhs) const {
     return freq > rhs.freq;
   }
 };
@@ -2293,7 +2293,7 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
   Timbl::ValueDistribution::dist_iterator it = vd->begin();
   int cnt = vd->size();
   int distr_count = vd->totalSize();
-  std::vector<distr_elem> distr_vec;// see correct in levenshtein.
+  std::vector<my_distr_elem> distr_vec;// see correct in levenshtein.
   std::string cg = "ic";
 
   while ( it != vd->end() ) {
@@ -2301,7 +2301,7 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
     std::string tvs  = it->second->Value()->Name();
     double      wght = it->second->Weight();
 
-    distr_elem  d;
+    my_distr_elem  d;
     d.name   = tvs;
     d.freq   = wght;
     distr_vec.push_back( d );
@@ -2313,7 +2313,7 @@ int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
 
   int cntr = 10;
   sort( distr_vec.begin(), distr_vec.end() ); // not when cached?
-  std::vector<distr_elem>::iterator fi;
+  std::vector<my_distr_elem>::iterator fi;
   fi = distr_vec.begin();
   if ( target ==  (*fi).name ) {
     cg = "cg";
