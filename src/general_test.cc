@@ -50,6 +50,7 @@
 
 #ifdef TIMBL
 struct distr_elem {
+  distr_elem():freq(0),s_freq(0){};
   std::string name;
   double      freq;
   double      s_freq;

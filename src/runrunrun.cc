@@ -971,7 +971,7 @@ int ngram_s( Logfile& l, Config& c ) {
   while( std::getline( file_in, a_line )) {
 
     ngram_line( a_line, ws, results );
-    for ( const auto cl : results ) {
+    for ( const auto& cl : results ) {
       file_out << cl << std::endl;
     }
     results.clear();
@@ -3232,6 +3232,7 @@ int pplx( Logfile& l, Config& c ) {
 #ifdef TIMBL
 // should use the elements.h one
 struct distr_elpplx {
+  distr_elpplx():freq(0),s_freq(0){};
   std::string name;
   double      freq;
   double      s_freq;

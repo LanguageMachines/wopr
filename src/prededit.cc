@@ -732,7 +732,7 @@ int pdt2( Logfile& l, Config& c ) {
       prediction_count = 0;
       long savedhere = 0; // key presses saved in this prediction.
       int adjust = 0; // Adjust the keys saved if we find word predictor matches.
-      for ( const auto si : strs ) {
+      for ( const auto& si : strs ) {
 
 	// We should check if the prediction matches the original sentence.
 	// We compare word by word in the sentence and the predicted sequence.

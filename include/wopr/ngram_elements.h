@@ -31,6 +31,7 @@ struct ngl_elem {
 };
 
 struct ngram_elem {
+ngram_elem():p(0.0),l10p(0.0),l2p(0.0),n(0){};
   double p;
   double l10p;
   double l2p;
@@ -39,6 +40,7 @@ struct ngram_elem {
 };
 
 struct ngde { // ngram dist element
+ngde():freq(0),prob(0.0),l10prob(0.0){};
   std::string token;
   int freq;
   double prob;
@@ -48,6 +50,7 @@ struct ngde { // ngram dist element
     return freq > rhs.freq; // || prob > rhs.prob;
   }
 };
+
 struct ngmd { // ngram meta data
   double distr_count;
   double distr_sum;
