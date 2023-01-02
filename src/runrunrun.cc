@@ -1244,7 +1244,7 @@ int window_line(Logfile& l, Config& c) {
 	while ( it != vd->end() ){
 	  //Timbl::Vfield *foo = it->second;
 	  //const Timbl::TargetValue *bar = foo->Value();
-	  std::string quux = it->second->Value()->Name(); //bar->Name();
+	  std::string quux = it->second->Value()->name_string(); //bar->Name();
 	  if ( quux == a_word ) {
 	    std::cout << "Found a_word.\n";
 	    std::cout << it->second->Value() << ": "
@@ -3184,8 +3184,8 @@ int pplx( Logfile& l, Config& c ) {
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
 	}
-	wopr_line = wopr_line + tv->Name() + " ";
-	l.log( "Answer: " + tv->Name() );
+	wopr_line = wopr_line + tv->name_string() + " ";
+	l.log( "Answer: " + tv->name_string() );
 
 	Timbl::ValueDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
@@ -3683,7 +3683,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 		break;
       }
 
-      std::string answer = tv->Name();
+      std::string answer = tv->name_string();
       if ( vd == NULL ) {
 	l.log( "Classify( a_line, vd ) was null, skipping current line." );
 	file_out << a_line << ' ' << answer << " ERROR" << std::endl;
@@ -3721,7 +3721,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       for ( int i = 0; i < cache_size; i++ ) {
 	if ( distr_cache.at(i).cnt == cnt ) {
 	  if ( distr_cache.at(i).sum_freqs == distr_count ) {
-	    if ( distr_cache.at(i).first == it->second->Value()->Name() ) {
+	    if ( distr_cache.at(i).first == it->second->Value()->name_string() ) {
 	      cache_idx = i; // it's cached already!
 	      cd = &distr_cache.at(i);
 	      break;
@@ -3732,10 +3732,10 @@ int pplx_simple( Logfile& l, Config& c ) {
       if ( (cache_size > 0 ) && (cache_idx == -1) ) { // It should be cached, if not present.
 	if ( (cnt > cache_threshold) && (cnt > lowest_cache) ) {
 	  cd = &distr_cache.at( cache_size-1 ); // the lowest.
-	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->Name()+")" );
+	  l.log( "New cache: "+to_str(cnt)+" replacing: "+to_str(cd->cnt)+" ("+cd->first+"/"+it->second->Value()->name_string()+")" );
 	  cd->cnt = cnt;
 	  cd->sum_freqs  = distr_count;
-	  cd->first = it->second->Value()->Name();
+	  cd->first = it->second->Value()->name_string();
 	  (cd->distr_vec).clear();
 	}
       }
@@ -3770,92 +3770,92 @@ int pplx_simple( Logfile& l, Config& c ) {
       // TODO: fix. Current code allows me to run experiments.
       //
       if ( cache_level == 3 ) { // Use the cache, Luke.
-		std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
-		if ( wfi != (cd->freqs).end() ) {
-		  target_freq = (long)(*wfi).second;
-		  target_in_dist = true;
-		}
-		entropy = cd->entropy;
-		distr_vec = cd->distr_vec; // the [distr] we print
+	std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
+	if ( wfi != (cd->freqs).end() ) {
+	  target_freq = (long)(*wfi).second;
+	  target_in_dist = true;
+	}
+	entropy = cd->entropy;
+	distr_vec = cd->distr_vec; // the [distr] we print
 
-		long classification_freq = 0;
-		std::map<long, long, std::greater<long> > dfreqs;
-		while ( it != vd->end() ) {
+	long classification_freq = 0;
+	std::map<long, long, std::greater<long> > dfreqs;
+	while ( it != vd->end() ) {
 
-		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight(); // absolute frequency.
+	  std::string tvs  = it->second->Value()->name_string();
+	  double      wght = it->second->Weight(); // absolute frequency.
 
-		  dfreqs[wght] += 1;
+	  dfreqs[wght] += 1;
 
-		  if ( tvs == target ) { // The correct answer was in the distribution!
-			classification_freq = wght;
-		  }
-		  ++it;
-		}
-		long   idx       = 1;
-		std::map<long, long>::iterator dfi = dfreqs.begin();
-		while ( dfi != dfreqs.end() ) {
-		  if ( dfi->first == classification_freq ) {
-		    class_mrr = (double)1.0/idx;
-		  }
-		  //if ( idx > some_limit ) { break;}
-		  ++dfi;
-		  ++idx;
-		}
+	  if ( tvs == target ) { // The correct answer was in the distribution!
+	    classification_freq = wght;
+	  }
+	  ++it;
+	}
+	long   idx       = 1;
+	std::map<long, long>::iterator dfi = dfreqs.begin();
+	while ( dfi != dfreqs.end() ) {
+	  if ( dfi->first == classification_freq ) {
+	    class_mrr = (double)1.0/idx;
+	  }
+	  //if ( idx > some_limit ) { break;}
+	  ++dfi;
+	  ++idx;
+	}
       } //cache_level == 3
       if ( (cache_level == 1) || (cache_level == 0) ) { // go over Timbl distr.
 
-		long classification_freq = 0;
-		std::map<long, long, std::greater<long> > dfreqs;
-		while ( it != vd->end() ) {
-		  //const Timbl::TargetValue *tv = it->second->Value();
+	long classification_freq = 0;
+	std::map<long, long, std::greater<long> > dfreqs;
+	while ( it != vd->end() ) {
+	  //const Timbl::TargetValue *tv = it->second->Value();
 
-		  std::string tvs  = it->second->Value()->Name();
-		  double      wght = it->second->Weight(); // absolute frequency.
+	  std::string tvs  = it->second->Value()->name_string();
+	  double      wght = it->second->Weight(); // absolute frequency.
 
-		  dfreqs[wght] += 1;
+	  dfreqs[wght] += 1;
 
-		  if ( topn > 0 ) { // only save if we want to sort/print them later.
-			distr_elpplx  d;
-			d.name   = tvs;
-			d.freq   = wght;
-			d.s_freq = wght;
-			distr_vec.push_back( d );
-		  }
+	  if ( topn > 0 ) { // only save if we want to sort/print them later.
+	    distr_elpplx  d;
+	    d.name   = tvs;
+	    d.freq   = wght;
+	    d.s_freq = wght;
+	    distr_vec.push_back( d );
+	  }
 
-		  if ( tvs == target ) { // The correct answer was in the distribution!
-			target_freq = wght;
-			target_in_dist = true;
-			classification_freq = wght;
-		  }
+	  if ( tvs == target ) { // The correct answer was in the distribution!
+	    target_freq = wght;
+	    target_in_dist = true;
+	    classification_freq = wght;
+	  }
 
-		  // Save it in the cache?
-		  //
-		  if ( cache_level == 1 ) {
-			cd->freqs[tvs] = wght;
-		  }
+	  // Save it in the cache?
+	  //
+	  if ( cache_level == 1 ) {
+	    cd->freqs[tvs] = wght;
+	  }
 
-		  // Entropy of whole distr. Cache.
-		  //
-		  double prob = (double)wght / (double)distr_count;
-		  entropy -= ( prob * mylog(prob) );
+	  // Entropy of whole distr. Cache.
+	  //
+	  double prob = (double)wght / (double)distr_count;
+	  entropy -= ( prob * mylog(prob) );
 
-		  ++it;
-		} // end loop distribution
-		if ( cache_level == 1 ) {
-		  cd->entropy = entropy;
-		}
+	  ++it;
+	} // end loop distribution
+	if ( cache_level == 1 ) {
+	  cd->entropy = entropy;
+	}
 
-		long   idx       = 1;
-		std::map<long, long>::iterator dfi = dfreqs.begin();
-		while ( dfi != dfreqs.end() ) {
-		  if ( dfi->first == classification_freq ) {
-		    class_mrr = (double)1.0/idx;
-		  }
-		  //if ( idx > some_limit ) { break;}
-		  ++dfi;
-		  ++idx;
-		}
+	long   idx       = 1;
+	std::map<long, long>::iterator dfi = dfreqs.begin();
+	while ( dfi != dfreqs.end() ) {
+	  if ( dfi->first == classification_freq ) {
+	    class_mrr = (double)1.0/idx;
+	  }
+	  //if ( idx > some_limit ) { break;}
+	  ++dfi;
+	  ++idx;
+	}
 
       } // cache_level == 1 or 0
 

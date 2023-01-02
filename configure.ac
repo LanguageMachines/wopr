@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.60])
-AC_INIT([wopr], [1.43], [lamasoftware@science.ru.nl])  #adapt version number in codemeta.json as well
+AC_PREREQ([2.69])
+AC_INIT([wopr],[1.43],[lamasoftware@science.ru.nl])  #adapt version number in codemeta.json as well
 
 AC_CONFIG_SRCDIR(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
@@ -14,7 +14,6 @@ AC_PROG_AWK
 AC_PROG_LEX
 AC_PROG_INSTALL
 
-AC_PROG_LIBTOOL
 LT_INIT
 
 #check OpenMP support
@@ -126,7 +125,7 @@ AS_IF([test "x$with_timbl" != xno],
        PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$prefix/lib/pkgconfig"
        AC_DEFINE_UNQUOTED(TIMBL,"$prefix",[ Have Timbl ])
        ])
-  PKG_CHECK_MODULES([timbl], [timbl >= 6.4.4] )
+  PKG_CHECK_MODULES([timbl], [timbl >= 6.8] )
   CXXFLAGS="$CXXFLAGS $timbl_CFLAGS"
   LIBS="$LIBS $timbl_LIBS"
             ]
@@ -139,7 +138,7 @@ AX_TYPE_SOCKLEN_T
 AC_CHECK_HEADER([pthread.h],
        [AC_DEFINE([PTHREADS], [1], [pthreads]) LIBS="-lpthread $LIBS"])
 
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug], [Enable debugging support]),
+AC_ARG_ENABLE(debug, AS_HELP_STRING([--enable-debug],[Enable debugging support]),
         [ if test x$enableval = xyes ; then
                 AC_DEFINE(DEBUG,1,[ Define to enable debugging. ])
           fi
@@ -168,8 +167,8 @@ fi
 # ---
 
 # Check for a hash table implementation
-AC_CXX_HEADER_TR1_UNORDERED_MAP
-AC_CXX_HEADER_TR1_UNORDERED_SET
+AX_CXX_HEADER_TR1_UNORDERED_MAP
+AX_CXX_HEADER_TR1_UNORDERED_SET
 
 AC_CONFIG_FILES([Makefile
                  include/Makefile
