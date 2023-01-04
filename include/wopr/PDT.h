@@ -30,7 +30,7 @@ class PDTC {
 
 #ifdef TIMBL
   Timbl::TimblAPI *My_Experiment;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 #endif
 

@@ -28,9 +28,9 @@
 
 int distance(const std::string&, const std::string&);
 int levenshtein( Logfile&, Config& );
-void distr_spelcorr( const Timbl::ValueDistribution *, const std::string&, std::map<std::string,int>&,
+void distr_spelcorr( const Timbl::ClassDistribution *, const std::string&, std::map<std::string,int>&,
 		     std::vector<distr_elem*>&,int, double, double, bool, int, double);
-void tdistr_spelcorr( const Timbl::ValueDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
+void tdistr_spelcorr( const Timbl::ClassDistribution *vd, const std::string& target, std::map<std::string,int>& wfreqs,
 					  std::vector<distr_elem*>& distr_vec, int mld, bool cs, int min_df, double confidence);
 int correct( Logfile&, Config& );
 int tcorrect( Logfile&, Config& );
@@ -39,8 +39,8 @@ int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
 int mcorrect( Logfile&, Config& );
 int cmcorrect( Logfile&, Config& );
-double filter_dist( const Timbl::ValueDistribution*, std::vector<std::string>&, std::vector<distr_elem*>&);
-double copy_dist( const Timbl::ValueDistribution*, std::vector<distr_elem*>&);
+double filter_dist( const Timbl::ClassDistribution*, std::vector<std::string>&, std::vector<distr_elem*>&);
+double copy_dist( const Timbl::ClassDistribution*, std::vector<distr_elem*>&);
 int sml( Logfile&, Config& );
 
 #endif

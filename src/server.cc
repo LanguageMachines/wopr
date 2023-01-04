@@ -203,7 +203,7 @@ int server2(Logfile& l, Config& c) {
       }
       if ( verbose > 0 ) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
       }
 
       //newSock->write( "Greetings, earthling.\n" );
@@ -327,7 +327,7 @@ int server2(Logfile& l, Config& c) {
 	    // Determine word before target. Look it up.
 
 	    double distance;
-	    const Timbl::ValueDistribution *vd = 0;
+	    const Timbl::ClassDistribution *vd = 0;
 	    tv = My_Experiment->Classify( cl, vd, distance );
 	    if ( ! tv ) {
 	      l.log("ERROR: Timbl returned a classification error, aborting.");
@@ -544,12 +544,12 @@ std::string str_clean( const std::string& s ) {
 // tv = My_Experiment->Classify( *ri, vd );
 //
 #ifdef TIMBL
-int parse_distribution( const Timbl::ValueDistribution* vd,
+int parse_distribution( const Timbl::ClassDistribution* vd,
 			std::map<std::string, double>& res ) {
   if ( vd == NULL ){
     return 1;
   }
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  Timbl::ClassDistribution::dist_iterator it = vd->begin();
   int distr_count = vd->totalSize();
 
   while ( it != vd->end() ) {
@@ -602,7 +602,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
   std::string tmp_buf;
   std::string result;
   double distance;
-  const Timbl::ValueDistribution *vd = 0;
+  const Timbl::ClassDistribution *vd = 0;
   const Timbl::TargetValue *tv = 0;
 
   while( std::getline( file_in, tmp_buf )) {
@@ -870,7 +870,7 @@ int server4( Logfile& l, Config& c) {
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
   std::string result;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   signal(SIGCHLD, SIG_IGN);
@@ -904,7 +904,7 @@ int server4( Logfile& l, Config& c) {
       }
       if ( verbose > 0 ) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
       }
 
       //http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html
@@ -1058,7 +1058,7 @@ int server4( Logfile& l, Config& c) {
 	      //
 	      // Grok the distribution returned by Timbl.
 	      //
-	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	      Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
 
 		std::string tvs  = it->second->Value()->name_string();
@@ -1287,7 +1287,7 @@ int xmlserver(Logfile& l, Config& c) {
       ++connections;
       if ( verbose > 0 ) {
 	l.log( "Created Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
 	l.log( to_str(connections) + " active connections" );
       }
 
@@ -1397,7 +1397,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    // that for the instances-without-target
 	    //
 	    std::string target = words.at( words.size()-1 );
-	    const Timbl::ValueDistribution *vd;
+	    const Timbl::ClassDistribution *vd;
 	    double distance;
 	    const Timbl::TargetValue *tv
 	      = My_Experiment->Classify( classify_line, vd, distance );
@@ -1423,7 +1423,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    //
 	    // Grok the distribution returned by Timbl.
 	    //
-	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	    Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	    while ( it != vd->end() ) {
 
 	      std::string tvs  = it->second->Value()->name_string();
@@ -1536,7 +1536,7 @@ int xmlserver(Logfile& l, Config& c) {
       --connections;
       if ( verbose > 0 ) {
 	l.log( "Ending Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
 	l.log( to_str(connections) + " active connections" );
       }
       delete newSock;
@@ -1627,7 +1627,7 @@ int mbmt(Logfile& l, Config& c) {
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
   std::string result;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   signal(SIGCHLD, SIG_IGN);
@@ -1661,7 +1661,7 @@ int mbmt(Logfile& l, Config& c) {
       }
       if ( verbose > 0 ) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
       }
 
       bool connection_open = true;
@@ -1788,7 +1788,7 @@ int mbmt(Logfile& l, Config& c) {
 	      //
 	      // Grok the distribution returned by Timbl.
 	      //
-	      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	      Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	      while ( it != vd->end() ) {
 
 		std::string tvs  = it->second->Value()->name_string();
@@ -1963,7 +1963,7 @@ int webdemo(Logfile& l, Config& c) {
   }
 
   std::string result;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   try {
@@ -1996,7 +1996,7 @@ int webdemo(Logfile& l, Config& c) {
       }
       if ( verbose > 0 ) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
       }
 
       std::string tmp_buf;
@@ -2165,7 +2165,7 @@ int one( Logfile& l, Config& c) {
   l.dec_prefix();
 
   std::string result;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   try {
@@ -2197,7 +2197,7 @@ int one( Logfile& l, Config& c) {
       }
       if ( verbose > 0 ) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
       }
 
       std::string tmp_buf;
@@ -2287,10 +2287,10 @@ struct my_distr_elem {
   }
 };
 
-int dist_to_xml( const Timbl::ValueDistribution* vd, std::string& res,
+int dist_to_xml( const Timbl::ClassDistribution* vd, std::string& res,
 		 std::string& target) {
 
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  Timbl::ClassDistribution::dist_iterator it = vd->begin();
   int cnt = vd->size();
   int distr_count = vd->totalSize();
   std::vector<my_distr_elem> distr_vec;// see correct in levenshtein.
@@ -2478,7 +2478,7 @@ int server_mg( Logfile& l, Config& c ) {
       }
       if ( verbose > 0 ) {
 	l.log( "Connection " + to_str(newSock->getSockId()) + "/"
-	       + std::string(newSock->getClientName()) );
+	       + newSock->getClientName() );
       }
 
       int cpid = fork();

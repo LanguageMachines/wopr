@@ -420,7 +420,7 @@ int levenshtein( Logfile& l, Config& ) {
 // The core, do the spelling correction on the distribution.
 // tv = My_Experiment->Classify( a_line, vd );
 //
-void distr_spelcorr( const Timbl::ValueDistribution *vd,
+void distr_spelcorr( const Timbl::ClassDistribution *vd,
 		     const std::string& target,
 		     std::map<std::string,int>& wfreqs,
 		     std::vector<distr_elem*>& distr_vec,
@@ -492,7 +492,7 @@ void distr_spelcorr( const Timbl::ValueDistribution *vd,
 // test version paired with tcorrect.
 // Elements are added distr_vec
 //
-void tdistr_spelcorr( const Timbl::ValueDistribution *vd,
+void tdistr_spelcorr( const Timbl::ClassDistribution *vd,
 		      const std::string& target,
 		      std::map<std::string,int>& wfreqs,
 		      std::vector<distr_elem*>& distr_vec,
@@ -798,7 +798,7 @@ int correct( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string classify_line;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     int correct = 0;
@@ -924,7 +924,7 @@ int correct( Logfile& l, Config& c ) {
 		// PJB: patterns containing spelling errors....
 		//
 		//
-		Timbl::ValueDistribution::dist_iterator it = vd->begin();
+		Timbl::ClassDistribution::dist_iterator it = vd->begin();
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
@@ -1347,7 +1347,7 @@ int tcorrect( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string classify_line;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     int correct = 0;
@@ -1474,7 +1474,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		// PJB: patterns containing spelling errors....
 		//
 		//
-		Timbl::ValueDistribution::dist_iterator it = vd->begin();
+		Timbl::ClassDistribution::dist_iterator it = vd->begin();
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
@@ -1737,7 +1737,7 @@ int server_sc( Logfile& l, Config& c ) {
   file_lexicon.close();
   l.log( "Read lexicon, "+to_str(hpx_entries)+"/"+to_str(lex_entries)+" (total_count="+to_str(total_count)+")." );
 
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   signal(SIGCHLD, SIG_IGN);
@@ -1902,7 +1902,7 @@ int server_sc( Logfile& l, Config& c ) {
 
 	    // Check if target word is in the distribution.
 	    //
-	    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	    Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	    if ( cnt < max_distr ) {
 	      while ( it != vd->end() ) {
 		//const Timbl::TargetValue *tv = it->second->Value();
@@ -2144,7 +2144,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
   Cache *cache = new Cache( cachesize );
 
-  const Timbl::ValueDistribution *vd = 0;
+  const Timbl::ClassDistribution *vd = 0;
   const Timbl::TargetValue *tv = 0;
 
   /*
@@ -2305,7 +2305,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
 	  // Check if target word is in the distribution.
 	  //
-	  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	  Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	  if ( cnt < max_distr ) {
 	    while ( it != vd->end() ) {
 	      //const Timbl::TargetValue *tv = it->second->Value();
@@ -2724,7 +2724,7 @@ int mcorrect( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string classify_line;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     int correct = 0;
@@ -2866,7 +2866,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		// PJB: patterns containing spelling errors....
 		//
 		//
-		Timbl::ValueDistribution::dist_iterator it = vd->begin();
+		Timbl::ClassDistribution::dist_iterator it = vd->begin();
 		int cnt = 0;
 		int distr_count = 0;
 		int target_freq = 0;
@@ -3281,7 +3281,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string classify_line;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     int correct = 0;
@@ -3402,7 +3402,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 
 	// Loop over distribution returned by Timbl.
 	//
-	Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
 	int distr_count = 0;
 	int target_freq = 0;
@@ -3579,12 +3579,12 @@ int cmcorrect( Logfile& l, Config& c ) {
 
 // Only leave in distr_vec what is in vd and a_set.
 // Used in sml.
-double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>& a_set, std::vector<distr_elem*>& distr_vec) {
+double filter_dist( const Timbl::ClassDistribution *vd, std::vector<std::string>& a_set, std::vector<distr_elem*>& distr_vec) {
 
   int    cnt         = 0;
   double distr_count = 0;
 
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  Timbl::ClassDistribution::dist_iterator it = vd->begin();
 
   while ( it != vd->end() ) { // loop over distribution
     std::string tvs  = it->second->Value()->name_string(); // element in distribution
@@ -3608,10 +3608,10 @@ double filter_dist( const Timbl::ValueDistribution *vd, std::vector<std::string>
 }
 
 // for cmcorrect
-double copy_dist( const Timbl::ValueDistribution *vd, std::vector<distr_elem*>& distr_vec) {
+double copy_dist( const Timbl::ClassDistribution *vd, std::vector<distr_elem*>& distr_vec) {
   double distr_count = 0;
 
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  Timbl::ClassDistribution::dist_iterator it = vd->begin();
 
   while ( it != vd->end() ) { // loop over distribution
     std::string tvs  = it->second->Value()->name_string(); // element in distribution
@@ -3905,7 +3905,7 @@ int sml( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string classify_line;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     int correct = 0;
     int wrong   = 0;
@@ -4013,7 +4013,7 @@ int sml( Logfile& l, Config& c ) {
 
 	// Loop over distribution returned by Timbl.
 	//
-	Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
 	int distr_count = 0;
 	int target_freq = 0;

@@ -211,7 +211,7 @@ int gen_test( Logfile& l, Config& c ) {
     // Here we created Timbl exp before.
 
     std::string a_line;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     int correct = 0;
@@ -293,7 +293,7 @@ int gen_test( Logfile& l, Config& c ) {
       //
       // entropy over distribution: sum( p log(p) ).
       //
-      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+      Timbl::ClassDistribution::dist_iterator it = vd->begin();
       int cnt = 0;
       int distr_count = 0;
       //      int target_freq = 0;

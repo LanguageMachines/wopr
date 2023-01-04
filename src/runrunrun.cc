@@ -1240,7 +1240,7 @@ int window_line(Logfile& l, Config& c) {
       /*
       if ( vd ) {
 	int count = 0;
-	Timbl::ValueDistribution::dist_iterator it=vd->begin();
+	Timbl::ClassDistribution::dist_iterator it=vd->begin();
 	while ( it != vd->end() ){
 	  //Timbl::Vfield *foo = it->second;
 	  //const Timbl::TargetValue *bar = foo->Value();
@@ -3130,7 +3130,7 @@ int pplx( Logfile& l, Config& c ) {
   std::string a_line;
   std::vector<std::string> results;
   std::vector<std::string>::iterator ri;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   skip = 0; //kludge factor
@@ -3187,7 +3187,7 @@ int pplx( Logfile& l, Config& c ) {
 	wopr_line = wopr_line + tv->name_string() + " ";
 	l.log( "Answer: " + tv->name_string() );
 
-	Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	int cnt = 0;
 	cnt = vd->size();
 	//l.log( to_str(cnt) );
@@ -3527,7 +3527,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     std::string a_line;
     std::string sentence;
-    const Timbl::ValueDistribution *vd;
+    const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     std::vector<double> w_pplx;
@@ -3702,7 +3702,7 @@ int pplx_simple( Logfile& l, Config& c ) {
       //
       // entropy over distribution: sum( p log(p) ).
       //
-      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+      Timbl::ClassDistribution::dist_iterator it = vd->begin();
       int cnt = 0;
       int distr_count = 0;
       int target_freq = 0;

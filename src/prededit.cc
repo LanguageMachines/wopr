@@ -855,7 +855,7 @@ void generate_next( Timbl::TimblAPI* My_Experiment,
 		    std::vector<t_distr_elem>& distr_vec ) {
 
   double distance;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
   tv = My_Experiment->Classify( instance, vd, distance );
   if ( ! tv ) {
@@ -865,7 +865,7 @@ void generate_next( Timbl::TimblAPI* My_Experiment,
 
   // Grok the distribution returned by Timbl.
   //
-  Timbl::ValueDistribution::dist_iterator it = vd->begin();
+  Timbl::ClassDistribution::dist_iterator it = vd->begin();
   while ( it != vd->end() ) {
 
     std::string tvs  = it->second->Value()->name_string();

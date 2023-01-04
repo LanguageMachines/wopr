@@ -179,7 +179,7 @@ int multi( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::vector<std::string> results;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 
   while( std::getline( file_in, a_line )) {
@@ -499,7 +499,7 @@ int multi_dist( Logfile& l, Config& c ) {
   std::ostream_iterator<std::string> output( file_out, " " );
 
   std::string a_line;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
   std::vector<distr_probs> distr_vec;
@@ -547,7 +547,7 @@ int multi_dist( Logfile& l, Config& c ) {
 	(*cli)->inc_correct();
       }
 
-      Timbl::ValueDistribution::dist_iterator it = vd->begin();
+      Timbl::ClassDistribution::dist_iterator it = vd->begin();
       while ( it != vd->end() ) {
 	std::string tvs  = it->second->Value()->name_string();
 	long        wght = it->second->Weight(); // absolute frequency.

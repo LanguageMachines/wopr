@@ -42,9 +42,9 @@ std::string str_clean( const std::string& );
 int socket_file( Logfile&, Config&,
 		 Timbl::TimblAPI *, const std::string&,
 		 std::map<std::string,int>&, unsigned long);
-int parse_distribution( const Timbl::ValueDistribution*,
+int parse_distribution( const Timbl::ClassDistribution*,
 			std::map<std::string, double>&);
-int dist_to_xml( const Timbl::ValueDistribution*, std::string&, std::string& );
+int dist_to_xml( const Timbl::ClassDistribution*, std::string&, std::string& );
 #endif
 
 int server3( Logfile&, Config& );

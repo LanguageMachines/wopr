@@ -131,10 +131,10 @@ int generate( Logfile& l, Config& c ) {
 
   std::string a_line;
   std::string result;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
   std::vector<std::string> words;
-  Timbl::ValueDistribution::dist_iterator it;
+  Timbl::ClassDistribution::dist_iterator it;
   int cnt;
   int distr_count;
 
@@ -259,9 +259,9 @@ std::string generate_one( std::string& a_line, int len, int ws,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   std::string result = "";
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   std::vector<std::string> words;
-  Timbl::ValueDistribution::dist_iterator it;
+  Timbl::ClassDistribution::dist_iterator it;
 
   MTRand mtrand;
 
@@ -318,9 +318,9 @@ std::string generate_xml( std::string& a_line, int len, int ws,
 			  const std::string& end, std::string& id,
 			  Timbl::TimblAPI* My_Experiment ) {
 
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   std::vector<std::string> words;
-  Timbl::ValueDistribution::dist_iterator it;
+  Timbl::ClassDistribution::dist_iterator it;
 
   MTRand mtrand;
 

@@ -100,7 +100,7 @@ class Classifier {
   std::vector<std::string> words;
 #ifdef TIMBL
   Timbl::TimblAPI       *My_Experiment;
-  const Timbl::ValueDistribution *vd;
+  const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
 #endif
 
@@ -227,7 +227,7 @@ class Classifier {
 	classification.cnt = vd->size(); // size of distr.
 	classification.distr_count = vd->totalSize(); // sum of freqs in distr.
 
-	Timbl::ValueDistribution::dist_iterator it = vd->begin();
+	Timbl::ClassDistribution::dist_iterator it = vd->begin();
 	while ( it != vd->end() ) {
 	  std::string tvs  = it->second->Value()->name_string();
 	  long        wght = it->second->Weight(); // absolute frequency.
@@ -338,7 +338,7 @@ class Classifier {
     classification.entropy = 0.0;
 
     // Timbl distr is unsorted...
-    Timbl::ValueDistribution::dist_iterator it = vd->begin();
+    Timbl::ClassDistribution::dist_iterator it = vd->begin();
     long classification_freq = 0.0;
     std::map<long, long, std::greater<long> > dfreqs;
     /*
