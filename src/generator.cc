@@ -79,7 +79,7 @@ int generate( Logfile& l, Config& c ) {
   const std::string  start            = c.get_value( "start", "" );
   const std::string  filename         = c.get_value( "filename", to_str(getpid()) );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
-  const std::string& timbl            = c.get_value( "timbl" );
+  const std::string& timbl_val        = c.get_value( "timbl" );
   const std::string  end              = c.get_value( "end", "." );
   int                ws               = my_stoi( c.get_value( "ws", "3" ));
   int                mode             = my_stoi( c.get_value( "mode", "1" ));
@@ -93,7 +93,7 @@ int generate( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "ws:         "+to_str(ws) );
   l.log( "mode:       "+to_str(mode) );
   l.log( "start:      "+start );
@@ -106,7 +106,7 @@ int generate( Logfile& l, Config& c ) {
   l.dec_prefix();
 
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -315,7 +315,8 @@ std::string generate_one( std::string& a_line, int len, int ws,
 // returns one sentence of length len.
 //
 std::string generate_xml( std::string& a_line, int len, int ws,
-			  const std::string& end, std::string& id,
+			  const std::string& end,
+			  const std::string& id,
 			  Timbl::TimblAPI* My_Experiment ) {
 
   const Timbl::ClassDistribution *vd;
@@ -444,7 +445,7 @@ int generate_server( Logfile& l, Config& c ) {
   const std::string  port             = c.get_value( "port", "1988" );
   std::string        start            = c.get_value( "start", "" );
   const std::string& ibasefile        = c.get_value( "ibasefile" );
-  const std::string& timbl            = c.get_value( "timbl" );
+  const std::string& timbl_val        = c.get_value( "timbl" );
   const std::string& end              = c.get_value( "end", "" );
   int                lc               = my_stoi( c.get_value( "lc", "2" ));
   int                rc               = my_stoi( c.get_value( "rc", "0" ));
@@ -459,7 +460,7 @@ int generate_server( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "port:       "+port );
   l.log( "ibasefile:  "+ibasefile );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "lc:         "+to_str(lc) );
   l.log( "rc:         "+to_str(rc) );
   l.log( "end:        "+end ); // end marker of sentences
@@ -468,7 +469,7 @@ int generate_server( Logfile& l, Config& c ) {
   l.dec_prefix();
 
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -486,13 +487,13 @@ int generate_server( Logfile& l, Config& c ) {
 
   // ----
 
-  Sockets::ServerSocket server;
+  Sockets::ServerSocket server_sock;
 
-  if ( ! server.connect( port )) {
-    l.log( "ERROR: cannot start server: "+server.getMessage() );
+  if ( ! server_sock.connect( port )) {
+    l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
     return 1;
   }
-  if ( ! server.listen() ) {
+  if ( ! server_sock.listen() ) {
     l.log( "ERROR: cannot listen. ");
     return 1;
   };
@@ -507,11 +508,11 @@ int generate_server( Logfile& l, Config& c ) {
   while ( true ) {
 
     Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-    if ( !server.accept( *newSock ) ) {
+    if ( !server_sock.accept( *newSock ) ) {
       if( errno == EINTR ) {
 	continue;
       } else {
-	l.log( "ERROR: " + server.getMessage() );
+	l.log( "ERROR: " + server_sock.getMessage() );
 	return 1;
       }
     }

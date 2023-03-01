@@ -105,10 +105,10 @@ int range_from_lex( Logfile& l, Config& c ) {
   std::vector<int>::iterator wfi;
   while ( file_lexicon >> a_word >> wfreq ) {
     freqs_list[wfreq] = 1;
-    lex_elem l;
-    l.name = a_word;
-    l.freq = wfreq;
-    lex_vec.push_back( l );
+    lex_elem le;
+    le.name = a_word;
+    le.freq = wfreq;
+    lex_vec.push_back( le );
   }
   file_lexicon.close();
   l.log( "Read lexicon." );
@@ -384,9 +384,9 @@ int lcontext( Logfile& l, Config& c ) {
       // before the instance. We should have a start-pause (# of instances)
       // before we start adding gc?
     }
-    for( size_t i = start; i < words.size(); i++ ) {
+    for( size_t index = start; i < words.size(); i++ ) {
 
-      std::string wrd = words.at(i);
+      std::string wrd = words.at(index);
 
       ri = range.find( wrd ); // word in data is in .rng list?
       if ( ri != range.end() ) {
@@ -416,9 +416,9 @@ int lcontext( Logfile& l, Config& c ) {
 	  // else 0. Then instead of push_front we insert at right
 	  // position.
 	  //
-	  int pos = (*ri).second - 1; // gcs must be big enough!
-	  //l.log( "binary gc pos="+to_str(pos)+" "+wrd );
-	  global_context.at( pos ) = gce;
+	  int pos_i = (*ri).second - 1; // gcs must be big enough!
+	  //l.log( "binary gc pos="+to_str(pos_i)+" "+wrd );
+	  global_context.at( pos_i ) = gce;
 	} else if ( gct == 2 ) { // hashed type
 	  // just save the pre-calculated version.
 	  global_context.push_front( gce );
@@ -501,8 +501,8 @@ int lcontext( Logfile& l, Config& c ) {
   std::string stats_filename = output_filename + ".stats";
   file_out.open( stats_filename.c_str(), std::ios::out );
   if ( file_out ) {
-    for ( const auto& ri : range_stats ) {
-      file_out << ri.first << "\t" <<  ri.second << std::endl;
+    for ( const auto& rit : range_stats ) {
+      file_out << rit.first << "\t" <<  rit.second << std::endl;
     }
     file_out.close();
   }
@@ -663,9 +663,9 @@ int occgaps( Logfile& l, Config& c ) {
       double ogrps = 0; // single large gaps are a group
       double sgaps = 0; // small gaps
       double lgaps = 0; // large gaps
-      for( size_t i = 0; i < vv.size()-1; i++ ) {
+      for( size_t j = 0; j < vv.size()-1; j++ ) {
 	// only if gap < 200 for the stats?
-	long this_gap = vv.at(i+1)-vv.at(i)-1;
+	long this_gap = vv.at(j+1)-vv.at(j)-1;
 	if ( this_gap < gap ) {
 	  if ( ! inside ) {
 	    inside = true;

@@ -68,7 +68,7 @@ int focus( Logfile& l, Config& c ) {
   int                numeric_files   = my_stoi( c.get_value( "nf", "-1" ));
   std::string        id              = c.get_value( "id", "" );
   std::string        dflt            = c.get_value( "default", "dflt" );
-  std::string        timbl           = c.get_value( "timbl", "no" );
+  std::string        timbl_val       = c.get_value( "timbl", "no" );
   bool               skip_create     = my_stoi( c.get_value( "sc", "0" )) == 1;
 
   std::string        output_filename = filename + ".fcs"+to_str(fco);
@@ -98,8 +98,8 @@ int focus( Logfile& l, Config& c ) {
   }
   l.log( "id:         "+id );
   l.log( "default:    "+dflt );
-  if ( timbl != "no" ) {
-    l.log( "timbl:      "+timbl );
+  if ( timbl_val != "no" ) {
+    l.log( "timbl:      "+timbl_val );
   }
   l.log( "sc:         "+to_str(skip_create) ); // skip creation of data sets
   l.log( "OUTPUT:     "+output_filename );
@@ -267,7 +267,7 @@ int focus( Logfile& l, Config& c ) {
   //
 #ifdef TIMBL
 
-  if ( timbl != "no" ) { // We skip kvs and ibase creation is so desired
+  if ( timbl_val != "no" ) { // We skip kvs and ibase creation is so desired
     std::ofstream kvs_out( kvs_filename, std::ios::out );
     if ( ! kvs_out ) {
       l.log( "ERROR: cannot write kvs output file." );
@@ -277,10 +277,10 @@ int focus( Logfile& l, Config& c ) {
     Timbl::TimblAPI       *My_Experiment;
     for ( const auto& ofi : output_files ) {
       std::string focus_word      = ofi.first;
-      std::string output_filename = ofi.second;
+      std::string out_filename = ofi.second;
 
-      std::string t_ext = timbl;
-      std::string ibase_filename = output_filename;
+      std::string t_ext = timbl_val;
+      std::string ibase_filename = out_filename;
       bool dataset_ok = true;
 
       bool skip_dflt = false;
@@ -294,13 +294,13 @@ int focus( Logfile& l, Config& c ) {
       }
       ibase_filename = ibase_filename+".ibase";
 
-      l.log( output_filename+"/"+ibase_filename );
+      l.log( out_filename+"/"+ibase_filename );
 
       if ( ! file_exists( l, c, ibase_filename ) ) {
-		if ( file_exists( l, c, output_filename ) ) {
+		if ( file_exists( l, c, out_filename ) ) {
 		  if ( ! skip_dflt ) {
-			My_Experiment = new Timbl::TimblAPI( timbl );
-			(void)My_Experiment->Learn( output_filename );
+			My_Experiment = new Timbl::TimblAPI( timbl_val );
+			(void)My_Experiment->Learn( out_filename );
 			My_Experiment->WriteInstanceBase( ibase_filename );
 			delete My_Experiment;
 		  } else {
@@ -322,7 +322,7 @@ int focus( Logfile& l, Config& c ) {
 
 		  kvs_out << "classifier:" << focus_word << std::endl;
 		  kvs_out << "ibasefile:" << ibase_filename << std::endl;
-		  kvs_out << "timbl:" << timbl << std::endl;
+		  kvs_out << "timbl:" << timbl_val << std::endl;
 		  if ( fmode != 0 ) { // what for 0?
 			if ( focus_word == dflt ) {
 			  kvs_out << "gatedefault:1" << std::endl;

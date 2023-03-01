@@ -70,18 +70,18 @@ struct my_cached_distr {
     return cnt > rhs.cnt;
   }
 };
-int gen_test( Logfile& l, Config& c ) {
+int gen_test( Logfile& l, Config& cf ) {
   l.log( "gt" );
-  const std::string& filename         = c.get_value( "filename" );//testfile
-  std::string        dirname          = c.get_value( "dir", "" );
-  std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
-  const std::string& ibasefile        = c.get_value( "ibasefile" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  std::string        id               = c.get_value( "id", to_str(getpid()) );
-  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
-  int                cache_size       = my_stoi( c.get_value( "cache", "3" ) );
-  int                cache_threshold  = my_stoi( c.get_value( "cth", "25000" ) );
-  int                cs               = my_stoi( c.get_value( "cs", "10000" ) );
+  const std::string& filename         = cf.get_value( "filename" );//testfile
+  std::string        dirname          = cf.get_value( "dir", "" );
+  std::string        dirmatch         = cf.get_value( "dirmatch", ".*" );
+  const std::string& ibasefile        = cf.get_value( "ibasefile" );
+  const std::string& timbl_val        = cf.get_value( "timbl" );
+  std::string        id               = cf.get_value( "id", to_str(getpid()) );
+  int                topn             = my_stoi( cf.get_value( "topn", "0" ) );
+  int                cache_size       = my_stoi( cf.get_value( "cache", "3" ) );
+  int                cache_threshold  = my_stoi( cf.get_value( "cth", "25000" ) );
+  int                cs               = my_stoi( cf.get_value( "cs", "10000" ) );
 
   Timbl::TimblAPI   *My_Experiment;
 
@@ -109,7 +109,7 @@ int gen_test( Logfile& l, Config& c ) {
     l.log( "dirmatch:        "+dirmatch );
   }
   l.log( "ibasefile:      "+ibasefile );
-  l.log( "timbl:          "+timbl );
+  l.log( "timbl:          "+timbl_val );
   l.log( "topn:           "+to_str(topn) );
   l.log( "cache:          "+to_str(cache_size) );
   l.log( "cache threshold:"+to_str(cache_threshold) );
@@ -142,7 +142,7 @@ int gen_test( Logfile& l, Config& c ) {
   for ( const auto& a_file : filenames ) {
     std::string output_filename  = a_file + id + ".gt";
 
-    if (file_exists(l,c,output_filename)) {
+    if (file_exists(l,cf,output_filename)) {
       //l.log( "Output for "+a_file+" exists, removing from list." );
       --numfiles;
     }
@@ -156,7 +156,7 @@ int gen_test( Logfile& l, Config& c ) {
   // Load instance base
   //
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       delete cache;
@@ -184,9 +184,9 @@ int gen_test( Logfile& l, Config& c ) {
     l.log( "Processing: "+a_file );
     l.log( "OUTPUT:     "+output_filename );
 
-    if ( file_exists(l,c,output_filename) ) {
+    if ( file_exists(l,cf,output_filename) ) {
       l.log( "OUTPUT file exist, not overwriting." );
-      c.add_kv( "gt_file", output_filename );
+      cf.add_kv( "gt_file", output_filename );
       l.log( "SET gt_file to "+output_filename );
       continue;
     }
@@ -493,7 +493,7 @@ int gen_test( Logfile& l, Config& c ) {
 
     l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
 
-    c.add_kv( "gt_file", output_filename );
+    cf.add_kv( "gt_file", output_filename );
     l.log( "SET gt_file to "+output_filename );
 
     l.dec_prefix();

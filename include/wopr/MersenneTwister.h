@@ -85,7 +85,7 @@ protected:
 //Methods
 public:
 	explicit MTRand( const uint32& oneSeed );  // initialize with a simple uint32
-	MTRand( uint32 *const bigSeed, uint32 const seedLength = N );  // or an array
+	explicit MTRand( uint32 *const bigSeed, uint32 const seedLength = N );  // or an array
 	MTRand();  // auto-initialize with /dev/urandom or time() and clock()
 
 	// Do NOT use for CRYPTOGRAPHY without securely hashing several returned

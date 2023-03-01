@@ -102,7 +102,7 @@ class Cache {
 	ce->listpos = --(cache_list.end()); // update pointer
 	++reinserts;
       } else {
-	cache_elem *ce = new cache_elem( b ); // create new element
+	ce = new cache_elem( b ); // create new element
 	cache[ a ] = ce;
 	cache_list.push_back( a );            // insert in the cache
 	ce->listpos = --(cache_list.end());   // update listpos

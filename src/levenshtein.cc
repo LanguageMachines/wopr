@@ -555,8 +555,8 @@ int correct( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& trigger_filename = c.get_value( "triggerfile", "" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const std::string& timbl_val        = c.get_value( "timbl" );
+  const int          hapax_val        = my_stoi( c.get_value( "hpx", "0" ));
   const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
   const int          lc               = my_stoi( c.get_value( "lc", "2" ));
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
@@ -603,9 +603,9 @@ int correct( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "triggerfile:"+trigger_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "id:         "+id );
-  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "hapax:      "+to_str(hapax_val) );
   l.log( "mode:       "+to_str(mode) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
@@ -689,7 +689,7 @@ int correct( Logfile& l, Config& c ) {
   }
 
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -728,7 +728,7 @@ int correct( Logfile& l, Config& c ) {
       if ( wfreq == 1 ) {
 	++N_1;
       }
-      if ( wfreq > hapax ) {
+      if ( wfreq > hapax_val ) {
 	hpxfreqs[a_word] = wfreq;
       }
     }
@@ -801,7 +801,7 @@ int correct( Logfile& l, Config& c ) {
     const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
-    int correct = 0;
+    int corrections = 0;
     int wrong   = 0;
     int correct_distr = 0;
 
@@ -834,7 +834,7 @@ int correct( Logfile& l, Config& c ) {
 
 		Tokenize( a_line, words, ' ' );
 
-		if ( hapax > 0 ) {
+		if ( hapax_val > 0 ) {
 		  (void)hapax_vector( words, hpxfreqs );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
@@ -902,7 +902,7 @@ int correct( Logfile& l, Config& c ) {
 		// (but we don't)
 
 		if ( target == answer ) {
-		  ++correct;
+		  ++corrections;
 		  correct_answer = true;
 		} else {
 		  ++wrong;
@@ -1041,8 +1041,8 @@ int correct( Logfile& l, Config& c ) {
 		  l.log( " sum_logprob = " + to_str( sum_logprob) );
 		  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
 		  double foo  = sum_logprob / (double)sentence_wordcount;
-		  double pplx = pow( 2, -foo );
-		  l.log( " pplx = " + to_str( pplx ) );
+		  double plx = pow( 2, -foo );
+		  l.log( " pplx = " + to_str( plx ) );
 		  sum_logprob = 0.0;
 		  sentence_wordcount = 0;
 		  l.log( "--" );
@@ -1056,21 +1056,21 @@ int correct( Logfile& l, Config& c ) {
       l.log( "sum_logprob = " + to_str( sum_logprob) );
       l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
-      double pplx = pow( 2, -foo );
-      l.log( "pplx = " + to_str( pplx ) );
+      double plx = pow( 2, -foo );
+      l.log( "pplx = " + to_str( plx ) );
     }
 
     file_out.close();
     file_in.close();
 
-    l.log( "Correct:       " + to_str(correct) );
+    l.log( "Correct:       " + to_str(corrections) );
     l.log( "Correct Distr: " + to_str(correct_distr) );
-    int correct_total = correct_distr+correct;
+    int correct_total = correct_distr+corrections;
     l.log( "Correct Total: " + to_str(correct_total) );
     l.log( "Wrong:         " + to_str(wrong) );
     if ( sentence_wordcount > 0 ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(corrections / (double)sentence_wordcount) );
     }
 
     c.add_kv( "sc_file", output_filename );
@@ -1101,8 +1101,8 @@ int tcorrect( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& trigger_filename = c.get_value( "triggerfile", "" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const std::string& timbl_val        = c.get_value( "timbl" );
+  const int          hapax_val        = my_stoi( c.get_value( "hpx", "0" ));
   const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
   const int          lc               = my_stoi( c.get_value( "lc", "2" ));
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
@@ -1152,9 +1152,9 @@ int tcorrect( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "triggerfile:"+trigger_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "id:         "+id );
-  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "hapax:      "+to_str(hapax_val) );
   l.log( "mode:       "+to_str(mode) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
@@ -1231,7 +1231,7 @@ int tcorrect( Logfile& l, Config& c ) {
   }
 
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -1270,7 +1270,7 @@ int tcorrect( Logfile& l, Config& c ) {
       if ( wfreq == 1 ) {
 		++N_1;
       }
-	  if ( wfreq > hapax ) {
+	  if ( wfreq > hapax_val ) {
 		hpxfreqs[a_word] = wfreq;
 	  }
     }
@@ -1350,7 +1350,7 @@ int tcorrect( Logfile& l, Config& c ) {
     const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
-    int correct = 0;
+    int corrections = 0;
     int wrong   = 0;
     int correct_distr = 0;
 
@@ -1383,7 +1383,7 @@ int tcorrect( Logfile& l, Config& c ) {
 
 		Tokenize( a_line, words, ' ' );
 
-		if ( hapax > 0 ) {
+		if ( hapax_val > 0 ) {
 		  (void)hapax_vector( words, hpxfreqs );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
@@ -1452,7 +1452,7 @@ int tcorrect( Logfile& l, Config& c ) {
 		// (but we don't)
 
 		if ( target == answer ) {
-		  ++correct;
+		  ++corrections;
 		  correct_answer = true;
 		} else {
 		  ++wrong;
@@ -1599,8 +1599,8 @@ int tcorrect( Logfile& l, Config& c ) {
 		  l.log( " sum_logprob = " + to_str( sum_logprob) );
 		  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
 		  double foo  = sum_logprob / (double)sentence_wordcount;
-		  double pplx = pow( 2, -foo );
-		  l.log( " pplx = " + to_str( pplx ) );
+		  double plx = pow( 2, -foo );
+		  l.log( " pplx = " + to_str( plx ) );
 		  sum_logprob = 0.0;
 		  sentence_wordcount = 0;
 		  l.log( "--" );
@@ -1614,22 +1614,22 @@ int tcorrect( Logfile& l, Config& c ) {
       l.log( "sum_logprob = " + to_str( sum_logprob) );
       l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
-      double pplx = pow( 2, -foo );
-      l.log( "pplx = " + to_str( pplx ) );
+      double plx = pow( 2, -foo );
+      l.log( "pplx = " + to_str( plx ) );
     }
 
     log_out.close();
     file_out.close();
     file_in.close();
 
-    l.log( "Correct:       " + to_str(correct) );
+    l.log( "Correct:       " + to_str(corrections) );
     l.log( "Correct Distr: " + to_str(correct_distr) );
-    int correct_total = correct_distr+correct;
+    int correct_total = correct_distr+corrections;
     l.log( "Correct Total: " + to_str(correct_total) );
     l.log( "Wrong:         " + to_str(wrong) );
     if ( sentence_wordcount > 0 ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(corrections / (double)sentence_wordcount) );
     }
 
     c.add_kv( "sc_file", output_filename );
@@ -1662,7 +1662,7 @@ int tcorrect( Logfile& l, Config& c ) {
 int server_sc( Logfile& l, Config& c ) {
   l.log( "server spelling correction" );
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val  = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
@@ -1683,16 +1683,16 @@ int server_sc( Logfile& l, Config& c ) {
   // ratio target_lexfreq:tvs_lexfreq
   double             min_ratio        = my_stod( c.get_value( "min_ratio", "0" ));
   const std::string empty        = c.get_value( "empty", "__EMPTY__" );
-  const int hapax                   = my_stoi( c.get_value( "hpx", "0" ));
+  const int hapax_val            = my_stoi( c.get_value( "hpx", "0" ));
 
   l.inc_prefix();
   l.log( "ibasefile:  "+ibasefile );
   l.log( "port:       "+port );
   l.log( "keep:       "+to_str(keep) ); // keep conn. open after sending result
   l.log( "verbose:    "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:      "+timbl ); // timbl settings
+  l.log( "timbl:      "+timbl_val ); // timbl settings
   l.log( "lexicon     "+lexicon_filename ); // the lexicon
-  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "hapax:      "+to_str(hapax_val) );
   l.log( "cache_size: "+to_str(cachesize) ); // size of the cache
   l.log( "mwl:        "+to_str(mwl) );
   l.log( "mld:        "+to_str(mld) );
@@ -1711,7 +1711,7 @@ int server_sc( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
   }
-  // Read the lexicon with word frequencies, freq > hapax.
+  // Read the lexicon with word frequencies, freq > hapax_val.
   //
   l.log( "Reading lexicon." );
   std::string a_word;
@@ -1729,7 +1729,7 @@ int server_sc( Logfile& l, Config& c ) {
     if ( wfreq == 1 ) {
       ++N_1;
     }
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       hpxfreqs[a_word] = wfreq;
       ++hpx_entries;
     }
@@ -1743,17 +1743,17 @@ int server_sc( Logfile& l, Config& c ) {
   signal(SIGCHLD, SIG_IGN);
 
   try {
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     volatile sig_atomic_t running = 1;
@@ -1761,11 +1761,11 @@ int server_sc( Logfile& l, Config& c ) {
       l.log( "Listening..." );
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -1843,7 +1843,7 @@ int server_sc( Logfile& l, Config& c ) {
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
 
-	    if ( hapax > 0 ) {
+	    if ( hapax_val > 0 ) {
 	      (void)hapax_vector( words, hpxfreqs );
 	      std::string t;
 	      vector_to_string(words, t);
@@ -1867,8 +1867,7 @@ int server_sc( Logfile& l, Config& c ) {
 	      target_lexfreq =  (int)(*wfi).second; // Take lexfreq
 	    }
 
-	    double distance;
-	    tv = My_Experiment->Classify( classify_line, vd, distance );
+	    tv = My_Experiment->Classify( classify_line, vd );
 	    if ( ! tv ) {
 	      l.log("ERROR: Timbl returned a classification error, aborting.");
 	      break;
@@ -2067,7 +2066,7 @@ int server_sc( Logfile& l, Config& c ) {
 int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "server spelling correction, non forking." );
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val   = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   const int verbose             = my_stoi( c.get_value( "verbose", "0" ));
@@ -2095,7 +2094,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
   l.log( "port:       "+port );
   l.log( "keep:       "+to_str(keep) ); // keep conn. open after sending result
   l.log( "verbose:    "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:      "+timbl ); // timbl settings
+  l.log( "timbl:      "+timbl_val ); // timbl settings
   l.log( "lexicon     "+lexicon_filename ); // the lexicon
   l.log( "cache_size: "+to_str(cachesize) ); // size of the cache
   l.log( "mwl:        "+to_str(mwl) );
@@ -2107,7 +2106,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
   // To be implemented later (maybe)
   //
-  int hapax = 0;
+  int hapx = 0;
 
   const char sep = '\t';
 
@@ -2118,7 +2117,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
   }
-  // Read the lexicon with word frequencies, freq > hapax.
+  // Read the lexicon with word frequencies, freq > hapax_val.
   //
   l.log( "Reading lexicon." );
   std::string a_word;
@@ -2135,7 +2134,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
     if ( wfreq == 1 ) {
       ++N_1;
     }
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapx ) {
       ++hpx_entries;
     }
   }
@@ -2155,31 +2154,31 @@ int server_sc_nf( Logfile& l, Config& c ) {
 
   try {
 
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       delete cache;
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       delete cache;
       return 1;
     };
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     while ( true ) {  // main accept() loop
       l.log( "Listening..." );
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	}
 	else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  delete cache;
 	  return 1;
 	}
@@ -2252,7 +2251,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	  words.clear();
 	  Tokenize( classify_line, words, ' ' );
 
-	  /*if ( hapax > 0 ) {
+	  /*if ( hapx > 0 ) {
 	    int c = hapax_vector( words, hpxfreqs );
 	    std::string t;
 	    vector_to_string(words, t);
@@ -2276,8 +2275,7 @@ int server_sc_nf( Logfile& l, Config& c ) {
 	    target_lexfreq =  (int)(*wfi).second; // Take lexfreq
 	  }
 
-	  double distance;
-	  tv = My_Experiment->Classify( classify_line, vd, distance );
+	  tv = My_Experiment->Classify( classify_line, vd );
 	  if ( ! tv ) {
 	    l.log("ERROR: Timbl returned a classification error, aborting.");
 	    break;
@@ -2469,8 +2467,8 @@ int mcorrect( Logfile& l, Config& c ) {
   std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const std::string& timbl_val        = c.get_value( "timbl" );
+  const int          hapax_val        = my_stoi( c.get_value( "hpx", "0" ));
   const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
   const int          lc               = my_stoi( c.get_value( "lc", "2" ));
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
@@ -2519,9 +2517,9 @@ int mcorrect( Logfile& l, Config& c ) {
   l.log( "configfile: "+configfile );
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "id:         "+id );
-  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "hapax:      "+to_str(hapax_val) );
   l.log( "mode:       "+to_str(mode) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
   l.log( "rc:         "+to_str(rc) ); // right context size for windowing
@@ -2599,7 +2597,7 @@ int mcorrect( Logfile& l, Config& c ) {
       if ( wfreq == 1 ) {
 	++N_1;
       }
-      if ( wfreq > hapax ) {
+      if ( wfreq > hapax_val ) {
 	hpxfreqs[a_word] = wfreq;
       }
     }
@@ -2638,7 +2636,7 @@ int mcorrect( Logfile& l, Config& c ) {
       l.log( "EXPERT: "+ibf );
       Expert *e = new Expert("a", 1);
       e->set_ibasefile(ibf);
-      e->set_timbl( timbl );
+      e->set_timbl( timbl_val );
       e->init();
       int hi_freq = 0;
       for ( size_t i = 1; i < words.size(); i++ ) {
@@ -2727,7 +2725,7 @@ int mcorrect( Logfile& l, Config& c ) {
     const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
-    int correct = 0;
+    int corrections = 0;
     int wrong   = 0;
     int correct_distr = 0;
 
@@ -2766,7 +2764,7 @@ int mcorrect( Logfile& l, Config& c ) {
 
 		Tokenize( a_line, words, ' ' );
 
-		if ( hapax > 0 ) {
+		if ( hapax_val > 0 ) {
 		  (void)hapax_vector( words, hpxfreqs );
 		  vector_to_string(words, a_line);
 		  a_line = trim( a_line );
@@ -2844,7 +2842,7 @@ int mcorrect( Logfile& l, Config& c ) {
 		//bool   mal = 0; //My_Experiment->matchedAtLeaf();
 
 		if ( target == answer ) {
-		  ++correct;
+		  ++corrections;
 		  correct_answer = true;
 		} else {
 		  ++wrong;
@@ -2995,8 +2993,8 @@ int mcorrect( Logfile& l, Config& c ) {
 		  l.log( " sum_logprob = " + to_str( sum_logprob) );
 		  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
 		  double foo  = sum_logprob / (double)sentence_wordcount;
-		  double pplx = pow( 2, -foo );
-		  l.log( " pplx = " + to_str( pplx ) );
+		  double plx = pow( 2, -foo );
+		  l.log( " pplx = " + to_str( plx ) );
 		  sum_logprob = 0.0;
 		  sentence_wordcount = 0;
 		  l.log( "--" );
@@ -3010,21 +3008,21 @@ int mcorrect( Logfile& l, Config& c ) {
       l.log( "sum_logprob = " + to_str( sum_logprob) );
       l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
-      double pplx = pow( 2, -foo );
-      l.log( "pplx = " + to_str( pplx ) );
+      double plx = pow( 2, -foo );
+      l.log( "pplx = " + to_str( plx ) );
     }
 
     file_out.close();
     file_in.close();
 
-    l.log( "Correct:       " + to_str(correct) );
+    l.log( "Correct:       " + to_str(corrections) );
     l.log( "Correct Distr: " + to_str(correct_distr) );
-    int correct_total = correct_distr+correct;
+    int correct_total = correct_distr+corrections;
     l.log( "Correct Total: " + to_str(correct_total) );
     l.log( "Wrong:         " + to_str(wrong) );
     if ( sentence_wordcount > 0 ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(corrections / (double)sentence_wordcount) );
     }
 
     // print call statistics for triggers.
@@ -3058,8 +3056,8 @@ int cmcorrect( Logfile& l, Config& c ) {
   std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const std::string& timbl_val        = c.get_value( "timbl" );
+  const int          hapax_val        = my_stoi( c.get_value( "hpx", "0" ));
   const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
   const int          lc               = my_stoi( c.get_value( "lc", "2" ));
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
@@ -3090,9 +3088,9 @@ int cmcorrect( Logfile& l, Config& c ) {
   l.log( "configfile: "+configfile );
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "id:         "+id );
-  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "hapax:      "+to_str(hapax_val) );
   l.log( "mode:       "+to_str(mode) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
@@ -3161,7 +3159,7 @@ int cmcorrect( Logfile& l, Config& c ) {
       if ( wfreq == 1 ) {
 	++N_1;
       }
-      if ( wfreq > hapax ) {
+      if ( wfreq > hapax_val ) {
 	hpxfreqs[a_word] = wfreq;
       }
     }
@@ -3200,7 +3198,7 @@ int cmcorrect( Logfile& l, Config& c ) {
       l.log( "EXPERT: "+ibf );
       Expert *e = new Expert("a", 1);
       e->set_ibasefile(ibf);
-      e->set_timbl( timbl );
+      e->set_timbl( timbl_val );
       e->init();
       for ( size_t i = 1; i < words.size(); i++ ) {
 	std::string tr = words[i];
@@ -3284,7 +3282,7 @@ int cmcorrect( Logfile& l, Config& c ) {
     const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
-    int correct = 0;
+    int corrections = 0;
     int wrong   = 0;
     int correct_distr = 0;
 
@@ -3322,7 +3320,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 
 	Tokenize( a_line, words, ' ' );
 
-	if ( hapax > 0 ) {
+	if ( hapax_val > 0 ) {
 	  (void)hapax_vector( words, hpxfreqs );
 	  vector_to_string(words, a_line);
 	  a_line = trim( a_line );
@@ -3394,7 +3392,7 @@ int cmcorrect( Logfile& l, Config& c ) {
 	//bool   mal = 0; //My_Experiment->matchedAtLeaf();
 
 	if ( target == answer ) {
-	  ++correct;
+	  ++corrections;
 	  correct_answer = true;
 	} else {
 	  ++wrong;
@@ -3520,8 +3518,8 @@ int cmcorrect( Logfile& l, Config& c ) {
 	  l.log( " sum_logprob = " + to_str( sum_logprob) );
 	  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
 	  double foo  = sum_logprob / (double)sentence_wordcount;
-	  double pplx = pow( 2, -foo );
-	  l.log( " pplx = " + to_str( pplx ) );
+	  double plx = pow( 2, -foo );
+	  l.log( " pplx = " + to_str( plx ) );
 	  sum_logprob = 0.0;
 	  sentence_wordcount = 0;
 	  l.log( "--" );
@@ -3535,28 +3533,28 @@ int cmcorrect( Logfile& l, Config& c ) {
       l.log( "sum_logprob = " + to_str( sum_logprob) );
       l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
-      double pplx = pow( 2, -foo );
-      l.log( "pplx = " + to_str( pplx ) );
+      double plx = pow( 2, -foo );
+      l.log( "pplx = " + to_str( plx ) );
     }
 
     log_out.close();
     file_out.close();
     file_in.close();
 
-    l.log( "Correct:       " + to_str(correct) );
+    l.log( "Correct:       " + to_str(corrections) );
     l.log( "Correct Distr: " + to_str(correct_distr) );
-    int correct_total = correct_distr+correct;
+    int correct_total = correct_distr+corrections;
     l.log( "Correct Total: " + to_str(correct_total) );
     l.log( "Wrong:         " + to_str(wrong) );
     if ( sentence_wordcount > 0 ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(corrections / (double)sentence_wordcount) );
     }
 
     // print call statistics for triggers.
     //
-    for ( const auto& c : called ) {
-      l.log( c.first+": "+to_str(c.second) );
+    for ( const auto& call : called ) {
+      l.log( call.first+": "+to_str(call.second) );
     }
 
     c.add_kv( "sc_file", output_filename );
@@ -3579,7 +3577,9 @@ int cmcorrect( Logfile& l, Config& c ) {
 
 // Only leave in distr_vec what is in vd and a_set.
 // Used in sml.
-double filter_dist( const Timbl::ClassDistribution *vd, std::vector<std::string>& a_set, std::vector<distr_elem*>& distr_vec) {
+double filter_dist( const Timbl::ClassDistribution *vd,
+		    const std::vector<std::string>& a_set,
+		    std::vector<distr_elem*>& distr_vec) {
 
   int    cnt         = 0;
   double distr_count = 0;
@@ -3639,8 +3639,8 @@ int sml( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& trigger_filename = c.get_value( "triggerfile", "" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  const int          hapax            = my_stoi( c.get_value( "hpx", "0" ));
+  const std::string& timbl_val        = c.get_value( "timbl" );
+  const int          hapax_val        = my_stoi( c.get_value( "hpx", "0" ));
   const int          mode             = my_stoi( c.get_value( "mode", "0" )); // mode:0 is windowed, mode:1 is plain text
   const int          lc               = my_stoi( c.get_value( "lc", "2" ));
   const int          rc               = my_stoi( c.get_value( "rc", "0" ));
@@ -3676,9 +3676,9 @@ int sml( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "triggerfile:"+trigger_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "id:         "+id );
-  l.log( "hapax:      "+to_str(hapax) );
+  l.log( "hapax:      "+to_str(hapax_val) );
   l.log( "mode:       "+to_str(mode) );
   l.log( "topn:       "+to_str(topn) );
   l.log( "lc:         "+to_str(lc) ); // left context size for windowing
@@ -3789,7 +3789,7 @@ int sml( Logfile& l, Config& c ) {
   }
 
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -3828,7 +3828,7 @@ int sml( Logfile& l, Config& c ) {
       if ( wfreq == 1 ) {
 	++N_1;
       }
-      if ( wfreq > hapax ) {
+      if ( wfreq > hapax_val ) {
 	hpxfreqs[a_word] = wfreq;
       }
     }
@@ -3907,7 +3907,7 @@ int sml( Logfile& l, Config& c ) {
     std::string classify_line;
     const Timbl::ClassDistribution *vd;
     const Timbl::TargetValue *tv;
-    int correct = 0;
+    int corrections = 0;
     int wrong   = 0;
     int correct_distr = 0;
 
@@ -3940,7 +3940,7 @@ int sml( Logfile& l, Config& c ) {
 
 	Tokenize( a_line, words, ' ' );
 
-	if ( hapax > 0 ) {
+	if ( hapax_val > 0 ) {
 	  (void)hapax_vector( words, hpxfreqs );
 	  vector_to_string(words, a_line);
 	  a_line = trim( a_line );
@@ -4005,7 +4005,7 @@ int sml( Logfile& l, Config& c ) {
 	//bool   mal = My_Experiment->matchedAtLeaf();
 
 	if ( target == answer ) {
-	  ++correct;
+	  ++corrections;
 	  correct_answer = true;
 	} else {
 	  ++wrong;
@@ -4137,8 +4137,8 @@ int sml( Logfile& l, Config& c ) {
 	  l.log( " sum_logprob = " + to_str( sum_logprob) );
 	  l.log( " sentence_wordcount = " + to_str( sentence_wordcount ) );
 	  double foo  = sum_logprob / (double)sentence_wordcount;
-	  double pplx = pow( 2, -foo );
-	  l.log( " pplx = " + to_str( pplx ) );
+	  double plx = pow( 2, -foo );
+	  l.log( " pplx = " + to_str( plx ) );
 	  sum_logprob = 0.0;
 	  sentence_wordcount = 0;
 	  l.log( "--" );
@@ -4152,22 +4152,22 @@ int sml( Logfile& l, Config& c ) {
       l.log( "sum_logprob = " + to_str( sum_logprob) );
       l.log( "sentence_wordcount = " + to_str( sentence_wordcount ) );
       double foo  = sum_logprob / (double)sentence_wordcount;
-      double pplx = pow( 2, -foo );
-      l.log( "pplx = " + to_str( pplx ) );
+      double plx = pow( 2, -foo );
+      l.log( "pplx = " + to_str( plx ) );
     }
 
     log_out.close();
     file_out.close();
     file_in.close();
 
-    l.log( "Correct:       " + to_str(correct) );
+    l.log( "Correct:       " + to_str(corrections) );
     l.log( "Correct Distr: " + to_str(correct_distr) );
-    int correct_total = correct_distr+correct;
+    int correct_total = correct_distr+corrections;
     l.log( "Correct Total: " + to_str(correct_total) );
     l.log( "Wrong:         " + to_str(wrong) );
     if ( sentence_wordcount > 0 ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(corrections / (double)sentence_wordcount) );
     }
 
     c.add_kv( "sc_file", output_filename );

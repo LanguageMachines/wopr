@@ -39,7 +39,9 @@ int server_sc( Logfile&, Config& );
 int server_sc_nf( Logfile&, Config& );
 int mcorrect( Logfile&, Config& );
 int cmcorrect( Logfile&, Config& );
-double filter_dist( const Timbl::ClassDistribution*, std::vector<std::string>&, std::vector<distr_elem*>&);
+double filter_dist( const Timbl::ClassDistribution*,
+		    const std::vector<std::string>&,
+		    std::vector<distr_elem*>&);
 double copy_dist( const Timbl::ClassDistribution*, std::vector<distr_elem*>&);
 int sml( Logfile&, Config& );
 
