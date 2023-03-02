@@ -40,7 +40,9 @@ void last_word( std::string&, std::string& );
 void but_last_word( std::string&, std::string& );
 void split( std::string&, std::string&, std::string& );
 void split_tab( std::string&, std::string&, std::string&, std::string& );
-int ngram_one_line( std::string, int, std::map<std::string,double>&, std::vector<ngram_elem>&, 
+int ngram_one_line( const std::string&,
+		    int, std::map<std::string,double>&,
+		    std::vector<ngram_elem>&,
 		    std::vector<std::string>&, Logfile& );
 
 #endif

@@ -102,7 +102,7 @@ int ngram_list( Logfile& l, Config& c ) {
   std::string a_line;
   std::vector<std::string> results;
   std::map<std::string,ngl_elem> grams;
-  std::map<std::string,ngl_elem>::iterator gi;
+
   long sum_freq = 0;
 
   l.log( "Reading..." );
@@ -118,7 +118,7 @@ int ngram_list( Logfile& l, Config& c ) {
 	  if ( i == 1 ) {
 	    ++sum_freq;
 	  }
-	  gi = grams.find( cl );
+	  auto gi = grams.find( cl );
 	  if ( gi == grams.end() ) {
 	    ngl_elem e;
 	    e.freq    = 1;
@@ -166,7 +166,7 @@ int ngram_list( Logfile& l, Config& c ) {
   // n-gram frequency probability
   //
   for ( const auto& gi : grams ) {
-    std::string ngram = gi.first;
+    std::string ngram_val = gi.first;
     ngl_elem e = gi.second;
     if ( e.n == 1 ) { // unigram
       // srilm saves log10 of probability in its files.
@@ -174,20 +174,20 @@ int ngram_list( Logfile& l, Config& c ) {
       if ( log_base > 0 ) {
 	p = mylog(p); // save the logprob instead of the prob
       }
-      file_out << ngram << " " << e.freq << " "
+      file_out << ngram_val << " " << e.freq << " "
 	       << p << std::endl;
     } else if ( e.n > 1 ) {
       // filter before we calculate probs?
       if ( e.freq > fco ) { // for n > 1, only if > frequency cut off.
-	size_t pos = ngram.rfind( ' ' );
+	size_t pos = ngram_val.rfind( ' ' );
 	if ( pos != std::string::npos ) {
-	  std::string n_minus_1_gram = ngram.substr(0, pos);
+	  std::string n_minus_1_gram = ngram_val.substr(0, pos);
 	  ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
 	  double p = e.freq / (float)em1.freq;
 	  if ( log_base > 0 ) {
 	    p = mylog(p);
 	  }
-	  file_out << ngram << " " << e.freq << " "
+	  file_out << ngram_val << " " << e.freq << " "
 		   << p << std::endl;
 	}
       } // freq>1
@@ -231,7 +231,7 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
   std::string a_line;
   std::vector<std::string> results;
   std::map<std::string,ngl_elem> grams;
-  std::map<std::string,ngl_elem>::iterator gi;
+
   long sum_freq = 0;
 
   l.log( "Reading..." );
@@ -247,7 +247,7 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
 	  if ( i == 1 ) {
 	    ++sum_freq;
 	  }
-	  gi = grams.find( cl );
+	  auto gi = grams.find( cl );
 	  if ( gi == grams.end() ) {
 	    ngl_elem e;
 	    e.freq    = 1;
@@ -295,20 +295,20 @@ int OFF_ngram_list( Logfile& l, Config& c ) {
   // n-gram frequency probability
   //
   for ( const auto& gi : grams ) {
-    std::string ngram = gi.first;
+    std::string ngram_val = gi.first;
     ngl_elem e = gi.second;
     if ( e.n == 1 ) { // unigram
       // srilm saves log10 of probability in its files.
-      file_out << ngram << " " << e.freq << " "
+      file_out << ngram_val << " " << e.freq << " "
 	       << e.freq / (float)sum_freq << std::endl;
     } else if ( e.n > 1 ) {
       // filter before we calculate probs?
       if ( e.freq > fco ) { // for n > 1, only if > frequency cut off.
-	size_t pos = ngram.rfind( ' ' );
+	size_t pos = ngram_val.rfind( ' ' );
 	if ( pos != std::string::npos ) {
-	  std::string n_minus_1_gram = ngram.substr(0, pos);
+	  std::string n_minus_1_gram = ngram_val.substr(0, pos);
 	  ngl_elem em1 = grams[n_minus_1_gram]; // check if exists
-	  file_out << ngram << " " << e.freq << " "
+	  file_out << ngram_val << " " << e.freq << " "
 		   << e.freq / (float)em1.freq << std::endl;
 	}
       } // freq>1
@@ -361,7 +361,10 @@ void split( std::string& str, std::string& nmin1gram, std::string& lw ) {
 // empty strings. Only the outer tabs will be used in
 // the case of more tabs.
 //
-void split_tab( std::string& str, std::string& l, std::string& ngram, std::string& r ) {
+void split_tab( std::string& str,
+		std::string& l,
+		std::string& ngram,
+		std::string& r ) {
     size_t t0 = str.find( '\t' );
     size_t t1 = str.rfind( '\t' );
     if ( (t0 != std::string::npos) && (t1 != std::string::npos) ) {
@@ -482,7 +485,7 @@ int ngram_test( Logfile& l, Config& c ) {
   long lex_count = 0;
   long lex_sumf  = 0;
 
-  std::string ngram;
+  std::string ngram_val;
   std::string prob_str;
   std::string freq_str;
   long   freq;
@@ -538,24 +541,24 @@ int ngram_test( Logfile& l, Config& c ) {
 	// maybe with split_tab and a separate SRILM/WOPR mode?
 	replace( a_line.begin(), a_line.end(), '\t', ' ' );
 	Tokenize( a_line, results );
-	ngram.clear();
+	ngram_val.clear();
 	int offset = 2;  //2 for srilm, 3 for wopr
 	size_t i;
 	for ( i = 0; i < results.size()-offset; i++ ) {
-	  ngram = ngram + results.at(i) + " ";
+	  ngram_val = ngram_val + results.at(i) + " ";
 	}
-	ngram = ngram + results.at(i);
+	ngram_val = ngram_val + results.at(i);
 
 	++i;
 	freq = my_stol( results.at(i) );
-	srilm_ngrams[ngram] = freq;
-	//l.log( ngram + " / " + to_str(freq) );
+	srilm_ngrams[ngram_val] = freq;
+	//l.log( ngram_val + " / " + to_str(freq) );
 
 	// if UNIGRAM, process for lex RR!
 	//
 	if ( results.size() == 2 ) {
-	  //l.log( ngram + " / " + to_str(freq) );
-	  lex[ngram] = freq;
+	  //l.log( ngram_val + " / " + to_str(freq) );
+	  lex[ngram_val] = freq;
 	  lex_freqs[freq] += 1;
 	  lex_count += 1;
 	  lex_sumf += freq;
@@ -582,12 +585,12 @@ int ngram_test( Logfile& l, Config& c ) {
 
       std::string lp;
       std::string rp;
-      split_tab( a_line, lp, ngram, rp );
-      //l.log( lp+"/"+ngram+"/"+rp );
+      split_tab( a_line, lp, ngram_val, rp );
+      //l.log( lp+"/"+ngram_val+"/"+rp );
       l10prob = my_stod( lp );
       prob = pow( 10, l10prob );
       l2prob = l10prob * 0.3010299957;
-      sngi = srilm_ngrams.find( ngram );
+      sngi = srilm_ngrams.find( ngram_val );
       if ( (sngi == srilm_ngrams.end()) ) {
 	continue;
       }
@@ -626,7 +629,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	prob    = pow(2, l2prob );
       } else {
 	prob    = my_stod( prob_str );
-	if ( prob < 0 ) {
+	if ( prob <= 0 ) {
 	  l.log( a_line );
 	  l.log( "ERROR, not a valid probability." );
 	  file_ngl.close();
@@ -639,15 +642,15 @@ int ngram_test( Logfile& l, Config& c ) {
       pos1     = a_line.rfind(' ', pos-1);
       freq_str = a_line.substr(pos1+1, pos-pos1-1);
       freq     = my_stol( freq_str );
-      ngram    = a_line.substr(0, pos1);
-      //l.log( ngram+": "+freq_str+"/"+to_str(prob)+","+to_str(l10prob) );
+      ngram_val    = a_line.substr(0, pos1);
+      //l.log( ngram_val+": "+freq_str+"/"+to_str(prob)+","+to_str(l10prob) );
 
       // No spaces is UNIGRAM, process for lex RR
       //
-      pos = ngram.find(' ');
+      pos = ngram_val.find(' ');
       if ( pos == std::string::npos ) {
-	//l.log( ngram + " / " + freq_str );
-	lex[ngram] = freq;
+	//l.log( ngram_val + " / " + freq_str );
+	lex[ngram_val] = freq;
 	lex_freqs[freq] += 1;
 	lex_count += 1;
 	lex_sumf += freq;
@@ -659,7 +662,7 @@ int ngram_test( Logfile& l, Config& c ) {
     the_ngp.prob    = prob;
     the_ngp.l10prob = l10prob;
     the_ngp.l2prob  = l2prob;
-    ngrams[ngram]   = the_ngp; // was prob;
+    ngrams[ngram_val]   = the_ngp; // was prob;
 
     // foo
     // Can be optimised by remembering the "fooi" till we have a new
@@ -667,7 +670,7 @@ int ngram_test( Logfile& l, Config& c ) {
     //
     std::string res;
     std::string token;
-    split( ngram, res, token ); // "a b c" => "a b", "c"
+    split( ngram_val, res, token ); // "a b c" => "a b", "c"
     if ( token != "" ) {
       //l.log( ngram+"="+res+"/"+token );
 
@@ -888,7 +891,7 @@ int ngram_test( Logfile& l, Config& c ) {
 	ngd_out << target << " 0 0 0 0 0 [ ]" << std::endl;
       } else {
 	// dist
-	std::string ngram = (*ni).ngram;
+	std::string ngr = (*ni).ngram;
 	std::string left;
 	std::string out = target + " ";
 	if ( log_base == 10 ) {
@@ -898,8 +901,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	} else {
 	  out = out + to_str(p);
 	}
-	but_last_word( ngram, left );
-	if ( ngram != left ) { // if equal, one word: is lexical
+	but_last_word( ngr, left );
+	if ( ngr != left ) { // if equal, one word: is lexical
 	  std::vector<ngde> v = foo[left].distr;
 	  double dc = foo[left].distr_count;
 	  double ds = foo[left].distr_sum;
@@ -910,23 +913,23 @@ int ngram_test( Logfile& l, Config& c ) {
 	  long classification_freq = 0;
 	  std::map<long, long, std::greater<long> > dfreqs;
 	  for( const auto& vi : v ) {
-	    long freq = vi.freq; // SRILM has no freqs, only in counts file
-	    dfreqs[freq] += 1;
+	    long frq = vi.freq; // SRILM has no freqs, only in counts file
+	    dfreqs[frq] += 1;
 	    if ( vi.token == target ) { // position in distribution
-	      classification_freq = freq;
+	      classification_freq = frq;
 	    }
 	  }
-	  long   idx       = 1;
+	  long   indx       = 1;
 	  long   class_idx = 0;
 	  double class_rr = 0.0;
 	  std::map<long, long>::iterator dfi = dfreqs.begin();
 	  while ( dfi != dfreqs.end() ) {
 	    if ( dfi->first == classification_freq ) {
-	      class_idx = idx;
-	      class_rr = (double)1.0/idx;
+	      class_idx = indx;
+	      class_rr = (double)1.0/indx;
 	    }
 	    ++dfi;
-	    ++idx;
+	    ++indx;
 	  }
 	  out = out + " " + to_str(class_rr);
 	  sum_rr += class_rr;
@@ -941,8 +944,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	  auto vi = v.begin();
 	  out = out + " [";
 	  while ( (vi != v.end()) && (--cnt >= 0) ) {
-	    long freq = (*vi).freq;
-	    out = out + " " + (*vi).token+" "+to_str(freq);
+	    long frq = (*vi).freq;
+	    out = out + " " + (*vi).token+" "+to_str(frq);
 	    ++vi;
 	  }
 	  out = out + " ]";
@@ -962,8 +965,8 @@ int ngram_test( Logfile& l, Config& c ) {
 	      sli = sorted_lex.begin();
 	      out = out + " [";
 	      while ( (sli != sorted_lex.end()) && (--cnt >= 0) ) {
-		long freq = (*sli).freq;
-		out = out + " " + (*sli).token+" "+to_str(freq);
+		long frq = (*sli).freq;
+		out = out + " " + (*sli).token+" "+to_str(frq);
 		++sli;
 	      }
 	      out = out + " ]";
@@ -983,24 +986,24 @@ int ngram_test( Logfile& l, Config& c ) {
 		 << (*ni).ngram
 		 << std::endl;
 	/*l.log( results.at(wc) + ":" + to_str(p) + "/" + to_str((*ni).n)
-	  + "   " + (*ni).ngram );*/
+	  + "   " + (*ni).ngr );*/
 	H += l2p;
 	sum_l10p += l10p;
 	++wc;
       }
     }
-    double pplx   = 0.0;
+    double plx   = 0.0;
     //    double pplx10 = 0.0;
     if ( (wc-oov) > 0 ) {
-      pplx   = pow(  2, -H/(double)(wc-oov) );
+      plx   = pow(  2, -H/(double)(wc-oov) );
       //      pplx10 = pow( 10, -sum_l10p/(double)(wc-oov) );
     }
     ngp_out << H << " "
-	    << pplx << " "
+	    << plx << " "
 	    << wc << " "
 	    << oov << " "
 	    << a_line << std::endl;
-    // NB: pplx is in the end the same as SRILM, we takes log2 and pow(2)
+    // NB: plx is in the end the same as SRILM, we takes log2 and pow(2)
     // in our code, SRILM takes log10s and then pow(10) in the end.
 
     total_words    += wc;
@@ -1042,7 +1045,7 @@ int ngram_test( Logfile& l, Config& c ) {
   For use in the ngram server.
 */
 
-int ngram_one_line( std::string a_line,
+int ngram_one_line( const std::string& a_line,
 		    int n,
 		    std::map<std::string,double>& ngrams,
 		    std::vector<ngram_elem>& best_ngrams,
