@@ -111,18 +111,18 @@ int ngram_server(Logfile& l, Config& c) {
     std::string prob_str = a_line.substr(pos+1);
     double prob = my_stod( prob_str );
     size_t pos1 = a_line.rfind(' ', pos-1);
-    std::string ngram = a_line.substr(0, pos1);
-    ngrams[ngram] = prob;
+    std::string ngr = a_line.substr(0, pos1);
+    ngrams[ngr] = prob;
   }
   file_ngl.close();
 
-  Sockets::ServerSocket server;
+  Sockets::ServerSocket server_sock;
 
-  if ( ! server.connect( port )) {
-    l.log( "ERROR: cannot start server: "+server.getMessage() );
+  if ( ! server_sock.connect( port )) {
+    l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
     return 1;
   }
-  if ( ! server.listen() ) {
+  if ( ! server_sock.listen() ) {
     l.log( "ERROR: cannot listen. ");
     return 1;
   };
@@ -131,11 +131,11 @@ int ngram_server(Logfile& l, Config& c) {
   std::string buf;
   while ( true ) {
     Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-    if ( !server.accept( *newSock ) ) {
+    if ( !server_sock.accept( *newSock ) ) {
       if( errno == EINTR ) {
 	continue;
       } else {
-	l.log( "ERROR: " + server.getMessage() );
+	l.log( "ERROR: " + server_sock.getMessage() );
 	return 1;
       }
     }
@@ -167,12 +167,12 @@ int ngram_server(Logfile& l, Config& c) {
       for( ni = best_ngrams.begin()+sos; ni != best_ngrams.end(); ++ni ) {
 	double p = (*ni).p;
 	++wc;
-	std::string ngram = (*ni).ngram;
+	std::string ngr = (*ni).ngram;
 	if ( verbose > 1 ) {
-	  if ( ngram == "" ) {
-	    ngram = "<unk>";
+	  if ( ngr == "" ) {
+	    ngr = "<unk>";
 	  }
-	  l.log( ngram+"/"+to_str(p) ) ;
+	  l.log( ngr+"/"+to_str(p) ) ;
 	}
 	if ( p > 0 ) {
 	  sum_l10probs += log10( p );

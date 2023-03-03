@@ -115,7 +115,7 @@ int pdt( Logfile& l, Config& c ) {
   //const std::string& start           = c.get_value( "start", "" );
   const std::string  filename        = c.get_value( "filename", to_str(getpid()) ); // "test"file
   const std::string& ibasefile       = c.get_value( "ibasefile" );
-  const std::string& timbl           = c.get_value( "timbl" );
+  const std::string& timbl_val       = c.get_value( "timbl" );
   int                lc              = my_stoi( c.get_value( "lc", "2" ));
   int                rc              = my_stoi( c.get_value( "rc", "0" )); // should be 0
   std::string        ped             = c.get_value( "ds", "" ); // depths
@@ -154,7 +154,7 @@ int pdt( Logfile& l, Config& c ) {
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "lc:         "+to_str(lc) );
   l.log( "rc:         "+to_str(rc) );
   l.log( "mo:         "+to_str(matchesonly) );
@@ -162,7 +162,7 @@ int pdt( Logfile& l, Config& c ) {
   l.dec_prefix();
 
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -1419,13 +1419,13 @@ int pdt2web( Logfile& l, Config& c ) {
     }*/
 
 
-  Sockets::ServerSocket server;
+  Sockets::ServerSocket server_sock;
 
-  if ( ! server.connect( port )) {
-    l.log( "ERROR: cannot start server: "+server.getMessage() );
+  if ( ! server_sock.connect( port )) {
+    l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
     return 1;
   }
-  if ( ! server.listen() ) {
+  if ( ! server_sock.listen() ) {
     l.log( "ERROR: cannot listen. ");
     return 1;
   };
@@ -1460,11 +1460,11 @@ int pdt2web( Logfile& l, Config& c ) {
     l.log( "Listening..." );
 
     Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-    if ( !server.accept( *newSock ) ) {
+    if ( !server_sock.accept( *newSock ) ) {
       if( errno == EINTR ) {
 	continue;
       } else {
-	l.log( "ERROR: " + server.getMessage() );
+	l.log( "ERROR: " + server_sock.getMessage() );
 	return 1;
       }
     }
@@ -1519,7 +1519,7 @@ int pdt2web( Logfile& l, Config& c ) {
       }
       l.log( "Assigning "+to_str(num)+" to request." );
       TiXmlDocument res_doc;
-      TiXmlDeclaration *decl = new TiXmlDeclaration( "1.0", "", "" );
+      auto *decl = new TiXmlDeclaration( "1.0", "", "" );
       TiXmlElement     *element = new TiXmlElement( "result" );
       res_doc.LinkEndChild( decl );
       res_doc.LinkEndChild( element );
@@ -1529,7 +1529,7 @@ int pdt2web( Logfile& l, Config& c ) {
       newSock->write( ostr.str() );
     } else if ( buf == "INFO" ) {
       TiXmlDocument res_doc;
-      TiXmlDeclaration *decl = new TiXmlDeclaration( "1.0", "", "" );
+      auto *decl = new TiXmlDeclaration( "1.0", "", "" );
       TiXmlElement     *element = new TiXmlElement( "result" );
       res_doc.LinkEndChild( decl );
       res_doc.LinkEndChild( element );

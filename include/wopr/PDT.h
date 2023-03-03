@@ -235,7 +235,7 @@ class PDT {
   // Set the word depth(s) and length n from s. Vector is
   // needed for generate_tree().
   //
-  void set_wrd_ds( std::string s ) {
+  void set_wrd_ds( const std::string& s ) {
     ds = s;
     n = ds.length();
     wrd_depths.clear();
@@ -249,7 +249,7 @@ class PDT {
   // Set the letter depth(s), only one number, but we still
   // need the vector for generate_tree().
   //
-  void set_ltr_dl( std::string s ) {
+  void set_ltr_dl( const std::string& s ) {
     dl = my_stoi( s, 32 );
     ltr_depths.clear();
     ltr_depths.resize( 2, 1 );
@@ -345,7 +345,7 @@ class PDT {
 
   // For generation, we need this at least.
   //
-  void add_wrd( std::string& s ) {
+  void add_wrd( const std::string& s ) {
     wrd_ctx->push( s );
     //std::cerr << "(" << wrd_ctx->toString() << ")" << std::endl;
     touch();
