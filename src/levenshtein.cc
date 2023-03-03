@@ -32,11 +32,7 @@
 #include <algorithm>
 #include <iterator>
 
-#if defined(HAVE_TR1_UNORDERED_SET)
-#include <tr1/unordered_set>
-#else
 #include <unordered_set>
-#endif
 
 #include <cmath>
 #include <cstdio>
@@ -663,11 +659,7 @@ int correct( Logfile& l, Config& c ) {
     return 0;
   }
 
-#if defined(HAVE_TR1_UNORDERED_SET)
-  std::tr1::unordered_set<std::string> triggers;
-#else
   std::unordered_set<std::string> triggers;
-#endif
 
   int trigger_count = 0;
   if ( trigger_filename != "" ) {
@@ -1130,11 +1122,7 @@ int tcorrect( Logfile& l, Config& c ) {
 
   Timbl::TimblAPI   *My_Experiment;
 
-#if defined(HAVE_TR1_UNORDERED_SET)
-  std::tr1::unordered_set<std::string> triggers;
-#else
   std::unordered_set<std::string> triggers;
-#endif
 
   // No slash at end of dirname.
   //
@@ -3654,12 +3642,7 @@ int sml( Logfile& l, Config& c ) {
 
   Timbl::TimblAPI   *My_Experiment;
 
-#if defined(HAVE_TR1_UNORDERED_SET)
-  std::tr1::unordered_set<std::string> triggers;
-#else
   std::unordered_set<std::string> triggers;
-#endif
-
   // No slash at end of dirname.
   //
   if ( (dirname != "") && (dirname.substr(dirname.length()-1, 1) == "/") ) {

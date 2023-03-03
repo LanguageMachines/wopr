@@ -166,10 +166,6 @@ else
 fi
 # ---
 
-# Check for a hash table implementation
-AX_CXX_HEADER_TR1_UNORDERED_MAP
-AX_CXX_HEADER_TR1_UNORDERED_SET
-
 AC_CONFIG_FILES([Makefile
                  include/Makefile
                  include/wopr/Makefile
