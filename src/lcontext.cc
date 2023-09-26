@@ -84,9 +84,9 @@ int range_from_lex( Logfile& l, Config& c ) {
   //
   int wfreq;
   std::vector<lex_elem> lex_vec;
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
-    l.log( "ERROR: cannot load lexicon file." );
+    l.log( "ERROR: cannot load lexicon file." + lexicon_filename );
     return -1;
   }
   std::ofstream range_out( range_filename.c_str(), std::ios::out );
@@ -384,7 +384,7 @@ int lcontext( Logfile& l, Config& c ) {
       // before the instance. We should have a start-pause (# of instances)
       // before we start adding gc?
     }
-    for( size_t index = start; i < words.size(); i++ ) {
+    for( size_t index = start; index < words.size(); ++index ) {
 
       std::string wrd = words.at(index);
 
