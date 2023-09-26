@@ -105,7 +105,7 @@ test$ ../wopr -r server2 -p ibasefile:reuters.martin.tok.1000.ws3.ibase,lexicon:
 int server2(Logfile& l, Config& c) {
   l.log( "server2. Deprecated." );
 
-  const std::string& timbl  = c.get_value( "timbl" );
+  const std::string& timbl_val  = c.get_value( "timbl" );
   const std::string port    = c.get_value( "port", "1984" );
   const int precision = my_stoi( c.get_value( "precision", "10" )); // c++ output
                                                                  // precision
@@ -114,16 +114,16 @@ int server2(Logfile& l, Config& c) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const int verbose = my_stoi( c.get_value( "verbose", "0" ));
   int ws = my_stoi( c.get_value( "ws", "7" ));
-  int hapax = my_stoi( c.get_value( "hpx", "0" ));
+  int hapax_val = my_stoi( c.get_value( "hpx", "0" ));
   double unk_prob = my_stod( c.get_value( "unk_prob", "0.000001" ));
   const int sentence = my_stoi( c.get_value( "sentence", "1" ));
 
   l.inc_prefix();
   l.log( "ibasefile: "+c.get_value("ibasefile") );
   l.log( "port:      "+port );
-  l.log( "timbl:     "+timbl );
+  l.log( "timbl:     "+timbl_val );
   l.log( "ws:        "+to_str(ws) );
-  l.log( "hpx:       "+to_str(hapax) );
+  l.log( "hpx:       "+to_str(hapax_val) );
   l.log( "hpx_t:     "+to_str(hpx_t) );
   l.log( "precision: "+to_str(precision) );
   l.log( "output:    "+to_str(output) );
@@ -136,7 +136,7 @@ int server2(Logfile& l, Config& c) {
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
@@ -150,7 +150,7 @@ int server2(Logfile& l, Config& c) {
   unsigned long total_count = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
   while( file_lexicon >> a_word >> wfreq ) {
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       wfreqs[a_word] = wfreq;
       total_count += wfreq; // here?
     }
@@ -161,8 +161,8 @@ int server2(Logfile& l, Config& c) {
   // To fool the hapax_line2 function:
   // (this affects probability)
   //
-  //wfreqs["_"] = hapax + 1;
-  //wfreqs["HAPAX"] = hapax + 1;
+  //wfreqs["_"] = hapax_val + 1;
+  //wfreqs["HAPAX"] = hapax_val + 1;
 
   // Init message queue.
   //
@@ -174,30 +174,30 @@ int server2(Logfile& l, Config& c) {
 
   try {
 
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
 
     l.log( "Starting server..." );
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
 
     // loop
     while ( c.get_status() != 0 ) {  // main accept() loop
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -256,7 +256,7 @@ int server2(Logfile& l, Config& c) {
 	  // Hapax.
 	  //
 	  std::string classify_line;
-	  if ( hapax > 0 ) {
+	  if ( hapax_val > 0 ) {
 	    hapax_line( tmp_buf, wfreqs, classify_line );
 	  } else {
 	    classify_line = tmp_buf;
@@ -278,7 +278,7 @@ int server2(Logfile& l, Config& c) {
 	  // the same as the input line.
 	  //
 	  std::string t;
-	  if ( (hapax > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
+	  if ( (hapax_val > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
 	    hapax_line( tmp_buf, wfreqs, t );
 	  } else {
 	    t = tmp_buf;
@@ -580,19 +580,19 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
   int ws = my_stoi( c.get_value( "ws", "7" ));
   double unk_prob = my_stod( c.get_value( "unk_prob", "0.000001" ));
   const int hpx_t  = my_stoi( c.get_value( "hpx_t", "0" )); // Hapax target
-  int hapax = my_stoi( c.get_value( "hpx", "0" ));
+  int hapax_val = my_stoi( c.get_value( "hpx", "0" ));
   const int sentence = my_stoi( c.get_value( "sentence", "1" ));
   const int verbose = my_stoi( c.get_value( "verbose", "0" ));
 
   std::string fo = fn + ".wopr";
   std::string fr = fo + ".ready";
 
-  std::ifstream file_in( fn.c_str() );
+  std::ifstream file_in( fn );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( fo.c_str(), std::ios::out );
+  std::ofstream file_out( fo, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -603,11 +603,10 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
   std::string result;
   double distance;
   const Timbl::ClassDistribution *vd = 0;
-  const Timbl::TargetValue *tv = 0;
 
   while( std::getline( file_in, tmp_buf )) {
 
-    if ( hapax > 0 ) {
+    if ( hapax_val > 0 ) {
       hapax_line( tmp_buf, wfreqs, classify_line );
     } else {
       classify_line = tmp_buf;
@@ -629,7 +628,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
     // the same as the input line.
     //
     std::string t;
-    if ( (hapax > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
+    if ( (hapax_val > 0) && (hpx_t == 1) ) { // If hpx_t is one, we HPX targets
       hapax_line( tmp_buf, wfreqs, t );
     } else {
       t = tmp_buf;
@@ -674,7 +673,8 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 
       if ( lc_unknown == false ) {
 	//My_Experiment->Classify( cl, result, distrib, distance );
-	tv = My_Experiment->Classify( cl, vd, distance );
+	const Timbl::TargetValue *tv
+	  = My_Experiment->Classify( cl, vd, distance );
 	if ( ! tv ) {
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
@@ -707,13 +707,13 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 	//
 	// Fall back 1: look up in dictionary.
 	//
-	std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-	if ( wfi == wfreqs.end() ) { // not found.
+	std::map<std::string,int>::iterator wfit = wfreqs.find(target);
+	if ( wfit == wfreqs.end() ) { // not found.
 	  // verbose output removed
 	} else {
 	  // Found, take p(word in lexicon)
 	  //
-	  prob = (int)(*wfi).second / (double)total_count ;
+	  prob = (int)(*wfit).second / (double)total_count ;
 	  // verbose output removed
 	}
       } else {
@@ -762,7 +762,7 @@ int socket_file( Logfile& l, Config& c, Timbl::TimblAPI *My_Experiment,
 
   // marker file
   //
-  std::ofstream filem_out( fr.c_str(), std::ios::out );
+  std::ofstream filem_out( fr, std::ios::out );
   if ( ! filem_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -805,7 +805,7 @@ int server4( Logfile& l, Config& c) {
 
   l.log( "server4. Returns a log10prob over sequence." );
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   const int mode                = my_stoi( c.get_value( "mode", "0" ));
@@ -817,7 +817,7 @@ int server4( Logfile& l, Config& c) {
   const int lc                  = my_stoi( c.get_value( "lc", "2" ));
   const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
+  const int hapax_val               = my_stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm            = my_stoi( c.get_value( "skm", "0" )) == 1;
   const long cachesize          = my_stoi( c.get_value( "cs", "100000" ));
 
@@ -833,16 +833,16 @@ int server4( Logfile& l, Config& c) {
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
   l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "timbl:     "+timbl_val ); // timbl settings
   l.log( "lexicon    "+lexicon_filename ); // the lexicon...
-  l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
+  l.log( "hapax:     "+to_str(hapax_val) ); // hapax (needs lexicon) frequency
   l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
   l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
   l.dec_prefix();
 
   // Load lexicon.
   //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
@@ -861,7 +861,7 @@ int server4( Logfile& l, Config& c) {
     ++lex_entries;
     total_count += wfreq;
     wfreqs[a_word] = wfreq;
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       hpxfreqs[a_word] = wfreq;
       ++hpx_entries;
     }
@@ -876,17 +876,17 @@ int server4( Logfile& l, Config& c) {
   signal(SIGCHLD, SIG_IGN);
 
   try {
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     bool running = true;
@@ -894,11 +894,11 @@ int server4( Logfile& l, Config& c) {
       l.log( "Listening..." );
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -1007,7 +1007,7 @@ int server4( Logfile& l, Config& c) {
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
 
-	    if ( hapax > 0 ) {
+	    if ( hapax_val > 0 ) {
 	      (void)hapax_vector( words, hpxfreqs );
 	      std::string t;
 	      vector_to_string(words, t);
@@ -1021,12 +1021,12 @@ int server4( Logfile& l, Config& c) {
 	    if ( verbose > 2 ) {
 	      l.log( "Check instance cache: ["+classify_line+"]" );
 	    }
-	    std::string cache_ans = icache->get( classify_line );
-	    if ( cache_ans != "" ) {
+	    std::string cached_ans = icache->get( classify_line );
+	    if ( cached_ans != "" ) {
 	      if ( verbose > 2 ) {
 		l.log( "Found in cache." );
 	      }
-	      res_pl10 = my_stod(cache_ans); // my_stod() slows it down?
+	      res_pl10 = my_stod(cached_ans); // my_stod() slows it down?
 	    } else {
 
 	      // if we take target from a pre-non-hapaxed vector, we
@@ -1085,14 +1085,14 @@ int server4( Logfile& l, Config& c) {
 			res_pl10 = log10( res_p );
 	      } else {
 			// fall back to lex freq. of correct answer.
-			std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-			if  (wfi != wfreqs.end()) {
-			  res_p = (int)(*wfi).second / (double)total_count ;
-			  res_pl10 = log10( res_p );
-			  if ( verbose > 1 ) {
-				l.log( "Fall back to lex freq of Timbl answer." );
-			  }
-			}
+		std::map<std::string,int>::iterator wfit = wfreqs.find(target);
+		if  (wfit != wfreqs.end()) {
+		  res_p = (int)(*wfit).second / (double)total_count ;
+		  res_pl10 = log10( res_p );
+		  if ( verbose > 1 ) {
+		    l.log( "Fall back to lex freq of Timbl answer." );
+		  }
+		}
 	      }
 
 	      if ( verbose > 1 ) {
@@ -1193,7 +1193,7 @@ int server4( Logfile& l, Config& c ) {
 int xmlserver(Logfile& l, Config& c) {
   l.log( "xmlserver. Returns a FoLiA document over a sequence." );
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   //  const int mode                = 1; // hard coded
@@ -1205,7 +1205,7 @@ int xmlserver(Logfile& l, Config& c) {
   const int lc                  = my_stoi( c.get_value( "lc", "2" ));
   const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
+  const int hapax_val               = my_stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm            = my_stoi( c.get_value( "skm", "0" )) == 1;
 
   l.inc_prefix();
@@ -1220,9 +1220,9 @@ int xmlserver(Logfile& l, Config& c) {
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
   l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "timbl:     "+timbl_val ); // timbl settings
   l.log( "lexicon    "+lexicon_filename ); // the lexicon...
-  l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
+  l.log( "hapax:     "+to_str(hapax_val) ); // hapax (needs lexicon) frequency
   l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
   l.dec_prefix();
 
@@ -1233,7 +1233,7 @@ int xmlserver(Logfile& l, Config& c) {
     l.log( "ERROR: cannot load lexicon file: " + lexicon_filename );
     return -1;
   }
-  // Read the lexicon with word frequencies, freq > hapax.
+  // Read the lexicon with word frequencies, freq > hapax_val.
   //
   l.log( "Reading lexicon." );
   std::string a_word;
@@ -1247,7 +1247,7 @@ int xmlserver(Logfile& l, Config& c) {
     ++lex_entries;
     total_count += wfreq;
     wfreqs[a_word] = wfreq;
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       hpxfreqs[a_word] = wfreq;
       ++hpx_entries;
     }
@@ -1258,17 +1258,17 @@ int xmlserver(Logfile& l, Config& c) {
   signal(SIGCHLD, SIG_IGN);
 
   try {
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
     size_t connections = 0;
     bool running = true;
@@ -1276,11 +1276,11 @@ int xmlserver(Logfile& l, Config& c) {
       l.log( "Listening..." );
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -1362,12 +1362,12 @@ int xmlserver(Logfile& l, Config& c) {
 	  folia::Text *text =
 	    new folia::Text( folia::getArgs( "xml:id='wopr.t'"), &doc );
 	  doc.append( text );
-	  folia::Paragraph *p
+	  folia::Paragraph *par
 	    = new folia::Paragraph( folia::getArgs( "xml:id='wopr.t.p'" ), &doc );
-	  text->append( p );
+	  text->append( par );
 	  folia::Sentence *s =
 	    new folia::Sentence( folia::getArgs("xml:id='wopr.t.p.s'"), &doc );
-	  p->append( s );
+	  par->append( s );
 	  l.log( "folia document created." );
 
 	  std::vector<double> probs;
@@ -1380,7 +1380,7 @@ int xmlserver(Logfile& l, Config& c) {
 	    std::vector<std::string> words;
 	    Tokenize( classify_line, words, ' ' );
 
-	    if ( hapax > 0 ) {
+	    if ( hapax_val > 0 ) {
 	      hapax_vector( words, hpxfreqs );
 	      std::string t;
 	      vector_to_string(words, t);
@@ -1445,9 +1445,9 @@ int xmlserver(Logfile& l, Config& c) {
 	      res_pl10 = log10( res_p );
 	    } else {
 	      // fall back to lex freq. of correct answer.
-	      std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-	      if  (wfi != wfreqs.end()) {
-		res_p = (int)(*wfi).second / (double)total_count ;
+	      std::map<std::string,int>::iterator wfit = wfreqs.find(target);
+	      if  (wfit != wfreqs.end()) {
+		res_p = (int)(*wfit).second / (double)total_count ;
 		res_pl10 = log10( res_p );
 		if ( verbose > 1 ) {
 		  l.log( "Fall back to lex freq of Timbl answer." );
@@ -1562,7 +1562,7 @@ int xmlserver( Logfile& l, Config& c ) {
 int mbmt(Logfile& l, Config& c) {
   l.log( "server for (pbmb) machine translation. Returns a (log10)prob over sequence." );
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   //const int mode = 1; // hardcoded 1 for PBMBMT
@@ -1574,7 +1574,7 @@ int mbmt(Logfile& l, Config& c) {
   const int lc                  = my_stoi( c.get_value( "lc", "2" ));
   const int rc                  = my_stoi( c.get_value( "rc", "0" ));
   const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const int hapax               = my_stoi( c.get_value( "hpx", "0" ));
+  const int hapax_val               = my_stoi( c.get_value( "hpx", "0" ));
   //const bool skip_sm = false;  // hardcoded for PBMBMT
   const long cachesize          = my_stoi( c.get_value( "cs", "1000000" ));
 
@@ -1583,28 +1583,28 @@ int mbmt(Logfile& l, Config& c) {
   l.log( "port:      "+port );
   //l.log( "mode:      "+to_str(mode) ); // mode:0=input is instance, mode:1=window
   //l.log( "resm:      "+to_str(resm) ); // result mode, resm=0=average, resm=1=sum, resm:2=averge, no OOV words
-  //l.log( "keep:      "+to_str(keep) ); // keep connection open after sending result,
+  l.log( "keep:      "+to_str(keep) ); // keep connection open after sending result,
                                        // close by sending _CLOSE_
   //l.log( "moses:     "+to_str(moses) );// Send 6 char moses output
   l.log( "lb:        "+to_str(lb) );// log base of answer, 0=straight prob, 10=log10
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
   l.log( "verbose:   "+to_str(verbose) ); // be verbose, or more verbose
-  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "timbl:     "+timbl_val ); // timbl settings
   l.log( "lexicon    "+lexicon_filename ); // the lexicon...
-  l.log( "hapax:     "+to_str(hapax) ); // hapax (needs lexicon) frequency
+  l.log( "hapax:     "+to_str(hapax_val) ); // hapax (needs lexicon) frequency
   //l.log( "skip_sm:   "+to_str(skip_sm) ); // remove sentence markers
   l.log( "cache_size:"+to_str(cachesize) ); // size of the cache
   l.dec_prefix();
 
   // Load lexicon.
   //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
   }
-  // Read the lexicon with word frequencies, freq > hapax.
+  // Read the lexicon with word frequencies, freq > hapax_val.
   //
   l.log( "Reading lexicon." );
   std::string a_word;
@@ -1618,7 +1618,7 @@ int mbmt(Logfile& l, Config& c) {
     ++lex_entries;
     total_count += wfreq;
     wfreqs[a_word] = wfreq;
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       hpxfreqs[a_word] = wfreq;
       ++hpx_entries;
     }
@@ -1633,17 +1633,17 @@ int mbmt(Logfile& l, Config& c) {
   signal(SIGCHLD, SIG_IGN);
 
   try {
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     bool running = true;
@@ -1651,11 +1651,11 @@ int mbmt(Logfile& l, Config& c) {
       l.log( "Listening..." );
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -1739,7 +1739,7 @@ int mbmt(Logfile& l, Config& c) {
 	    words.clear();
 	    Tokenize( classify_line, words, ' ' );
 
-	    if ( hapax > 0 ) {
+	    if ( hapax_val > 0 ) {
 	      (void)hapax_vector( words, hpxfreqs );
 	      std::string t;
 	      vector_to_string(words, t);
@@ -1754,12 +1754,12 @@ int mbmt(Logfile& l, Config& c) {
 	    if ( verbose > 2 ) {
 	      l.log( "Check instance cache: ["+classify_line+"]" );
 	    }
-	    std::string cache_ans = icache->get( classify_line );
-	    if ( cache_ans != "" ) {
+	    std::string cached_ans = icache->get( classify_line );
+	    if ( cached_ans != "" ) {
 	      if ( verbose > 2 ) {
-			l.log( "Found in cache." );
+		l.log( "Found in cache." );
 	      }
-	      res_pl10 = my_stod(cache_ans); // my_stod() slows it down?
+	      res_pl10 = my_stod(cached_ans); // my_stod() slows it down?
 	    } else {
 
 	      // if we take target from a pre-non-hapaxed vector, we
@@ -1810,9 +1810,9 @@ int mbmt(Logfile& l, Config& c) {
 		res_pl10 = log10( res_p );
 	      } else {
 		// fall back to lex freq. of correct answer.
-		std::map<std::string,int>::iterator wfi = wfreqs.find(target);
-		if  (wfi != wfreqs.end()) {
-		  res_p = (int)(*wfi).second / (double)total_count ;
+		std::map<std::string,int>::iterator wfit = wfreqs.find(target);
+		if  (wfit != wfreqs.end()) {
+		  res_p = (int)(*wfit).second / (double)total_count ;
 		  res_pl10 = log10( res_p );
 		}
 	      }
@@ -1857,7 +1857,7 @@ int mbmt(Logfile& l, Config& c) {
 	    }
 	    cache->add( full_string, ans );
 	    newSock->write( ans + "\n" );
-	    connection_open = (keep == 1);
+	    //	    connection_open = (keep == 1); //keep is always 1
       } // while running & connection_open
 
       l.log( "connection closed." );
@@ -1891,7 +1891,7 @@ int mbmt( Logfile& l, Config& c ) {
 // In place hapaxing. For server4. uses full lexicon and hpx freq.
 //
 int hapax_vector( std::vector<std::string>& words, const std::map<std::string,int>& wfreqs ) {
-  std::map<std::string, int>::const_iterator wfi;
+  std::map<std::string, int>::const_iterator wfit;
   std::string hpx_sym = "<unk>"; //c.get_value("hpx_sym", "<unk>");
   int changes = 0;
 
@@ -1901,9 +1901,9 @@ int hapax_vector( std::vector<std::string>& words, const std::map<std::string,in
     if ( wrd == "_" ) { // skip
        continue;
     }
-    wfi = wfreqs.find( wrd );
+    wfit = wfreqs.find( wrd );
 
-    if ( wfi == wfreqs.end() ) { // not found in lexicon
+    if ( wfit == wfreqs.end() ) { // not found in lexicon
       words.at(i) = hpx_sym;
       ++changes;
     } // else leave it as it is
@@ -1918,10 +1918,10 @@ int webdemo(Logfile& l, Config& c) {
   // listen or commands: "one", "window", etc, and return
   // answer in XML.
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
-  const std::string lexicon     = c.get_value( "lexicon" );
+  const std::string lexicon_name     = c.get_value( "lexicon" );
   const int verbose             = my_stoi( c.get_value( "verbose", "1" ));
   const int lc                  = my_stoi( c.get_value( "lc", "2" ));
   const int rc                  = my_stoi( c.get_value( "rc", "0" ));
@@ -1935,10 +1935,10 @@ int webdemo(Logfile& l, Config& c) {
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+port );
-  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "timbl:     "+timbl_val ); // timbl settings
   l.log( "lc:        "+to_str(lc) ); // left context size for windowing
   l.log( "rc:        "+to_str(rc) ); // right context size for windowing
-  l.log( "lexicon:   "+lexicon );
+  l.log( "lexicon:   "+lexicon_name );
   l.log( "tok:       "+to_str(tok) );
   l.dec_prefix();
 
@@ -1946,7 +1946,7 @@ int webdemo(Logfile& l, Config& c) {
   std::map<std::string, int>::iterator fi;
   bool do_filter = false;
   if ( filterfile != "" ) {
-    std::ifstream file_filter( filterfile.c_str() );
+    std::ifstream file_filter( filterfile );
     if ( ! file_filter ) {
       l.log( "ERROR: cannot load filter file." );
       return -1;
@@ -1967,30 +1967,30 @@ int webdemo(Logfile& l, Config& c) {
   const Timbl::TargetValue *tv;
 
   try {
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
 
-    l.log( "Starting server..." );
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    l.log( "Starting server_sock..." );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
     bool skip = false;
 
     while ( true ) {
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -2153,7 +2153,7 @@ int webdemo( Logfile& l, Config& c ) {
 int one( Logfile& l, Config& c) {
   l.log( "one." );
 
-  const std::string& timbl      = c.get_value( "timbl" );
+  const std::string& timbl_val      = c.get_value( "timbl" );
   const std::string& ibasefile  = c.get_value( "ibasefile" );
   const std::string port        = c.get_value( "port", "1984" );
   const int verbose             = my_stoi( c.get_value( "verbose", "1" ));
@@ -2161,7 +2161,7 @@ int one( Logfile& l, Config& c) {
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
   l.log( "port:      "+port );
-  l.log( "timbl:     "+timbl ); // timbl settings
+  l.log( "timbl:     "+timbl_val ); // timbl settings
   l.dec_prefix();
 
   std::string result;
@@ -2169,29 +2169,29 @@ int one( Logfile& l, Config& c) {
   const Timbl::TargetValue *tv;
 
   try {
-    Sockets::ServerSocket server;
+    Sockets::ServerSocket server_sock;
 
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
 
     l.log( "Starting server..." );
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
 
 
     while ( true ) {
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -2288,7 +2288,7 @@ struct my_distr_elem {
 };
 
 int dist_to_xml( const Timbl::ClassDistribution* vd, std::string& res,
-		 std::string& target) {
+		 const std::string& target) {
 
   Timbl::ClassDistribution::dist_iterator it = vd->begin();
   int cnt = vd->size();
@@ -2333,7 +2333,7 @@ int dist_to_xml( const Timbl::ClassDistribution* vd, std::string& res,
 }
 #endif
 
-int vector_to_string( std::vector<std::string>& words, std::string& res ) {
+int vector_to_string( const std::vector<std::string>& words, std::string& res ) {
   res.clear();
   for ( size_t i = 0; i < words.size(); i++ ) {
     res = res + words[i] + " ";
@@ -2356,7 +2356,7 @@ int server_mg( Logfile& l, Config& c ) {
   const int verbose                   = my_stoi( c.get_value( "verbose", "0" ));
   const int lc                      = my_stoi( c.get_value( "lc", "2" ));
   const int rc                      = my_stoi( c.get_value( "rc", "0" ));
-  const int hapax                   = my_stoi( c.get_value( "hpx", "0" ));
+  const int hapax_val                   = my_stoi( c.get_value( "hpx", "0" ));
   const bool skip_sm                  = my_stoi( c.get_value( "skm", "0" )) == 1;
   const int keep                      = my_stoi( c.get_value( "keep", "0" ));
   const int resm                      = my_stoi( c.get_value( "resm", "0" ));
@@ -2382,7 +2382,7 @@ int server_mg( Logfile& l, Config& c ) {
   //
   unsigned long total_count = 0;
   std::map<std::string,int> wfreqs; // whole lexicon
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "NOTICE: cannot load lexicon file." );
     //return -1;
@@ -2403,22 +2403,22 @@ int server_mg( Logfile& l, Config& c ) {
 
   // Read kvs
   //
-  std::vector<Classifier*> cls;
+  std::vector<Classifier*> classes;
   std::vector<Classifier*>::iterator cli;
   std::map<std::string,Classifier*> gated_cls; // reverse list
   Classifier* dflt = NULL;
   if ( kvs_filename != "" ) {
     l.log( "Reading classifiers." );
-    std::ifstream file_kvs( kvs_filename.c_str() );
+    std::ifstream file_kvs( kvs_filename );
     if ( ! file_kvs ) {
       l.log( "ERROR: cannot load kvs file." );
       return -1;
     }
-    read_classifiers_from_file( file_kvs, cls );
+    read_classifiers_from_file( file_kvs, classes );
     file_kvs.close();
-    l.log( "Read "+to_str(cls.size())+" classifiers from "+kvs_filename );
+    l.log( "Read "+to_str(classes.size())+" classifiers from "+kvs_filename );
 
-    for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
+    for ( cli = classes.begin(); cli != classes.end(); ++cli ) {
       (*cli)->init();
       l.log( (*cli)->id + "/" + to_str((*cli)->get_type()) );
       //
@@ -2446,18 +2446,17 @@ int server_mg( Logfile& l, Config& c ) {
 
   md2    multidist;
   Classifier* cl = NULL; // classifier used.
-  std::map<std::string,int>::iterator wfi;
 
   signal(SIGCHLD, SIG_IGN);
 
   try {
 
-    Sockets::ServerSocket server;
-    if ( ! server.connect( port )) {
-      l.log( "ERROR: cannot start server: "+server.getMessage() );
+    Sockets::ServerSocket server_sock;
+    if ( ! server_sock.connect( port )) {
+      l.log( "ERROR: cannot start server: "+server_sock.getMessage() );
       return 1;
     }
-    if ( ! server.listen() ) {
+    if ( ! server_sock.listen() ) {
       l.log( "ERROR: cannot listen. ");
       return 1;
     };
@@ -2468,11 +2467,11 @@ int server_mg( Logfile& l, Config& c ) {
       l.log( "Listening..." );
 
       Sockets::ClientSocket *newSock = new Sockets::ClientSocket();
-      if ( !server.accept( *newSock ) ) {
+      if ( !server_sock.accept( *newSock ) ) {
 	if( errno == EINTR ) {
 	  continue;
 	} else {
-	  l.log( "ERROR: " + server.getMessage() );
+	  l.log( "ERROR: " + server_sock.getMessage() );
 	  return 1;
 	}
       }
@@ -2548,8 +2547,8 @@ int server_mg( Logfile& l, Config& c ) {
 
 	    words.clear();
 
-	    if ( hapax > 0 ) {
-	      /*int c = hapax_vector( words, hpxfreqs, hapax );
+	    if ( hapax_val > 0 ) {
+	      /*int c = hapax_vector( words, hpxfreqs, hapax_val );
 	      std::string t;
 	      vector_to_string(words, t);
 	      classify_line = t;
@@ -2600,9 +2599,9 @@ int server_mg( Logfile& l, Config& c ) {
 	  //file_out << a_line << " " << multidist.answer << " ";
 
 	  if ( multidist.prob == 0 ) {
-	    wfi = wfreqs.find(target);
-	    if ( wfi != wfreqs.end() ) {
-	      multidist.prob = (int)(*wfi).second / (double)total_count;
+	    std::map<std::string,int>::iterator wfit = wfreqs.find(target);
+	    if ( wfit != wfreqs.end() ) {
+	      multidist.prob = (int)(*wfit).second / (double)total_count;
 	    }
 	  }
 

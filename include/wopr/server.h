@@ -44,7 +44,7 @@ int socket_file( Logfile&, Config&,
 		 std::map<std::string,int>&, unsigned long);
 int parse_distribution( const Timbl::ClassDistribution*,
 			std::map<std::string, double>&);
-int dist_to_xml( const Timbl::ClassDistribution*, std::string&, std::string& );
+int dist_to_xml( const Timbl::ClassDistribution*, std::string&, const std::string& );
 #endif
 
 int server3( Logfile&, Config& );
@@ -54,6 +54,6 @@ int mbmt( Logfile&, Config& );
 int webdemo( Logfile&, Config& );
 int one( Logfile&, Config& );
 int hapax_vector( std::vector<std::string>&, const std::map<std::string,int>& );
-int vector_to_string( std::vector<std::string>& , std::string&  );
+int vector_to_string( const std::vector<std::string>& , std::string&  );
 int server_mg( Logfile&, Config& );
 #endif
