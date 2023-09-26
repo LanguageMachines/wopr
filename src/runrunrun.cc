@@ -83,15 +83,15 @@
 #ifdef TIMBL
 int timbl( Logfile& l, Config& c ) {
   l.log( "timbl");
-  const std::string& timbl =  c.get_value("timbl");
+  const std::string& timbl_val =  c.get_value("timbl");
   l.inc_prefix();
-  l.log( "timbl:     "+timbl );
+  l.log( "timbl:     "+timbl_val );
   l.log( "trainfile: "+c.get_value( "trainfile" ) );
   l.log( "testfile:  "+c.get_value( "testfile" ) );
   l.dec_prefix();
 
   //"-a IB2 +vF+DI+DB" ->  -timbl -- "-a IB2 +vF+DI+DB"
-  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
   My_Experiment->Learn( c.get_value( "trainfile" ));
 
   const std::string& test_filename = c.get_value( "testfile" );
@@ -202,9 +202,9 @@ int count_lines( Logfile& l, Config& c ) {
   const std::string& filename = c.get_value( "filename" );
   l.log( "count_lines(filename/"+filename+")" );
 
-  std::ifstream file( filename.c_str() );
+  std::ifstream file( filename );
   if ( ! file ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
 
@@ -232,9 +232,9 @@ int script(Logfile& l, Config& c)  {
   const std::string& filename = c.get_value( "script_filename" );
   l.log( "script(script_filename/"+filename+")" );
 
-  std::ifstream file( filename.c_str() );
+  std::ifstream file( filename );
   if ( ! file ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
 
@@ -566,14 +566,14 @@ int cut(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
+    l.log( "ERROR: cannot write file: " + output_filename );
     return -1;
   }
 
@@ -612,14 +612,14 @@ int flatten(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
+    l.log( "ERROR: cannot write file: " + output_filename );
     return -1;
   }
 
@@ -656,14 +656,14 @@ int lowercase(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
+    l.log( "ERROR: cannot write file: " + output_filename );
     return -1;
   }
 
@@ -698,14 +698,14 @@ int letters(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
-    l.log( "ERROR: cannot write file." );
+    l.log( "ERROR: cannot write file: " + output_filename );
     return -1;
   }
 
@@ -749,12 +749,12 @@ int window( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
-    l.log( "ERROR: cannot load file." );
+    l.log( "ERROR: cannot load file: " + filename );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -834,12 +834,12 @@ int window_s( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -892,12 +892,12 @@ int ngram( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -954,12 +954,12 @@ int ngram_s( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -1010,13 +1010,13 @@ int prepare( Logfile& l, Config& c ) {
     return 0;
   }
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
 
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -1066,7 +1066,7 @@ int arpa( Logfile& l, Config& c ) {
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -1093,7 +1093,7 @@ int arpa( Logfile& l, Config& c ) {
   }
   */
 
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -1145,19 +1145,18 @@ int window_line(Logfile& l, Config& c) {
   std::vector<std::string>::iterator wi;
   std::ostream_iterator<std::string> output( std::cout, " " );
   const std::string& a_line = c.get_value( "classify", "error" );
-  const std::string& timbl  =  c.get_value("timbl");
+  const std::string& timbl_val  =  c.get_value("timbl");
   Tokenize( a_line, words, ' ' );
 
   std::string classify_line;
   try {
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
     std::string distrib;
     std::vector<std::string> distribution;
     std::string result;
-    double distance;
     double total_prplx = 0.0;
-    int correct = 0;
+    int corr = 0;
     int possible = 0;
     int sentence_length = 0;
 
@@ -1174,17 +1173,18 @@ int window_line(Logfile& l, Config& c) {
       classify_line = classify_line + a_word; // target
       window_v.at(ws) = a_word;
       // Classify with the TimblAPI
-      My_Experiment->Classify( classify_line, result, distrib, distance );
+      double dist;
+      My_Experiment->Classify( classify_line, result, distrib, dist );
       //tv = My_Experiment->Classify( classify_line, vd );
 
       std::cout << "[" << classify_line << "] = " << result
-		<< "/" << distance << " "
+		<< "/" << dist << " "
 	//<< distrib << " "
 		<< std::endl;
       classify_line = "";
       if ( result == a_word ) {
 	l.log( "Correcto" );
-	++correct;
+	++corr;
       }
 
       // Begin experimental
@@ -1266,7 +1266,7 @@ int window_line(Logfile& l, Config& c) {
     // all wrong, totally surprised).
     //
     total_prplx = total_prplx / sentence_length;
-    l.log( "correct     = " + to_str(correct)+"/"+to_str(sentence_length));
+    l.log( "correct     = " + to_str(corr)+"/"+to_str(sentence_length));
     l.log( "possible    = " + to_str(possible));
     l.log( "total_prplx = " + to_str( 1 - total_prplx ));
 
@@ -1599,20 +1599,20 @@ int window_lr( Logfile& l, Config& c ) {
     return 0;
   }
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
   std::ifstream tfile_in;
   if ( it > 0 ) {
-	tfile_in.open( targetfile.c_str() );
+	tfile_in.open( targetfile );
 	if ( ! tfile_in ) {
 	  l.log( "ERROR: cannot load target file." );
 	  return -1;
 	}
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -1713,22 +1713,22 @@ int hapax_line( const std::string& a_line, const std::map<std::string,int>& wfre
 #ifdef TIMBL
 int unk_pred( Logfile& l, Config& c ) {
   l.log( "unk_pred" );
-  const std::string& timbl     = c.get_value("timbl");
+  const std::string& timbl_val     = c.get_value("timbl");
   const std::string& ibasefile = c.get_value("ibasefile");
-  const std::string& testfile  = c.get_value("testfile"); // We'll make data
+  const std::string& testfile_name  = c.get_value("testfile"); // We'll make data
   const std::string& lexfile   = c.get_value("lexicon");
-  std::string        output_filename = testfile + ".up";
+  std::string        output_filename = testfile_name + ".up";
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
-  l.log( "testfile:  "+testfile );
+  l.log( "testfile:  "+testfile_name );
   l.log( "lexicon:   "+lexfile );
-  l.log( "timbl:     "+timbl );
+  l.log( "timbl:     "+timbl_val );
   l.log( "OUTPUT:    "+output_filename );
   l.dec_prefix();
 
   // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
   //
-  std::ifstream file_lexicon( lexfile.c_str() );
+  std::ifstream file_lexicon( lexfile );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load lexicon file." );
     return -1;
@@ -1750,13 +1750,13 @@ int unk_pred( Logfile& l, Config& c ) {
 
   // Open test file.
   //
-  std::ifstream file_in( testfile.c_str() );
+  std::ifstream file_in( testfile_name );
   if ( ! file_in ) {
-    l.log( "ERROR: cannot load test file." );
+    l.log( "ERROR: cannot load test file:" + testfile_name );
     return -1;
   }
 
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
@@ -1772,7 +1772,7 @@ int unk_pred( Logfile& l, Config& c ) {
   int skipped_ent = 0;
 
   try {
-    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+    Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( c.get_value( "ibasefile" ));
 
     std::vector<std::string> results;
@@ -1824,8 +1824,8 @@ int unk_pred( Logfile& l, Config& c ) {
 	  cl = cl + "TARGET";
 	  //std::cout << cl << std::endl;
 	  std::string distrib;
-	  double distance;
-	  My_Experiment->Classify( cl, result, distrib, distance );
+	  double dist;
+	  My_Experiment->Classify( cl, result, distrib, dist );
 	  //std::cout << "CLAS=" << result << std::endl;
 	  new_line = new_line + result + " ";
 	  results.clear();
@@ -1922,20 +1922,20 @@ int ngram_line( const std::string& a_line,
 #ifdef TIMBL
 int timbl_test(Logfile& l, Config& c) {
   l.log( "timb_test" );
-  const std::string& timbl     =  c.get_value("timbl");
+  const std::string& timbl_val =  c.get_value("timbl");
   const std::string& ibasefile =  c.get_value("ibasefile");
-  const std::string& testfile  =  c.get_value("testfile");
+  const std::string& testfile_name  =  c.get_value("testfile");
 
   l.inc_prefix();
   l.log( "ibasefile: "+ibasefile );
-  l.log( "testfile:  "+testfile );
+  l.log( "testfile:  "+testfile_name );
   l.dec_prefix();
 
-  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_val );
   (void)My_Experiment->GetInstanceBase( ibasefile );
 
-  const std::string testout_filename = testfile + ".out";
-  My_Experiment->Test( testfile, testout_filename );
+  const std::string testout_filename = testfile_name + ".out";
+  My_Experiment->Test( testfile_name, testout_filename );
   delete My_Experiment;
 
   return 0;
@@ -1974,7 +1974,7 @@ int lexicon(Logfile& l, Config& c) {
     return 0;
   }
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -2004,12 +2004,12 @@ int lexicon(Logfile& l, Config& c) {
 
   // Save lexicon, and count counts, anagram values
   //
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write lexicon file." );
     return -1;
   }
-  std::ofstream file1_out( anaval_filename.c_str(), std::ios::out );
+  std::ofstream file1_out( anaval_filename, std::ios::out );
   if ( ! file1_out ) {
     l.log( "ERROR: cannot write anaval file." );
     return -1;
@@ -2038,7 +2038,7 @@ int lexicon(Logfile& l, Config& c) {
   //                   ^number with this frequency
   //                       ^adjusted frequency (after smooth)
   //
-  std::ofstream counts_out( counts_filename.c_str(), std::ios::out );
+  std::ofstream counts_out( counts_filename, std::ios::out );
   if ( ! counts_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -2142,17 +2142,17 @@ int hapax(Logfile& l, Config& c)  {
     return 0;
   }
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
   }
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -2273,17 +2273,17 @@ int hapax_txt(Logfile& l, Config& c)  {
     return 0;
   }
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
   }
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -2365,7 +2365,7 @@ int hapax_line_OLD(Logfile& l, Config& c)  {
   l.log( "lexicon:  "+lexicon_filename );
   l.dec_prefix();
 
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -2475,12 +2475,12 @@ int window_usenet( Logfile& l, Config& c ) {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -2701,7 +2701,7 @@ int smooth_old( Logfile& l, Config& c ) {
   l.log( "OUTPUT: " + gt_filename );
   l.dec_prefix();
 
-  std::ifstream file_counts( counts_filename.c_str() );
+  std::ifstream file_counts( counts_filename );
   if ( ! file_counts ) {
     l.log( "ERROR: cannot load counts file." );
     return -1;
@@ -2735,7 +2735,7 @@ int smooth_old( Logfile& l, Config& c ) {
 
   l.log( "Total count: " + to_str( total_count ));
 
-  std::ofstream counts_out( counts_filename.c_str(), std::ios::out );
+  std::ofstream counts_out( counts_filename, std::ios::out );
   if ( ! counts_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -2744,7 +2744,7 @@ int smooth_old( Logfile& l, Config& c ) {
   // GT smoothed file, contains:
   // freq, number of words with freq, pMLE, pMLE smoothed.
   //
-  std::ofstream file_out( gt_filename.c_str(), std::ios::out );
+  std::ofstream file_out( gt_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     return -1;
@@ -2822,7 +2822,7 @@ int smooth_old_LEX( Logfile& l, Config& c ) {
   l.log( "k:       " + to_str(k) );
   l.dec_prefix();
 
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -2890,7 +2890,7 @@ int smooth(Logfile& l, Config& c)  {
   l.log( "filename: "+filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
@@ -2995,13 +2995,13 @@ int read_a3(Logfile& l, Config& c) {
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load file." );
     return -1;
   }
 
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write file." );
     file_in.close();
@@ -3063,69 +3063,47 @@ int read_a3(Logfile& l, Config& c) {
         use Timbl to classif and calculate pplx.
 */
 #ifdef TIMBL
-int pplx( Logfile& l, Config& c ) {
+int pplx( Logfile& l, Config& cf ) {
   l.log( "pplx" );
-  const std::string& filename         = c.get_value( "filename" );
-  const std::string& ibasefile        = c.get_value( "ibasefile" );
-  const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  int                ws               = my_stoi( c.get_value( "ws", "3" ));
-  bool               to_lower         = my_stoi( c.get_value( "lc", "0" )) == 1;
+  const std::string& filename         = cf.get_value( "filename" );
+  const std::string& ibasefile        = cf.get_value( "ibasefile" );
+  const std::string& lexicon_filename = cf.get_value( "lexicon" );
+  const std::string& timbl_val        = cf.get_value( "timbl" );
+  int                ws               = my_stoi( cf.get_value( "ws", "3" ));
+  bool               to_lower         = my_stoi( cf.get_value( "lc", "0" )) == 1;
   std::string        output_filename  = filename + ".px" + to_str(ws);
-  std::string        pre_s            = c.get_value( "pre_s", "<s>" );
-  std::string        suf_s            = c.get_value( "suf_s", "</s>" );
-  int                skip             = 0;
+  std::string        pre_s            = cf.get_value( "pre_s", "<s>" );
+  std::string        suf_s            = cf.get_value( "suf_s", "</s>" );
+  int                skip             = my_stoi( cf.get_value( "skip", "0" ));
+   //kludge factor
   Timbl::TimblAPI   *My_Experiment = 0;
 
   l.inc_prefix();
   l.log( "filename:   "+filename );
   l.log( "ibasefile:  "+ibasefile );
   l.log( "lexicon:    "+lexicon_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
-  std::ifstream file_in( filename.c_str() );
+  std::ifstream file_in( filename );
   if ( ! file_in ) {
     l.log( "ERROR: cannot load inputfile." );
     return -1;
   }
-  std::ofstream file_out( output_filename.c_str(), std::ios::out );
+  std::ofstream file_out( output_filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
   }
 
-  // BUG: below a file is opened and read, but all of its content is unused
-
-  // // Load lexicon. NB: hapaxed lexicon is different? Or add HAPAX entry?
-  // //
-  // std::ifstream file_lexicon( lexicon_filename.c_str() );
-  // if ( ! file_lexicon ) {
-  //   l.log( "ERROR: cannot load lexicon file." );
-  //   return -1;
-  // }
-  // // Read the lexicon with word frequencies.
-  // // We need a hash with frequence - countOfFrequency, ffreqs.
-  // //
-  // l.log( "Reading lexicon." );
-  // std::string a_word;
-  // int wfreq;
-  // unsigned long total_count = 0;
-  // std::map<std::string,int> wfreqs; // whole lexicon
-  // while ( file_lexicon >> a_word >> wfreq ) {
-  //   wfreqs[a_word] = wfreq;
-  //   total_count += wfreq;
-  // }
-  // file_lexicon.close();
-  // l.log( "Read lexicon (total_count="+to_str(total_count)+")." );
-
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     (void)My_Experiment->GetInstanceBase( ibasefile );
-    // My_Experiment->Classify( cl, result, distrib, distance );
+    // double dist;
+    // My_Experiment->Classify( cl, result, distrib, dist );
   } catch (...) {}
 
   std::ostream_iterator<std::string> output( file_out, " " );
@@ -3135,8 +3113,6 @@ int pplx( Logfile& l, Config& c ) {
   std::vector<std::string>::iterator ri;
   const Timbl::ClassDistribution *vd;
   const Timbl::TargetValue *tv;
-
-  skip = 0; //kludge factor
 
   while( std::getline( file_in, a_line )) {
 
@@ -3217,7 +3193,7 @@ int pplx( Logfile& l, Config& c ) {
   file_out.close();
   file_in.close();
 
-  c.add_kv( "filename", output_filename );
+  cf.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   delete My_Experiment;
   return 0;
@@ -3255,33 +3231,34 @@ struct cached_distr {
   }
 };
 
-int pplx_simple( Logfile& l, Config& c ) {
+int pplx_simple( Logfile& l, Config& cf ) {
   l.log( "pplxs" );
-  const std::string& filename         = c.get_value( "filename" );
-  std::string        dirname          = c.get_value( "dir", "" );
-  std::string        dirmatch         = c.get_value( "dirmatch", ".*" );
-  const std::string& ibasefile        = c.get_value( "ibasefile" );
-  const std::string& lexicon_filename = c.get_value( "lexicon" );
-  const std::string& counts_filename  = c.get_value( "counts" );
-  const std::string& timbl            = c.get_value( "timbl" );
-  int                hapax            = my_stoi( c.get_value( "hpx", "0" ));
-  std::string        id               = c.get_value( "id", to_str(getpid()) );
-  //  int                ws               = my_stoi( c.get_value( "ws", "3" ));
-  int                lc               = my_stoi( c.get_value( "lc", "0" ));
-  int                rc               = my_stoi( c.get_value( "rc", "0" ));
-  int                topn             = my_stoi( c.get_value( "topn", "0" ) );
-  int                cache_size       = my_stoi( c.get_value( "cache", "3" ) );
-  int                cache_threshold  = my_stoi( c.get_value( "cth", "25000" ) );
-  bool               inc_sen          = my_stoi( c.get_value( "is", "0" )) == 1;
-  int                bl               = my_stoi( c.get_value( "bl", "0" )); //baseline
-  int                log_base         = my_stoi( c.get_value( "log", "2" ) ); // default like log2 before
+  const std::string& filename         = cf.get_value( "filename" );
+  std::string        dirname          = cf.get_value( "dir", "" );
+  std::string        dirmatch         = cf.get_value( "dirmatch", ".*" );
+  const std::string& ibasefile        = cf.get_value( "ibasefile" );
+  const std::string& lexicon_filename = cf.get_value( "lexicon" );
+  const std::string& counts_filename  = cf.get_value( "counts" );
+  const std::string& timbl_val        = cf.get_value( "timbl" );
+  int                hapax_val        = my_stoi( cf.get_value( "hpx", "0" ));
+  std::string        id               = cf.get_value( "id", to_str(getpid()) );
+  //  int                ws               = my_stoi( cf.get_value( "ws", "3" ));
+  int                lc               = my_stoi( cf.get_value( "lc", "0" ));
+  int                rc               = my_stoi( cf.get_value( "rc", "0" ));
+  int                topn             = my_stoi( cf.get_value( "topn", "0" ) );
+  int                cache_size       = my_stoi( cf.get_value( "cache", "3" ) );
+  int                cache_threshold  = my_stoi( cf.get_value( "cth", "25000" ) );
+  bool               inc_sen          = my_stoi( cf.get_value( "is", "0" )) == 1;
+  int                bl               = my_stoi( cf.get_value( "bl", "0" )); //baseline
+  int                log_base         = my_stoi( cf.get_value( "log", "2" ) ); // default like log2 before
   Timbl::TimblAPI   *My_Experiment;
 
   typedef double(*pt2log)(double);
-  pt2log mylog = &log2;
+  pt2log mylog;
   if ( log_base == 10 ) {
     mylog = &log10;
-  } else {
+  }
+  else {
     if ( log_base != 2 ) {
       l.log( "Log must be 2 or 10, setting to 2." );
     }
@@ -3326,8 +3303,8 @@ int pplx_simple( Logfile& l, Config& c ) {
   l.log( "ibasefile:      "+ibasefile );
   l.log( "lexicon:        "+lexicon_filename );
   l.log( "counts:         "+counts_filename );
-  l.log( "timbl:          "+timbl );
-  l.log( "hapax:          "+to_str(hapax) );
+  l.log( "timbl:          "+timbl_val );
+  l.log( "hapax:          "+to_str(hapax_val) );
   l.log( "ws:             "+to_str(ws) );
   l.log( "lc:             "+to_str(lc) );
   l.log( "rc:             "+to_str(rc) );
@@ -3372,13 +3349,14 @@ int pplx_simple( Logfile& l, Config& c ) {
     std::string output_filename  = a_file + id + ".px";
     std::string output_filename1 = a_file + id + ".pxs";
 
-    if (file_exists(l,c,output_filename) && file_exists(l,c,output_filename1)) {
+    if (file_exists(l,cf,output_filename)
+	&& file_exists(l,cf,output_filename1)) {
       //l.log( "Output for "+a_file+" exists, removing from list." );
       // We must set the variables for scripts anyway. Mostly if we supply
       // only one file to process.
-      c.add_kv( "px_file", output_filename );
+      cf.add_kv( "px_file", output_filename );
       l.log( "SET px_file to "+output_filename );
-      c.add_kv( "pxs_file", output_filename1 );
+      cf.add_kv( "pxs_file", output_filename1 );
       l.log( "SET pxs_file to "+output_filename1 );
       --numfiles;
     }
@@ -3391,7 +3369,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   // If we had > 0 numfiles left, we continue.
   //
   try {
-    My_Experiment = new Timbl::TimblAPI( timbl );
+    My_Experiment = new Timbl::TimblAPI( timbl_val );
     if ( ! My_Experiment->Valid() ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
@@ -3401,7 +3379,8 @@ int pplx_simple( Logfile& l, Config& c ) {
       l.log( "Timbl Experiment is not valid." );
       return 1;
     }
-    // My_Experiment->Classify( cl, result, distrib, distance );
+    // double dist;
+    // My_Experiment->Classify( cl, result, distrib, dist );
   } catch (...) {
     l.log( "Cannot create Timbl Experiment..." );
     return 1;
@@ -3414,7 +3393,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   unsigned long total_count = 0;
   unsigned long N_1 = 0; // Count for p0 estimate.
   std::map<std::string,int> wfreqs; // whole lexicon
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
     l.log( "NOTICE: cannot load lexicon file." );
     //return -1;
@@ -3426,10 +3405,10 @@ int pplx_simple( Logfile& l, Config& c ) {
     std::string a_word;
     int wfreq;
     while ( file_lexicon >> a_word >> wfreq ) {
-      if ( wfreq > hapax ) { // PJB: klopt dit? We don't get ++N_1? Smoothing?
+      if ( wfreq > hapax_val ) { // PJB: klopt dit? We don't get ++N_1? Smoothing?
 	wfreqs[a_word] = wfreq;
 	total_count += wfreq;
-	if ( wfreq == 1 ) { // Maybe <= hapax ?, outside the if >hapax loop
+	if ( wfreq == 1 ) { // Maybe <= hapax_val ?, outside the if >hapax loop
 	  // or we calculate everything <= hapax as mass for the unknown. An
 	  // unknown token will also be HAPAX...
 	  ++N_1;
@@ -3453,7 +3432,7 @@ int pplx_simple( Logfile& l, Config& c ) {
   //
   std::map<int,double> c_stars;
 
-  std::ifstream file_counts( counts_filename.c_str() );
+  std::ifstream file_counts( counts_filename );
   if ( ! file_counts ) {
     l.log( "NOTICE: cannot read counts file, no smoothing will be applied." );
   } else {
@@ -3498,28 +3477,29 @@ int pplx_simple( Logfile& l, Config& c ) {
     l.log( "OUTPUT:     "+output_filename );
     l.log( "OUTPUT:     "+output_filename1 );
 
-    if (file_exists(l,c,output_filename) && file_exists(l,c,output_filename1)) {
+    if ( file_exists(l,cf,output_filename)
+	 && file_exists(l,cf,output_filename1)) {
       l.log( "OUTPUT files exist, not overwriting." );
-      c.add_kv( "px_file", output_filename );
+      cf.add_kv( "px_file", output_filename );
       l.log( "SET px_file to "+output_filename );
-      c.add_kv( "pxs_file", output_filename1 );
+      cf.add_kv( "pxs_file", output_filename1 );
       l.log( "SET pxs_file to "+output_filename1 );
       continue;
     }
 
-    std::ifstream file_in( a_file.c_str() );
+    std::ifstream file_in( a_file );
     if ( ! file_in ) {
-      l.log( "ERROR: cannot load inputfile." );
+      l.log( "ERROR: cannot load inputfile: " + a_file );
       return -1;
     }
-    std::ofstream file_out( output_filename.c_str(), std::ios::out );
+    std::ofstream file_out( output_filename, std::ios::out );
     if ( ! file_out ) {
       l.log( "ERROR: cannot write .px output file." ); // for px
       return -1;
     }
     file_out << "# instance+target classification log" << log_base << "prob entropy word_lp guess k/u md mal dist.cnt dist.sum RR ([topn])" << std::endl;
 
-    std::ofstream file_out1( output_filename1.c_str(), std::ios::out );
+    std::ofstream file_out1( output_filename1, std::ios::out );
     if ( ! file_out1 ) {
       l.log( "ERROR: cannot write .pxs output file." ); // for pxs
       return -1;
@@ -3534,7 +3514,7 @@ int pplx_simple( Logfile& l, Config& c ) {
     const Timbl::TargetValue *tv;
     std::vector<std::string> words;
     std::vector<double> w_pplx;
-    int correct = 0;
+    int corrected = 0;
     int wrong   = 0;
     int correct_distr = 0;
 
@@ -3565,12 +3545,12 @@ int pplx_simple( Logfile& l, Config& c ) {
     int lowest_cache = 0; // size of distr. (prolly need a higher starting value)
     std::vector<cached_distr> distr_cache;
     for ( int i = 0; i < cache_size; i++ ) {
-      cached_distr c;
-      c.cnt       = 0;
-      c.sum_freqs = 0;
-      c.entropy   = 0.0;
-      c.first     = "";
-      distr_cache.push_back( c );
+      cached_distr cd;
+      cd.cnt       = 0;
+      cd.sum_freqs = 0;
+      cd.entropy   = 0.0;
+      cd.first     = "";
+      distr_cache.push_back( cd );
     }
 
     long timbl_time = 0;
@@ -3750,18 +3730,21 @@ int pplx_simple( Logfile& l, Config& c ) {
       //
       int cache_level = -1; // see above.
 
-      if (cache_idx == -1) {
-		if ( cd == NULL ) {
-		  cache_level = 0;
-		} else {
-		  cache_level = 1; // want to cache
-		}
-      } else if (cache_idx != -1) {
-		if ( cd != NULL ) {
-		  cache_level = 3;
-		} else {
-		  cache_level = 2;// play mission impossible theme
-		}
+      if ( cache_idx == -1) {
+	if ( cd == NULL ) {
+	  cache_level = 0;
+	}
+	else {
+	  cache_level = 1; // want to cache
+	}
+      }
+      else {
+	if ( cd != NULL ) {
+	  cache_level = 3;
+	}
+	else {
+	  cache_level = 2;// play mission impossible theme
+	}
       }
 
       //cache_level = 0;
@@ -3773,9 +3756,9 @@ int pplx_simple( Logfile& l, Config& c ) {
       // TODO: fix. Current code allows me to run experiments.
       //
       if ( cache_level == 3 ) { // Use the cache, Luke.
-	std::map<std::string,int>::iterator wfi = (cd->freqs).find( target );
-	if ( wfi != (cd->freqs).end() ) {
-	  target_freq = (long)(*wfi).second;
+	std::map<std::string,int>::iterator wfit = (cd->freqs).find( target );
+	if ( wfit != (cd->freqs).end() ) {
+	  target_freq = (long)(*wfit).second;
 	  target_in_dist = true;
 	}
 	entropy = cd->entropy;
@@ -3866,10 +3849,12 @@ int pplx_simple( Logfile& l, Config& c ) {
       // Counting correct guesses
       //
       if ( answer == target ) {
-	++correct;
-      } else if ( (answer != target) && (target_in_dist == true) ) {
+	++corrected;
+      }
+      else if ( target_in_dist == true ) {
 	++correct_distr;
-      } else {
+      }
+      else {
 	++wrong;
       }
 
@@ -3925,19 +3910,22 @@ int pplx_simple( Logfile& l, Config& c ) {
       file_out << word_lp << ' ';
 
       if ( answer == target ) {
-		file_out << "cg"; // correct guess
-      } else if ( (answer != target) && (target_in_dist == true) ) {
-		file_out << "cd"; // correct distr.
-      } else {
-		file_out << "ic"; // incorrect
+	file_out << "cg"; // correct guess
+      }
+      else if ( target_in_dist == true ) {
+	file_out << "cd"; // correct distr.
+      }
+      else {
+	file_out << "ic"; // incorrect
       }
       /*if ( (total_count > 0) && (target_unknown == true) ) {
 		file_out << "u";
 		}*/
       if ( target_unknown ) {
-		file_out << " u ";
-      } else {
-		file_out << " k ";
+	file_out << " u ";
+      }
+      else {
+	file_out << " k ";
       }
 
       // New in 1.10.0, the matchDepth and matchedAtLeaf
@@ -4136,11 +4124,12 @@ int pplx_simple( Logfile& l, Config& c ) {
     file_out.close();
     file_in.close();
 
-    double correct_perc = correct / (double)(correct+correct_distr+wrong)*100.0;
-    l.log( "Correct:       "+to_str(correct)+" ("+to_str(correct_perc)+")" );
-    double cd_perc = correct_distr / (double)(correct+correct_distr+wrong)*100.0;
+    double correct_perc
+      = corrected / (double)(corrected+correct_distr+wrong)*100.0;
+    l.log( "Correct:       "+to_str(corrected)+" ("+to_str(correct_perc)+")" );
+    double cd_perc = correct_distr / (double)(corrected+correct_distr+wrong)*100.0;
     l.log( "Correct Distr: "+to_str(correct_distr)+" ("+to_str(cd_perc)+")" );
-    int correct_total = correct_distr+correct;
+    int correct_total = correct_distr+corrected;
     double ct_perc = correct_perc+cd_perc;
     l.log( "Correct Total: " + to_str(correct_total)+" ("+to_str(ct_perc)+")" );
     l.log( "Wrong:         " + to_str(wrong)+" ("+to_str(100.0-ct_perc)+")" );
@@ -4151,7 +4140,7 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     if ( sentence_wordcount > 0 ) {
       l.log( "Cor.tot/total: " + to_str(correct_total / (double)sentence_wordcount) );
-      l.log( "Correct/total: " + to_str(correct / (double)sentence_wordcount) );
+      l.log( "Correct/total: " + to_str(corrected / (double)sentence_wordcount) );
     }
 
     /*for ( int i = 0; i < cache_size; i++ ) {
@@ -4160,9 +4149,9 @@ int pplx_simple( Logfile& l, Config& c ) {
 
     l.log("Timbl took: "+secs_to_str(timbl_time/1000000) );
 
-    c.add_kv( "px_file", output_filename );
+    cf.add_kv( "px_file", output_filename );
     l.log( "SET px_file to "+output_filename );
-    c.add_kv( "pxs_file", output_filename1 );
+    cf.add_kv( "pxs_file", output_filename1 );
     l.log( "SET pxs_file to "+output_filename1 );
 
     l.dec_prefix();
@@ -4289,7 +4278,7 @@ int kvs( Logfile& l, Config& c ) {
   l.log( "OUTPUT: "+filename );
   l.dec_prefix();
 
-  std::ofstream file_out( filename.c_str(), std::ios::out );
+  std::ofstream file_out( filename, std::ios::out );
   if ( ! file_out ) {
     l.log( "ERROR: cannot write output file." );
     return -1;
