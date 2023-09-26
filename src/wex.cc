@@ -61,7 +61,7 @@ int multi( Logfile& l, Config& c ) {
   const std::string& lexicon_filename = c.get_value( "lexicon" );
   const std::string& counts_filename  = c.get_value( "counts" );
   const std::string& kvs_filename     = c.get_value( "kvs" );
-  const std::string& timbl            = c.get_value( "timbl" );
+  const std::string& timbl_val            = c.get_value( "timbl" );
   // PJB: Should be a context string, also l2r2 &c.
   int                ws               = my_stoi( c.get_value( "ws", "3" ));
   bool               to_lower         = my_stoi( c.get_value( "lc", "0" )) == 1;
@@ -74,7 +74,7 @@ int multi( Logfile& l, Config& c ) {
   l.log( "lexicon:    "+lexicon_filename );
   l.log( "counts:     "+counts_filename );
   l.log( "kvs:        "+kvs_filename );
-  l.log( "timbl:      "+timbl );
+  l.log( "timbl:      "+timbl_val );
   l.log( "ws:         "+to_str(ws) );
   l.log( "lowercase:  "+to_str(to_lower) );
   l.log( "OUTPUT:     "+output_filename );
@@ -204,7 +204,7 @@ int multi( Logfile& l, Config& c ) {
       int win_s = classifier->get_ws();
       //l.log( "win_s="+to_str(win_s) );
 
-      Timbl::TimblAPI *timbl = classifier->get_exp();
+      Timbl::TimblAPI *timbl_exp = classifier->get_exp();
 
       //      pattern target  lc    rc  it backoff
       window( a_line, a_line, win_s, 0, 0, false, results );
@@ -226,7 +226,7 @@ int multi( Logfile& l, Config& c ) {
       for ( const auto& cl : results ) {
 	file_out << cl << std::endl;
 
-	tv = timbl->Classify( cl, vd );
+	tv = timbl_exp->Classify( cl, vd );
 	if ( ! tv ) {
 	  l.log( "ERROR: Timbl returned a classification error, aborting." );
 	  break;
@@ -519,22 +519,22 @@ int multi_dist( Logfile& l, Config& c ) {
     for ( cli = cls.begin(); cli != cls.end(); ++cli ) {
 
       Classifier *classifier   = *cli;
-      Timbl::TimblAPI *timbl   = classifier->get_exp();
+      Timbl::TimblAPI *timbl_exp   = classifier->get_exp();
       double classifier_weight = classifier->get_weight();
 
       // get a line from the file, above cls loop!
 
       std::string cl = a_line;
 
-      tv = timbl->Classify( cl, vd );
+      tv = timbl_exp->Classify( cl, vd );
       if ( ! tv ) {
 	l.log( "ERROR: Timbl returned a classification error, aborting." );
 	break;
       }
       std::string answer = tv->name_string();
 
-      size_t md  = timbl->matchDepth();
-      bool   mal = timbl->matchedAtLeaf();
+      size_t md  = timbl_exp->matchDepth();
+      bool   mal = timbl_exp->matchedAtLeaf();
 
       int distr_count = vd->totalSize(); // sum of freqs in distr.
 
@@ -1103,10 +1103,9 @@ int multi_gated( Logfile& l, Config& c ) {
     if ( mode != 1 ) {
       file_out << multidist.distr_count << " ";
     }
-
-    // For MRR, this makes output format different from px output again.
-    //
-    if ( mode != 1 ) {
+    else {
+      // For MRR, this makes output format different from px output again.
+      //
       file_out << multidist.mrr << " ";
     }
 
