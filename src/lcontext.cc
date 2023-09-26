@@ -89,7 +89,7 @@ int range_from_lex( Logfile& l, Config& c ) {
     l.log( "ERROR: cannot load lexicon file." + lexicon_filename );
     return -1;
   }
-  std::ofstream range_out( range_filename.c_str(), std::ios::out );
+  std::ofstream range_out( range_filename, std::ios::out );
   if ( ! range_out ) {
     l.log( "ERROR: cannot write range file." );
     return -1;
