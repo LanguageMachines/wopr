@@ -107,7 +107,8 @@ void Node::dump() {
 // categories on nodes.
 //
 void Node::dump( std::map<int, std::string>& classes,
-		 std::map<int, std::string>& features, std::string pat,
+		 std::map<int, std::string>& features,
+		 const std::string& pat,
 		 int d, std::ofstream& os ) {
 
   // pattern we generate is class from dist with pat prepended.
@@ -149,7 +150,8 @@ void Node::dump( std::map<int, std::string>& classes,
 // smooth: count -> count*
 //
 void Node::dump( std::map<int, std::string>& classes,
-		 std::map<int, std::string>& features, std::string pat,
+		 std::map<int, std::string>& features,
+		 const std::string& pat,
 		 int d, std::ofstream& os,
 		 std::map<int, double>& smooth ) {
 

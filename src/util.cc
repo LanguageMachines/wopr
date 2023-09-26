@@ -335,15 +335,15 @@ long parse_date_time(const std::string& d) {
   return s;
 }
 
-void set_flag(unsigned long& var, unsigned long& f) {
+void set_flag(unsigned long& var, const unsigned long& f) {
   var |= f;
 }
 
-void clear_flag(unsigned long& var, unsigned long& f) {
+void clear_flag(unsigned long& var, const unsigned long& f) {
   var &= ~f;
 }
 
-bool is_set(unsigned long& var, unsigned long& f) {
+bool is_set( const unsigned long& var, const unsigned long& f) {
   return var & f;
 }
 
@@ -407,7 +407,9 @@ bool check_dir( const std::string& name ) {
   return false;
 }
 
-int get_dir(std::string dir, std::vector<std::string> &files, std::string re) {
+int get_dir( const std::string& dir,
+	     std::vector<std::string> &files,
+	     const std::string& re) {
     DIR *dp;
     struct dirent *dirp;
     regex_t regex;

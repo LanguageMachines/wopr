@@ -1,6 +1,3 @@
-// $Id$
-//
-
 /*****************************************************************************
  * Copyright 2008 - 2011 Peter Berck                                                *
  *                                                                           *
@@ -59,8 +56,12 @@ class Node {
   void smooth_dist( std::map<int, double>&, std::vector<double>& );
   std::string get_dist( std::map<int, double>& );
   void dump();
-  void dump(std::map<int, std::string>&, std::map<int, std::string>&, std::string, int, std::ofstream& );
-  void dump(std::map<int, std::string>&, std::map<int, std::string>&, std::string, int, std::ofstream&, std::map<int, double>& );
+  void dump(std::map<int, std::string>&,
+	    std::map<int, std::string>&,
+	    const std::string&, int, std::ofstream& );
+  void dump(std::map<int, std::string>&,
+	    std::map<int, std::string>&,
+	    const std::string&, int, std::ofstream&, std::map<int, double>& );
 };
 
 int tag( Logfile&, Config& );
