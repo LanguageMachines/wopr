@@ -1228,9 +1228,9 @@ int xmlserver(Logfile& l, Config& c) {
 
   // Load lexicon.
   //
-  std::ifstream file_lexicon( lexicon_filename.c_str() );
+  std::ifstream file_lexicon( lexicon_filename );
   if ( ! file_lexicon ) {
-    l.log( "ERROR: cannot load lexicon file." );
+    l.log( "ERROR: cannot load lexicon file:" + lexicon_filename );
     return -1;
   }
   // Read the lexicon with word frequencies, freq > hapax.
