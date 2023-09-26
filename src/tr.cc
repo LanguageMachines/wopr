@@ -46,11 +46,11 @@
 //  Code.
 // ---------------------------------------------------------------------------
 
-int tr( Logfile& l, Config& c ) {
+int tr( Logfile& l, Config& conf ) {
   l.log( "tr" );
-  const std::string& filename        = c.get_value( "filename" ); // dataset
-  std::string        id              = c.get_value( "id", "" );
-  std::string        trs             = c.get_value( "trs", "num" );
+  const std::string& filename        = conf.get_value( "filename" ); // dataset
+  std::string        id              = conf.get_value( "id", "" );
+  std::string        trs             = conf.get_value( "trs", "num" );
   std::string        output_filename = filename + ".tr";
 
   if ( (id != "") && (contains_id(output_filename, id) == false) ) {
@@ -64,9 +64,9 @@ int tr( Logfile& l, Config& c ) {
   l.log( "OUTPUT:     "+output_filename );
   l.dec_prefix();
 
-  if ( file_exists( l, c, output_filename ) ) {
+  if ( file_exists( l, conf, output_filename ) ) {
     l.log( "OUTPUT exists, not overwriting." );
-    c.add_kv( "filename", output_filename );
+    conf.add_kv( "filename", output_filename );
     l.log( "SET filename to "+output_filename );
     return 0;
   }
@@ -110,7 +110,7 @@ int tr( Logfile& l, Config& c ) {
   file_in.close();
   file_out.close();
 
-  c.add_kv( "filename", output_filename );
+  conf.add_kv( "filename", output_filename );
   l.log( "SET filename to "+output_filename );
   return 0;
 }

@@ -51,15 +51,15 @@ int ngram_s( Logfile&, Config& );
 int ngram_list( Logfile&, Config& );
 int prepare( Logfile&, Config& );
 int arpa( Logfile&, Config& );
-int window( std::string, std::string, int, int, bool, bool, bool, std::vector<std::string>& );
-int window( std::string, std::string, int, int, int, bool, std::vector<std::string>& );//plain, 1317, ti added
-int window( std::string, std::string, int, int, bool, int, std::vector<std::string>& );//with to, 1390
+int window( const std::string&, const std::string&, int, int, bool, bool, bool, std::vector<std::string>& );
+int window( const std::string&, const std::string&, int, int, int, bool, std::vector<std::string>& );//plain, 1317, ti added
+int window( const std::string&, const std::string&, int, int, bool, int, std::vector<std::string>& );//with to, 1390
 int window_line( Logfile&, Config& );
 int window_lr( Logfile&, Config& );
 int window_line2( Logfile&, Config& );
 int hapax_line( const std::string&, const std::map<std::string,int>&, std::string& );
 int unk_pred( Logfile& , Config& );
-int ngram_line( std::string, int, std::vector<std::string>& );
+int ngram_line( const std::string&, int, std::vector<std::string>& );
 int ngram( std::string, int, std::vector<std::string>& );
 int timbl_test( Logfile&, Config& );
 int lexicon( Logfile&, Config& );

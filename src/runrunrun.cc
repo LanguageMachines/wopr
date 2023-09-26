@@ -112,12 +112,12 @@ int timbl( Logfile& l, Config& c ) {
 #ifdef TIMBL
 int make_ibase( Logfile& l, Config& c ) {
   l.log( "make_ibase");
-  const std::string& timbl          =  c.get_value("timbl");
+  const std::string& timbl_v          =  c.get_value("timbl");
   const std::string& filename       = c.get_value( "filename" );
   const std::string& ibasefile      = c.get_value( "ibasefile", "" ); //pbmbmt
   //  std::string        id             = c.get_value( "id", "" );
 
-  //std::string t_ext = timbl;
+  //std::string t_ext = timbl_v;
   std::string ibase_filename = filename;
 
   if ( ibasefile != "" ) {
@@ -130,7 +130,7 @@ int make_ibase( Logfile& l, Config& c ) {
     // this will influence bash scripts too
     std::string t_ext = "";
     std::vector<std::string> t_bits;
-    Tokenize( timbl, t_bits );
+    Tokenize( timbl_v, t_bits );
     for ( size_t i = 0; i < t_bits.size(); i++ ) {
       std::string t_bit = t_bits.at(i);
       if ( t_bit.substr(0, 2) != "-k" ) {
@@ -159,12 +159,12 @@ int make_ibase( Logfile& l, Config& c ) {
   }
 
   l.inc_prefix();
-  l.log( "timbl:     "+timbl );
+  l.log( "timbl:     "+timbl_v );
   l.log( "filename:  "+c.get_value( "filename" ) );
   l.log( "ibasefile: "+ibase_filename );
   l.dec_prefix();
 
-  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl );
+  Timbl::TimblAPI *My_Experiment = new Timbl::TimblAPI( timbl_v );
   My_Experiment->Learn( filename ); //c.get_value( "trainfile" ));
   My_Experiment->WriteInstanceBase( ibase_filename );
 
@@ -245,23 +245,23 @@ int script(Logfile& l, Config& c)  {
     }
     std::vector<std::string>kv_pairs;
 
-    size_t pos = a_line.find( ':', 0 );
-    if ( pos != std::string::npos ) {
-      std::string lhs = trim(a_line.substr( 0, pos ));
-      std::string rhs = trim(a_line.substr( pos+1 ));
+    size_t line_pos = a_line.find( ':', 0 );
+    if ( line_pos != std::string::npos ) {
+      std::string left_hs = trim(a_line.substr( 0, line_pos ));
+      std::string right_hs = trim(a_line.substr( line_pos+1 ));
 
-      if ( lhs == "run" ) {
-	//l.log(rhs);
+      if ( left_hs == "run" ) {
+	//l.log(right_hs);
 	//l.log( c.kvs_str() );
-	int(*pt2Func2)(Logfile&, Config&) = get_function( rhs );
+	int(*pt2Func2)(Logfile&, Config&) = get_function( right_hs );
 	int res = pt2Func2(l, c);
 	//l.log( "Result = "+to_str(res) );// should abort if != 0
 	if ( res != 0 ) {
 	  return res;
 	}
       }
-      if ( lhs == "params" ) {
-	Tokenize( rhs, kv_pairs, ',' );
+      if ( left_hs == "params" ) {
+	Tokenize( right_hs, kv_pairs, ',' );
 	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  //
 	  // Can override params in script from cmdline if false.
@@ -274,8 +274,8 @@ int script(Logfile& l, Config& c)  {
 	}
 	kv_pairs.clear();
       }
-      if ( lhs == "msg" ) {
-	Tokenize( rhs, kv_pairs, ' ' );
+      if ( left_hs == "msg" ) {
+	Tokenize( right_hs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
 	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string chunk = kv_pairs.at(j);
@@ -289,12 +289,12 @@ int script(Logfile& l, Config& c)  {
 
 	l.log( expanded_rhs );
       }
-      if ( lhs == "extern" ) {
+      if ( left_hs == "extern" ) {
 	//
 	// Go over each chunk, see if we gave $vars,
 	// expand them.
 	//
-	Tokenize( rhs, kv_pairs, ' ' );
+	Tokenize( right_hs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
 	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string chunk = kv_pairs.at(j);
@@ -310,8 +310,8 @@ int script(Logfile& l, Config& c)  {
 	int r = system( expanded_rhs.c_str() );
 	l.log( "EXTERN result: "+to_str(r) );
       }
-      if ( lhs == "extern2" ) {
-	Tokenize( rhs, kv_pairs, ' ' );
+      if ( left_hs == "extern2" ) {
+	Tokenize( right_hs, kv_pairs, ' ' );
 	std::string expanded_rhs = "";
 	for ( size_t j = 0; j < kv_pairs.size(); j++ ) {
 	  std::string chunk = kv_pairs.at(j);
@@ -342,14 +342,14 @@ int script(Logfile& l, Config& c)  {
       // set: oldname:$filename
       //              ^ take value of parameter instead of string.
       //
-      if ( lhs == "set" ) {
+      if ( left_hs == "set" ) {
 	// set foo = foo + "t" ? (or add foo "t")
-	Tokenize( rhs, kv_pairs, ',' );
+	Tokenize( right_hs, kv_pairs, ',' );
 	std::string kv = kv_pairs.at(0);
-	size_t pos = kv.find( ':', 0 );
-	if ( pos != std::string::npos ) {
-          std::string lhs = trim(kv.substr( 0, pos ));
-          std::string rhs = trim(kv.substr( pos+1 ));
+	size_t kv_pos = kv.find( ':', 0 );
+	if ( kv_pos != std::string::npos ) {
+          std::string lhs = trim(kv.substr( 0, kv_pos ));
+          std::string rhs = trim(kv.substr( kv_pos+1 ));
           if ( rhs.substr(0, 1) == "$" ) {
             rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
           }
@@ -359,22 +359,22 @@ int script(Logfile& l, Config& c)  {
 	kv_pairs.clear();
       }
       // Unset a variable.
-      if ( lhs == "unset" ) {
-	c.del_kv( rhs );
-	l.log( "UNSET "+rhs );
+      if ( left_hs == "unset" ) {
+	c.del_kv( right_hs );
+	l.log( "UNSET "+right_hs );
 	kv_pairs.clear();
       }
       //
       // add: filename:foo
       // add: filename:$time
       //
-      if ( lhs == "add" ) {
-	Tokenize( rhs, kv_pairs, ',' );
+      if ( left_hs == "add" ) {
+	Tokenize( right_hs, kv_pairs, ',' );
 	std::string kv = kv_pairs.at(0);
-	size_t pos = kv.find( ':', 0 );
-	if ( pos != std::string::npos ) {
-          std::string lhs = trim(kv.substr( 0, pos ));
-          std::string rhs = trim(kv.substr( pos+1 ));
+	size_t kv_pos = kv.find( ':', 0 );
+	if ( kv_pos != std::string::npos ) {
+          std::string lhs = trim(kv.substr( 0, kv_pos ));
+          std::string rhs = trim(kv.substr( kv_pos+1 ));
           if ( rhs.substr(0, 1) == "$" ) {
             rhs = c.get_value( rhs.substr(1, rhs.length()-1) );
           }
@@ -711,11 +711,11 @@ int letters(Logfile& l, Config& c) {
 
   std::string a_line;
   while ( getline( file_in, a_line )) {
-    for ( const auto c : a_line ) {
-      if ( c == ' ' ) {
+    for ( const auto& ch : a_line ) {
+      if ( ch == ' ' ) {
 	file_out << "_ ";
       } else {
-	file_out << c << ' ' ;
+	file_out << ch << ' ' ;
       }
     }
     file_out << std::endl;
@@ -913,24 +913,24 @@ int ngram( Logfile& l, Config& c ) {
   //       first          last             begin pos
   // until nomorewords.
   std::string               a_word;
-  std::vector<std::string>  window(ws, "_");
+  std::vector<std::string>  window_v(ws, "_");
   std::ostream_iterator<std::string> output( file_out, " " );
 
   for ( int i = 0; i < ws; i++ ) {
     file_in >> a_word;
-     window.at(i) = a_word;
+     window_v.at(i) = a_word;
   }
 
   while( file_in >> a_word ) {
 
-    std::copy( window.begin(), window.end(), output );
+    std::copy( window_v.begin(), window_v.end(), output );
     file_out << std::endl;
 
-    copy( window.begin()+1, window.end(), window.begin() );
-    window.at(ws-1) = a_word;
+    copy( window_v.begin()+1, window_v.end(), window_v.begin() );
+    window_v.at(ws-1) = a_word;
   }
 
-  std::copy( window.begin(), window.end(), output );
+  std::copy( window_v.begin(), window_v.end(), output );
   file_out << std::endl;
 
   file_out.close();
@@ -1141,7 +1141,7 @@ int window_line(Logfile& l, Config& c) {
   std::vector<std::string> words; // input.
   std::vector<std::string> res;
   std::vector<std::string> word_stats; // perplx. per word.
-  std::vector<std::string> window(ws+1, "_"); //context + target
+  std::vector<std::string> window_v(ws+1, "_"); //context + target
   std::vector<std::string>::iterator wi;
   std::ostream_iterator<std::string> output( std::cout, " " );
   const std::string& a_line = c.get_value( "classify", "error" );
@@ -1161,18 +1161,18 @@ int window_line(Logfile& l, Config& c) {
     int possible = 0;
     int sentence_length = 0;
 
-    //window.at(ws-1) = words.at(0); // shift in the first word
+    //window_v.at(ws-1) = words.at(0); // shift in the first word
     //                      +1 in the above case.
     for ( wi = words.begin()+0; wi != words.end(); ++wi )  {
       ++sentence_length;
       a_word = *wi;
-      std::copy( window.begin(), window.end()-1, std::inserter(res, res.end()));
+      std::copy( window_v.begin(), window_v.end()-1, std::inserter(res, res.end()));
       res.push_back(a_word); // target
       for ( int i = 0; i < ws; i++ ) {
-	classify_line = classify_line + window.at(i)+" ";
+	classify_line = classify_line + window_v.at(i)+" ";
       }
       classify_line = classify_line + a_word; // target
-      window.at(ws) = a_word;
+      window_v.at(ws) = a_word;
       // Classify with the TimblAPI
       My_Experiment->Classify( classify_line, result, distrib, distance );
       //tv = My_Experiment->Classify( classify_line, vd );
@@ -1259,7 +1259,7 @@ int window_line(Logfile& l, Config& c) {
 	}
       }
       */
-      copy( window.begin()+1, window.end(), window.begin() );
+      std::copy( window_v.begin()+1, window_v.end(), window_v.begin() );
     }
     //
     // Normalize to sentence length. Subtract from 1 (0 means
@@ -1309,9 +1309,10 @@ int window_line( Logfile& l, Config& c ) {
 // vector<string> new_targets(size);
 // copy ( targets.begin(), targets.end(), new_targets.begin()+to );
 //
-int window( std::string a_line, std::string target_str,
-			int lc, int rc, int it, bool var,
-			std::vector<std::string>& res ) {
+int window( const std::string& a_line,
+	    const std::string& target_str,
+	    int lc, int rc, int it, bool var,
+	    std::vector<std::string>& res ) {
 
   std::vector<std::string> words; //(10000000,"foo");
   Tokenize( a_line, words );
@@ -1436,7 +1437,8 @@ int window( std::string a_line, std::string target_str,
 
 // With target offset
 //
-int window( std::string a_line, std::string target_str,
+int window( const std::string& a_line,
+	    const std::string& target_str,
 	    int lc, int rc, bool var, int to,
 	    std::vector<std::string>& res ) {
 
@@ -1880,7 +1882,9 @@ int unk_pred( Logfile& l, Config& c ) {
 
 // Version with targets?
 //
-int ngram_line( std::string a_line, int n, std::vector<std::string>& res ) {
+int ngram_line( const std::string& a_line,
+		int n,
+		std::vector<std::string>& res ) {
 
   std::vector<std::string> words;
   Tokenize( a_line, words, ' ' );
@@ -2239,9 +2243,9 @@ int hapax_txt(Logfile& l, Config& c)  {
   l.log( "hapax_txt" );
 
   const std::string& filename = c.get_value( "filename" );
-  int hapax = my_stoi( c.get_value( "hpx", "1" ));
+  int hapax_val = my_stoi( c.get_value( "hpx", "1" ));
 
-  if ( hapax <= 0 ) {
+  if ( hapax_val <= 0 ) {
     l.log( "WARNING: not doing hapax <=0" );
     return 0;
   }
@@ -2251,14 +2255,14 @@ int hapax_txt(Logfile& l, Config& c)  {
   if ( (id != "") && ( ! contains_id( filename, id)) ) {
     output_filename = output_filename + "_" + id;
   }
-  output_filename = output_filename + ".hpt" + to_str(hapax); // New suffix
+  output_filename = output_filename + ".hpt" + to_str(hapax_val); // New suffix
 
   std::string lexicon_filename = c.get_value("lexicon");
   std::string hpx_sym = c.get_value("hpx_sym", "<unk>");
 
   l.inc_prefix();
   l.log( "filename: "+filename );
-  l.log( "hpx:      "+to_str(hapax) );
+  l.log( "hpx:      "+to_str(hapax_val) );
   l.log( "lexicon:  "+lexicon_filename );
   l.log( "OUTPUT:   "+output_filename );
   l.dec_prefix();
@@ -2299,7 +2303,7 @@ int hapax_txt(Logfile& l, Config& c)  {
   //
   l.log( "Reading lexicon, creating hapax list." );
   while( file_lexicon >> a_word >> wfreq ) {
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       wfreqs[a_word] = wfreq;
     }
     ++wcount;
@@ -2346,7 +2350,7 @@ int hapax_txt(Logfile& l, Config& c)  {
 //
 int hapax_line_OLD(Logfile& l, Config& c)  {
   l.log( "hapax_line" );
-  int hapax = my_stoi( c.get_value( "hpx", "1" ));
+  int hapax_val = my_stoi( c.get_value( "hpx", "1" ));
   const std::string& lexicon_filename = c.get_value("lexicon");
   const std::string& a_line = c.get_value("classify", "error");
 
@@ -2357,7 +2361,7 @@ int hapax_line_OLD(Logfile& l, Config& c)  {
     type = 1;
   }
   l.inc_prefix();
-  l.log( "hpx:      "+to_str(hapax) );
+  l.log( "hpx:      "+to_str(hapax_val) );
   l.log( "lexicon:  "+lexicon_filename );
   l.dec_prefix();
 
@@ -2378,7 +2382,7 @@ int hapax_line_OLD(Logfile& l, Config& c)  {
   //
   l.log( "Reading lexicon, creating hapax list." );
   while( file_lexicon >> a_word >> wfreq ) {
-    if ( wfreq > hapax ) {
+    if ( wfreq > hapax_val ) {
       wfreqs[a_word] = wfreq;
     }
   }
@@ -2484,7 +2488,6 @@ int window_usenet( Logfile& l, Config& c ) {
 
   std::string               a_word;
   std::string               target;
-  std::vector<std::string>  window(ws+1, "_");
   std::ostream_iterator<std::string> output( file_out, " " );
   std::vector<std::string>  data;
 
@@ -2496,14 +2499,14 @@ int window_usenet( Logfile& l, Config& c ) {
     if ( a_word.substr(0,7) == "TARGET:" ) {
       //window data with target
       if ( data.size() > 0 ) {
-	std::vector<std::string>  window(ws, "_");
+	std::vector<std::string>  window_v(ws, "_");
 	for ( size_t i = 0; i < data.size(); i++ ) {
-	  std::copy( window.begin(), window.end(), output );
+	  std::copy( window_v.begin(), window_v.end(), output );
 	  file_out << target << std::endl;
-	  copy( window.begin()+1, window.end(), window.begin() );
-	  window.at(ws-1) = data.at(i);
+	  copy( window_v.begin()+1, window_v.end(), window_v.begin() );
+	  window_v.at(ws-1) = data.at(i);
 	}
-	std::copy( window.begin(), window.end(), output );
+	std::copy( window_v.begin(), window_v.end(), output );
 	file_out << target << std::endl;
       }
       target = a_word.substr(7);
@@ -2513,10 +2516,10 @@ int window_usenet( Logfile& l, Config& c ) {
     data.push_back( a_word );
     /*
     std::transform(a_word.begin(),a_word.end(),a_word.begin(),tolower);
-    std::copy( window.begin(), window.end()-1, output );
+    std::copy( window_v.begin(), window_v.end()-1, output );
     file_out << target << std::endl;
-    window.at(ws) = a_word;
-    copy( window.begin()+1, window.end(), window.begin() );
+    window_v.at(ws) = a_word;
+    copy( window_v.begin()+1, window_v.end(), window_v.begin() );
     */
   }
   file_out.close();
