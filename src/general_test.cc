@@ -256,8 +256,8 @@ int gen_test( Logfile& l, Config& cf ) {
       //
       std::string cache_ans = cache->get( a_line );
       if ( cache_ans != "" ) {
-		file_out << cache_ans << std::endl;
-		continue;
+	file_out << cache_ans << std::endl;
+	continue;
       }
 
       Tokenize( a_line, words, ' ' );
