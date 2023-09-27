@@ -512,7 +512,7 @@ int pdt2( Logfile& l, Config& c ) {
   std::string token;
   std::string letter;
   std::vector<std::string> words;
-  std::vector<std::string> letters;
+  std::vector<std::string> characters;
   std::vector<std::string>::iterator wi;
   std::vector<std::string> predictions;
   std::vector<std::string>::iterator pi;
@@ -544,7 +544,7 @@ int pdt2( Logfile& l, Config& c ) {
   int skip = 0;
   long keypresses = 0;
   long keyssaved = 0;
-  long letterssaved = 0;
+  long characterssaved = 0;
 
   while( std::getline( file_in, a_line ) ) {
     if ( a_line == "" ) {
@@ -568,7 +568,7 @@ int pdt2( Logfile& l, Config& c ) {
     //
     long sentenceksaved = 0; // key presses saved in this sentence
     long sentencewsaved = 0; // words saved in this sentence
-    long sletterssaved  = 0; // letter keys saved in this sentence
+    long scharacterssaved  = 0; // letter keys saved in this sentence
 
     for ( size_t i = 0; i < words.size(); i++ ) {
 
@@ -591,9 +591,9 @@ int pdt2( Logfile& l, Config& c ) {
 
 	// We need to skip the letter context as well now.
 	//
-	(void)explode( token, letters );
-	for ( size_t j = 0; j < letters.size(); j++ ) {
-	  letter = letters.at(j);
+	(void)explode( token, characters );
+	for ( size_t j = 0; j < characters.size(); j++ ) {
+	  letter = characters.at(j);
 	  ctx0.push( letter );
 	}
 	ctx0.push( "_" );
@@ -610,21 +610,21 @@ int pdt2( Logfile& l, Config& c ) {
       std::vector<std::string> strs; // should be a struct with more stuff
       std::string t;
 
-      // Explode word into letters.
-      // Loop over all letters here, do predictions, just to get
+      // Explode word into characters.
+      // Loop over all characters here, do predictions, just to get
       // starting context for the ibase1 classifier, which continues word based.
       // We need a data struct here to save data in this loop.
       //
-      letters.clear();
-      (void)explode( token, letters );
+      characters.clear();
+      (void)explode( token, characters );
       int lsaved = 0;
-      //l.log( "Inside "+token+", letters="+to_str(letters.size()) );
-      for ( size_t j = 0; j < letters.size(); j++ ) {
+      //l.log( "Inside "+token+", characters="+to_str(characters.size()) );
+      for ( size_t j = 0; j < characters.size(); j++ ) {
 
 	// get the letter we "typed", and add it to the context used
 	// to predict the rest of the word.
 	//
-	letter = letters.at(j);
+	letter = characters.at(j);
 	ctx0.push( letter );
 	//l.log( "ctx0="+ctx0.toString() );
 
@@ -650,7 +650,7 @@ int pdt2( Logfile& l, Config& c ) {
 	  if ( lpred == token ) { //NB these spaces in the beginning
 	    //l.log( "MATCH INSIDE WORD" );
 
-	    lsaved = letters.size() - j - 1; // NB, we subtract the space also
+	    lsaved = characters.size() - j - 1; // NB, we subtract the space also
 
 	    // So, if it is the last word, we substract one.
 	    //
@@ -671,7 +671,7 @@ int pdt2( Logfile& l, Config& c ) {
 	    // The pred. should be insterted in this context here, if match inside word.
 	    // actually, the lpred is what is already in ctx1, because if we match it is
 	    // the current word.
-	    // We "just" need to know how many extra letters we saved
+	    // We "just" need to know how many extra characters we saved
 	    //
 	    Context ctx01 = ctx1;
 	    //l.log( "ctx1="+ctx1.toString() );
@@ -682,10 +682,10 @@ int pdt2( Logfile& l, Config& c ) {
 	    //
 	    generate_tree( My_Experiment1, ctx01, strs, length, depths, length, t );
 
-	    // We need to shift our ctx0 with the predicted letters.
+	    // We need to shift our ctx0 with the predicted characters.
 	    //
-	    for ( size_t j1 = j+1; j1 < letters.size(); j1++ ) {
-	      letter = letters.at(j1);
+	    for ( size_t j1 = j+1; j1 < characters.size(); j1++ ) {
+	      letter = characters.at(j1);
 	      ctx0.push( letter );
 	    }
 
@@ -701,9 +701,9 @@ int pdt2( Logfile& l, Config& c ) {
 	if ( lsaved > 0 ) {
 	  break;
 	}
-      } // j over letters
+      } // j over characters
       // End of word.
-      letters.clear();
+      characters.clear();
       ctx0.push( "_" );
 
       //l.log( "IBASE1 predictions: "+to_str(strs.size()) );
@@ -812,8 +812,8 @@ int pdt2( Logfile& l, Config& c ) {
       }
 
       keyssaved += savedhere;
-      letterssaved += lsaved;
-      sletterssaved += lsaved;
+      characterssaved += lsaved;
+      scharacterssaved += lsaved;
 
       ++instance_count;
     } // i over words
@@ -822,7 +822,7 @@ int pdt2( Logfile& l, Config& c ) {
     //
     file_out << "R" << std::setfill('0') << std::setw(4) << sentence_count << " ";
     file_out << /*a_line << " " <<*/ sentencewsaved << " " << sentenceksaved << " ";
-    file_out << sletterssaved << std::endl;
+    file_out << scharacterssaved << std::endl;
 
     ctx0.reset(); // leave out to leave previous sentence in context
     ctx1.reset();
@@ -832,12 +832,12 @@ int pdt2( Logfile& l, Config& c ) {
 
   // Output Totals
   //
-  file_out << "T0 " << keypresses << " " << letterssaved << " " << ((double)letterssaved/keypresses)*100.0 << std::endl;
+  file_out << "T0 " << keypresses << " " << characterssaved << " " << ((double)characterssaved/keypresses)*100.0 << std::endl;
   file_out << "T1 " << keypresses << " " << keyssaved << " " << ((double)keyssaved/keypresses)*100.0 << std::endl;
-  file_out << "T " << keypresses << " " << (keyssaved+letterssaved) << " " << ((double)(keyssaved+letterssaved)/keypresses)*100.0 << std::endl;
+  file_out << "T " << keypresses << " " << (keyssaved+characterssaved) << " " << ((double)(keyssaved+characterssaved)/keypresses)*100.0 << std::endl;
 
   l.log( "Keypresses: " + to_str(keypresses) );
-  l.log( "Letters   : " + to_str(letterssaved) );
+  l.log( "Characters   : " + to_str(characterssaved) );
   l.log( "Saved     : " + to_str(keyssaved) );
 
   c.add_kv( "pdt2_file", output_filename );
@@ -941,7 +941,7 @@ void generate_tree( Timbl::TimblAPI* My_Experiment,
 
 // --
 
-// Count UTF-8 letters.
+// Count UTF-8 characters.
 // Quick&dirty hack, pdt should be re-written (some day).
 //
 #ifndef HAVE_ICU
@@ -1051,7 +1051,7 @@ void window_words_letters( const std::string& a_line,
       ctx.push( "_" );
       res.push_back( ctx.toString() + " " + words.at(i));
     }
-    // Continue with the individual letters of the word.
+    // Continue with the individual characters of the word.
     window_word_letters( words.at(i), words.at(i), lc, ctx, res );
   }
 }
@@ -1327,16 +1327,6 @@ int pdt2web( Logfile& l, Config& c ) {
     return 1;
   }
 
-  // We need more of those, for multiple users, and some kind
-  // of ID (to prefix commands...?) Plus handshake protocol.
-  //
-  PDT pdt;
-  pdt.set_ltr_c( &pdtc0 );
-  pdt.set_wrd_c( &pdtc1 );
-
-  pdt.set_wrd_ds( ped );
-  pdt.set_ltr_dl( dl );
-
   std::vector<PDT*> pdts;
   int max_pdts = users;
   pdts.clear();
@@ -1348,76 +1338,6 @@ int pdt2web( Logfile& l, Config& c ) {
 
   std::vector<std::string> strs;
   std::vector<std::string>::iterator si = strs.begin();
-  std::vector<std::string> letters;
-  letters.clear();
-
-  /*
-  std::string token = "hallo";
-  std::string foo;
-  (void)explode( token, letters );
-  for ( int j = 0; j < letters.size(); j++ ) {
-
-    // spaces special treatment.
-
-    pdt.add_ltr( letters.at(j) );
-    strs.clear();
-    pdt.ltr_generate( strs );
-    si = strs.begin();
-    while ( si != strs.end() ) {
-      std::string s = *si;
-      s = s.substr( 1, s.length()-1);
-      std::cerr << "(" << s << ")" << std::endl;
-      Context *old = new Context(pdt.wrd_ctx); //save
-      pdt.add_wrd( s );
-      std::vector<std::string> strs_wrd;
-      std::vector<std::string>::iterator si_wrd;
-      pdt.wrd_generate( strs_wrd );
-      si_wrd = strs_wrd.begin();
-      while ( si_wrd != strs_wrd.end() ) {
-	std::cerr << *si_wrd << std::endl;
-	++si_wrd;
-      }
-      delete pdt.wrd_ctx;
-      pdt.wrd_ctx = old; // restore.
-      ++si;
-    }
-    std::cerr << std::endl;
-  }
-
-  foo = "o";
-  pdt.add_ltr( foo );
-  strs.clear();
-  pdt.ltr_generate( strs );
-  si = strs.begin();
-  while ( si != strs.end() ) {
-    std::string s = *si;
-    s = s.substr( 1, s.length()-1);
-    std::cerr << "(" << s << ")" << std::endl;
-    Context *old = new Context(pdt.wrd_ctx); //save
-    pdt.add_wrd( s );
-    std::vector<std::string> strs_wrd;
-    std::vector<std::string>::iterator si_wrd;
-    pdt.wrd_generate( strs_wrd );
-    si_wrd = strs_wrd.begin();
-    while ( si_wrd != strs_wrd.end() ) {
-      std::cerr << *si_wrd << std::endl;
-      ++si_wrd;
-    }
-    delete pdt.wrd_ctx;
-    pdt.wrd_ctx = old; // restore.
-    ++si;
-  }
-  */
-
-  /*
-  strs.clear();
-  pdt.wrd_generate( strs );
-  si = strs.begin();
-  while ( si != strs.end() ) {
-    std::cerr << *si << std::endl;
-    ++si;
-    }*/
-
 
   Sockets::ServerSocket server_sock;
 
@@ -1519,28 +1439,28 @@ int pdt2web( Logfile& l, Config& c ) {
       }
       l.log( "Assigning "+to_str(num)+" to request." );
       TiXmlDocument res_doc;
-      auto *decl = new TiXmlDeclaration( "1.0", "", "" );
-      TiXmlElement     *element = new TiXmlElement( "result" );
-      res_doc.LinkEndChild( decl );
-      res_doc.LinkEndChild( element );
-      add_element( element, "pdt_idx", to_str(num) );
-      std::ostringstream ostr;
-      ostr << res_doc;
-      newSock->write( ostr.str() );
+      auto *decl1 = new TiXmlDeclaration( "1.0", "", "" );
+      TiXmlElement     *result_element = new TiXmlElement( "result" );
+      res_doc.LinkEndChild( decl1 );
+      res_doc.LinkEndChild( result_element );
+      add_element( result_element, "pdt_idx", to_str(num) );
+      std::ostringstream oss;
+      oss << res_doc;
+      newSock->write( oss.str() );
     } else if ( buf == "INFO" ) {
       TiXmlDocument res_doc;
-      auto *decl = new TiXmlDeclaration( "1.0", "", "" );
-      TiXmlElement     *element = new TiXmlElement( "result" );
-      res_doc.LinkEndChild( decl );
-      res_doc.LinkEndChild( element );
+      auto *decl1 = new TiXmlDeclaration( "1.0", "", "" );
+      TiXmlElement     *result_element = new TiXmlElement( "result" );
+      res_doc.LinkEndChild( decl1 );
+      res_doc.LinkEndChild( result_element );
 
       // These/this should be taken from PDT.
       //
-      add_element( element, "ltr_ibasefile", ibasefile0 );
-      add_element( element, "wrd_ibasefile", ibasefile1 );
-      std::ostringstream ostr;
-      ostr << res_doc;
-      newSock->write( ostr.str() );
+      add_element( result_element, "ltr_ibasefile", ibasefile0 );
+      add_element( result_element, "wrd_ibasefile", ibasefile1 );
+      std::ostringstream oss;
+      oss << res_doc;
+      newSock->write( oss.str() );
     }
 
     // Commands on PDTs ------------------------
@@ -1563,29 +1483,29 @@ int pdt2web( Logfile& l, Config& c ) {
 
       std::string cmd = buf_tokens.at(0);
       int pdt_idx = my_stoi(buf_tokens.at(1));
-      PDT *pdt = NULL;
+      PDT *pdt_pnt = NULL;
       if ( pdt_idx < 0 ) {
 	l.log( "-2 index requested at "+buf_tokens.at(1) );
 	newSock->write( err_doc_str );// error doc
 	cmd = "__IGNORE__";
       }
       else {
-	pdt = pdts.at( pdt_idx );
-	if ( pdt == NULL ) {
+	pdt_pnt = pdts.at( pdt_idx );
+	if ( pdt_pnt == NULL ) {
 	  l.log( "NULL index requested at "+buf_tokens.at(1) );
 	  newSock->write( err_doc_str );// error doc
 	  cmd = "__IGNORE__";
 	}
 	else {
-	  time_t idle = pdt->idle();
+	  time_t idle = pdt_pnt->idle();
 	  l.log( "idle="+to_str(idle));
 	}
       }
-      if ( pdt == NULL ) {
+      if ( pdt_pnt == NULL ) {
 	// nothing
       }
       else if ( cmd == "STOP" ) {
-	delete pdt;
+	delete pdt_pnt;
 	pdts.at( pdt_idx ) = NULL;
 	newSock->write( ok_doc_str );
       }
@@ -1595,24 +1515,24 @@ int pdt2web( Logfile& l, Config& c ) {
 	// then follow up with the word predictor.
 	//
 	TiXmlDocument doc;
-	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
-	TiXmlElement * element = new TiXmlElement( "result" );
-	doc.LinkEndChild( decl );
-	doc.LinkEndChild( element );
+	auto * decl2 = new TiXmlDeclaration( "1.0", "", "" );
+	TiXmlElement *result = new TiXmlElement( "result" );
+	doc.LinkEndChild( decl2 );
+	doc.LinkEndChild( result );
 
 	strs.clear();
-	pdt->ltr_generate( strs );
+	pdt_pnt->ltr_generate( strs );
 	si = strs.begin();
 	long time0 = clock_m_secs();
 	int cnt = 0;
 	while ( si != strs.end() ) {
 	  std::string s = *si;
 	  s = s.substr( 1, s.length()-1);
-	  Context *old = new Context(pdt->wrd_ctx); //save
-	  pdt->add_wrd( s );
+	  Context *old = new Context(pdt_pnt->wrd_ctx); //save
+	  pdt_pnt->add_wrd( s );
 	  std::vector<std::string> strs_wrd;
 	  std::vector<std::string>::iterator si_wrd;
-	  pdt->wrd_generate( strs_wrd );
+	  pdt_pnt->wrd_generate( strs_wrd );
 	  si_wrd = strs_wrd.begin();
 	  while ( si_wrd != strs_wrd.end() ) {
 
@@ -1620,76 +1540,75 @@ int pdt2web( Logfile& l, Config& c ) {
 	    element0->SetAttribute("idx", cnt++);
 	    TiXmlText * text0 = new TiXmlText( s + *si_wrd );
 	    element0->LinkEndChild( text0 );
-	    element->LinkEndChild( element0 );
+	    result->LinkEndChild( element0 );
 
 	    //l.log( s + *si_wrd );
 	    ++si_wrd;
 	  }
-	  delete pdt->wrd_ctx;
-	  pdt->wrd_ctx = old; // restore.
+	  delete pdt_pnt->wrd_ctx;
+	  pdt_pnt->wrd_ctx = old; // restore.
 	  ++si;
 	}
 	long time_ms = clock_m_secs()-time0;
-	add_element( element, "time_ms", to_str(time_ms) );
+	add_element( result, "time_ms", to_str(time_ms) );
 
-	std::ostringstream ostr;
-	ostr << doc;
-	newSock->write( ostr.str() );
-	l.log( ostr.str() );
+	std::ostringstream oss;
+	oss << doc;
+	newSock->write( oss.str() );
+	l.log( oss.str() );
       }
       else if ( cmd == "CTX" ) {
 	//
 	// Returns the two contexts.
 	//
-	l.log( pdt->ltr_ctx->toString() );
-	l.log( pdt->wrd_ctx->toString() );
-	l.log( pdt->wip+"/"+pdt->pwip );
+	l.log( pdt_pnt->ltr_ctx->toString() );
+	l.log( pdt_pnt->wrd_ctx->toString() );
+	l.log( pdt_pnt->wip+"/"+pdt_pnt->pwip );
 
 	TiXmlDocument doc;
-	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+	auto *decl2 = new TiXmlDeclaration( "1.0", "", "" );
 
 	TiXmlElement * element0 = new TiXmlElement( "ctx_ltr" );
-	TiXmlText * text0 = new TiXmlText( pdt->ltr_ctx->toString() );
+	TiXmlText * text0 = new TiXmlText( pdt_pnt->ltr_ctx->toString() );
 	element0->LinkEndChild( text0 );
 	TiXmlElement * element1 = new TiXmlElement( "ctx_wrd" );
-	TiXmlText * text1 = new TiXmlText( pdt->wrd_ctx->toString() );
+	TiXmlText * text1 = new TiXmlText( pdt_pnt->wrd_ctx->toString() );
 	element1->LinkEndChild( text1 );
 
 	TiXmlElement * element2 = new TiXmlElement( "ds" );
-	TiXmlText * text2 = new TiXmlText( pdt->ds );
+	TiXmlText * text2 = new TiXmlText( pdt_pnt->ds );
 	element2->LinkEndChild( text2 );
 	TiXmlElement * element3 = new TiXmlElement( "dl" );
-	TiXmlText * text3 = new TiXmlText( to_str(pdt->dl) );
+	TiXmlText * text3 = new TiXmlText( to_str(pdt_pnt->dl) );
 	element3->LinkEndChild( text3 );
 
-	TiXmlElement * element = new TiXmlElement( "result" );
-	element->LinkEndChild( element0 );
-	element->LinkEndChild( element1 );
-	element->LinkEndChild( element2 );
-	element->LinkEndChild( element3 );
+	TiXmlElement * r_element = new TiXmlElement( "result" );
+	r_element->LinkEndChild( element0 );
+	r_element->LinkEndChild( element1 );
+	r_element->LinkEndChild( element2 );
+	r_element->LinkEndChild( element3 );
 
-	add_element( element, "ltr_his", to_str(pdt->get_ltr_his()) );
+	add_element( r_element, "ltr_his", to_str(pdt_pnt->get_ltr_his()) );
 
-	doc.LinkEndChild( decl );
-	doc.LinkEndChild( element );
+	doc.LinkEndChild( decl2 );
+	doc.LinkEndChild( r_element );
 
-	std::ostringstream ostr;
-	ostr << doc;
-
-	//      std::string answer = pdt->wrd_ctx->toString() + '\n';
-	newSock->write( ostr.str() );
-	l.log( ostr.str() );
+	std::ostringstream oss;
+	oss << doc;
+	//      std::string answer = pdt_pnt->wrd_ctx->toString() + '\n';
+	newSock->write( oss.str() );
+	l.log( oss.str() );
       }
       else if ( cmd == "SPC" ) {
-	pdt->add_spc();
+	pdt_pnt->add_spc();
 	newSock->write( ok_doc_str );
       }
       else if ( cmd == "CLR" ) {
-	pdt->clear();
+	pdt_pnt->clear();
 	newSock->write( ok_doc_str );
       }
       else if ( cmd == "DEL" ) {
-	pdt->del_ltr();
+	pdt_pnt->del_ltr();
 	newSock->write( ok_doc_str );
       }
       else if ( cmd == "LTR" ) {
@@ -1697,35 +1616,34 @@ int pdt2web( Logfile& l, Config& c ) {
 	// Add one letter to the letter context.
 	//
 	if ( buf_tokens.size() > 2 ) {
-	  pdt->add_ltr( buf_tokens.at(2) );
+	  pdt_pnt->add_ltr( buf_tokens.at(2) );
 	}
 	newSock->write( ok_doc_str );
       }
       else if ( cmd == "FEED" ) {
 	//
 	// First attempt to feed selected text into
-	// the system. Need to skip the first few letters
+	// the system. Need to skip the first few characters
 	// which have already been typed: we use lpos for
 	// this, it is reset after the first word has been added.
 	//
-	l.log("LPOS: "+ to_str(pdt->lpos));
-	int lpos = pdt->lpos;
-	std::vector<std::string> letters;
+	l.log("LPOS: "+ to_str(pdt_pnt->lpos));
+	int lpos = pdt_pnt->lpos;
+	std::vector<std::string> feed_characters;
 	for ( size_t i = 2; i < buf_tokens.size(); i++ ) {
 	  l.log("FEED: "+ buf_tokens.at(i));
-	  (void)explode( buf_tokens.at(i), letters );
+	  (void)explode( buf_tokens.at(i), feed_characters );
 
-	  for ( size_t j = lpos; j < letters.size(); j++ ) {
-	    if ( letters.at(j) == " " ) {
-	      pdt->add_spc();
+	  for ( size_t j = lpos; j < feed_characters.size(); j++ ) {
+	    if ( feed_characters.at(j) == " " ) {
+	      pdt_pnt->add_spc();
 	    } else {
-	      l.log("FEED: "+ letters.at(j));
-	      pdt->add_ltr( letters.at(j) );
+	      l.log("FEED: "+ feed_characters.at(j));
+	      pdt_pnt->add_ltr( feed_characters.at(j) );
 	    }
 	  }
 	  lpos = 0;
-	  letters.clear();
-	  pdt->add_spc();
+	  pdt_pnt->add_spc();
 	}
 	newSock->write( ok_doc_str );
       }
@@ -1734,25 +1652,25 @@ int pdt2web( Logfile& l, Config& c ) {
 	// Add a word to the word context. Explode the word,
 	// and add each letter to the letter context as well.
 	//
-	pdt->add_wrd( buf_tokens.at(2) );
+	pdt_pnt->add_wrd( buf_tokens.at(2) );
 
-	std::vector<std::string> letters;
-	(void)explode( buf_tokens.at(2), letters );
+	std::vector<std::string> word_characters;
+	(void)explode( buf_tokens.at(2), word_characters );
 	// need a space before?
-	for ( size_t j = 0; j < letters.size(); j++ ) {
-	  pdt->add_ltr( letters.at(j) );
+	for ( size_t j = 0; j < word_characters.size(); j++ ) {
+	  pdt_pnt->add_ltr( word_characters.at(j) );
 	}
 	newSock->write( ok_doc_str );
       }
       else if ( cmd == "GENWRD" ) {
 	//
-	// Seperate generators for words and letters.
+	// Seperate generators for words and characters.
 	//
 	if ( buf_tokens.at(2) == "WRD" ) {
 	  strs.clear();
 	  std::vector<std::string> strs_wrd;
 	  std::vector<std::string>::iterator si_wrd;
-	  pdt->wrd_generate( strs_wrd );
+	  pdt_pnt->wrd_generate( strs_wrd );
 	  si_wrd = strs_wrd.begin();
 	  while ( si_wrd != strs_wrd.end() ) {
 	    l.log( *si_wrd );
@@ -1762,7 +1680,7 @@ int pdt2web( Logfile& l, Config& c ) {
 	}
 	else if ( buf_tokens.at(2) == "LTR" ) {
 	  strs.clear();
-	  pdt->ltr_generate( strs );
+	  pdt_pnt->ltr_generate( strs );
 	  si = strs.begin();
 	  while ( si != strs.end() ) {
 	    l.log( *si );

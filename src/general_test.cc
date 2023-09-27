@@ -334,17 +334,17 @@ int gen_test( Logfile& l, Config& cf ) {
       int cache_level = -1; // see above.
 
       if (cache_idx == -1) {
-		if ( cd == NULL ) {
-		  cache_level = 0;
-		} else {
-		  cache_level = 1; // want to cache
-		}
-      } else if (cache_idx != -1) {
-		if ( cd != NULL ) {
-		  cache_level = 3;
-		} else {
-		  cache_level = 2;// play mission impossible theme
-		}
+	if ( cd == NULL ) {
+	  cache_level = 0;
+	} else {
+	  cache_level = 1; // want to cache
+	}
+      } else {
+	if ( cd != NULL ) {
+	  cache_level = 3;
+	} else {
+	  cache_level = 2;// play mission impossible theme
+	}
       }
 
       // ----
@@ -403,11 +403,11 @@ int gen_test( Logfile& l, Config& cf ) {
       // Counting correct guesses
       //
       if ( answer == target ) {
-		++correct;
-      } else if ( (answer != target) && (target_in_dist == true) ) {
-		++correct_distr;
+	++correct;
+      } else if ( target_in_dist == true ) {
+	++correct_distr;
       } else {
-		++wrong;
+	++wrong;
       }
 
       //target_distprob = (double)target_freq / (double)distr_count;
@@ -425,11 +425,11 @@ int gen_test( Logfile& l, Config& cf ) {
 		/*<< entropy << ' '*/ ;
 
       if ( answer == target ) {
-		out << "cg "; // correct guess
-      } else if ( (answer != target) && (target_in_dist == true) ) {
-		out << "cd "; // correct distr.
+	out << "cg "; // correct guess
+      } else if ( target_in_dist == true ) {
+	out << "cd "; // correct distr.
       } else {
-		out << "ic "; // incorrect
+	out << "ic "; // incorrect
       }
 
       // New in 1.10.0, the matchDepth and matchedAtLeaf
