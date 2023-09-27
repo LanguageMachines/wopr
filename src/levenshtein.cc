@@ -85,13 +85,12 @@
 #define BACKLOG 5        // how many pending connections queue will hold
 #define MAXDATASIZE 2048 // max number of bytes we can get at once
 
-char toLowerCase(char c) {
-    return char( std::tolower(static_cast<unsigned char>( c )));
-}
+static int toLower( const int& i ){ return tolower(i); }
+
 std::string toLowerCase( std::string const& s ) {
-  std::string result( s.length(), '\0' );
+  std::string result = s;
   setlocale( LC_ALL, "" );
-  std::transform( s.begin(), s.end(), result.begin(), std::ptr_fun<char>(toLowerCase) );
+  std::transform( result.begin(), result.end(), result.begin(), toLower );
   return result;
 }
 
